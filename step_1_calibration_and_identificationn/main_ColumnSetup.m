@@ -8,44 +8,21 @@
 %              IISL, Purdue University, West Lafayette, IN                %
 %                                                                         %
 %              Coded by:           Mohamed Gomaa                          %
-%                                  Edwin Patino**                         %
+%                                  Edwin Patino                           %
 %                                  Tao Zhang                              %
 %                                                                         %
 %              Supervised by:      Shirley J. Dyke                        %
-%                                                                         %
-%              Created:            June 24, 2024                          %
-%                                                                         %
-%              Last Updated:       May 28, 2024                        %
-%                                  by: Mohamed                       %
-%                                                                         %
-%                                                                         %
-%                                                                         %
-% **: Lead contact                                                        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Note Board (Read First)
+%% Note Board
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% 1. Purpose: This script and Simulink model provide a basic setup for
-% running four types of signals (stair signal, sine wave, BLWN, and 
-% frequency sweep) in the ColumnSetup. The goal is to help you 
-% familiarize yourself with the setup and the interaction between MATLAB, 
-% Simulink, and Speedgoat. This is a Ready-to-Run Model with current
-% Simulink-Speedgoat-MTS configurations as of 07/30/2024.
-
-% 2. Attention: Pay close attention to the comments that will appear in the
-% command window as these will provide you with important information about
-% the test status and the steps you need to follow.
-
-% 3. Assistance: If you need help getting started with this script, are 
-% unsure about how to use any feature, or have a recommended modification,
-% please contact any of the people listed above before proceeding.
-
+% 1. Purpose: This script supports the first step of the ColumnSetup
+% Goals:
+% 1. Calibrate the Speedgoat command and measurement signals.
+% 2. Collect the data needed to identify the system dynamics.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparing the Workspace
-tmp = matlab.desktop.editor.getActive;
-cd(fileparts(tmp.Filename));
 clear; clc; close all
 
 disp('===============================================================')
@@ -75,7 +52,7 @@ sat_limit = 130/v2d_gain; % Volts
 % Test File Name % IMPORTANT!
 datename = datestr(now,'mmddyyyy');         % Date
 nametime = datestr(now,'HHMMSS');           % Time 
-path     = ['.\2_TestFiles\' datename '\']; % Path to load files
+path     = ['.\saved_results\' datename '\']; % Path to save files
 type     = 'Test_';                         % Type of test
 date     = [datename '_'];                  % Date experimental data was taken
 time     = [nametime '_'];                  % Time
@@ -92,7 +69,7 @@ feat6    = '.mat';                          % File extension
 file_name     = strcat(path,type,date,time,signal,feat1,feat2,feat3,feat4,feat5,feat6);
 
 % Make sure there is a folder named 'mmddyyyy'
-% inside the '2_TestFiles' folder
+% inside the 'saved_results' folder
 if ~exist(path, 'dir')
        mkdir(path)
        disp('A New Test Folder was created')
@@ -204,7 +181,7 @@ end
 %% Initializing the Simulation
 
 % Adding supporting files
-addpath(genpath('1_SupportFiles'));
+addpath(genpath('helpers'));
 % Ramping all channels to zero
 Speedgoat_RampToZero
 % Reading the initial vaues of voltages for all channels

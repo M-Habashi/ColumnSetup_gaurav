@@ -4,7 +4,7 @@
 
 Speedgoat_ReadOffsets
 
-ramp_ini_v = ini_v(10);
+ramp_ini_v = ini_v(3);
 % 0.256196610889764 in/sec*(25.4 mm/in)*(1/6.5073939166 volts/mm) = 1 volts/sec
 ramp_vel = 1; % volts/sec
 ramp_slope = -sign(ramp_ini_v)*ramp_vel;
