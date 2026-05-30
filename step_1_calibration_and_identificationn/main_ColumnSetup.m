@@ -24,6 +24,7 @@
 
 %% Preparing the Workspace
 clear; clc; close all
+addpath(genpath('helpers'));
 
 disp('===============================================================')
 disp('                         Column Setup                          ')
@@ -45,6 +46,12 @@ v2f_const       = 0;                % N
 v2a_gain        = -1000/50.6;       % (mm/s^2)/volts
 v2a_const       = 0;                % mm/s^2
 correction_gain = 1.01;     % Volts MTS/Volts Speedgoat
+
+% Hardware Channel Configuration
+ch.am = 2;         % Acceleration measurement analog input
+ch.dm = 3;         % Displacement measurement analog input
+ch.fm = 4;         % Force measurement analog input
+ch.dd = 5;         % Actuator command analog output
 
 % Saturation Limit
 sat_limit = 130/v2d_gain; % Volts
@@ -180,8 +187,6 @@ end
 
 %% Initializing the Simulation
 
-% Adding supporting files
-addpath(genpath('helpers'));
 % Ramping all channels to zero
 Speedgoat_RampToZero
 % Reading the initial vaues of voltages for all channels
