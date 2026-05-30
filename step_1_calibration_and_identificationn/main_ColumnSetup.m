@@ -187,9 +187,7 @@ end
 
 %% Initializing the Simulation
 
-% Ramping all channels to zero
-Speedgoat_RampToZero
-% Reading the initial vaues of voltages for all channels
+% Reading the initial values of voltages for all channels
 Speedgoat_ReadOffsets
 
 %% Running the Simulation
@@ -242,14 +240,6 @@ if exist('savedfile_flag','var')
     save_system(model)
     close_system(model)
 
-    % Ramping all channels to zero
-    % ATTENTION: output variable will be cleared.
-    
-    if input('Ramp to Zero? (logsout will be cleared) (Y/N): ','s') == 'Y'
-        Speedgoat_RampToZero
-        clear logsout
-    end
-    
     disp('===============================================================')
     disp('                        Test Completed!                        ')
     disp('===============================================================')
