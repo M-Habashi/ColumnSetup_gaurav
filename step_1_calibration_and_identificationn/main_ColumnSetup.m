@@ -52,6 +52,7 @@ ch.am = 2;         % Acceleration measurement analog input
 ch.dm = 3;         % Displacement measurement analog input
 ch.fm = 4;         % Force measurement analog input
 ch.dd = 5;         % Actuator command analog output
+command_channel_selector = double((1:7)' == ch.dd);
 
 % Saturation Limit
 sat_limit = 130/v2d_gain; % Volts
