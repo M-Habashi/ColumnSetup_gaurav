@@ -3,14 +3,24 @@
 
 clear; clc
 
-root = fileparts(mfilename('fullpath'));
+root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 if isempty(root), root = pwd; end
 
-folderPatterns = {'slprj', '*_slrealtime_rtw', '*_ert_rtw', '*_grt_rtw'};
+folderNames = {'slprj'};
+folderPatterns = {'*_slrealtime_rtw', '*_ert_rtw', '*_grt_rtw'};
 filePatterns = {'*.slxc', '*.mldatx', '*.asv', '*.autosave', '*.bak', '*.tmp', '~$*'};
 
 deleted = {};
 nDeleted = 0;
+
+for i = 1:numel(folderNames)
+    p = fullfile(root, folderNames{i});
+    if isfolder(p)
+        rmdir(p, 's');
+        nDeleted = nDeleted + 1;
+        deleted{nDeleted, 1} = relpath(p, root); %#ok<SAGROW>
+    end
+end
 
 for i = 1:numel(folderPatterns)
     items = dir(fullfile(root, folderPatterns{i}));

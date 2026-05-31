@@ -2,7 +2,12 @@
 % Lists saved result MAT files, prompts for one file, prints a compact
 % report, and plots displacement tracking plus measured force.
 
-clear; clc; close all
+if exist('outputVerificationFile', 'var')
+    requestedFilePath = outputVerificationFile;
+else
+    requestedFilePath = '';
+end
+clc; close all
 
 scriptFolder = fileparts(mfilename('fullpath'));
 rootFolder = fullfile(scriptFolder, '..', '..', 'saved_results');
@@ -19,16 +24,24 @@ end
 [~, order] = sort(string(fullfile({files.folder}, {files.name})));
 files = files(order);
 
-fprintf('\nAvailable saved result files:\n\n');
-printFileTree(rootFolder, files);
+if isempty(requestedFilePath)
+    fprintf('\nAvailable saved result files:\n\n');
+    printFileTree(rootFolder, files);
 
-selection = input('\nSelect file number to load: ');
-while ~isValidSelection(selection, numel(files))
-    fprintf('Please enter a number from 1 to %d.\n', numel(files));
-    selection = input('Select file number to load: ');
+    selection = input('\nSelect file number to load: ');
+    while ~isValidSelection(selection, numel(files))
+        fprintf('Please enter a number from 1 to %d.\n', numel(files));
+        selection = input('Select file number to load: ');
+    end
+
+    filePath = fullfile(files(selection).folder, files(selection).name);
+    selectedFileName = files(selection).name;
+else
+    filePath = requestedFilePath;
+    [~, selectedName, selectedExt] = fileparts(filePath);
+    selectedFileName = [selectedName selectedExt];
 end
 
-filePath = fullfile(files(selection).folder, files(selection).name);
 data = load(filePath);
 requiredSignals = {'t', 'dd', 'dc', 'dm', 'fm'};
 for k = 1:numel(requiredSignals)
@@ -53,7 +66,7 @@ fm = fm(1:n);
 trackingError = dd - dm;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
 
-metadata = getResultMetadata(data, files(selection).name);
+metadata = getResultMetadata(data, selectedFileName);
 duration = t(end) - t(1);
 fs = getScalarField(data, 'fs', NaN);
 dt = getScalarField(data, 'dt', NaN);
@@ -61,7 +74,7 @@ dt = getScalarField(data, 'dt', NaN);
 fprintf('\n===============================================================\n');
 fprintf('                    Saved Result Summary\n');
 fprintf('===============================================================\n');
-fprintf('File name:       %s\n', files(selection).name);
+fprintf('File name:       %s\n', selectedFileName);
 fprintf('Full path:       %s\n', filePath);
 fprintf('Date/time:       %s\n', metadata.dateTime);
 fprintf('Test type:       %s\n', metadata.testType);
@@ -73,7 +86,7 @@ fprintf('dt:              %.6g s\n', dt);
 fprintf('RMS(dd - dm):    %.6g mm\n', rmsError);
 fprintf('===============================================================\n\n');
 
-figure('Name', files(selection).name, 'WindowState', 'maximized');
+figure('Name', selectedFileName, 'WindowState', 'maximized');
 colors = getPlotColors();
 
 subplot(2, 1, 1)
