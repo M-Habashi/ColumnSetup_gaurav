@@ -1,0 +1,6 @@
+file: C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn\test\baseline_pre_move.mat
+duration_s: 60
+sample_count: 122881
+fs_hz: 2048
+dt_s: 0.00048828125
+rms_dd_minus_dm_mm: 7.0711235

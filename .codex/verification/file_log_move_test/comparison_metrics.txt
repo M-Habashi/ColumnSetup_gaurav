@@ -1,0 +1,9 @@
+baseline_file: C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn\test\baseline_pre_move.mat
+after_file: C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn\test\after_move.mat
+
+metric,baseline,after,difference
+duration_s,60,60,0
+sample_count,122881,122881,0
+fs_hz,2048,2048,0
+dt_s,0.00048828125,0.00048828125,0
+rms_dd_minus_dm_mm,7.0711235,7.07110872,-1.47787986e-05

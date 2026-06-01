@@ -6,13 +6,14 @@
 - Visual inspection also includes capturing and sending screenshots of every Simulink subsystem relevant to the edited model/workflow.
 - For Simulink visual inspection screenshots, prefer computer-use/GUI screenshots of the actual Simulink windows because MATLAB programmatic exports can miss or blur block details. Open each relevant subsystem, zoom/fit so block names and signal paths are readable, capture the screen, and send the screenshots in the chat. Use programmatic exports only as a fallback when computer-use is unavailable.
 - If the user replies `yes 1 min`, run the visual inspection for 1 minute and stop the target manually/programmatically after 1 minute. If the user replies only `yes`, run the full configured simulation.
-- Visual inspection file locations: main script is `main_ColumnSetup.m`; main Simulink model is `model_ColumnSetup_00.slx`; visualization helper is `helpers\visualization\visualize_saved_results.m`; Speedgoat helper scripts are in `helpers\helper_speedgoat`; helper Simulink models are in `helpers\helper_simulink`; visual inspection screenshots can be saved in `visual_inspection`.
+- Visual inspection file locations: main script is `main_ColumnSetup.m`; main Simulink model is `model_ColumnSetup_00.slx`; visualization helper is `helpers\visualization\visualize_saved_results.m`; Speedgoat helper scripts are in `helpers\helper_speedgoat`; helper Simulink models are in `helpers\helper_simulink`.
+- Store all temporary verification/test artifacts under repo-level `.codex`, for example `.codex\verification\<task_name>\`. This includes baseline/after MAT files, plots, comparison metrics, and Simulink screenshots. If the MATLAB workflow first writes a verification MAT file under `saved_results`, copy/move the needed evidence into `.codex\verification\<task_name>\` and remove duplicate temporary verification files from the step folder.
 - Send visual inspection images directly in the chat, including the output result plot and subsystem screenshots, not only the file paths.
 - If the user asks to verify/vrify, treat that as explicit permission to run the physical Speedgoat workflow. It is considered safe and does not need an additional confirmation prompt.
 - Output verification procedure:
   1. Work in `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn`.
-  2. In MATLAB, run `dbstop in main_ColumnSetup at 210`, then run `main_ColumnSetup.m`.
-  3. Wait until MATLAB stops at line 210 (`pause`). At this point offsets are read, `model_ColumnSetup_00` is open, and the main script is waiting for the target run.
+  2. In MATLAB, run `dbstop in main_ColumnSetup at 201`, then run `main_ColumnSetup.m`.
+  3. Wait until MATLAB stops at line 201 (`pause`). At this point offsets are read, `model_ColumnSetup_00` is open, and the main script is waiting for the target run.
   4. Run the physical Speedgoat target from MATLAB:
      ```matlab
      tend = 60; % use 60 for a quick verification; use the configured tend for a full run
@@ -34,11 +35,17 @@
      cd(projectFolder)
      outputVerificationFile = fullfile(projectFolder, file_name);
      run(fullfile(projectFolder, 'helpers', 'visualization', 'visualize_saved_results.m'))
-     outputImagePath = fullfile(projectFolder, 'visual_inspection', 'output_verification_result.png');
+     outputFolder = fullfile(fileparts(projectFolder), '.codex', 'verification', 'output_verification');
+     if ~exist(outputFolder, 'dir'), mkdir(outputFolder); end
+     outputImagePath = fullfile(outputFolder, 'output_verification_result.png');
      print(gcf, outputImagePath, '-dpng', '-r150')
      ```
-  7. Send `visual_inspection\output_verification_result.png` directly in the chat. Also report the saved MAT filename, duration, sample count, `fs`, `dt`, and `RMS(dd - dm)` from the visualization output.
+  7. Send `.codex\verification\output_verification\output_verification_result.png` directly in the chat. Also report the saved MAT filename, duration, sample count, `fs`, `dt`, and `RMS(dd - dm)` from the visualization output.
   8. If the user asks for a full verification, use the configured `tend` instead of `60`. If the user says `yes 1 min`, use `tend = 60`.
+- When comparing baseline/after physical runs for a model cleanup, save the baseline MAT/plot, after MAT/plot, comparison metrics, and subsystem screenshots under `.codex\verification\<task_name>\` rather than a `test` or `visual_inspection` folder inside the step folder.
+- MATLAB MCP can lose connection after a long Speedgoat run while the file log is importing; first reconnect with a small MATLAB query and check for the expected saved MAT file before rerunning the physical system.
+- In `mcp__matlab.evaluate_matlab_code`, avoid relying on local helper functions defined later in the same evaluated snippet for quick metric generation. Use inline MATLAB code or a real `.m` script instead.
+- If you learn something new about this workflow during implementation, such as a better way to do something or a better way to avoid an error, update this markdown file with the specific instruction.
 - Computer Use troubleshooting notes from prior visual-inspection attempts: if Computer Use says `native pipe path is unavailable`, retry after a short delay and reconnect/reset once before giving up. If it can screenshot MATLAB but input fails with `failed to activate captured window`, ask the user to click/foreground MATLAB and then retry. If MATLAB is not listed, launch it by `C:\Program Files\MATLAB\R2020b\bin\matlab.exe` and wait for `MATLAB R2020b - academic use`.
 - Whenever opening an instance/session/window through MCP, close it again after finishing with it.
 - Do not run physical Speedgoat/actuator workflows for discussion-only prompts unless the user explicitly requests it.
