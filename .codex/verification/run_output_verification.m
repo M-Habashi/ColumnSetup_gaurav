@@ -1,14 +1,20 @@
 %% Run Output Verification
-% Start this from the project folder or call it by path. At the pause in
-% main_ColumnSetup.m, run the model on target, wait for it to finish, then
-% press a key in MATLAB so the script saves and plots the result.
+% Agent helper for output verification. Start MATLAB from the active step
+% folder so this can be reused from repo-level .codex workflows.
 
-scriptFolder = fileparts(mfilename('fullpath'));
-projectFolder = fullfile(scriptFolder, '..', '..');
+originalFolder = pwd;
+
+if exist(fullfile(originalFolder, 'main_ColumnSetup.m'), 'file')
+    projectFolder = originalFolder;
+else
+    scriptFolder = fileparts(mfilename('fullpath'));
+    repoFolder = fileparts(fileparts(scriptFolder));
+    projectFolder = fullfile(repoFolder, 'step_1_calibration_and_identificationn');
+end
+
 [~, projectAttributes] = fileattrib(projectFolder);
 projectFolder = projectAttributes.Name;
 
-originalFolder = pwd;
 cleanup = onCleanup(@() cd(originalFolder));
 cd(projectFolder)
 

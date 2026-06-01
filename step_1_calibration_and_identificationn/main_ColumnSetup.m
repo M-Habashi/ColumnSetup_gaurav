@@ -17,6 +17,7 @@
 %% Note Board
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1. Purpose: This script supports the first step of the ColumnSetup
+% testing
 % Goals:
 % 1. Calibrate the Speedgoat command and measurement signals.
 % 2. Collect the data needed to identify the system dynamics.

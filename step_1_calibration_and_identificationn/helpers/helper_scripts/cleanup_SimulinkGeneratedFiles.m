@@ -12,10 +12,13 @@ filePatterns = {'*.slxc', '*.mldatx', '*.asv', '*.autosave', '*.bak', '*.tmp', '
 
 deleted = {};
 nDeleted = 0;
+folders = dir(fullfile(root, '**', '*'));
+folders = folders([folders.isdir] & ~startsWith({folders.name}, '.'));
 
 for i = 1:numel(folderNames)
-    p = fullfile(root, folderNames{i});
-    if isfolder(p)
+    items = folders(strcmp({folders.name}, folderNames{i}));
+    for j = 1:numel(items)
+        p = fullfile(items(j).folder, items(j).name);
         rmdir(p, 's');
         nDeleted = nDeleted + 1;
         deleted{nDeleted, 1} = relpath(p, root); %#ok<SAGROW>
@@ -23,14 +26,12 @@ for i = 1:numel(folderNames)
 end
 
 for i = 1:numel(folderPatterns)
-    items = dir(fullfile(root, folderPatterns{i}));
+    items = folders(~cellfun('isempty', regexp({folders.name}, ['^' regexptranslate('wildcard', folderPatterns{i}) '$'], 'once')));
     for j = 1:numel(items)
-        if items(j).isdir && ~startsWith(items(j).name, '.')
-            p = fullfile(items(j).folder, items(j).name);
-            rmdir(p, 's');
-            nDeleted = nDeleted + 1;
-            deleted{nDeleted, 1} = relpath(p, root); %#ok<SAGROW>
-        end
+        p = fullfile(items(j).folder, items(j).name);
+        rmdir(p, 's');
+        nDeleted = nDeleted + 1;
+        deleted{nDeleted, 1} = relpath(p, root); %#ok<SAGROW>
     end
 end
 
