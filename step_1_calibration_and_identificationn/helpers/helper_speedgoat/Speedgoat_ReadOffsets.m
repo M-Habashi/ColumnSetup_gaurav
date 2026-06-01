@@ -3,16 +3,17 @@
 % Updated on 07/10/2024 by Edwin
 
 model = 'Model_Speedgoat_ReadOffset';
-tend_offset = 5;  % Seconds
+tend_offset = 1;  % Seconds
 
-open_system(model); slbuild(model);
-tg = slrealtime; tg.load(model)
+logsout = Speedgoat_RunModel(model,tend_offset);
 
-tg.start('AutoImportFileLog',true,'StopTime',tend_offset);
-T = timer('TimerFcn',@(~,~)disp('*** Reading offsets in channels...***'),...
-    'StartDelay',tend_offset+5); start(T); wait(T);
+disp('*** Reading offsets in channels...***')
 
-measured_data = logsout.LiveStreamSignals{1}.Values.Data;
+if isfield(logsout,'LiveStreamSignals')
+    measured_data = logsout.LiveStreamSignals{1}.Values.Data;
+else
+    measured_data = logsout.FileLogSignals{1}.Values.Data;
+end
 ini_v = mean(measured_data);
 
 close_system(model)
