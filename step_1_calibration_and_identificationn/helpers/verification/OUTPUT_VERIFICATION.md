@@ -15,7 +15,7 @@ Use output verification when the goal is to prove that the main workflow can run
 4. In Simulink, use the `REAL-TIME` tab and click `Run on Target`.
 5. Wait until the target simulation finishes. For a one-minute check, stop the target after 60 s before resuming MATLAB.
 6. Return to MATLAB and press any key so `main_ColumnSetup.m` continues.
-7. The main script imports `logsout`, saves the MAT file under `saved_results\mmddyyyy`, closes the model, and creates its quick-look figure.
+7. The main script imports `logsout`, saves the MAT file under `saved_results\yyyymmdd`, closes the model, and creates its quick-look figure.
 8. The helper then runs `helpers\visualization\visualize_saved_results.m` on the exact MAT file that was just saved and exports:
 
    ```text

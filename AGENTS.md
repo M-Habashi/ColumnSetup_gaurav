@@ -40,6 +40,7 @@
   7. Send `visual_inspection\output_verification_result.png` directly in the chat. Also report the saved MAT filename, duration, sample count, `fs`, `dt`, and `RMS(dd - dm)` from the visualization output.
   8. If the user asks for a full verification, use the configured `tend` instead of `60`. If the user says `yes 1 min`, use `tend = 60`.
 - Computer Use troubleshooting notes from prior visual-inspection attempts: if Computer Use says `native pipe path is unavailable`, retry after a short delay and reconnect/reset once before giving up. If it can screenshot MATLAB but input fails with `failed to activate captured window`, ask the user to click/foreground MATLAB and then retry. If MATLAB is not listed, launch it by `C:\Program Files\MATLAB\R2020b\bin\matlab.exe` and wait for `MATLAB R2020b - academic use`.
+- Whenever opening an instance/session/window through MCP, close it again after finishing with it.
 - Do not run physical Speedgoat/actuator workflows for discussion-only prompts unless the user explicitly requests it.
 Try to minimize code changes and prefer compact and direct codes
 no need to inout vrifiction or error handling or edge cases study. assume the user is an engineer knows how to deal with default matlab errors

@@ -13,6 +13,7 @@ ramp_time = 1 + abs(ramp_ini_v)/ramp_vel;
 tend_ramp = ceil(ramp_time) + 2;
 
 model = 'Model_Speedgoat_RampToZero';
+ramp_ini_values = (command_channel_selector*ramp_ini_v)';
 
 open_system(model); slbuild(model);
 tg = slrealtime; tg.load(model)

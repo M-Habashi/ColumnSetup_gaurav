@@ -31,6 +31,9 @@ disp('                         Column Setup                          ')
 disp('                        Simulation Tool                        ')
 disp('===============================================================')
 
+%% Test Inputs
+testname = 'config';
+
 %% Simulation Parameters
    
 % Sampling Variables
@@ -55,28 +58,15 @@ ch.dd = 5;         % Actuator command analog output
 command_channel_selector = double((1:7)' == ch.dd);
 
 % Saturation Limit
-sat_limit = 130/v2d_gain; % Volts
+sat_limit = 60/v2d_gain; % Volts
                    
 % Test File Name % IMPORTANT!
-datename = datestr(now,'mmddyyyy');         % Date
-nametime = datestr(now,'HHMMSS');           % Time 
-path     = ['.\saved_results\' datename '\']; % Path to save files
-type     = 'Test_';                         % Type of test
-date     = [datename '_'];                  % Date experimental data was taken
-time     = [nametime '_'];                  % Time
+timestamp = datestr(now,'yyyymmdd_HHMM');
+projectFolder = fileparts(mfilename('fullpath'));
+path = fullfile(projectFolder, 'saved_results', datestr(now,'yyyymmdd'));
+file_name = fullfile(path, [timestamp '_' testname '.mat']);
 
-signal   = 'Signal_';                       % Type of signal
-feat1    = '01_';                           % Number of test
-feat2    = 'Hz_';                           % Signal frequency
-feat3    = 'NA_';                           % Feature 3
-
-feat4    = 'plate';                         % Specimen
-feat5    = '';                              % Feature 5
-feat6    = '.mat';                          % File extension
-
-file_name     = strcat(path,type,date,time,signal,feat1,feat2,feat3,feat4,feat5,feat6);
-
-% Make sure there is a folder named 'mmddyyyy'
+% Make sure there is a folder named 'yyyymmdd'
 % inside the 'saved_results' folder
 if ~exist(path, 'dir')
        mkdir(path)
@@ -226,7 +216,6 @@ if exist('logsout','var')
     am = Results{1}(:,6);
     
     save(file_name)
-    savedfile_flag = 1;
     disp('*** Data file saved! ***')
 else
     disp('*** No output variable exist.***')
@@ -236,48 +225,18 @@ end
 
 %% Finilazing the Simulation
 
-if exist('savedfile_flag','var')
-    % Closing the model
-    save_system(model)
-    close_system(model)
+% Closing the model
+save_system(model)
+close_system(model)
 
-    disp('===============================================================')
-    disp('                        Test Completed!                        ')
-    disp('===============================================================')
- 
-end
+disp('===============================================================')
+disp('                        Test Completed!                        ')
+disp('===============================================================')
 
 %% Plotting Simulation Data
 
-if exist('savedfile_flag','var')
-    
-    figure('WindowState','maximized');
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    subplot(311)
-    plot(t,dd,'r'); hold on
-    plot(t,dm,'b');
-    title('Displacement Time History');
-    grid on; xlabel('Time (sec)'); ylabel('Displacement (mm)');
-    legend('Desired displacement' ,'Measured displacement');
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    subplot(312)
-    plot(t,fm,'b');
-    title('Measured Force History');
-    grid on; xlabel('Time (sec)'); ylabel('Measured Force (N)');
-    legend('Measured force');
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    subplot(313)
-    plot(t,am,'b');
-    title('Measured Acceleration History');
-    grid on; xlabel('Time (sec)'); ylabel('Measured Acceleration (mm/s^2)');
-    legend('Measured Acceleration');
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    
-end
+outputVerificationFile = file_name;
+run(fullfile(projectFolder, 'helpers', 'visualization', 'visualize_saved_results.m'))
 
 
 
