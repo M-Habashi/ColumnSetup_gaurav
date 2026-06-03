@@ -1,7 +1,7 @@
 %% End to End System Identification for Analog Closed-Loop Transfer Function
  % 1- Estimate the discrete frequency-response transfer function with xfunc
- % 2- Fit a continuous rational transfer function with invfreqs
- % 3- Identify the physical parametric transfer function
+ % 2- Identify the physical parametric transfer function
+ % 3- Fit a continuous rational transfer function with regularized LS
  % 4- Compare the three transfer-function models
 
 %% Startup
@@ -15,7 +15,7 @@ rng(0);
 
 %% Inputs
 model_name = "";
-max_freq_hz = 40;
+max_freq_hz = 80;
 
 %% Setup
 project_root = fileparts(mfilename('fullpath'));
@@ -62,6 +62,9 @@ tf_estimate_config = struct( ...
     'f_lim', [0.1, max_freq_hz], ...
     'nn', 1, ...
     'nm', 6, ...
+    'fit_regularization', 1e-6, ...
+    'fit_reference_weight', 3, ...
+    'fit_iterations', 25, ...
     'fft_length', 2^14, ...
     'overlap', 2^13);
 
@@ -122,30 +125,33 @@ discrete_tf_estimate = struct( ...
     'controller', pid(kp, ki), ...
     'controller_gains', struct('Kp', kp, 'Ki', ki));
 
-%% Get Continuous Transfer-Function Fit from invfreqs
+%% Parametric Physical Model Identification
+parametric_identification = identify_analog_closed_loop_params( ...
+    discrete_tf_estimate, parametric_identification_config);
+identified_params = parametric_identification.identified_params;
+tf_parametric = parametric_identification.parametric_cl;
+
+%% Get Continuous Transfer-Function Fit
 fit_idx = freq_hz_all >= tf_estimate_config.f_lim(1) & ...
     freq_hz_all <= tf_estimate_config.f_lim(2);
 tf_fit_points = [1; tf_points_all(fit_idx)];
 tf_fit_freq_hz = [0; freq_hz_all(fit_idx)];
 tf_fit_freq_rad = 2 * pi * tf_fit_freq_hz;
 tf_fit_weight = ones(size(tf_fit_freq_hz));
+tf_fit_reference = squeeze(freqresp(tf_parametric, tf_fit_freq_rad));
 
-[tf_fit_num, tf_fit_den] = invfreqs( ...
+[tf_fit_num, tf_fit_den, tf_fit_info] = regularized_rational_fit( ...
     tf_fit_points, ...
     tf_fit_freq_rad, ...
     tf_estimate_config.nn, ...
     tf_estimate_config.nm, ...
+    tf_estimate_config.fit_regularization, ...
     tf_fit_weight, ...
-    [], ...
-    1e-5);
-
+    struct('max_iterations', tf_estimate_config.fit_iterations, ...
+        'phase_weight', parametric_identification_config.phase_weight, ...
+        'reference_response', tf_fit_reference, ...
+        'reference_weight', tf_estimate_config.fit_reference_weight));
 tf_fit = tf(tf_fit_num, tf_fit_den);
-
-%% Parametric Physical Model Identification
-parametric_identification = identify_analog_closed_loop_params( ...
-    discrete_tf_estimate, parametric_identification_config);
-identified_params = parametric_identification.identified_params;
-tf_parametric = parametric_identification.parametric_cl;
 
 %% Save Identified Parameters and Models
 params_path = fullfile(param_output_dir, sprintf('%s.mat', params_file_name));
@@ -158,7 +164,7 @@ beta2 = identified_params.beta2;
 Kp = identified_params.Kp;
 Ki = identified_params.Ki;
 
-save(fit_path, 'tf_fit');
+save(fit_path, 'tf_fit', 'tf_fit_info');
 save(params_path, ...
     'a1b0', ...
     'a2', ...
@@ -181,9 +187,26 @@ fprintf('Ki = %.12g\n', identified_params.Ki);
 fprintf('RMS magnitude error = %.4f dB\n', parametric_identification.rms_mag_db);
 fprintf('RMS phase error = %.4f deg\n', parametric_identification.rms_phase_deg);
 
+tf_fit_resp = squeeze(freqresp(tf_fit, discrete_tf_estimate.freq_rad));
+tf_parametric_resp = squeeze(freqresp(tf_parametric, discrete_tf_estimate.freq_rad));
+mag_fit_db = 20 * log10(abs(tf_fit_resp) + eps);
+mag_discrete_db = 20 * log10(abs(discrete_tf_estimate.tf_points) + eps);
+mag_parametric_db = 20 * log10(abs(tf_parametric_resp) + eps);
+phase_fit_deg = unwrap(angle(tf_fit_resp)) * 180 / pi;
+phase_discrete_deg = unwrap(angle(discrete_tf_estimate.tf_points)) * 180 / pi;
+phase_parametric_deg = unwrap(angle(tf_parametric_resp)) * 180 / pi;
+
+fprintf('\nRegularized fit RMS comparison over %.3g-%.3g Hz\n', tf_estimate_config.f_lim);
+fprintf('vs xfunc: %.4f dB, %.4f deg\n', ...
+    rms(mag_fit_db - mag_discrete_db), rms(phase_fit_deg - phase_discrete_deg));
+fprintf('vs parametric ID: %.4f dB, %.4f deg\n', ...
+    rms(mag_fit_db - mag_parametric_db), rms(phase_fit_deg - phase_parametric_deg));
+fprintf('regularized fit iterations = %d, lambda = %.3g\n', ...
+    tf_fit_info.iterations, tf_fit_info.lambda);
+
 fprintf('\nThree transfer-function models used in the comparison\n');
 fprintf('tf_discrete (xfunc): experimental transfer-function estimate from xfunc\n');
-fprintf('tf_fit (invfreq): rational fitted transfer function from invfreqs\n');
+fprintf('tf_fit (regularized): rational fitted transfer function from regularized LS\n');
 fprintf('tf_parametric: physical parametric model from the identification\n');
 
 plot_transfer_function_model_comparison( ...

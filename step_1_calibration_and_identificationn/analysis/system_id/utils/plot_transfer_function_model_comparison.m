@@ -21,7 +21,7 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     nexttile;
     semilogx(freq_hz, mag_discrete_db, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
     hold on
-    semilogx(freq_hz, mag_fit_db, 'b-', 'LineWidth', 1.4, 'DisplayName', 'tf_{fit} (invfreq)');
+    semilogx(freq_hz, mag_fit_db, 'b-', 'LineWidth', 1.4, 'DisplayName', 'tf_{fit} (regularized)');
     semilogx(freq_hz, mag_parametric_db, 'r--', 'LineWidth', 1.6, 'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
@@ -32,7 +32,7 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     nexttile;
     semilogx(freq_hz, phase_discrete_deg, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
     hold on
-    semilogx(freq_hz, phase_fit_deg, 'b-', 'LineWidth', 1.4, 'DisplayName', 'tf_{fit} (invfreq)');
+    semilogx(freq_hz, phase_fit_deg, 'b-', 'LineWidth', 1.4, 'DisplayName', 'tf_{fit} (regularized)');
     semilogx(freq_hz, phase_parametric_deg, 'r--', 'LineWidth', 1.6, 'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
