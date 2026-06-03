@@ -15,7 +15,7 @@ rng(0);
 
 %% Inputs
 model_name = "";
-max_freq_hz = 20;
+max_freq_hz = 40;
 
 %% Setup
 project_root = fileparts(mfilename('fullpath'));
@@ -128,7 +128,6 @@ tf_fit_points = [1; tf_points_all(fit_idx)];
 tf_fit_freq_hz = [0; freq_hz_all(fit_idx)];
 tf_fit_freq_rad = 2 * pi * tf_fit_freq_hz;
 tf_fit_weight = double(tf_fit_freq_hz <= tf_estimate_config.f_lim(2));
-tf_fit_weight(1) = 1e4;
 
 [tf_fit_num, tf_fit_den] = invfreqs( ...
     tf_fit_points, ...
