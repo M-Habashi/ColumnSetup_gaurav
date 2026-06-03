@@ -23,6 +23,14 @@
 % 2. Collect the data needed to identify the system dynamics.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% If this is a new setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% If this is a nw setup you need to make sure to adjust the following
+% 1. All calibration factors (v2d, v2f, v2a, correction factor)
+% 2. The channels (Here in the script only, Simulink will adjust
+% automatically)
+% 3. Saturation limits
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Preparing the Workspace
 clear; clc; close all
 addpath(genpath('helpers'));
@@ -47,9 +55,9 @@ v2d_gain        = 7.62;     % mm/volts  MTS/SG
 v2d_const       = 0;                % mm
 v2f_gain        = 1000;  % N/volts (1125.4109330128)
 v2f_const       = 0;                % N
-v2a_gain        = -1000/50.6;       % (mm/s^2)/volts
+v2a_gain        = -1000/510*9810;       % (mm/s^2)/volts  510mv/g
 v2a_const       = 0;                % mm/s^2
-correction_gain = 1.01;     % Volts MTS/Volts Speedgoat
+correction_gain = 1.013;     % This to address the minor change in input and output displacement calibration gain (should be close to 1)
 
 % Hardware Channel Configuration
 ch.am = 2;         % Acceleration measurement analog input
@@ -59,7 +67,7 @@ ch.dd = 5;         % Actuator command analog output
 command_channel_selector = double((1:7)' == ch.dd);
 
 % Saturation Limit
-sat_limit = 60/v2d_gain; % Volts
+sat_limit = 60; % mm
                    
 % Test File Name % IMPORTANT!
 timestamp = datestr(now,'yyyymmdd_HHMM');
@@ -87,7 +95,7 @@ disp(file_name)
 % 5: constant
 
 
-test_signal = 2;
+test_signal = 3;
 
 
 %%% 1- Stair Signal Calculation
@@ -143,8 +151,11 @@ test_signal = 2;
 %%% 2- Sine wave parameters
 
 %%% 3- BLWN parameters
-        wn_power = 1;
-        wn_bandwidth = 50;  % in HZ  (Design the filter from simulink)
+        wn_power = 0.01;
+        wn_bandwidth = 2;  % in HZ  (Design the filter from simulink)
+        
+        std_blwn = 4;
+        f1 = 20;  % cutoff frequency
         tend_BLWN = 120;
 
 %%% 4- Chirp parameters
@@ -181,7 +192,7 @@ end
 
 % Reading the initial values of voltages for all channels
 Speedgoat_ReadOffsets
-
+Speedgoat_RampToZero
 %% Running the Simulation
 
 disp('===============================================================')
@@ -211,10 +222,9 @@ if exist('logsout','var')
 
     dd = Results{1}(:,1);
     dc = Results{1}(:,2);
-    vc = Results{1}(:,3);
-    dm = Results{1}(:,4);
-    fm = Results{1}(:,5);
-    am = Results{1}(:,6);
+    dm = Results{1}(:,3);
+    fm = Results{1}(:,4);
+    am = Results{1}(:,5);
     
     save(file_name)
     disp('*** Data file saved! ***')

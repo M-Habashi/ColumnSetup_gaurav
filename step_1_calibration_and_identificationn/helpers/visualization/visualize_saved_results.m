@@ -2,53 +2,13 @@
 % Lists saved result MAT files, prompts for one file, prints a compact
 % report, and plots displacement tracking plus measured force.
 
-if exist('outputVerificationFile', 'var')
-    requestedFilePath = outputVerificationFile;
-else
-    requestedFilePath = '';
-end
 clc; close all
 
 scriptFolder = fileparts(mfilename('fullpath'));
-rootFolder = fullfile(scriptFolder, '..', '..', 'saved_results');
-if ~exist(rootFolder, 'dir')
-    error('Saved results folder was not found: %s', rootFolder);
-end
-[~, rootAttributes] = fileattrib(rootFolder);
-rootFolder = rootAttributes.Name;
+projectFolder = fullfile(scriptFolder, '..', '..');
+addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
-files = dir(fullfile(rootFolder, '**', '*.mat'));
-if isempty(files)
-    error('No MAT files were found under: %s', rootFolder);
-end
-[~, order] = sort(string(fullfile({files.folder}, {files.name})));
-files = files(order);
-
-if isempty(requestedFilePath)
-    fprintf('\nAvailable saved result files:\n\n');
-    printFileTree(rootFolder, files);
-
-    selection = input('\nSelect file number to load: ');
-    while ~isValidSelection(selection, numel(files))
-        fprintf('Please enter a number from 1 to %d.\n', numel(files));
-        selection = input('Select file number to load: ');
-    end
-
-    filePath = fullfile(files(selection).folder, files(selection).name);
-    selectedFileName = files(selection).name;
-else
-    filePath = requestedFilePath;
-    [~, selectedName, selectedExt] = fileparts(filePath);
-    selectedFileName = [selectedName selectedExt];
-end
-
-data = load(filePath);
-requiredSignals = {'t', 'dd', 'dc', 'dm', 'fm'};
-for k = 1:numel(requiredSignals)
-    if ~isfield(data, requiredSignals{k})
-        error('The selected file is missing required signal "%s".', requiredSignals{k});
-    end
-end
+[data, filePath, selectedFileName] = load_saved_result_file(projectFolder);
 
 t = data.t(:);
 dd = data.dd(:);
@@ -67,8 +27,8 @@ trackingError = dd - dm;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
 
 duration = t(end) - t(1);
-fs = getScalarField(data, 'fs', NaN);
-dt = getScalarField(data, 'dt', NaN);
+fs = data.fs;
+dt = data.dt;
 
 fprintf('\n===============================================================\n');
 fprintf('                    Saved Result Summary\n');
@@ -108,29 +68,6 @@ set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
-function printFileTree(rootFolder, files)
-    currentFolder = "";
-    fprintf('saved_results\n');
-    for k = 1:numel(files)
-        relFolder = getRelativeFolder(rootFolder, files(k).folder);
-        if relFolder ~= currentFolder
-            currentFolder = relFolder;
-            if currentFolder ~= "."
-                parts = split(currentFolder, filesep);
-                for p = 1:numel(parts)
-                    fprintf('%s%s\n', repmat('    ', 1, p), char(parts(p)));
-                end
-            end
-        end
-        if currentFolder == "."
-            indentLevel = 1;
-        else
-            indentLevel = numel(split(currentFolder, filesep)) + 1;
-        end
-        fprintf('%s[%d] %s\n', repmat('    ', 1, indentLevel), k, files(k).name);
-    end
-end
-
 function colors = getPlotColors()
     colors.green = hexToRgb('39BF5E');
     colors.black = [0 0 0];
@@ -142,34 +79,6 @@ end
 
 function rgb = hexToRgb(hexColor)
     rgb = sscanf(hexColor, '%2x%2x%2x', [1 3]) / 255;
-end
-
-function relFolder = getRelativeFolder(rootFolder, folder)
-    rootFolder = string(rootFolder);
-    folder = string(folder);
-    rootWithSeparator = rootFolder + filesep;
-
-    if strcmpi(folder, rootFolder)
-        relFolder = ".";
-    elseif startsWith(lower(folder), lower(rootWithSeparator))
-        relFolder = extractAfter(folder, strlength(rootWithSeparator));
-    else
-        [~, relFolder] = fileparts(folder);
-        relFolder = string(relFolder);
-    end
-end
-
-function isValid = isValidSelection(selection, fileCount)
-    isValid = isnumeric(selection) && isscalar(selection) && isfinite(selection) && ...
-        selection >= 1 && selection <= fileCount && isequal(selection, floor(selection));
-end
-
-function value = getScalarField(data, fieldName, defaultValue)
-    if isfield(data, fieldName) && isscalar(data.(fieldName))
-        value = data.(fieldName);
-    else
-        value = defaultValue;
-    end
 end
 
 function toggleSignalVisibility(~, event)

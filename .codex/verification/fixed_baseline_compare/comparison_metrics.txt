@@ -1,0 +1,15 @@
+fixed_baseline_file: C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\.codex\verification\file_log_move_test\baseline_pre_move.mat
+current_saved_file: C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn\saved_results\20260601\20260601_1146_config.mat
+current_artifact_file: C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\.codex\verification\fixed_baseline_compare\current_20260601_1146_config.mat
+
+metric,baseline,current,difference
+duration_s,60,60,0
+sample_count,122881,122881,0
+fs_hz,2048,2048,0
+dt_s,0.00048828125,0.00048828125,0
+rms_dd_minus_dm_mm,7.07112349793,7.11109652625,0.0399730283236
+
+signal_metric,value
+rms_current_minus_baseline_dd_mm,0
+rms_current_minus_baseline_dm_mm,0.663555626946
+rms_current_minus_baseline_fm_N,0.54188721331
