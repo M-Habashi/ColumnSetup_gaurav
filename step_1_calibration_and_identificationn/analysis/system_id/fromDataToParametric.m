@@ -15,7 +15,7 @@ rng(0);
 
 %% Inputs
 model_name = "";
-max_freq_hz = 80;
+max_freq_hz = 20;
 
 %% Setup
 project_root = fileparts(mfilename('fullpath'));
@@ -99,6 +99,9 @@ if isfield(experimental_data, 'ki'), ki = experimental_data.ki; else, ki = 0; en
     tf_estimate_config.fft_length, ...
     tf_estimate_config.overlap);
 
+tf_points_all = tf_points(:);
+freq_hz_all = freq_hz(:);
+
 keep_idx = freq_hz >= tf_estimate_config.f_lim(1) & freq_hz <= tf_estimate_config.f_lim(2);
 freq_hz = freq_hz(keep_idx);
 tf_points = tf_points(keep_idx);
@@ -120,12 +123,19 @@ discrete_tf_estimate = struct( ...
     'controller_gains', struct('Kp', kp, 'Ki', ki));
 
 %% Get Continuous Transfer-Function Fit from invfreqs
+fit_idx = freq_hz_all >= tf_estimate_config.f_lim(1);
+tf_fit_points = [1; tf_points_all(fit_idx)];
+tf_fit_freq_hz = [0; freq_hz_all(fit_idx)];
+tf_fit_freq_rad = 2 * pi * tf_fit_freq_hz;
+tf_fit_weight = double(tf_fit_freq_hz <= tf_estimate_config.f_lim(2));
+tf_fit_weight(1) = 1e4;
+
 [tf_fit_num, tf_fit_den] = invfreqs( ...
-    discrete_tf_estimate.tf_points, ...
-    discrete_tf_estimate.freq_rad, ...
+    tf_fit_points, ...
+    tf_fit_freq_rad, ...
     tf_estimate_config.nn, ...
     tf_estimate_config.nm, ...
-    [], ...
+    tf_fit_weight, ...
     [], ...
     1e-5);
 
