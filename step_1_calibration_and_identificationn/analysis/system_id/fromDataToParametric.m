@@ -123,11 +123,12 @@ discrete_tf_estimate = struct( ...
     'controller_gains', struct('Kp', kp, 'Ki', ki));
 
 %% Get Continuous Transfer-Function Fit from invfreqs
-fit_idx = freq_hz_all >= tf_estimate_config.f_lim(1);
+fit_idx = freq_hz_all >= tf_estimate_config.f_lim(1) & ...
+    freq_hz_all <= tf_estimate_config.f_lim(2);
 tf_fit_points = [1; tf_points_all(fit_idx)];
 tf_fit_freq_hz = [0; freq_hz_all(fit_idx)];
 tf_fit_freq_rad = 2 * pi * tf_fit_freq_hz;
-tf_fit_weight = double(tf_fit_freq_hz <= tf_estimate_config.f_lim(2));
+tf_fit_weight = ones(size(tf_fit_freq_hz));
 
 [tf_fit_num, tf_fit_den] = invfreqs( ...
     tf_fit_points, ...
