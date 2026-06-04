@@ -15,13 +15,15 @@ dd = data.dd(:);
 dc = data.dc(:);
 dm = data.dm(:);
 fm = data.fm(:);
+am = data.am(:);
 
-n = min([numel(t), numel(dd), numel(dc), numel(dm), numel(fm)]);
+n = min([numel(t), numel(dd), numel(dc), numel(dm), numel(fm), numel(am)]);
 t = t(1:n);
 dd = dd(1:n);
 dc = dc(1:n);
 dm = dm(1:n);
 fm = fm(1:n);
+am = am(1:n);
 
 trackingError = dd - dm;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
@@ -45,7 +47,7 @@ fprintf('===============================================================\n\n');
 figure('Name', selectedFileName, 'WindowState', 'maximized');
 colors = getPlotColors();
 
-subplot(2, 1, 1)
+ax(1) = subplot(3, 1, 1);
 hDesired = plot(t, dd, '--', 'Color', colors.black, 'LineWidth', 1.8, 'DisplayName', 'dd desired displacement'); hold on
 plot(t, dc, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
 plot(t, dm, '-', 'Color', colors.blue, 'LineWidth', 1.0, 'DisplayName', 'dm measured displacement');
@@ -58,7 +60,7 @@ set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
-subplot(2, 1, 2)
+ax(2) = subplot(3, 1, 2);
 plot(t, fm, '-', 'Color', colors.purple, 'LineWidth', 1.0, 'DisplayName', 'fm measured force');
 grid on
 xlabel('Time (s)')
@@ -67,6 +69,18 @@ title('Force History')
 set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
+
+ax(3) = subplot(3, 1, 3);
+plot(t, am, '-', 'Color', colors.green, 'LineWidth', 1.0, 'DisplayName', 'am measured acceleration');
+grid on
+xlabel('Time (s)')
+ylabel('Acceleration')
+title('Acceleration History')
+set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
+lgd = legend('Location', 'best');
+lgd.ItemHitFcn = @toggleSignalVisibility;
+
+linkaxes(ax, 'x')
 
 function colors = getPlotColors()
     colors.green = hexToRgb('39BF5E');

@@ -8,8 +8,6 @@ function [num, den, info] = regularized_rational_fit(h, w, nb, na, lambda, weigh
     if ~isfield(opts, 'tolerance'), opts.tolerance = 1e-8; end
     if ~isfield(opts, 'phase_weight'), opts.phase_weight = 0.35; end
     if ~isfield(opts, 'solver_display'), opts.solver_display = 'off'; end
-    if ~isfield(opts, 'reference_response'), opts.reference_response = []; end
-    if ~isfield(opts, 'reference_weight'), opts.reference_weight = 0; end
 
     h = h(:); w = w(:); weights = weights(:);
     ws = max(abs(w)); if ws == 0, ws = 1; end
@@ -52,10 +50,5 @@ function r = fit_error(x, q, h, nb, lambda, weights, opts)
     r = [weights .* (log10(abs(h_fit) + eps) - log10(abs(h) + eps)); ...
         opts.phase_weight * weights .* ((unwrap(angle(h_fit)) - unwrap(angle(h))) / pi); ...
         sqrt(lambda) * x];
-    if opts.reference_weight > 0 && ~isempty(opts.reference_response)
-        h_ref = opts.reference_response(:);
-        r = [r; opts.reference_weight * weights .* (log10(abs(h_fit) + eps) - log10(abs(h_ref) + eps)); ...
-            opts.reference_weight * opts.phase_weight * weights .* ((unwrap(angle(h_fit)) - unwrap(angle(h_ref))) / pi)];
-    end
     r(~isfinite(r)) = 1e6;
 end
