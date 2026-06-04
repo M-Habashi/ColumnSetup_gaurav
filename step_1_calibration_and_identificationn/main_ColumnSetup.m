@@ -48,6 +48,7 @@ testname = 'config';
 % Sampling Variables
 fs = 2048;                      % Sampling frequency [Hz]
 dt = 1/fs;                      % Sampling period [s]
+zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
 
 % Conversion Factors
 % Voltage to Enginnering Units
@@ -190,9 +191,9 @@ end
 
 %% Initializing the Simulation
 
-% Reading the initial values of voltages for all channels
-Speedgoat_ReadOffsets
-Speedgoat_RampToZero
+% Keep old initial-voltage offsets neutral; measurement zeroing is handled in the model.
+ini_v = zeros(1,7);
+
 %% Running the Simulation
 
 disp('===============================================================')
@@ -250,7 +251,7 @@ outputVerificationFile = file_name;
 run(fullfile(projectFolder, 'helpers', 'visualization', 'visualize_saved_results.m'))
 
 
-
+%slrtExplorer
   
     
     
