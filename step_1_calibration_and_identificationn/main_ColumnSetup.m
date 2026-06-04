@@ -89,67 +89,16 @@ disp(file_name)
 %% Test Signal Selection
 
 % Select type of test signal
-% 1: Stair signal (Calibration) or Time History Signal
+% 1: Time History Signal
 % 2: Sine Wave (Edit parameters in Simulink)
 % 3: BLWN
 % 4: Chirp
 % 5: constant
+tend = inf;
 
-
-test_signal = 3;
-
-
-%%% 1- Stair Signal Calculation
-    % User-defined parameters
-    start_dsip  = -7*v2d_gain;    % mm, Starting displacement
-    end_disp    = 7*v2d_gain;     % mm, Ending displacement
-    increment   = 1*v2d_gain;     % mm, Increment value
-    step_length = 5;              % Seconds
-
-    % Calculate the number of steps
-    stair_steps = start_dsip:increment:end_disp;
-
-    % Generate the stair signal
-    clearvars stair_signal
-    stair_signal = [];
-    for ii = 1:length(stair_steps)
-        stair_signal = [stair_signal (1:step_length/dt)*0 + stair_steps(ii)]; % Signal vector
-    end
-    stair_time_smoothed   = [];
-    stair_signal_smoothed = [];
-    for ii = 1:length(stair_steps)
-        % Smooth the stair signal
-        stair_time_period   = ((ii-1)*step_length/dt:ii*step_length/dt-1)*dt;
-        stair_signal_period = stair_signal((ii-1)*step_length/dt+1:ii*step_length/dt);
-        stair_time_smoothed = [stair_time_smoothed; stair_time_period'];
-        % Apply spline interpolation
-        x_ramp = [stair_time_period(1) stair_time_period(floor(length(stair_time_period)/5)) stair_time_period(floor(length(stair_time_period)/2))];
-        y_ramp = [stair_signal_period(1)-increment stair_signal_period(1)-0.35*increment stair_signal_period(end)];
-        stair_signal_period_smoothed = spline(x_ramp, y_ramp, stair_time_period(1:floor(length(stair_time_period)/2)));
-        stair_signal_period_smoothed = [stair_signal_period_smoothed stair_signal_period(floor(length(stair_signal_period)/2)+1:end)];
-        stair_signal_smoothed = [stair_signal_smoothed; stair_signal_period_smoothed'];
-    end
-    stair_time = (1:length(stair_steps)*step_length/dt)*dt; % Time vector
-%                 % Plot the stair signal
-%                 plot(stair_time, stair_signal); hold on
-%                 grid on; grid minor
-%                 xlim([0 stair_time(end)]);
-%                 xlabel('Time')
-%                 ylabel('Voltage')
-%                 title('Stair Signal')
-% 
-%                 % Plot the smoothed stair signal
-%                 plot(stair_time_smoothed, stair_signal_smoothed)
-%                 grid on; grid minor
-%                 xlim([0 stair_time_smoothed(end)]);
-%                 xlabel('Time')
-%                 ylabel('Voltage')
-%                 title('Stair Signal Smoothed'); hold off
-
-    tend_stair = stair_time_smoothed(end);
-    time_history = [stair_time_smoothed stair_signal_smoothed];
-
-%%% 2- Sine wave parameters
+%%% 1- Time history parameters
+        time_history = [0 0; dt 0]; % Replace with [time_s dd_mm] for time-history tests.
+        tend_time_history = time_history(end, 1);
 
 %%% 3- BLWN parameters
         wn_power = 0.01;
@@ -167,27 +116,8 @@ test_signal = 3;
         tend_chirp = 90;
             
 
-switch test_signal
-    case 1  % Stair Signal
-        
-        tend = tend_stair;
- 
-    case 2  % Sine
 
-        tend = 30000;
-        
-    case 3  % BLWN
 
-        tend = tend_BLWN;
-        
-    case 4  % Chirp  
-
-        tend = tend_chirp;
-        
-    case 5  % Chirp  
-
-        tend = inf;
-end
 
 %% Initializing the Simulation
 
