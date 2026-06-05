@@ -90,7 +90,7 @@ disp(file_name)
 
 % Select type of test signal
 % 1: Time History Signal
-% 2: Sine Wave (Edit parameters in Simulink)
+% 2: Sine Wave (Edit amplitude, frequency, and set point in Simulink)
 % 3: BLWN
 % 4: Chirp
 % 5: constant
