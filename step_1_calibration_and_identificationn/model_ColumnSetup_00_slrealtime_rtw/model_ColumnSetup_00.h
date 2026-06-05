@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.227
+ * Model version              : 16.244
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 16:55:13 2026
+ * C++ source code generated on : Fri Jun  5 18:19:47 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -138,10 +138,10 @@ typedef struct {
   real_T Controllerplaceholder;        /* '<S2>/ Controller placeholder' */
   real_T dcmm;
   /* '<S2>/Saturation limit for the displacement signal  that is sent to the MTS' */
-  real_T AnalogControllervsDigitalContro;
-  /* '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
   real_T signal_offset;                /* '<S14>/signal_offset' */
   real_T Subtract1;                    /* '<S11>/Subtract1' */
+  real_T AnalogControllervsDigitalContro;
+  /* '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
   real_T u;                            /* '<S11>/  ' */
   real_T Populatecommand[7];           /* '<S11>/Populate command' */
   real_T Analoginput[18];              /* '<S13>/Analog input' */
@@ -157,6 +157,11 @@ typedef struct {
   real_T enableupdate_c;               /* '<S15>/enable update' */
   real_T offsetupdate_i;               /* '<S15>/offset update' */
   real_T Gain1;                        /* '<S13>/Gain1' */
+  real_T signal_offset_i;              /* '<S16>/signal_offset' */
+  real_T signalminusoffset_lf;         /* '<S16>/signal minus offset' */
+  real_T zero_alpha_a;                 /* '<S16>/zero_alpha' */
+  real_T enableupdate_b;               /* '<S16>/enable update' */
+  real_T offsetupdate_c;               /* '<S16>/offset update' */
   real_T Mux_51[5];
   /* '<S12>/TmpSignal ConversionAtTAQSigLogging_InsertedFor_Mux_5_at_outport_0Inport1' */
   real_T Product;                      /* '<S4>/Product' */
@@ -177,9 +182,10 @@ typedef struct {
 
 /* Block states (default storage) for system '<Root>' */
 typedef struct {
-  real_T DigitalFilter_states[130];    /* '<S5>/Digital Filter' */
+  real_T DigitalFilter_states[1037];   /* '<S5>/Digital Filter' */
   real_T signal_offset_DSTATE;         /* '<S14>/signal_offset' */
   real_T signal_offset_DSTATE_l;       /* '<S15>/signal_offset' */
+  real_T signal_offset_DSTATE_g;       /* '<S16>/signal_offset' */
   real_T NextOutput;                   /* '<S3>/White Noise' */
   real_T t0;                           /* '<S1>/Smooth Stop Command' */
   real_T blend0;                       /* '<S1>/Smooth Stop Command' */
@@ -237,6 +243,7 @@ struct P_model_ColumnSetup_00_T_ {
                                         *   '<S1>/Pausable Time'
                                         *   '<S1>/Pausable Time1'
                                         *   '<S1>/Smooth Sine'
+                                        *   '<S3>/Output'
                                         */
   real_T f_final;                      /* Variable: f_final
                                         * Referenced by: '<S4>/deltaFreq'
@@ -270,6 +277,7 @@ struct P_model_ColumnSetup_00_T_ {
                                         * Referenced by:
                                         *   '<S14>/zero_alpha'
                                         *   '<S15>/zero_alpha'
+                                        *   '<S16>/zero_alpha'
                                         */
 };
 
@@ -450,11 +458,14 @@ extern DW_model_ColumnSetup_00_T model_ColumnSetup_00_DW;
 extern real_T dd_pause_enable;         /* Variable: dd_pause_enable
                                         * Referenced by: '<S1>/dd_pause_enable'
                                         */
+extern real_T get_setpoint_enable;     /* Variable: get_setpoint_enable
+                                        * Referenced by: '<S13>/get_setpoint_enable'
+                                        */
 extern real_T smooth_stop_enable;      /* Variable: smooth_stop_enable
                                         * Referenced by: '<S1>/smooth_stop_enable'
                                         */
-extern real_T zero_measurements_enable;/* Variable: zero_measurements_enable
-                                        * Referenced by: '<S13>/zero_measurements_enable'
+extern real_T zero_meas_enable;        /* Variable: zero_meas_enable
+                                        * Referenced by: '<S13>/zero_meas_enable'
                                         */
 
 #ifdef __cplusplus
@@ -517,5 +528,6 @@ extern "C" {
  * '<S13>'  : 'model_ColumnSetup_00/columnSetup/Measurements'
  * '<S14>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Adaptive signal zeroing - dm'
  * '<S15>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Adaptive signal zeroing - fm'
+ * '<S16>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Zero meas trim - dm'
  */
 #endif                                 /* RTW_HEADER_model_ColumnSetup_00_h_ */

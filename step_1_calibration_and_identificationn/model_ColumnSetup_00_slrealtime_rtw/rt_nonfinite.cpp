@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.227
+ * Model version              : 16.244
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 16:55:13 2026
+ * C++ source code generated on : Fri Jun  5 18:19:47 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping

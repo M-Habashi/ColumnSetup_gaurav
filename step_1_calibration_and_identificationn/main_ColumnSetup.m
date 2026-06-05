@@ -102,11 +102,10 @@ tend = inf;
         tend_time_history = time_history(end, 1);
 
 %%% 3- BLWN parameters
-% in HZ  (Design the filter from simulink)
+% std_blwn is the expected BLWN output std after the f1 low-pass filter.
         
-        std_blwn = 4;
+        std_blwn = 1;
         f1 = 20;  % cutoff frequency
-        tend_BLWN = 120;
 
 %%% 4- Chirp parameters
         f_init = 0.001;
@@ -114,13 +113,6 @@ tend = inf;
         tend_chirp = 90;
             
 
-
-
-
-%% Initializing the Simulation
-
-% Keep old initial-voltage offsets neutral; measurement zeroing is handled in the model.
-ini_v = zeros(1,7);
 
 %% Running the Simulation
 

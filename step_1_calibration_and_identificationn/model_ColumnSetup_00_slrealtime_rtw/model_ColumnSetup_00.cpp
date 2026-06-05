@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.227
+ * Model version              : 16.244
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 16:55:13 2026
+ * C++ source code generated on : Fri Jun  5 18:19:47 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -22,14 +22,17 @@
 #include "model_ColumnSetup_00_private.h"
 
 /* Exported block parameters */
-real_T dd_pause_enable = 0.0;          /* Variable: dd_pause_enable
+real_T dd_pause_enable = 1.0;          /* Variable: dd_pause_enable
                                         * Referenced by: '<S1>/dd_pause_enable'
                                         */
-real_T smooth_stop_enable = 0.0;       /* Variable: smooth_stop_enable
+real_T get_setpoint_enable = 0.0;      /* Variable: get_setpoint_enable
+                                        * Referenced by: '<S13>/get_setpoint_enable'
+                                        */
+real_T smooth_stop_enable = 1.0;       /* Variable: smooth_stop_enable
                                         * Referenced by: '<S1>/smooth_stop_enable'
                                         */
-real_T zero_measurements_enable = 0.0; /* Variable: zero_measurements_enable
-                                        * Referenced by: '<S13>/zero_measurements_enable'
+real_T zero_meas_enable = 0.0;         /* Variable: zero_meas_enable
+                                        * Referenced by: '<S13>/zero_meas_enable'
                                         */
 
 /* Block signals (default storage) */
@@ -383,7 +386,7 @@ void model_ColumnSetup_00_step(void)
   model_ColumnSetup_00_B.WhiteNoise = model_ColumnSetup_00_DW.NextOutput;
 
   /* Gain: '<S3>/Output' */
-  raw = model_ColumnSetup_00_cal->BandLimitedWhiteNoise_Cov;
+  raw = model_ColumnSetup_00_P.dt / 0.015362751853809833;
   raw = std::sqrt(raw);
   raw /= 0.022097086912079612;
 
@@ -400,7 +403,7 @@ void model_ColumnSetup_00_step(void)
       raw += q;
     }
 
-    for (j = 0; j < 131 - i; j++) {
+    for (j = 0; j < 1038 - i; j++) {
       q = model_ColumnSetup_00_cal->DigitalFilter_Coefficients[i + j] *
         model_ColumnSetup_00_DW.DigitalFilter_states[j];
       raw += q;
@@ -411,7 +414,7 @@ void model_ColumnSetup_00_step(void)
   }
 
   /* Update delay line for next frame */
-  for (i = 128; i >= 0; i--) {
+  for (i = 1035; i >= 0; i--) {
     model_ColumnSetup_00_DW.DigitalFilter_states[i + 1] =
       model_ColumnSetup_00_DW.DigitalFilter_states[i];
   }
@@ -601,24 +604,24 @@ void model_ColumnSetup_00_step(void)
 
   /* End of Saturate: '<S2>/Saturation limit for the displacement signal  that is sent to the MTS' */
 
-  /* Gain: '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
-  model_ColumnSetup_00_B.AnalogControllervsDigitalContro =
-    model_ColumnSetup_00_P.correction_gain * model_ColumnSetup_00_B.dcmm;
-
   /* UnitDelay: '<S14>/signal_offset' */
   model_ColumnSetup_00_B.signal_offset =
     model_ColumnSetup_00_DW.signal_offset_DSTATE;
 
   /* Sum: '<S11>/Subtract1' */
-  model_ColumnSetup_00_B.Subtract1 =
-    model_ColumnSetup_00_B.AnalogControllervsDigitalContro +
+  model_ColumnSetup_00_B.Subtract1 = model_ColumnSetup_00_B.dcmm +
     model_ColumnSetup_00_B.signal_offset;
+
+  /* Gain: '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
+  model_ColumnSetup_00_B.AnalogControllervsDigitalContro =
+    model_ColumnSetup_00_P.correction_gain * model_ColumnSetup_00_B.Subtract1;
 
   /* Gain: '<S11>/  ' */
   raw = 1.0 / model_ColumnSetup_00_P.v2d_gain;
 
   /* Gain: '<S11>/  ' */
-  model_ColumnSetup_00_B.u = raw * model_ColumnSetup_00_B.Subtract1;
+  model_ColumnSetup_00_B.u = raw *
+    model_ColumnSetup_00_B.AnalogControllervsDigitalContro;
   for (i = 0; i < 7; i++) {
     /* Gain: '<S11>/Populate command' */
     model_ColumnSetup_00_B.Populatecommand[i] =
@@ -663,10 +666,10 @@ void model_ColumnSetup_00_step(void)
     model_ColumnSetup_00_B.signalminusoffset;
 
   /* Product: '<S14>/enable update' incorporates:
-   *  Constant: '<S13>/zero_measurements_enable'
+   *  Constant: '<S13>/get_setpoint_enable'
    */
   model_ColumnSetup_00_B.enableupdate = model_ColumnSetup_00_B.zero_alpha *
-    zero_measurements_enable;
+    get_setpoint_enable;
 
   /* Sum: '<S14>/offset update' */
   model_ColumnSetup_00_B.offsetupdate = model_ColumnSetup_00_B.enableupdate +
@@ -689,10 +692,10 @@ void model_ColumnSetup_00_step(void)
     model_ColumnSetup_00_B.signalminusoffset_l;
 
   /* Product: '<S15>/enable update' incorporates:
-   *  Constant: '<S13>/zero_measurements_enable'
+   *  Constant: '<S13>/get_setpoint_enable'
    */
   model_ColumnSetup_00_B.enableupdate_c = model_ColumnSetup_00_B.zero_alpha_m *
-    zero_measurements_enable;
+    get_setpoint_enable;
 
   /* Sum: '<S15>/offset update' */
   model_ColumnSetup_00_B.offsetupdate_i = model_ColumnSetup_00_B.enableupdate_c
@@ -702,11 +705,34 @@ void model_ColumnSetup_00_step(void)
   model_ColumnSetup_00_B.Gain1 = model_ColumnSetup_00_P.v2a_gain *
     model_ColumnSetup_00_B.Analoginput[1];
 
+  /* UnitDelay: '<S16>/signal_offset' */
+  model_ColumnSetup_00_B.signal_offset_i =
+    model_ColumnSetup_00_DW.signal_offset_DSTATE_g;
+
+  /* Sum: '<S16>/signal minus offset' */
+  model_ColumnSetup_00_B.signalminusoffset_lf =
+    model_ColumnSetup_00_B.signalminusoffset -
+    model_ColumnSetup_00_B.signal_offset_i;
+
+  /* Gain: '<S16>/zero_alpha' */
+  model_ColumnSetup_00_B.zero_alpha_a = model_ColumnSetup_00_P.zero_alpha *
+    model_ColumnSetup_00_B.signalminusoffset_lf;
+
+  /* Product: '<S16>/enable update' incorporates:
+   *  Constant: '<S13>/zero_meas_enable'
+   */
+  model_ColumnSetup_00_B.enableupdate_b = model_ColumnSetup_00_B.zero_alpha_a *
+    zero_meas_enable;
+
+  /* Sum: '<S16>/offset update' */
+  model_ColumnSetup_00_B.offsetupdate_c = model_ColumnSetup_00_B.enableupdate_b
+    + model_ColumnSetup_00_B.signal_offset_i;
+
   /* Outputs for Atomic SubSystem: '<S2>/File Log' */
   /* SignalConversion generated from: '<S12>/Mux_5' */
   model_ColumnSetup_00_B.Mux_51[0] = model_ColumnSetup_00_B.y;
   model_ColumnSetup_00_B.Mux_51[1] = model_ColumnSetup_00_B.dcmm;
-  model_ColumnSetup_00_B.Mux_51[2] = model_ColumnSetup_00_B.signalminusoffset;
+  model_ColumnSetup_00_B.Mux_51[2] = model_ColumnSetup_00_B.signalminusoffset_lf;
   model_ColumnSetup_00_B.Mux_51[3] = model_ColumnSetup_00_B.signalminusoffset_l;
   model_ColumnSetup_00_B.Mux_51[4] = model_ColumnSetup_00_B.Gain1;
 
@@ -730,6 +756,10 @@ void model_ColumnSetup_00_step(void)
   /* Update for UnitDelay: '<S15>/signal_offset' */
   model_ColumnSetup_00_DW.signal_offset_DSTATE_l =
     model_ColumnSetup_00_B.offsetupdate_i;
+
+  /* Update for UnitDelay: '<S16>/signal_offset' */
+  model_ColumnSetup_00_DW.signal_offset_DSTATE_g =
+    model_ColumnSetup_00_B.offsetupdate_c;
 
   /* Update absolute time for base rate */
   /* The "clockTick0" counts the number of times the code of this task has
@@ -1640,7 +1670,7 @@ void model_ColumnSetup_00_initialize(void)
     /* End of InitializeConditions for RandomNumber: '<S3>/White Noise' */
 
     /* InitializeConditions for DiscreteFir: '<S5>/Digital Filter' */
-    for (i = 0; i < 130; i++) {
+    for (i = 0; i < 1037; i++) {
       model_ColumnSetup_00_DW.DigitalFilter_states[i] =
         model_ColumnSetup_00_cal->DigitalFilter_InitialStates;
     }
@@ -1654,6 +1684,10 @@ void model_ColumnSetup_00_initialize(void)
     /* InitializeConditions for UnitDelay: '<S15>/signal_offset' */
     model_ColumnSetup_00_DW.signal_offset_DSTATE_l =
       model_ColumnSetup_00_cal->signal_offset_InitialConditio_b;
+
+    /* InitializeConditions for UnitDelay: '<S16>/signal_offset' */
+    model_ColumnSetup_00_DW.signal_offset_DSTATE_g =
+      model_ColumnSetup_00_cal->signal_offset_InitialConditio_p;
 
     /* SystemInitialize for MATLAB Function: '<S1>/Pausable Time' */
     model_ColumnS_PausableTime_Init(&model_ColumnSetup_00_DW.sf_PausableTime);

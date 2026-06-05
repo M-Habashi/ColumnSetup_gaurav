@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.227
+ * Model version              : 16.244
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 16:55:13 2026
+ * C++ source code generated on : Fri Jun  5 18:19:47 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -23,72 +23,16 @@
 
 /* Block parameters (default storage) */
 P_model_ColumnSetup_00_T model_ColumnSetup_00_P = {
-  /* Variable: command_channel_selector
-   * Referenced by: '<S11>/Populate command'
-   */
   { 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 },
-
-  /* Variable: correction_gain
-   * Referenced by: '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  '
-   */
   1.013,
-
-  /* Variable: dt
-   * Referenced by:
-   *   '<S1>/Pausable Time'
-   *   '<S1>/Pausable Time1'
-   *   '<S1>/Smooth Sine'
-   */
   0.00048828125,
-
-  /* Variable: f_final
-   * Referenced by: '<S4>/deltaFreq'
-   */
   50.0,
-
-  /* Variable: f_init
-   * Referenced by:
-   *   '<S4>/deltaFreq'
-   *   '<S4>/initialFreq'
-   */
   0.001,
-
-  /* Variable: sat_limit
-   * Referenced by: '<S2>/Saturation limit for the displacement signal  that is sent to the MTS'
-   */
   60.0,
-
-  /* Variable: t_ending
-   * Referenced by: '<S1>/t_ending'
-   */
   5.0,
-
-  /* Variable: tend_chirp
-   * Referenced by: '<S4>/targetTime'
-   */
   90.0,
-
-  /* Variable: v2a_gain
-   * Referenced by: '<S13>/Gain1'
-   */
   -19235.294117647059,
-
-  /* Variable: v2d_gain
-   * Referenced by:
-   *   '<S11>/  '
-   *   '<S13>/Gain2'
-   */
   7.62,
-
-  /* Variable: v2f_gain
-   * Referenced by: '<S13>/Gain4'
-   */
   1000.0,
-
-  /* Variable: zero_alpha
-   * Referenced by:
-   *   '<S14>/zero_alpha'
-   *   '<S15>/zero_alpha'
-   */
   0.0009765625
 };
