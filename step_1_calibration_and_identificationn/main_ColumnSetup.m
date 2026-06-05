@@ -49,6 +49,7 @@ testname = 'config';
 fs = 2048;                      % Sampling frequency [Hz]
 dt = 1/fs;                      % Sampling period [s]
 zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
+t_ending = 5;                   % Smooth-stop transition time [s]
 
 % Conversion Factors
 % Voltage to Enginnering Units

@@ -2,6 +2,10 @@
 1- at displays of the important parts (displacements d c m)
 2- ramp to zero
 3- test time history
+4- sine wave power calc
+
+# Bugs
+1- stopping and resuming make the simulation scope buggy
 
 
 # Next Work

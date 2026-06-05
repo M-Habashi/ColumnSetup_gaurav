@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.210
+ * Model version              : 16.227
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 09:52:32 2026
+ * C++ source code generated on : Fri Jun  5 16:55:13 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -35,9 +35,7 @@
 
 /* Child system includes */
 #include "model_ColumnSetup_00_cal.h"
-#include "rtGetNaN.h"
 #include "rt_nonfinite.h"
-#include "rtGetInf.h"
 
 /* Macros for accessing real-time model data structure */
 #ifndef rtmGetContTimeOutputInconsistentWithStateAtMajorStepFlag
@@ -136,30 +134,31 @@ typedef struct {
   real_T Output;                       /* '<S3>/Output' */
   real_T DigitalFilter;                /* '<S5>/Digital Filter' */
   real_T dd;                           /* '<S1>/Multiport Switch' */
+  real_T SmoothStopClock;              /* '<S1>/Smooth Stop Clock' */
   real_T Controllerplaceholder;        /* '<S2>/ Controller placeholder' */
   real_T dcmm;
   /* '<S2>/Saturation limit for the displacement signal  that is sent to the MTS' */
-  real_T signal_offset;                /* '<S13>/signal_offset' */
-  real_T Subtract1;                    /* '<S10>/Subtract1' */
   real_T AnalogControllervsDigitalContro;
-  /* '<S10>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
-  real_T u;                            /* '<S10>/  ' */
-  real_T Populatecommand[7];           /* '<S10>/Populate command' */
-  real_T Analoginput[18];              /* '<S12>/Analog input' */
-  real_T Gain2;                        /* '<S12>/Gain2' */
-  real_T signalminusoffset;            /* '<S13>/signal minus offset' */
-  real_T zero_alpha;                   /* '<S13>/zero_alpha' */
-  real_T enableupdate;                 /* '<S13>/enable update' */
-  real_T offsetupdate;                 /* '<S13>/offset update' */
-  real_T Gain4;                        /* '<S12>/Gain4' */
-  real_T signal_offset_n;              /* '<S14>/signal_offset' */
-  real_T signalminusoffset_l;          /* '<S14>/signal minus offset' */
-  real_T zero_alpha_m;                 /* '<S14>/zero_alpha' */
-  real_T enableupdate_c;               /* '<S14>/enable update' */
-  real_T offsetupdate_i;               /* '<S14>/offset update' */
-  real_T Gain1;                        /* '<S12>/Gain1' */
+  /* '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
+  real_T signal_offset;                /* '<S14>/signal_offset' */
+  real_T Subtract1;                    /* '<S11>/Subtract1' */
+  real_T u;                            /* '<S11>/  ' */
+  real_T Populatecommand[7];           /* '<S11>/Populate command' */
+  real_T Analoginput[18];              /* '<S13>/Analog input' */
+  real_T Gain2;                        /* '<S13>/Gain2' */
+  real_T signalminusoffset;            /* '<S14>/signal minus offset' */
+  real_T zero_alpha;                   /* '<S14>/zero_alpha' */
+  real_T enableupdate;                 /* '<S14>/enable update' */
+  real_T offsetupdate;                 /* '<S14>/offset update' */
+  real_T Gain4;                        /* '<S13>/Gain4' */
+  real_T signal_offset_n;              /* '<S15>/signal_offset' */
+  real_T signalminusoffset_l;          /* '<S15>/signal minus offset' */
+  real_T zero_alpha_m;                 /* '<S15>/zero_alpha' */
+  real_T enableupdate_c;               /* '<S15>/enable update' */
+  real_T offsetupdate_i;               /* '<S15>/offset update' */
+  real_T Gain1;                        /* '<S13>/Gain1' */
   real_T Mux_51[5];
-  /* '<S11>/TmpSignal ConversionAtTAQSigLogging_InsertedFor_Mux_5_at_outport_0Inport1' */
+  /* '<S12>/TmpSignal ConversionAtTAQSigLogging_InsertedFor_Mux_5_at_outport_0Inport1' */
   real_T Product;                      /* '<S4>/Product' */
   real_T Gain;                         /* '<S4>/Gain' */
   real_T Product1;                     /* '<S4>/Product1' */
@@ -170,7 +169,8 @@ typedef struct {
   real_T BLWNPauseGate;                /* '<S1>/BLWN Pause Gate' */
   real_T Gain1_j;                      /* '<S1>/Gain1' */
   real_T TimeHistoryLookup;            /* '<S1>/Time History Lookup' */
-  real_T y;                            /* '<S1>/Smooth Sine' */
+  real_T y;                            /* '<S1>/Smooth Stop Command' */
+  real_T y_f;                          /* '<S1>/Smooth Sine' */
   B_PausableTime_model_ColumnSe_T sf_PausableTime1;/* '<S1>/Pausable Time1' */
   B_PausableTime_model_ColumnSe_T sf_PausableTime;/* '<S1>/Pausable Time' */
 } B_model_ColumnSetup_00_T;
@@ -178,9 +178,12 @@ typedef struct {
 /* Block states (default storage) for system '<Root>' */
 typedef struct {
   real_T DigitalFilter_states[130];    /* '<S5>/Digital Filter' */
-  real_T signal_offset_DSTATE;         /* '<S13>/signal_offset' */
-  real_T signal_offset_DSTATE_l;       /* '<S14>/signal_offset' */
+  real_T signal_offset_DSTATE;         /* '<S14>/signal_offset' */
+  real_T signal_offset_DSTATE_l;       /* '<S15>/signal_offset' */
   real_T NextOutput;                   /* '<S3>/White Noise' */
+  real_T t0;                           /* '<S1>/Smooth Stop Command' */
+  real_T blend0;                       /* '<S1>/Smooth Stop Command' */
+  real_T blend;                        /* '<S1>/Smooth Stop Command' */
   real_T phase;                        /* '<S1>/Smooth Sine' */
   real_T offset;                       /* '<S1>/Smooth Sine' */
   real_T y_prev;                       /* '<S1>/Smooth Sine' */
@@ -188,20 +191,20 @@ typedef struct {
   real_T setpoint_prev;                /* '<S1>/Smooth Sine' */
   real_T startup_t;                    /* '<S1>/Smooth Sine' */
   real_T startup_y0;                   /* '<S1>/Smooth Sine' */
-  real_T Setup_RWORK[2];               /* '<S10>/Setup' */
-  real_T AnalogOutput_RWORK[2];        /* '<S10>/Analog Output' */
-  real_T Setup_RWORK_h[2];             /* '<S12>/Setup' */
-  real_T Analoginput_RWORK[2];         /* '<S12>/Analog input' */
-  void *Setup_PWORK;                   /* '<S10>/Setup' */
-  void *AnalogOutput_PWORK;            /* '<S10>/Analog Output' */
-  void *Setup_PWORK_o;                 /* '<S12>/Setup' */
-  void *Analoginput_PWORK;             /* '<S12>/Analog input' */
+  real_T Setup_RWORK[2];               /* '<S11>/Setup' */
+  real_T AnalogOutput_RWORK[2];        /* '<S11>/Analog Output' */
+  real_T Setup_RWORK_h[2];             /* '<S13>/Setup' */
+  real_T Analoginput_RWORK[2];         /* '<S13>/Analog input' */
+  void *Setup_PWORK;                   /* '<S11>/Setup' */
+  void *AnalogOutput_PWORK;            /* '<S11>/Analog Output' */
+  void *Setup_PWORK_o;                 /* '<S13>/Setup' */
+  void *Analoginput_PWORK;             /* '<S13>/Analog input' */
   struct {
     void *LoggedData[3];
   } Scope_PWORK;                       /* '<S2>/Scope' */
 
   struct {
-    void *LoggedData[3];
+    void *LoggedData[2];
   } Scope2_PWORK;                      /* '<S2>/Scope2' */
 
   struct {
@@ -210,9 +213,10 @@ typedef struct {
   } TAQSigLogging_InsertedFor_Mux_5;   /* synthesized block */
 
   uint32_T RandSeed;                   /* '<S3>/White Noise' */
-  int_T AnalogOutput_IWORK;            /* '<S10>/Analog Output' */
-  int_T Setup_IWORK;                   /* '<S12>/Setup' */
-  int_T Analoginput_IWORK;             /* '<S12>/Analog input' */
+  int_T AnalogOutput_IWORK;            /* '<S11>/Analog Output' */
+  int_T Setup_IWORK;                   /* '<S13>/Setup' */
+  int_T Analoginput_IWORK;             /* '<S13>/Analog input' */
+  boolean_T last_enable;               /* '<S1>/Smooth Stop Command' */
   boolean_T phase_not_empty;           /* '<S1>/Smooth Sine' */
   boolean_T startup_active;            /* '<S1>/Smooth Sine' */
   boolean_T startup_done;              /* '<S1>/Smooth Sine' */
@@ -223,10 +227,10 @@ typedef struct {
 /* Parameters (default storage) */
 struct P_model_ColumnSetup_00_T_ {
   real_T command_channel_selector[7];  /* Variable: command_channel_selector
-                                        * Referenced by: '<S10>/Populate command'
+                                        * Referenced by: '<S11>/Populate command'
                                         */
   real_T correction_gain;              /* Variable: correction_gain
-                                        * Referenced by: '<S10>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  '
+                                        * Referenced by: '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  '
                                         */
   real_T dt;                           /* Variable: dt
                                         * Referenced by:
@@ -245,24 +249,27 @@ struct P_model_ColumnSetup_00_T_ {
   real_T sat_limit;                    /* Variable: sat_limit
                                         * Referenced by: '<S2>/Saturation limit for the displacement signal  that is sent to the MTS'
                                         */
+  real_T t_ending;                     /* Variable: t_ending
+                                        * Referenced by: '<S1>/t_ending'
+                                        */
   real_T tend_chirp;                   /* Variable: tend_chirp
                                         * Referenced by: '<S4>/targetTime'
                                         */
   real_T v2a_gain;                     /* Variable: v2a_gain
-                                        * Referenced by: '<S12>/Gain1'
+                                        * Referenced by: '<S13>/Gain1'
                                         */
   real_T v2d_gain;                     /* Variable: v2d_gain
                                         * Referenced by:
-                                        *   '<S10>/  '
-                                        *   '<S12>/Gain2'
+                                        *   '<S11>/  '
+                                        *   '<S13>/Gain2'
                                         */
   real_T v2f_gain;                     /* Variable: v2f_gain
-                                        * Referenced by: '<S12>/Gain4'
+                                        * Referenced by: '<S13>/Gain4'
                                         */
   real_T zero_alpha;                   /* Variable: zero_alpha
                                         * Referenced by:
-                                        *   '<S13>/zero_alpha'
                                         *   '<S14>/zero_alpha'
+                                        *   '<S15>/zero_alpha'
                                         */
 };
 
@@ -282,7 +289,7 @@ struct tag_RTM_model_ColumnSetup_00_T {
    */
   struct {
     RTWSfcnInfo sfcnInfo;
-    time_T *taskTimePtrs[1];
+    time_T *taskTimePtrs[2];
     SimStruct childSFunctions[4];
     SimStruct *childSFunctionPtrs[4];
     struct _ssBlkInfo2 blkInfo2[4];
@@ -378,9 +385,13 @@ struct tag_RTM_model_ColumnSetup_00_T {
     uint32_T clockTick0;
     uint32_T clockTickH0;
     time_T stepSize0;
+    uint32_T clockTick1;
+    uint32_T clockTickH1;
+    time_T stepSize1;
     time_T tStart;
     time_T tFinal;
     time_T timeOfLastOutput;
+    SimTimeStep simTimeStep;
     boolean_T stopRequestedFlag;
     time_T *sampleTimes;
     time_T *offsetTimes;
@@ -388,12 +399,12 @@ struct tag_RTM_model_ColumnSetup_00_T {
     int_T *sampleHits;
     int_T *perTaskSampleHits;
     time_T *t;
-    time_T sampleTimesArray[1];
-    time_T offsetTimesArray[1];
-    int_T sampleTimeTaskIDArray[1];
-    int_T sampleHitArray[1];
-    int_T perTaskSampleHitsArray[1];
-    time_T tArray[1];
+    time_T sampleTimesArray[2];
+    time_T offsetTimesArray[2];
+    int_T sampleTimeTaskIDArray[2];
+    int_T sampleHitArray[2];
+    int_T perTaskSampleHitsArray[4];
+    time_T tArray[2];
   } Timing;
 };
 
@@ -439,8 +450,11 @@ extern DW_model_ColumnSetup_00_T model_ColumnSetup_00_DW;
 extern real_T dd_pause_enable;         /* Variable: dd_pause_enable
                                         * Referenced by: '<S1>/dd_pause_enable'
                                         */
+extern real_T smooth_stop_enable;      /* Variable: smooth_stop_enable
+                                        * Referenced by: '<S1>/smooth_stop_enable'
+                                        */
 extern real_T zero_measurements_enable;/* Variable: zero_measurements_enable
-                                        * Referenced by: '<S12>/zero_measurements_enable'
+                                        * Referenced by: '<S13>/zero_measurements_enable'
                                         */
 
 #ifdef __cplusplus
@@ -496,11 +510,12 @@ extern "C" {
  * '<S6>'   : 'model_ColumnSetup_00/Signal Generation/Pausable Time'
  * '<S7>'   : 'model_ColumnSetup_00/Signal Generation/Pausable Time1'
  * '<S8>'   : 'model_ColumnSetup_00/Signal Generation/Smooth Sine'
- * '<S9>'   : 'model_ColumnSetup_00/Signal Generation/Digital Filter Design/Check Signal Attributes'
- * '<S10>'  : 'model_ColumnSetup_00/columnSetup/Command to MTS'
- * '<S11>'  : 'model_ColumnSetup_00/columnSetup/File Log'
- * '<S12>'  : 'model_ColumnSetup_00/columnSetup/Measurements'
- * '<S13>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Adaptive signal zeroing - dm'
- * '<S14>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Adaptive signal zeroing - fm'
+ * '<S9>'   : 'model_ColumnSetup_00/Signal Generation/Smooth Stop Command'
+ * '<S10>'  : 'model_ColumnSetup_00/Signal Generation/Digital Filter Design/Check Signal Attributes'
+ * '<S11>'  : 'model_ColumnSetup_00/columnSetup/Command to MTS'
+ * '<S12>'  : 'model_ColumnSetup_00/columnSetup/File Log'
+ * '<S13>'  : 'model_ColumnSetup_00/columnSetup/Measurements'
+ * '<S14>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Adaptive signal zeroing - dm'
+ * '<S15>'  : 'model_ColumnSetup_00/columnSetup/Measurements/Adaptive signal zeroing - fm'
  */
 #endif                                 /* RTW_HEADER_model_ColumnSetup_00_h_ */

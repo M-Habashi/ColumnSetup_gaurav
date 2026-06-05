@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.210
+ * Model version              : 16.227
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 09:52:32 2026
+ * C++ source code generated on : Fri Jun  5 16:55:13 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -22,11 +22,14 @@
 #include "model_ColumnSetup_00_private.h"
 
 /* Exported block parameters */
-real_T dd_pause_enable = 1.0;          /* Variable: dd_pause_enable
+real_T dd_pause_enable = 0.0;          /* Variable: dd_pause_enable
                                         * Referenced by: '<S1>/dd_pause_enable'
                                         */
+real_T smooth_stop_enable = 0.0;       /* Variable: smooth_stop_enable
+                                        * Referenced by: '<S1>/smooth_stop_enable'
+                                        */
 real_T zero_measurements_enable = 0.0; /* Variable: zero_measurements_enable
-                                        * Referenced by: '<S12>/zero_measurements_enable'
+                                        * Referenced by: '<S13>/zero_measurements_enable'
                                         */
 
 /* Block signals (default storage) */
@@ -171,6 +174,52 @@ real_T rt_nrand_Upu32_Yd_f_pw_snf(uint32_T *u)
   return y;
 }
 
+real_T rt_powd_snf(real_T u0, real_T u1)
+{
+  real_T tmp;
+  real_T tmp_0;
+  real_T y;
+  if (rtIsNaN(u0) || rtIsNaN(u1)) {
+    y = (rtNaN);
+  } else {
+    tmp = std::abs(u0);
+    tmp_0 = std::abs(u1);
+    if (rtIsInf(u1)) {
+      if (tmp == 1.0) {
+        y = 1.0;
+      } else if (tmp > 1.0) {
+        if (u1 > 0.0) {
+          y = (rtInf);
+        } else {
+          y = 0.0;
+        }
+      } else if (u1 > 0.0) {
+        y = 0.0;
+      } else {
+        y = (rtInf);
+      }
+    } else if (tmp_0 == 0.0) {
+      y = 1.0;
+    } else if (tmp_0 == 1.0) {
+      if (u1 > 0.0) {
+        y = u0;
+      } else {
+        y = 1.0 / u0;
+      }
+    } else if (u1 == 2.0) {
+      y = u0 * u0;
+    } else if ((u1 == 0.5) && (u0 >= 0.0)) {
+      y = std::sqrt(u0);
+    } else if ((u0 < 0.0) && (u1 > std::floor(u1))) {
+      y = (rtNaN);
+    } else {
+      y = std::pow(u0, u1);
+    }
+  }
+
+  return y;
+}
+
 /* Model step function */
 void model_ColumnSetup_00_step(void)
 {
@@ -181,9 +230,9 @@ void model_ColumnSetup_00_step(void)
   int32_T j;
   boolean_T rEQ0;
 
-  /* S-Function (sg_IO113_setup_s): '<S10>/Setup' */
+  /* S-Function (sg_IO113_setup_s): '<S11>/Setup' */
 
-  /* Level2 S-Function Block: '<S10>/Setup' (sg_IO113_setup_s) */
+  /* Level2 S-Function Block: '<S11>/Setup' (sg_IO113_setup_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[0];
     sfcnOutputs(rts,0);
@@ -219,7 +268,7 @@ void model_ColumnSetup_00_step(void)
   if (dd_pause_enable != 0.0) {
     /* '<S8>:1:18' */
     /* '<S8>:1:19' */
-    model_ColumnSetup_00_B.y = model_ColumnSetup_00_DW.y_prev;
+    model_ColumnSetup_00_B.y_f = model_ColumnSetup_00_DW.y_prev;
   } else if (!model_ColumnSetup_00_DW.startup_done) {
     /* '<S8>:1:23' */
     if (!model_ColumnSetup_00_DW.startup_active) {
@@ -253,12 +302,12 @@ void model_ColumnSetup_00_step(void)
 
     /* '<S8>:1:34' */
     /* '<S8>:1:35' */
-    model_ColumnSetup_00_B.y = (3.0 - 2.0 * raw) * (raw * raw) *
+    model_ColumnSetup_00_B.y_f = (3.0 - 2.0 * raw) * (raw * raw) *
       (model_ColumnSetup_00_cal->sine_setpoint_Value -
        model_ColumnSetup_00_DW.startup_y0) + model_ColumnSetup_00_DW.startup_y0;
 
     /* '<S8>:1:36' */
-    model_ColumnSetup_00_DW.y_prev = model_ColumnSetup_00_B.y;
+    model_ColumnSetup_00_DW.y_prev = model_ColumnSetup_00_B.y_f;
     if (model_ColumnSetup_00_DW.startup_t >= 2.0) {
       /* '<S8>:1:38' */
       /* '<S8>:1:39' */
@@ -319,13 +368,13 @@ void model_ColumnSetup_00_step(void)
     }
 
     /* '<S8>:1:55' */
-    model_ColumnSetup_00_B.y = raw + model_ColumnSetup_00_DW.offset;
+    model_ColumnSetup_00_B.y_f = raw + model_ColumnSetup_00_DW.offset;
 
     /* '<S8>:1:56' */
     model_ColumnSetup_00_DW.offset *= std::exp(-model_ColumnSetup_00_P.dt / 0.1);
 
     /* '<S8>:1:57' */
-    model_ColumnSetup_00_DW.y_prev = model_ColumnSetup_00_B.y;
+    model_ColumnSetup_00_DW.y_prev = model_ColumnSetup_00_B.y_f;
   }
 
   /* End of MATLAB Function: '<S1>/Smooth Sine' */
@@ -398,7 +447,7 @@ void model_ColumnSetup_00_step(void)
 
    case 2:
     /* MultiPortSwitch: '<S1>/Multiport Switch' */
-    model_ColumnSetup_00_B.dd = model_ColumnSetup_00_B.y;
+    model_ColumnSetup_00_B.dd = model_ColumnSetup_00_B.y_f;
     break;
 
    case 3:
@@ -479,10 +528,61 @@ void model_ColumnSetup_00_step(void)
 
   /* End of MultiPortSwitch: '<S1>/Multiport Switch' */
 
+  /* Clock: '<S1>/Smooth Stop Clock' */
+  model_ColumnSetup_00_B.SmoothStopClock = model_ColumnSetup_00_M->Timing.t[0];
+
+  /* MATLAB Function: '<S1>/Smooth Stop Command' incorporates:
+   *  Constant: '<S1>/smooth_stop_enable'
+   *  Constant: '<S1>/t_ending'
+   */
+  /* MATLAB Function 'Signal Generation/Smooth Stop Command': '<S9>:1' */
+  /* '<S9>:1:11' */
+  rEQ0 = (smooth_stop_enable != 0.0);
+  if (rEQ0 != model_ColumnSetup_00_DW.last_enable) {
+    /* '<S9>:1:12' */
+    /* '<S9>:1:13' */
+    model_ColumnSetup_00_DW.t0 = model_ColumnSetup_00_B.SmoothStopClock;
+
+    /* '<S9>:1:14' */
+    model_ColumnSetup_00_DW.blend0 = model_ColumnSetup_00_DW.blend;
+  }
+
+  /* '<S9>:1:17' */
+  /* '<S9>:1:18' */
+  q = model_ColumnSetup_00_P.t_ending;
+  if (!(q > 2.2204460492503131E-16)) {
+    q = 2.2204460492503131E-16;
+  }
+
+  raw = (model_ColumnSetup_00_B.SmoothStopClock - model_ColumnSetup_00_DW.t0) /
+    q;
+  if (!(raw > 0.0)) {
+    raw = 0.0;
+  }
+
+  if (!(raw < 1.0)) {
+    raw = 1.0;
+  }
+
+  /* '<S9>:1:19' */
+  /* '<S9>:1:20' */
+  model_ColumnSetup_00_DW.blend = (raw * raw * 3.0 - 2.0 * rt_powd_snf(raw, 3.0))
+    * (static_cast<real_T>(rEQ0) - model_ColumnSetup_00_DW.blend0) +
+    model_ColumnSetup_00_DW.blend0;
+
+  /* '<S9>:1:21' */
+  model_ColumnSetup_00_B.y = (1.0 - model_ColumnSetup_00_DW.blend) *
+    model_ColumnSetup_00_B.dd;
+
+  /* '<S9>:1:22' */
+  model_ColumnSetup_00_DW.last_enable = rEQ0;
+
+  /* End of MATLAB Function: '<S1>/Smooth Stop Command' */
+
   /* Gain: '<S2>/ Controller placeholder' */
   model_ColumnSetup_00_B.Controllerplaceholder =
     model_ColumnSetup_00_cal->Controllerplaceholder_Gain *
-    model_ColumnSetup_00_B.dd;
+    model_ColumnSetup_00_B.y;
 
   /* Saturate: '<S2>/Saturation limit for the displacement signal  that is sent to the MTS' */
   raw = -model_ColumnSetup_00_P.sat_limit;
@@ -501,132 +601,133 @@ void model_ColumnSetup_00_step(void)
 
   /* End of Saturate: '<S2>/Saturation limit for the displacement signal  that is sent to the MTS' */
 
-  /* UnitDelay: '<S13>/signal_offset' */
+  /* Gain: '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
+  model_ColumnSetup_00_B.AnalogControllervsDigitalContro =
+    model_ColumnSetup_00_P.correction_gain * model_ColumnSetup_00_B.dcmm;
+
+  /* UnitDelay: '<S14>/signal_offset' */
   model_ColumnSetup_00_B.signal_offset =
     model_ColumnSetup_00_DW.signal_offset_DSTATE;
 
-  /* Sum: '<S10>/Subtract1' */
-  model_ColumnSetup_00_B.Subtract1 = model_ColumnSetup_00_B.dcmm +
+  /* Sum: '<S11>/Subtract1' */
+  model_ColumnSetup_00_B.Subtract1 =
+    model_ColumnSetup_00_B.AnalogControllervsDigitalContro +
     model_ColumnSetup_00_B.signal_offset;
 
-  /* Gain: '<S10>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  ' */
-  model_ColumnSetup_00_B.AnalogControllervsDigitalContro =
-    model_ColumnSetup_00_P.correction_gain * model_ColumnSetup_00_B.Subtract1;
-
-  /* Gain: '<S10>/  ' */
+  /* Gain: '<S11>/  ' */
   raw = 1.0 / model_ColumnSetup_00_P.v2d_gain;
 
-  /* Gain: '<S10>/  ' */
-  model_ColumnSetup_00_B.u = raw *
-    model_ColumnSetup_00_B.AnalogControllervsDigitalContro;
+  /* Gain: '<S11>/  ' */
+  model_ColumnSetup_00_B.u = raw * model_ColumnSetup_00_B.Subtract1;
   for (i = 0; i < 7; i++) {
-    /* Gain: '<S10>/Populate command' */
+    /* Gain: '<S11>/Populate command' */
     model_ColumnSetup_00_B.Populatecommand[i] =
       model_ColumnSetup_00_P.command_channel_selector[i] *
       model_ColumnSetup_00_B.u;
   }
 
-  /* S-Function (sg_IO113_da_s): '<S10>/Analog Output' */
+  /* S-Function (sg_IO113_da_s): '<S11>/Analog Output' */
 
-  /* Level2 S-Function Block: '<S10>/Analog Output' (sg_IO113_da_s) */
+  /* Level2 S-Function Block: '<S11>/Analog Output' (sg_IO113_da_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[1];
     sfcnOutputs(rts,0);
   }
 
-  /* S-Function (sg_IO112_setup_s): '<S12>/Setup' */
+  /* S-Function (sg_IO112_setup_s): '<S13>/Setup' */
 
-  /* Level2 S-Function Block: '<S12>/Setup' (sg_IO112_setup_s) */
+  /* Level2 S-Function Block: '<S13>/Setup' (sg_IO112_setup_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[2];
     sfcnOutputs(rts,0);
   }
 
-  /* S-Function (sg_IO112_ad_s): '<S12>/Analog input' */
+  /* S-Function (sg_IO112_ad_s): '<S13>/Analog input' */
 
-  /* Level2 S-Function Block: '<S12>/Analog input' (sg_IO112_ad_s) */
+  /* Level2 S-Function Block: '<S13>/Analog input' (sg_IO112_ad_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[3];
     sfcnOutputs(rts,0);
   }
 
-  /* Gain: '<S12>/Gain2' */
+  /* Gain: '<S13>/Gain2' */
   model_ColumnSetup_00_B.Gain2 = model_ColumnSetup_00_P.v2d_gain *
     model_ColumnSetup_00_B.Analoginput[2];
 
-  /* Sum: '<S13>/signal minus offset' */
+  /* Sum: '<S14>/signal minus offset' */
   model_ColumnSetup_00_B.signalminusoffset = model_ColumnSetup_00_B.Gain2 -
     model_ColumnSetup_00_B.signal_offset;
 
-  /* Gain: '<S13>/zero_alpha' */
+  /* Gain: '<S14>/zero_alpha' */
   model_ColumnSetup_00_B.zero_alpha = model_ColumnSetup_00_P.zero_alpha *
     model_ColumnSetup_00_B.signalminusoffset;
 
-  /* Product: '<S13>/enable update' incorporates:
-   *  Constant: '<S12>/zero_measurements_enable'
+  /* Product: '<S14>/enable update' incorporates:
+   *  Constant: '<S13>/zero_measurements_enable'
    */
   model_ColumnSetup_00_B.enableupdate = model_ColumnSetup_00_B.zero_alpha *
     zero_measurements_enable;
 
-  /* Sum: '<S13>/offset update' */
+  /* Sum: '<S14>/offset update' */
   model_ColumnSetup_00_B.offsetupdate = model_ColumnSetup_00_B.enableupdate +
     model_ColumnSetup_00_B.signal_offset;
 
-  /* Gain: '<S12>/Gain4' */
+  /* Gain: '<S13>/Gain4' */
   model_ColumnSetup_00_B.Gain4 = model_ColumnSetup_00_P.v2f_gain *
     model_ColumnSetup_00_B.Analoginput[3];
 
-  /* UnitDelay: '<S14>/signal_offset' */
+  /* UnitDelay: '<S15>/signal_offset' */
   model_ColumnSetup_00_B.signal_offset_n =
     model_ColumnSetup_00_DW.signal_offset_DSTATE_l;
 
-  /* Sum: '<S14>/signal minus offset' */
+  /* Sum: '<S15>/signal minus offset' */
   model_ColumnSetup_00_B.signalminusoffset_l = model_ColumnSetup_00_B.Gain4 -
     model_ColumnSetup_00_B.signal_offset_n;
 
-  /* Gain: '<S14>/zero_alpha' */
+  /* Gain: '<S15>/zero_alpha' */
   model_ColumnSetup_00_B.zero_alpha_m = model_ColumnSetup_00_P.zero_alpha *
     model_ColumnSetup_00_B.signalminusoffset_l;
 
-  /* Product: '<S14>/enable update' incorporates:
-   *  Constant: '<S12>/zero_measurements_enable'
+  /* Product: '<S15>/enable update' incorporates:
+   *  Constant: '<S13>/zero_measurements_enable'
    */
   model_ColumnSetup_00_B.enableupdate_c = model_ColumnSetup_00_B.zero_alpha_m *
     zero_measurements_enable;
 
-  /* Sum: '<S14>/offset update' */
+  /* Sum: '<S15>/offset update' */
   model_ColumnSetup_00_B.offsetupdate_i = model_ColumnSetup_00_B.enableupdate_c
     + model_ColumnSetup_00_B.signal_offset_n;
 
-  /* Gain: '<S12>/Gain1' */
+  /* Gain: '<S13>/Gain1' */
   model_ColumnSetup_00_B.Gain1 = model_ColumnSetup_00_P.v2a_gain *
     model_ColumnSetup_00_B.Analoginput[1];
 
   /* Outputs for Atomic SubSystem: '<S2>/File Log' */
-  /* SignalConversion generated from: '<S11>/Mux_5' */
-  model_ColumnSetup_00_B.Mux_51[0] = model_ColumnSetup_00_B.dd;
+  /* SignalConversion generated from: '<S12>/Mux_5' */
+  model_ColumnSetup_00_B.Mux_51[0] = model_ColumnSetup_00_B.y;
   model_ColumnSetup_00_B.Mux_51[1] = model_ColumnSetup_00_B.dcmm;
   model_ColumnSetup_00_B.Mux_51[2] = model_ColumnSetup_00_B.signalminusoffset;
   model_ColumnSetup_00_B.Mux_51[3] = model_ColumnSetup_00_B.signalminusoffset_l;
   model_ColumnSetup_00_B.Mux_51[4] = model_ColumnSetup_00_B.Gain1;
 
-  /* ToAsyncQueueBlock generated from: '<S11>/Mux_5' */
+  /* ToAsyncQueueBlock generated from: '<S12>/Mux_5' */
   slrtLogSignal
     (model_ColumnSetup_00_DW.TAQSigLogging_InsertedFor_Mux_5.SLRTSigHandles,
-     model_ColumnSetup_00_M->Timing.t[0]);
+     model_ColumnSetup_00_M->Timing.t[1]);
 
   /* End of Outputs for SubSystem: '<S2>/File Log' */
+
   /* Update for RandomNumber: '<S3>/White Noise' */
   model_ColumnSetup_00_DW.NextOutput = rt_nrand_Upu32_Yd_f_pw_snf
     (&model_ColumnSetup_00_DW.RandSeed) *
     model_ColumnSetup_00_cal->WhiteNoise_StdDev +
     model_ColumnSetup_00_cal->WhiteNoise_Mean;
 
-  /* Update for UnitDelay: '<S13>/signal_offset' */
+  /* Update for UnitDelay: '<S14>/signal_offset' */
   model_ColumnSetup_00_DW.signal_offset_DSTATE =
     model_ColumnSetup_00_B.offsetupdate;
 
-  /* Update for UnitDelay: '<S14>/signal_offset' */
+  /* Update for UnitDelay: '<S15>/signal_offset' */
   model_ColumnSetup_00_DW.signal_offset_DSTATE_l =
     model_ColumnSetup_00_B.offsetupdate_i;
 
@@ -648,6 +749,27 @@ void model_ColumnSetup_00_step(void)
     model_ColumnSetup_00_M->Timing.stepSize0 +
     model_ColumnSetup_00_M->Timing.clockTickH0 *
     model_ColumnSetup_00_M->Timing.stepSize0 * 4294967296.0;
+
+  {
+    /* Update absolute timer for sample time: [0.00048828125s, 0.0s] */
+    /* The "clockTick1" counts the number of times the code of this task has
+     * been executed. The absolute time is the multiplication of "clockTick1"
+     * and "Timing.stepSize1". Size of "clockTick1" ensures timer will not
+     * overflow during the application lifespan selected.
+     * Timer of this task consists of two 32 bit unsigned integers.
+     * The two integers represent the low bits Timing.clockTick1 and the high bits
+     * Timing.clockTickH1. When the low bit overflows to 0, the high bits increment.
+     */
+    if (!(++model_ColumnSetup_00_M->Timing.clockTick1)) {
+      ++model_ColumnSetup_00_M->Timing.clockTickH1;
+    }
+
+    model_ColumnSetup_00_M->Timing.t[1] =
+      model_ColumnSetup_00_M->Timing.clockTick1 *
+      model_ColumnSetup_00_M->Timing.stepSize1 +
+      model_ColumnSetup_00_M->Timing.clockTickH1 *
+      model_ColumnSetup_00_M->Timing.stepSize1 * 4294967296.0;
+  }
 }
 
 /* Model initialize function */
@@ -657,6 +779,22 @@ void model_ColumnSetup_00_initialize(void)
 
   /* initialize non-finites */
   rt_InitInfAndNaN(sizeof(real_T));
+
+  {
+    /* Setup solver object */
+    rtsiSetSimTimeStepPtr(&model_ColumnSetup_00_M->solverInfo,
+                          &model_ColumnSetup_00_M->Timing.simTimeStep);
+    rtsiSetTPtr(&model_ColumnSetup_00_M->solverInfo, &rtmGetTPtr
+                (model_ColumnSetup_00_M));
+    rtsiSetStepSizePtr(&model_ColumnSetup_00_M->solverInfo,
+                       &model_ColumnSetup_00_M->Timing.stepSize0);
+    rtsiSetErrorStatusPtr(&model_ColumnSetup_00_M->solverInfo,
+                          (&rtmGetErrorStatus(model_ColumnSetup_00_M)));
+    rtsiSetRTModelPtr(&model_ColumnSetup_00_M->solverInfo,
+                      model_ColumnSetup_00_M);
+  }
+
+  rtsiSetSimTimeStep(&model_ColumnSetup_00_M->solverInfo, MAJOR_TIME_STEP);
   rtsiSetSolverName(&model_ColumnSetup_00_M->solverInfo,"FixedStepDiscrete");
   model_ColumnSetup_00_M->solverInfoPtr = (&model_ColumnSetup_00_M->solverInfo);
 
@@ -664,6 +802,7 @@ void model_ColumnSetup_00_initialize(void)
   {
     int_T *mdlTsMap = model_ColumnSetup_00_M->Timing.sampleTimeTaskIDArray;
     mdlTsMap[0] = 0;
+    mdlTsMap[1] = 1;
     model_ColumnSetup_00_M->Timing.sampleTimeTaskIDPtr = (&mdlTsMap[0]);
     model_ColumnSetup_00_M->Timing.sampleTimes =
       (&model_ColumnSetup_00_M->Timing.sampleTimesArray[0]);
@@ -671,10 +810,12 @@ void model_ColumnSetup_00_initialize(void)
       (&model_ColumnSetup_00_M->Timing.offsetTimesArray[0]);
 
     /* task periods */
-    model_ColumnSetup_00_M->Timing.sampleTimes[0] = (0.00048828125);
+    model_ColumnSetup_00_M->Timing.sampleTimes[0] = (0.0);
+    model_ColumnSetup_00_M->Timing.sampleTimes[1] = (0.00048828125);
 
     /* task offsets */
     model_ColumnSetup_00_M->Timing.offsetTimes[0] = (0.0);
+    model_ColumnSetup_00_M->Timing.offsetTimes[1] = (0.0);
   }
 
   rtmSetTPtr(model_ColumnSetup_00_M, &model_ColumnSetup_00_M->Timing.tArray[0]);
@@ -682,11 +823,13 @@ void model_ColumnSetup_00_initialize(void)
   {
     int_T *mdlSampleHits = model_ColumnSetup_00_M->Timing.sampleHitArray;
     mdlSampleHits[0] = 1;
+    mdlSampleHits[1] = 1;
     model_ColumnSetup_00_M->Timing.sampleHits = (&mdlSampleHits[0]);
   }
 
   rtmSetTFinal(model_ColumnSetup_00_M, -1);
   model_ColumnSetup_00_M->Timing.stepSize0 = 0.00048828125;
+  model_ColumnSetup_00_M->Timing.stepSize1 = 0.00048828125;
   model_ColumnSetup_00_M->solverInfoPtr = (&model_ColumnSetup_00_M->solverInfo);
   model_ColumnSetup_00_M->Timing.stepSize = (0.00048828125);
   rtsiSetFixedStepSize(&model_ColumnSetup_00_M->solverInfo, 0.00048828125);
@@ -710,6 +853,8 @@ void model_ColumnSetup_00_initialize(void)
       &model_ColumnSetup_00_M->Sizes.numSampTimes);
     model_ColumnSetup_00_M->NonInlinedSFcns.taskTimePtrs[0] = &(rtmGetTPtr
       (model_ColumnSetup_00_M)[0]);
+    model_ColumnSetup_00_M->NonInlinedSFcns.taskTimePtrs[1] = &(rtmGetTPtr
+      (model_ColumnSetup_00_M)[1]);
     rtssSetTPtrPtr(sfcnInfo,model_ColumnSetup_00_M->NonInlinedSFcns.taskTimePtrs);
     rtssSetTStartPtr(sfcnInfo, &rtmGetTStart(model_ColumnSetup_00_M));
     rtssSetTFinalPtr(sfcnInfo, &rtmGetTFinal(model_ColumnSetup_00_M));
@@ -750,7 +895,7 @@ void model_ColumnSetup_00_initialize(void)
     model_ColumnSetup_00_M->childSfunctions[3] =
       (&model_ColumnSetup_00_M->NonInlinedSFcns.childSFunctions[3]);
 
-    /* Level2 S-Function Block: model_ColumnSetup_00/<S10>/Setup (sg_IO113_setup_s) */
+    /* Level2 S-Function Block: model_ColumnSetup_00/<S11>/Setup (sg_IO113_setup_s) */
     {
       SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[0];
 
@@ -876,7 +1021,7 @@ void model_ColumnSetup_00_initialize(void)
       /* adjust sample time */
       ssSetSampleTime(rts, 0, 0.00048828125);
       ssSetOffsetTime(rts, 0, 0.0);
-      sfcnTsMap[0] = 0;
+      sfcnTsMap[0] = 1;
 
       /* set compiled values of dynamic vector attributes */
       ssSetNumNonsampledZCs(rts, 0);
@@ -885,7 +1030,7 @@ void model_ColumnSetup_00_initialize(void)
       /* Update the BufferDstPort flags for each input port */
     }
 
-    /* Level2 S-Function Block: model_ColumnSetup_00/<S10>/Analog Output (sg_IO113_da_s) */
+    /* Level2 S-Function Block: model_ColumnSetup_00/<S11>/Analog Output (sg_IO113_da_s) */
     {
       SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[1];
 
@@ -1092,7 +1237,7 @@ void model_ColumnSetup_00_initialize(void)
       /* adjust sample time */
       ssSetSampleTime(rts, 0, 0.00048828125);
       ssSetOffsetTime(rts, 0, 0.0);
-      sfcnTsMap[0] = 0;
+      sfcnTsMap[0] = 1;
 
       /* set compiled values of dynamic vector attributes */
       ssSetNumNonsampledZCs(rts, 0);
@@ -1116,7 +1261,7 @@ void model_ColumnSetup_00_initialize(void)
       ssSetInputPortBufferDstPort(rts, 6, -1);
     }
 
-    /* Level2 S-Function Block: model_ColumnSetup_00/<S12>/Setup (sg_IO112_setup_s) */
+    /* Level2 S-Function Block: model_ColumnSetup_00/<S13>/Setup (sg_IO112_setup_s) */
     {
       SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[2];
 
@@ -1246,7 +1391,7 @@ void model_ColumnSetup_00_initialize(void)
       /* adjust sample time */
       ssSetSampleTime(rts, 0, 0.00048828125);
       ssSetOffsetTime(rts, 0, 0.0);
-      sfcnTsMap[0] = 0;
+      sfcnTsMap[0] = 1;
 
       /* set compiled values of dynamic vector attributes */
       ssSetNumNonsampledZCs(rts, 0);
@@ -1255,7 +1400,7 @@ void model_ColumnSetup_00_initialize(void)
       /* Update the BufferDstPort flags for each input port */
     }
 
-    /* Level2 S-Function Block: model_ColumnSetup_00/<S12>/Analog input (sg_IO112_ad_s) */
+    /* Level2 S-Function Block: model_ColumnSetup_00/<S13>/Analog input (sg_IO112_ad_s) */
     {
       SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[3];
 
@@ -1402,7 +1547,7 @@ void model_ColumnSetup_00_initialize(void)
       /* adjust sample time */
       ssSetSampleTime(rts, 0, 0.00048828125);
       ssSetOffsetTime(rts, 0, 0.0);
-      sfcnTsMap[0] = 0;
+      sfcnTsMap[0] = 1;
 
       /* set compiled values of dynamic vector attributes */
       ssSetNumNonsampledZCs(rts, 0);
@@ -1415,8 +1560,8 @@ void model_ColumnSetup_00_initialize(void)
     }
   }
 
-  /* Start for S-Function (sg_IO113_setup_s): '<S10>/Setup' */
-  /* Level2 S-Function Block: '<S10>/Setup' (sg_IO113_setup_s) */
+  /* Start for S-Function (sg_IO113_setup_s): '<S11>/Setup' */
+  /* Level2 S-Function Block: '<S11>/Setup' (sg_IO113_setup_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[0];
     sfcnStart(rts);
@@ -1424,8 +1569,8 @@ void model_ColumnSetup_00_initialize(void)
       return;
   }
 
-  /* Start for S-Function (sg_IO113_da_s): '<S10>/Analog Output' */
-  /* Level2 S-Function Block: '<S10>/Analog Output' (sg_IO113_da_s) */
+  /* Start for S-Function (sg_IO113_da_s): '<S11>/Analog Output' */
+  /* Level2 S-Function Block: '<S11>/Analog Output' (sg_IO113_da_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[1];
     sfcnStart(rts);
@@ -1433,8 +1578,8 @@ void model_ColumnSetup_00_initialize(void)
       return;
   }
 
-  /* Start for S-Function (sg_IO112_setup_s): '<S12>/Setup' */
-  /* Level2 S-Function Block: '<S12>/Setup' (sg_IO112_setup_s) */
+  /* Start for S-Function (sg_IO112_setup_s): '<S13>/Setup' */
+  /* Level2 S-Function Block: '<S13>/Setup' (sg_IO112_setup_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[2];
     sfcnStart(rts);
@@ -1442,8 +1587,8 @@ void model_ColumnSetup_00_initialize(void)
       return;
   }
 
-  /* Start for S-Function (sg_IO112_ad_s): '<S12>/Analog input' */
-  /* Level2 S-Function Block: '<S12>/Analog input' (sg_IO112_ad_s) */
+  /* Start for S-Function (sg_IO112_ad_s): '<S13>/Analog input' */
+  /* Level2 S-Function Block: '<S13>/Analog input' (sg_IO112_ad_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[3];
     sfcnStart(rts);
@@ -1453,7 +1598,7 @@ void model_ColumnSetup_00_initialize(void)
 
   /* Start for Atomic SubSystem: '<S2>/File Log' */
 
-  /* Start for ToAsyncQueueBlock generated from: '<S11>/Mux_5' */
+  /* Start for ToAsyncQueueBlock generated from: '<S12>/Mux_5' */
   model_ColumnSetup_00_DW.TAQSigLogging_InsertedFor_Mux_5.SLRTSigHandles =
     slrtRegisterSignalToLoggingService(reinterpret_cast<uintptr_t>
     (&model_ColumnSetup_00_B.Mux_51[0]));
@@ -1502,11 +1647,11 @@ void model_ColumnSetup_00_initialize(void)
 
     /* End of InitializeConditions for DiscreteFir: '<S5>/Digital Filter' */
 
-    /* InitializeConditions for UnitDelay: '<S13>/signal_offset' */
+    /* InitializeConditions for UnitDelay: '<S14>/signal_offset' */
     model_ColumnSetup_00_DW.signal_offset_DSTATE =
       model_ColumnSetup_00_cal->signal_offset_InitialCondition;
 
-    /* InitializeConditions for UnitDelay: '<S14>/signal_offset' */
+    /* InitializeConditions for UnitDelay: '<S15>/signal_offset' */
     model_ColumnSetup_00_DW.signal_offset_DSTATE_l =
       model_ColumnSetup_00_cal->signal_offset_InitialConditio_b;
 
@@ -1525,35 +1670,41 @@ void model_ColumnSetup_00_initialize(void)
 
     /* SystemInitialize for MATLAB Function: '<S1>/Pausable Time1' */
     model_ColumnS_PausableTime_Init(&model_ColumnSetup_00_DW.sf_PausableTime1);
+
+    /* SystemInitialize for MATLAB Function: '<S1>/Smooth Stop Command' */
+    model_ColumnSetup_00_DW.last_enable = false;
+    model_ColumnSetup_00_DW.t0 = 0.0;
+    model_ColumnSetup_00_DW.blend0 = 0.0;
+    model_ColumnSetup_00_DW.blend = 0.0;
   }
 }
 
 /* Model terminate function */
 void model_ColumnSetup_00_terminate(void)
 {
-  /* Terminate for S-Function (sg_IO113_setup_s): '<S10>/Setup' */
-  /* Level2 S-Function Block: '<S10>/Setup' (sg_IO113_setup_s) */
+  /* Terminate for S-Function (sg_IO113_setup_s): '<S11>/Setup' */
+  /* Level2 S-Function Block: '<S11>/Setup' (sg_IO113_setup_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[0];
     sfcnTerminate(rts);
   }
 
-  /* Terminate for S-Function (sg_IO113_da_s): '<S10>/Analog Output' */
-  /* Level2 S-Function Block: '<S10>/Analog Output' (sg_IO113_da_s) */
+  /* Terminate for S-Function (sg_IO113_da_s): '<S11>/Analog Output' */
+  /* Level2 S-Function Block: '<S11>/Analog Output' (sg_IO113_da_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[1];
     sfcnTerminate(rts);
   }
 
-  /* Terminate for S-Function (sg_IO112_setup_s): '<S12>/Setup' */
-  /* Level2 S-Function Block: '<S12>/Setup' (sg_IO112_setup_s) */
+  /* Terminate for S-Function (sg_IO112_setup_s): '<S13>/Setup' */
+  /* Level2 S-Function Block: '<S13>/Setup' (sg_IO112_setup_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[2];
     sfcnTerminate(rts);
   }
 
-  /* Terminate for S-Function (sg_IO112_ad_s): '<S12>/Analog input' */
-  /* Level2 S-Function Block: '<S12>/Analog input' (sg_IO112_ad_s) */
+  /* Terminate for S-Function (sg_IO112_ad_s): '<S13>/Analog input' */
+  /* Level2 S-Function Block: '<S13>/Analog input' (sg_IO112_ad_s) */
   {
     SimStruct *rts = model_ColumnSetup_00_M->childSfunctions[3];
     sfcnTerminate(rts);

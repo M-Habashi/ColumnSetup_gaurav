@@ -6,9 +6,9 @@
  * government, commercial, or other organizational use.
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.210
+ * Model version              : 16.227
  * Simulink Coder version : 10.2 R2020b
- * C source code generated on : Fri Jun 05 09:52:50 2026
+ * C source code generated on : Fri Jun 05 16:55:19 2026
  *
  * Target selection: slrealtime.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -821,7 +821,7 @@ ASAP2_VERSION  1 71
     /end MOD_COMMON
 
   /begin CHARACTERISTIC  dd_pause_enable "Dashboard flag for pausing time-history and sine command generation."  
-    VALUE 0x0020E008 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+    VALUE 0x00211848 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
   /begin CHARACTERISTIC  model_ColumnSetup_00_P.command_channel_selector ""  
@@ -849,24 +849,28 @@ ASAP2_VERSION  1 71
     VALUE 0x0020E9F8 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
-  /begin CHARACTERISTIC  model_ColumnSetup_00_P.tend_chirp ""  
+  /begin CHARACTERISTIC  model_ColumnSetup_00_P.t_ending ""  
     VALUE 0x0020EA00 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
-  /begin CHARACTERISTIC  model_ColumnSetup_00_P.v2a_gain ""  
+  /begin CHARACTERISTIC  model_ColumnSetup_00_P.tend_chirp ""  
     VALUE 0x0020EA08 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
-  /begin CHARACTERISTIC  model_ColumnSetup_00_P.v2d_gain ""  
+  /begin CHARACTERISTIC  model_ColumnSetup_00_P.v2a_gain ""  
     VALUE 0x0020EA10 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
-  /begin CHARACTERISTIC  model_ColumnSetup_00_P.v2f_gain ""  
+  /begin CHARACTERISTIC  model_ColumnSetup_00_P.v2d_gain ""  
     VALUE 0x0020EA18 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
-  /begin CHARACTERISTIC  model_ColumnSetup_00_P.zero_alpha ""  
+  /begin CHARACTERISTIC  model_ColumnSetup_00_P.v2f_gain ""  
     VALUE 0x0020EA20 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+  /end CHARACTERISTIC 
+
+  /begin CHARACTERISTIC  model_ColumnSetup_00_P.zero_alpha ""  
+    VALUE 0x0020EA28 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
   /begin CHARACTERISTIC  model_ColumnSetup_00_cal_impl.AnalogOutput_P1 ""  
@@ -1105,291 +1109,325 @@ ASAP2_VERSION  1 71
     VALUE 0x0020E2D8 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
+  /begin CHARACTERISTIC  smooth_stop_enable "Dashboard flag for smooth stop and smooth resume of the command."  
+    VALUE 0x00211840 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+  /end CHARACTERISTIC 
+
   /begin CHARACTERISTIC  zero_measurements_enable "Dashboard flag for adaptive measurement zeroing. Direct-access to avoid SLRT page switching hiccups."  
-    VALUE 0x002117E8 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+    VALUE 0x00211838 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.AnalogControllervsDigitalContro ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211620
+    ECU_ADDRESS                       0x00211658
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Analoginput ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
     LAYOUT                            COLUMN_DIR
     MATRIX_DIM                        18 
-    ECU_ADDRESS                       0x00211668
+    ECU_ADDRESS                       0x002116B0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.BLWNPauseGate ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117B8
+    ECU_ADDRESS                       0x00211800
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Controllerplaceholder ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211600
+    ECU_ADDRESS                       0x00211648
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.DigitalFilter ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002115F0
+    ECU_ADDRESS                       0x00211630
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Gain ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211788
+    ECU_ADDRESS                       0x002117D0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Gain1 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211750
+    ECU_ADDRESS                       0x00211798
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Gain1_j ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117C0
+    ECU_ADDRESS                       0x00211808
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Gain2 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002116F8
+    ECU_ADDRESS                       0x00211740
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Gain4 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211720
+    ECU_ADDRESS                       0x00211768
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Gain_c ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117B0
+    ECU_ADDRESS                       0x002117F8
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Mux_51 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
     LAYOUT                            COLUMN_DIR
     MATRIX_DIM                        5 
-    ECU_ADDRESS                       0x00211758
+    ECU_ADDRESS                       0x002117A0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Output ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002115E8
+    ECU_ADDRESS                       0x00211628
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Output_p ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117A8
+    ECU_ADDRESS                       0x002117F0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Populatecommand ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
     LAYOUT                            COLUMN_DIR
     MATRIX_DIM                        7 
-    ECU_ADDRESS                       0x00211630
+    ECU_ADDRESS                       0x00211678
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Product ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211780
+    ECU_ADDRESS                       0x002117C8
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Product1 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211790
+    ECU_ADDRESS                       0x002117D8
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Product2 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117A0
+    ECU_ADDRESS                       0x002117E8
+  /end MEASUREMENT 
+
+  /begin MEASUREMENT  model_ColumnSetup_00_B.SmoothStopClock ""  
+    FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
+    ECU_ADDRESS                       0x00211640
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Subtract1 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211618
+    ECU_ADDRESS                       0x00211668
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.Sum ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211798
+    ECU_ADDRESS                       0x002117E0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.TimeHistoryLookup ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117C8
+    ECU_ADDRESS                       0x00211810
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.WhiteNoise ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002115E0
+    ECU_ADDRESS                       0x00211620
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.dcmm ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211608
+    ECU_ADDRESS                       0x00211650
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.dd ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002115F8
+    ECU_ADDRESS                       0x00211638
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.enableupdate ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211710
+    ECU_ADDRESS                       0x00211758
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.enableupdate_c ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211740
+    ECU_ADDRESS                       0x00211788
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.offsetupdate ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211718
+    ECU_ADDRESS                       0x00211760
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.offsetupdate_i ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211748
+    ECU_ADDRESS                       0x00211790
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.sf_PausableTime.tau ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117E0
+    ECU_ADDRESS                       0x00211830
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.sf_PausableTime1.tau ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117D8
+    ECU_ADDRESS                       0x00211828
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.signal_offset ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211610
+    ECU_ADDRESS                       0x00211660
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.signal_offset_n ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211728
+    ECU_ADDRESS                       0x00211770
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.signalminusoffset ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211700
+    ECU_ADDRESS                       0x00211748
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.signalminusoffset_l ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211730
+    ECU_ADDRESS                       0x00211778
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.u ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211628
+    ECU_ADDRESS                       0x00211670
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.y ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002117D0
+    ECU_ADDRESS                       0x00211818
+  /end MEASUREMENT 
+
+  /begin MEASUREMENT  model_ColumnSetup_00_B.y_f ""  
+    FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
+    ECU_ADDRESS                       0x00211820
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.zero_alpha ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211708
+    ECU_ADDRESS                       0x00211750
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_B.zero_alpha_m ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x00211738
+    ECU_ADDRESS                       0x00211780
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.DigitalFilter_states ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
     LAYOUT                            COLUMN_DIR
     MATRIX_DIM                        130 
-    ECU_ADDRESS                       0x002110A0
+    ECU_ADDRESS                       0x002110E0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.NextOutput ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114C0
+    ECU_ADDRESS                       0x00211500
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.RandSeed ""  
     ULONG model_ColumnSetup_00_CM_uint32       0             0       0 2147483646  
-    ECU_ADDRESS                       0x002115A0
+    ECU_ADDRESS                       0x002115F0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.amp_prev ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114E0
+    ECU_ADDRESS                       0x00211538
+  /end MEASUREMENT 
+
+  /begin MEASUREMENT  model_ColumnSetup_00_DW.blend ""  
+    FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
+    ECU_ADDRESS                       0x00211518
+  /end MEASUREMENT 
+
+  /begin MEASUREMENT  model_ColumnSetup_00_DW.blend0 ""  
+    FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
+    ECU_ADDRESS                       0x00211510
+  /end MEASUREMENT 
+
+  /begin MEASUREMENT  model_ColumnSetup_00_DW.last_enable ""  
+    UBYTE model_ColumnSetup_00_CM_logical       0             0       0 1  
+    ECU_ADDRESS                       0x00211600
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.offset ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114D0
+    ECU_ADDRESS                       0x00211528
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.phase ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114C8
+    ECU_ADDRESS                       0x00211520
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.phase_not_empty ""  
     UBYTE model_ColumnSetup_00_CM_logical       0             0       0 1  
-    ECU_ADDRESS                       0x002115B0
+    ECU_ADDRESS                       0x00211601
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.setpoint_prev ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114E8
+    ECU_ADDRESS                       0x00211540
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.sf_PausableTime.tau_state ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002115C0
+    ECU_ADDRESS                       0x00211610
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.sf_PausableTime1.tau_state ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002115B8
+    ECU_ADDRESS                       0x00211608
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.signal_offset_DSTATE ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114B0
+    ECU_ADDRESS                       0x002114F0
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.signal_offset_DSTATE_l ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114B8
+    ECU_ADDRESS                       0x002114F8
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.startup_active ""  
     UBYTE model_ColumnSetup_00_CM_logical       0             0       0 1  
-    ECU_ADDRESS                       0x002115B1
+    ECU_ADDRESS                       0x00211602
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.startup_done ""  
     UBYTE model_ColumnSetup_00_CM_logical       0             0       0 1  
-    ECU_ADDRESS                       0x002115B2
+    ECU_ADDRESS                       0x00211603
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.startup_t ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114F0
+    ECU_ADDRESS                       0x00211548
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.startup_y0 ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114F8
+    ECU_ADDRESS                       0x00211550
+  /end MEASUREMENT 
+
+  /begin MEASUREMENT  model_ColumnSetup_00_DW.t0 ""  
+    FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
+    ECU_ADDRESS                       0x00211508
   /end MEASUREMENT 
 
   /begin MEASUREMENT  model_ColumnSetup_00_DW.y_prev ""  
     FLOAT64_IEEE model_ColumnSetup_00_CM_double       0             0       -1.7E+308 1.7E+308  
-    ECU_ADDRESS                       0x002114D8
+    ECU_ADDRESS                       0x00211530
   /end MEASUREMENT 
 
   /begin AXIS_PTS  model_ColumnSetup_00_cal_impl.TimeHistoryLookup_bp01Data ""  
@@ -1433,6 +1471,7 @@ ASAP2_VERSION  1 71
   /begin GROUP model_ColumnSetup_00 "model_ColumnSetup_00" ROOT  
     /begin REF_CHARACTERISTIC
       dd_pause_enable
+      smooth_stop_enable
       zero_measurements_enable
     /end REF_CHARACTERISTIC
   /end GROUP

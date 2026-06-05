@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.210
+ * Model version              : 16.227
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 09:52:32 2026
+ * C++ source code generated on : Fri Jun  5 16:55:13 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -24,12 +24,12 @@
 /* Block parameters (default storage) */
 P_model_ColumnSetup_00_T model_ColumnSetup_00_P = {
   /* Variable: command_channel_selector
-   * Referenced by: '<S10>/Populate command'
+   * Referenced by: '<S11>/Populate command'
    */
   { 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 },
 
   /* Variable: correction_gain
-   * Referenced by: '<S10>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  '
+   * Referenced by: '<S11>/ Analog Controller vs.  Digital Controller  Voltage-to-Voltage  Correction Gain  '
    */
   1.013,
 
@@ -58,32 +58,37 @@ P_model_ColumnSetup_00_T model_ColumnSetup_00_P = {
    */
   60.0,
 
+  /* Variable: t_ending
+   * Referenced by: '<S1>/t_ending'
+   */
+  5.0,
+
   /* Variable: tend_chirp
    * Referenced by: '<S4>/targetTime'
    */
   90.0,
 
   /* Variable: v2a_gain
-   * Referenced by: '<S12>/Gain1'
+   * Referenced by: '<S13>/Gain1'
    */
   -19235.294117647059,
 
   /* Variable: v2d_gain
    * Referenced by:
-   *   '<S10>/  '
-   *   '<S12>/Gain2'
+   *   '<S11>/  '
+   *   '<S13>/Gain2'
    */
   7.62,
 
   /* Variable: v2f_gain
-   * Referenced by: '<S12>/Gain4'
+   * Referenced by: '<S13>/Gain4'
    */
   1000.0,
 
   /* Variable: zero_alpha
    * Referenced by:
-   *   '<S13>/zero_alpha'
    *   '<S14>/zero_alpha'
+   *   '<S15>/zero_alpha'
    */
   0.0009765625
 };

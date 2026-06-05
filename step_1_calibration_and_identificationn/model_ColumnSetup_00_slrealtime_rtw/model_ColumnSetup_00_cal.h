@@ -37,105 +37,105 @@ typedef struct {
                                         * Referenced by: '<S1>/Constant1'
                                         */
   real_T Setup_P1_Size[2];             /* Computed Parameter: Setup_P1_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P1;                     /* Expression: id
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P2_Size[2];             /* Computed Parameter: Setup_P2_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P2;                     /* Expression: pciSlot
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P3_Size[2];             /* Computed Parameter: Setup_P3_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P3;                     /* Expression: triggerSignal
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P4_Size[2];             /* Computed Parameter: Setup_P4_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P4;                     /* Expression: cal
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P5_Size[2];             /* Computed Parameter: Setup_P5_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P5[7];                  /* Expression: daChannel
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P6_Size[2];             /* Computed Parameter: Setup_P6_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P6;                     /* Expression: range
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P7_Size[2];             /* Computed Parameter: Setup_P7_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P7;                     /* Expression: daMode
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P8_Size[2];             /* Computed Parameter: Setup_P8_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P8[7];                  /* Expression: daReset
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P9_Size[2];             /* Computed Parameter: Setup_P9_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P9[7];                  /* Expression: daInitValue
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P10_Size[2];            /* Computed Parameter: Setup_P10_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P10[7];                 /* Expression: daIndex
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P11_Size[2];            /* Computed Parameter: Setup_P11_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P11[4];                 /* Expression: doChannel
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P12_Size[2];            /* Computed Parameter: Setup_P12_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P12;                    /* Expression: doReset
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P13_Size[2];            /* Computed Parameter: Setup_P13_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P13;                    /* Expression: doInitValue
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P14_Size[2];            /* Computed Parameter: Setup_P14_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P14;                    /* Expression: dioDirLo
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P15_Size[2];            /* Computed Parameter: Setup_P15_Size
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
   real_T Setup_P15;                    /* Expression: dioDirHi
-                                        * Referenced by: '<S10>/Setup'
+                                        * Referenced by: '<S11>/Setup'
                                         */
-  real_T Constant_Value;               /* Expression: 2
+  real_T Constant_Value;               /* Expression: 5
                                         * Referenced by: '<S1>/Constant'
                                         */
-  real_T sine_amp_Value;               /* Expression: 2
+  real_T sine_amp_Value;               /* Expression: 1
                                         * Referenced by: '<S1>/sine_amp'
                                         */
   real_T sine_freq_Value;              /* Expression: 1
                                         * Referenced by: '<S1>/sine_freq'
                                         */
-  real_T sine_setpoint_Value;          /* Expression: -5
+  real_T sine_setpoint_Value;          /* Expression: 0
                                         * Referenced by: '<S1>/sine_setpoint'
                                         */
   real_T WhiteNoise_Mean;              /* Expression: 0
@@ -155,136 +155,136 @@ typedef struct {
                                         * Referenced by: '<S2>/ Controller placeholder'
                                         */
   real_T signal_offset_InitialCondition;/* Expression: 0
-                                         * Referenced by: '<S13>/signal_offset'
+                                         * Referenced by: '<S14>/signal_offset'
                                          */
   real_T AnalogOutput_P1_Size[2];    /* Computed Parameter: AnalogOutput_P1_Size
-                                      * Referenced by: '<S10>/Analog Output'
+                                      * Referenced by: '<S11>/Analog Output'
                                       */
   real_T AnalogOutput_P1;              /* Expression: id
-                                        * Referenced by: '<S10>/Analog Output'
+                                        * Referenced by: '<S11>/Analog Output'
                                         */
   real_T AnalogOutput_P2_Size[2];    /* Computed Parameter: AnalogOutput_P2_Size
-                                      * Referenced by: '<S10>/Analog Output'
+                                      * Referenced by: '<S11>/Analog Output'
                                       */
   real_T AnalogOutput_P2[7];           /* Expression: index
-                                        * Referenced by: '<S10>/Analog Output'
+                                        * Referenced by: '<S11>/Analog Output'
                                         */
   real_T AnalogOutput_P3_Size[2];    /* Computed Parameter: AnalogOutput_P3_Size
-                                      * Referenced by: '<S10>/Analog Output'
+                                      * Referenced by: '<S11>/Analog Output'
                                       */
   real_T AnalogOutput_P3[7];           /* Expression: channels
-                                        * Referenced by: '<S10>/Analog Output'
+                                        * Referenced by: '<S11>/Analog Output'
                                         */
   real_T AnalogOutput_P4_Size[2];    /* Computed Parameter: AnalogOutput_P4_Size
-                                      * Referenced by: '<S10>/Analog Output'
+                                      * Referenced by: '<S11>/Analog Output'
                                       */
   real_T AnalogOutput_P4;              /* Expression: range
-                                        * Referenced by: '<S10>/Analog Output'
+                                        * Referenced by: '<S11>/Analog Output'
                                         */
   real_T AnalogOutput_P5_Size[2];    /* Computed Parameter: AnalogOutput_P5_Size
-                                      * Referenced by: '<S10>/Analog Output'
+                                      * Referenced by: '<S11>/Analog Output'
                                       */
   real_T AnalogOutput_P5;              /* Expression: ts
-                                        * Referenced by: '<S10>/Analog Output'
+                                        * Referenced by: '<S11>/Analog Output'
                                         */
   real_T AnalogOutput_P6_Size[2];    /* Computed Parameter: AnalogOutput_P6_Size
-                                      * Referenced by: '<S10>/Analog Output'
+                                      * Referenced by: '<S11>/Analog Output'
                                       */
   real_T AnalogOutput_P6;              /* Expression: pciSlot
-                                        * Referenced by: '<S10>/Analog Output'
+                                        * Referenced by: '<S11>/Analog Output'
                                         */
   real_T Setup_P1_Size_n[2];           /* Computed Parameter: Setup_P1_Size_n
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P1_p;                   /* Expression: id
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P2_Size_f[2];           /* Computed Parameter: Setup_P2_Size_f
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P2_j;                   /* Expression: cal
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P3_Size_p[2];           /* Computed Parameter: Setup_P3_Size_p
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P3_h;                   /* Expression: initiator
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P4_Size_i[2];           /* Computed Parameter: Setup_P4_Size_i
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P4_m;                   /* Expression: pciSlot
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P5_Size_f[2];           /* Computed Parameter: Setup_P5_Size_f
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P5_o;                   /* Expression: adChannel
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P6_Size_g[2];           /* Computed Parameter: Setup_P6_Size_g
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P6_l;                   /* Expression: adRange
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P7_Size_e[2];           /* Computed Parameter: Setup_P7_Size_e
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P7_h;                   /* Expression: adCoupling
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P8_Size_l[2];           /* Computed Parameter: Setup_P8_Size_l
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P8_l;                   /* Expression: invertIO
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P9_Size_j[2];           /* Computed Parameter: Setup_P9_Size_j
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Setup_P9_d;                   /* Expression: adResolution
-                                        * Referenced by: '<S12>/Setup'
+                                        * Referenced by: '<S13>/Setup'
                                         */
   real_T Analoginput_P1_Size[2];      /* Computed Parameter: Analoginput_P1_Size
-                                       * Referenced by: '<S12>/Analog input'
+                                       * Referenced by: '<S13>/Analog input'
                                        */
   real_T Analoginput_P1;               /* Expression: id
-                                        * Referenced by: '<S12>/Analog input'
+                                        * Referenced by: '<S13>/Analog input'
                                         */
   real_T Analoginput_P2_Size[2];      /* Computed Parameter: Analoginput_P2_Size
-                                       * Referenced by: '<S12>/Analog input'
+                                       * Referenced by: '<S13>/Analog input'
                                        */
   real_T Analoginput_P2;               /* Expression: channels
-                                        * Referenced by: '<S12>/Analog input'
+                                        * Referenced by: '<S13>/Analog input'
                                         */
   real_T Analoginput_P3_Size[2];      /* Computed Parameter: Analoginput_P3_Size
-                                       * Referenced by: '<S12>/Analog input'
+                                       * Referenced by: '<S13>/Analog input'
                                        */
   real_T Analoginput_P3;               /* Expression: range
-                                        * Referenced by: '<S12>/Analog input'
+                                        * Referenced by: '<S13>/Analog input'
                                         */
   real_T Analoginput_P4_Size[2];      /* Computed Parameter: Analoginput_P4_Size
-                                       * Referenced by: '<S12>/Analog input'
+                                       * Referenced by: '<S13>/Analog input'
                                        */
   real_T Analoginput_P4;               /* Expression: resolution
-                                        * Referenced by: '<S12>/Analog input'
+                                        * Referenced by: '<S13>/Analog input'
                                         */
   real_T Analoginput_P5_Size[2];      /* Computed Parameter: Analoginput_P5_Size
-                                       * Referenced by: '<S12>/Analog input'
+                                       * Referenced by: '<S13>/Analog input'
                                        */
   real_T Analoginput_P5;               /* Expression: ts
-                                        * Referenced by: '<S12>/Analog input'
+                                        * Referenced by: '<S13>/Analog input'
                                         */
   real_T Analoginput_P6_Size[2];      /* Computed Parameter: Analoginput_P6_Size
-                                       * Referenced by: '<S12>/Analog input'
+                                       * Referenced by: '<S13>/Analog input'
                                        */
   real_T Analoginput_P6;               /* Expression: pciSlot
-                                        * Referenced by: '<S12>/Analog input'
+                                        * Referenced by: '<S13>/Analog input'
                                         */
   real_T signal_offset_InitialConditio_b;/* Expression: 0
-                                          * Referenced by: '<S14>/signal_offset'
+                                          * Referenced by: '<S15>/signal_offset'
                                           */
 } model_ColumnSetup_00_cal_type;
 
