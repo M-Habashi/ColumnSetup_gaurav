@@ -101,8 +101,7 @@ tend = inf;
         tend_time_history = time_history(end, 1);
 
 %%% 3- BLWN parameters
-        wn_power = 0.01;
-        wn_bandwidth = 2;  % in HZ  (Design the filter from simulink)
+% in HZ  (Design the filter from simulink)
         
         std_blwn = 4;
         f1 = 20;  % cutoff frequency
@@ -111,8 +110,6 @@ tend = inf;
 %%% 4- Chirp parameters
         f_init = 0.001;
         f_final = 50;
-        % chirp_gain = 5 * v2d_gain;
-        chirp_gain = 5;
         tend_chirp = 90;
             
 
