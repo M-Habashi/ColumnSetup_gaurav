@@ -34,5 +34,4 @@ Use output verification when the goal is to prove that the active step workflow 
 - Run this helper from the step folder that contains `main_ColumnSetup.m`.
 - The saved result is identified from the `file_name` variable created by the main script, not by guessing the newest MAT file.
 - The visualization helper can still be run manually. If `outputVerificationFile` exists in the MATLAB workspace, it skips the file-selection prompt and plots that file.
-- Output verification does not require Simulink subsystem screenshots. Those belong to visual inspection after code/model changes.
 - Do not run this physical Speedgoat/actuator workflow for discussion-only prompts. Run it only when the user explicitly requests output verification or confirms it.

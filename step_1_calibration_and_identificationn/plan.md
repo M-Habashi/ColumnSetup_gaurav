@@ -153,7 +153,7 @@ Avoid large UI/plot refactor.
    - fitted point count
    - `tf_fit` RMS magnitude error
    - `tf_fit` RMS phase error
-5. Only after MATLAB-code edits are final, ask before physical/visual inspection if needed by AGENTS.md.
+5. Only after MATLAB-code edits are final, ask before physical verification if needed by AGENTS.md.
 
 ## Preferred Final Shape
 

@@ -65,7 +65,7 @@ model_ColumnSetup_00_cal_type model_ColumnSetup_00_cal_impl = {
 
   { 1.0, 1.0 },
   1.0,
-  3.0,
+  2.0,
   1.0,
   1.0,
   0.0,

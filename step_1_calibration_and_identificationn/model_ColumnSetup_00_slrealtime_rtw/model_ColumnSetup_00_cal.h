@@ -123,7 +123,7 @@ typedef struct {
   real_T Setup_P15;                    /* Expression: dioDirHi
                                         * Referenced by: '<S11>/Setup'
                                         */
-  real_T Constant_Value;               /* Expression: 3
+  real_T Constant_Value;               /* Expression: 2
                                         * Referenced by: '<S1>/Constant'
                                         */
   real_T sine_amp_Value;               /* Expression: 1

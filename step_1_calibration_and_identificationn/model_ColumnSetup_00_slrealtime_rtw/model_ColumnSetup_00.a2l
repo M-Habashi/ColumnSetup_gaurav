@@ -6,9 +6,9 @@
  * government, commercial, or other organizational use.
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.244
+ * Model version              : 16.250
  * Simulink Coder version : 10.2 R2020b
- * C source code generated on : Fri Jun 05 18:19:54 2026
+ * C source code generated on : Sun Jun 07 11:38:33 2026
  *
  * Target selection: slrealtime.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -821,11 +821,11 @@ ASAP2_VERSION  1 71
     /end MOD_COMMON
 
   /begin CHARACTERISTIC  dd_pause_enable "Dashboard flag for pausing time-history and sine command generation."  
-    VALUE 0x0020E010 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+    VALUE 0x0020E008 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
   /begin CHARACTERISTIC  get_setpoint_enable "Dashboard flag for capturing the actuator-off displacement setpoint used by the command offset."  
-    VALUE 0x00215108 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+    VALUE 0x00215110 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
   /begin CHARACTERISTIC  model_ColumnSetup_00_P.command_channel_selector ""  
@@ -1114,7 +1114,7 @@ ASAP2_VERSION  1 71
   /end CHARACTERISTIC 
 
   /begin CHARACTERISTIC  smooth_stop_enable "Dashboard flag for smooth stop and smooth resume of the command."  
-    VALUE 0x0020E008 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
+    VALUE 0x00215108 Scalar_FLOAT64_IEEE 0 model_ColumnSetup_00_CM_double -1.7E+308 1.7E+308  
   /end CHARACTERISTIC 
 
   /begin CHARACTERISTIC  zero_meas_enable "Dashboard flag for actuator-on adaptive command trim that drives measured displacement back to zero."  

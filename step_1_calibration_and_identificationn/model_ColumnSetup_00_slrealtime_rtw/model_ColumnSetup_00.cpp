@@ -7,9 +7,9 @@
  *
  * Code generation for model "model_ColumnSetup_00".
  *
- * Model version              : 16.244
+ * Model version              : 16.250
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C++ source code generated on : Fri Jun  5 18:19:47 2026
+ * C++ source code generated on : Sun Jun  7 11:38:26 2026
  *
  * Target selection: slrealtime.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -28,7 +28,7 @@ real_T dd_pause_enable = 1.0;          /* Variable: dd_pause_enable
 real_T get_setpoint_enable = 0.0;      /* Variable: get_setpoint_enable
                                         * Referenced by: '<S13>/get_setpoint_enable'
                                         */
-real_T smooth_stop_enable = 1.0;       /* Variable: smooth_stop_enable
+real_T smooth_stop_enable = 0.0;       /* Variable: smooth_stop_enable
                                         * Referenced by: '<S1>/smooth_stop_enable'
                                         */
 real_T zero_meas_enable = 0.0;         /* Variable: zero_meas_enable
