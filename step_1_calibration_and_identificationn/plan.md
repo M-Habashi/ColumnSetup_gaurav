@@ -21,9 +21,9 @@ Using `xfunc(dd, dm, fs, 2^14, 2^13)`:
 | File | Reliable Band | Current Fit Error | Masked `1/2` Fit Error |
 |---|---:|---:|---:|
 | `BLWN_01.mat` | `0.25-40 Hz` | `4.08 dB, 59.3 deg` | `0.39 dB, 2.45 deg` |
-| `id_1_20260602_1752_config.mat` | `0.125-18.5 Hz` | `16.5 dB, 80.9 deg` | `0.07 dB, 0.42 deg` |
-| `id_2_20260602_1756_config.mat` | `0.125-18.6 Hz` | `28.5 dB, 9.6 deg` | `0.09 dB, 0.39 deg` |
-| `id_3_20260602_1801_config.mat` | `0.125-23.6 Hz` | `14.8 dB, 40.5 deg` | `0.10 dB, 0.52 deg` |
+| `id_1_20260602_1752_no_specimen.mat` | `0.125-18.5 Hz` | `16.5 dB, 80.9 deg` | `0.07 dB, 0.42 deg` |
+| `id_2_20260602_1756_no_specimen.mat` | `0.125-18.6 Hz` | `28.5 dB, 9.6 deg` | `0.09 dB, 0.39 deg` |
+| `id_3_20260602_1801_no_specimen.mat` | `0.125-23.6 Hz` | `14.8 dB, 40.5 deg` | `0.10 dB, 0.52 deg` |
 
 ## Step 1: Remove Zero-Weight Rows
 

@@ -1,1 +1,1 @@
-20260602_1658_config.mat -> 50hz power 0.01 
+20260602_1658_no_specimen.mat -> 50hz power 0.01 

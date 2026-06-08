@@ -41,7 +41,8 @@ disp('                        Simulation Tool                        ')
 disp('===============================================================')
 
 %% Test Inputs
-testname = 'config';
+test_type = 'no_specimen';
+testname = test_type;
 
 %% Simulation Parameters
    
@@ -154,7 +155,7 @@ fm = Results{1}(:,4);
 am = Results{1}(:,5);
 
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
-    'Results', 'logsout', 'testname', 'model', 'file_name', '-v7.3')
+    'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', '-v7.3')
 
 disp('*** Data file saved! ***')
 disp(file_name)

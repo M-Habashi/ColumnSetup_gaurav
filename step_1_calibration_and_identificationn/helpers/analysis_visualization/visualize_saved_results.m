@@ -31,11 +31,13 @@ rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
 duration = t(end) - t(1);
 fs = data.fs;
 dt = data.dt;
+test_type = getTestType(data);
 
 fprintf('\n===============================================================\n');
 fprintf('                    Saved Result Summary\n');
 fprintf('===============================================================\n');
 fprintf('File name:       %s\n', selectedFileName);
+fprintf('Test type:       %s\n', test_type);
 fprintf('Full path:       %s\n', filePath);
 fprintf('Duration:        %.3f s\n', duration);
 fprintf('Sample count:    %d\n', n);
@@ -107,4 +109,14 @@ function toggleSignalVisibility(~, event)
     xlim(ax, xLimits);
     ylim(ax, yLimits);
     set(ax, 'XLimMode', 'manual', 'YLimMode', 'manual')
+end
+
+function test_type = getTestType(data)
+    if isfield(data, 'test_type')
+        test_type = char(string(data.test_type));
+    elseif isfield(data, 'testname')
+        test_type = char(string(data.testname));
+    else
+        test_type = 'unknown';
+    end
 end

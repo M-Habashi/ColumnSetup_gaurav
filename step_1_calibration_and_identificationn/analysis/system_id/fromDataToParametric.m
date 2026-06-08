@@ -81,6 +81,15 @@ parametric_identification_config = struct( ...
 
 %% Get Discrete Transfer Function from xfunc
 experimental_data = load(tf_estimate_config.data_file);
+if isfield(experimental_data, 'test_type')
+    test_type = char(string(experimental_data.test_type));
+elseif isfield(experimental_data, 'testname')
+    test_type = char(string(experimental_data.testname));
+else
+    test_type = 'unknown';
+end
+tf_estimate_config.test_type = test_type;
+
 if all(isfield(experimental_data, {'dd', 'dm', 'fs'}))
     dd = experimental_data.dd;
     dm = experimental_data.dm;
@@ -200,6 +209,7 @@ tf_fit_info.fit_point_count = nnz(fit_idx);
 tf_fit_info.fit_band_hz = [min(freq_hz_all(fit_idx)), max(freq_hz_all(fit_idx))];
 tf_fit_info.coherence_min = tf_estimate_config.fit_coherence_min;
 tf_fit_info.input_power_range_db = tf_estimate_config.fit_input_power_range_db;
+tf_fit_info.test_type = test_type;
 
 %% Save Identified Parameters and Models
 params_path = fullfile(param_output_dir, sprintf('%s.mat', params_file_name));
@@ -212,7 +222,7 @@ beta2 = identified_params.beta2;
 Kp = identified_params.Kp;
 Ki = identified_params.Ki;
 
-save(fit_path, 'tf_fit', 'tf_fit_info');
+save(fit_path, 'tf_fit', 'tf_fit_info', 'test_type');
 save(params_path, ...
     'a1b0', ...
     'a2', ...
@@ -221,10 +231,13 @@ save(params_path, ...
     'beta2', ...
     'Kp', ...
     'Ki', ...
+    'test_type', ...
     'tf_parametric');
 
 %% Conclusion: Three Transfer-Function Models
 fprintf('\nIdentified analog closed-loop parameters\n');
+fprintf('Data file = %s\n', data_name);
+fprintf('Test type = %s\n', test_type);
 fprintf('a1b0 = %.12g\n', identified_params.a1b0);
 fprintf('a2 = %.12g\n', identified_params.a2);
 fprintf('a3 = %.12g\n', identified_params.a3);

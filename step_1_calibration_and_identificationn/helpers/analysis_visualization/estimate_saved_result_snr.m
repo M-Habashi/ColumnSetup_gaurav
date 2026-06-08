@@ -12,6 +12,7 @@ addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
 [data, filePath, selectedFileName] = load_saved_result_file(projectFolder);
 channels = {'dm', 'fm', 'am'};
+test_type = getTestType(data);
 
 fs = data.fs;
 noiseWindowSamples = max(3, round(noiseWindowSeconds*fs));
@@ -40,9 +41,20 @@ fprintf('\n===============================================================\n');
 fprintf('                  Saved Result SNR Estimate\n');
 fprintf('===============================================================\n');
 fprintf('File name:             %s\n', selectedFileName);
+fprintf('Test type:             %s\n', test_type);
 fprintf('Full path:             %s\n', filePath);
 fprintf('fs:                    %.6g Hz\n', fs);
 fprintf('Noise window:          %.6g s (%d samples)\n', noiseWindowSeconds, noiseWindowSamples);
 fprintf('Recommended SNR:       > 20 dB usable, > 40 dB good\n');
 fprintf('===============================================================\n\n');
 disp(results)
+
+function test_type = getTestType(data)
+    if isfield(data, 'test_type')
+        test_type = char(string(data.test_type));
+    elseif isfield(data, 'testname')
+        test_type = char(string(data.testname));
+    else
+        test_type = 'unknown';
+    end
+end
