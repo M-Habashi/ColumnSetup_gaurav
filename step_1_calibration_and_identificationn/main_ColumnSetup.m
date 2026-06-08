@@ -25,7 +25,7 @@
 
 %% If this is a new setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% If this is a nw setup you need to make sure to adjust the following
+% If this is a new setup, make sure to adjust the following:
 % 1. All calibration factors (v2d, v2f, v2a, correction factor)
 % 2. The channels (Here in the script only, Simulink will adjust
 % automatically)
@@ -52,7 +52,7 @@ zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
 t_ending = 5;                   % Smooth-stop transition time [s]
 
 % Conversion Factors
-% Voltage to Enginnering Units
+% Voltage to Engineering Units
 v2d_gain        = 7.62;     % mm/volts  MTS/SG
 v2d_const       = 0;                % mm
 v2f_gain        = 1000;  % N/volts (1125.4109330128)
@@ -74,38 +74,34 @@ sat_limit = 60; % mm
 % Test File Name % IMPORTANT!
 timestamp = datestr(now,'yyyymmdd_HHMM');
 projectFolder = fileparts(mfilename('fullpath'));
-path = fullfile(projectFolder, 'saved_results', datestr(now,'yyyymmdd'));
-file_name = fullfile(path, [timestamp '_' testname '.mat']);
+saveFolder = fullfile(projectFolder, 'saved_results', datestr(now,'yyyymmdd'));
+file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
 
 % Make sure there is a folder named 'yyyymmdd'
 % inside the 'saved_results' folder
-if ~exist(path, 'dir')
-       mkdir(path)
+if ~exist(saveFolder, 'dir')
+       mkdir(saveFolder)
        disp('A New Test Folder was created')
 end
 
 disp('Test File Name Created:')
 disp(file_name)
 
-%% Test Signal Selection
+%% Test Signal Parameters
 
-% Select type of test signal
-% 1: Time History Signal
-% 2: Sine Wave (Edit amplitude, frequency, and set point in Simulink)
-% 3: BLWN
-% 4: Chirp
-% 5: constant
+% Select the active test signal manually in Simulink.
 tend = inf;
 
 %%% 1- Time history parameters
-        time_history = [0 0; dt 0]; % Replace with [time_s dd_mm] for time-history tests.
+        run(fullfile(projectFolder, 'input_signals', 'sample_time_history.m'))
         tend_time_history = time_history(end, 1);
 
 %%% 3- BLWN parameters
-% std_blwn is the expected BLWN output std after the f1 low-pass filter.
-        
-        std_blwn = 1;
-        f1 = 20;  % cutoff frequency
+% amp_2_percentile is the filtered BLWN amplitude exceeded by
+% exceed_percentile percent of the samples.
+        amp_2_percentile = 3;
+        exceed_percentile = 1;
+        f1 = 20;  % cutoff frequency (MUST be changed in the Simulink filter designer)
 
 %%% 4- Chirp parameters
         f_init = 0.001;
@@ -135,31 +131,35 @@ pause
 % If running Simulink through MATLAB, uncomment and run the following script:
 % Speedgoat_RunSimulink
 
-%% Getting Simulation Data
+%% Saving Data
 
-if exist('logsout','var')
-    Results{1} = logsout.FileLogSignals{1}.Values.Data;
-    t          = logsout.FileLogSignals{1}.Values.Time;
+projectFolder = fileparts(mfilename('fullpath'));
+model = 'model_ColumnSetup_00';
 
-    dd = Results{1}(:,1);
-    dc = Results{1}(:,2);
-    dm = Results{1}(:,3);
-    fm = Results{1}(:,4);
-    am = Results{1}(:,5);
-    
-    save(file_name)
-    disp('*** Data file saved! ***')
-else
-    disp('*** No output variable exist.***')
-    disp('*** No .mat file saved. ***')
-    disp('*** Check simulation. ***')
+if ~exist('logsout', 'var')
+    tg = slrealtime;
+    fileLogRuns = list(tg.FileLog);
+    tg.FileLog.import(fileLogRuns(end, :));
+    logsout = evalin('base', 'logsout');
 end
 
-%% Finilazing the Simulation
+sig = logsout.FileLogSignals{1}.Values;
+Results{1} = sig.Data;
+t          = sig.Time;
 
-% Closing the model
-save_system(model)
-close_system(model)
+dd = Results{1}(:,1);
+dc = Results{1}(:,2);
+dm = Results{1}(:,3);
+fm = Results{1}(:,4);
+am = Results{1}(:,5);
+
+save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
+    'Results', 'logsout', 'testname', 'model', 'file_name', '-v7.3')
+
+disp('*** Data file saved! ***')
+disp(file_name)
+
+%% Finalizing the Simulation
 
 disp('===============================================================')
 disp('                        Test Completed!                        ')
@@ -168,7 +168,7 @@ disp('===============================================================')
 %% Plotting Simulation Data
 
 outputVerificationFile = file_name;
-run(fullfile(projectFolder, 'helpers', 'visualization', 'visualize_saved_results.m'))
+run(fullfile(projectFolder, 'helpers', 'analysis_visualization', 'visualize_saved_results.m'))
 
 
 %slrtExplorer

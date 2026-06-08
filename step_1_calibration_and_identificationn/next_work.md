@@ -1,7 +1,14 @@
-# Next in simulink
+# Next in Simulink
+0- Backup
 1- at displays of the important parts (displacements d c m)
-3- test time history
-4- Fix BLWN power calc
+2- more cleanup and organization
+3- color scop same as display and results
+4- add virtual runn script with multiple checks (force displacements considering setpoint)
+5- mass stiffness damping estimation
+6- stability analysisand dsign controller
+7- add controller to simulink and add switch to activat deactivate it and another switch to reset the I gain error to prevent jumps
+8-online stiffness estimation (compare differeent methods, LSE, RLSE, TSE, RTSE, KF, UKF)
+9- acceleration
 
 # Bugs
 1- stopping and resuming make the simulation scope buggy
