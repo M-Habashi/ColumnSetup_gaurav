@@ -13,6 +13,8 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     phase_discrete_deg = unwrap(angle(tf_discrete_resp)) * 180 / pi;
     phase_fit_deg = unwrap(angle(tf_fit_resp)) * 180 / pi;
     phase_parametric_deg = unwrap(angle(tf_parametric_resp)) * 180 / pi;
+    fit_color = [144 21 0] / 255;        % #901500
+    parametric_color = [46 158 78] / 255; % darker #39BF5E
 
     %% Plot Bode magnitude and phase comparison
     figure('Name', 'Analog Closed-Loop Identification Comparison', 'Color', 'w');
@@ -21,8 +23,10 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     nexttile;
     semilogx(freq_hz, mag_discrete_db, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
     hold on
-    semilogx(freq_hz, mag_fit_db, 'b-', 'LineWidth', 1.4, 'DisplayName', 'tf_{fit} (regularized)');
-    semilogx(freq_hz, mag_parametric_db, 'r--', 'LineWidth', 1.6, 'DisplayName', 'tf_{parametric}');
+    semilogx(freq_hz, mag_fit_db, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
+        'DisplayName', 'tf_{fit} (regularized)');
+    semilogx(freq_hz, mag_parametric_db, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
+        'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
     ylabel('Magnitude (dB)');
@@ -32,8 +36,10 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     nexttile;
     semilogx(freq_hz, phase_discrete_deg, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
     hold on
-    semilogx(freq_hz, phase_fit_deg, 'b-', 'LineWidth', 1.4, 'DisplayName', 'tf_{fit} (regularized)');
-    semilogx(freq_hz, phase_parametric_deg, 'r--', 'LineWidth', 1.6, 'DisplayName', 'tf_{parametric}');
+    semilogx(freq_hz, phase_fit_deg, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
+        'DisplayName', 'tf_{fit} (regularized)');
+    semilogx(freq_hz, phase_parametric_deg, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
+        'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
     xlabel('Frequency (Hz)');
@@ -41,14 +47,11 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     legend('Location', 'best');
 
     figure('Name', 'Poles and Zeros for Transfer-Function Models', 'Color', 'w');
-    plot_poles_and_zeros(tf_fit, tf_parametric);
+    plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color);
 end
 
-function plot_poles_and_zeros(tf_fit, tf_parametric)
+function plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color)
     % Plot fitted and parametric model pole-zero locations together.
-    fit_color = [0, 0.25, 1];
-    parametric_color = [1, 0, 0];
-
     hold on
     plot_model_poles_and_zeros(tf_fit, fit_color);
     plot_model_poles_and_zeros(tf_parametric, parametric_color);

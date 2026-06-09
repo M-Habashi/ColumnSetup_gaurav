@@ -6,6 +6,7 @@ function out = identify_analog_closed_loop_params(discrete_tf_estimate, fit_conf
     c = defaults(fit_config);
     y = discrete_tf_estimate.tf_points(:);
     w = discrete_tf_estimate.freq_rad(:);
+    c.frequency_weight = frequency_weight(w, c);
     fields = {'a1b0','a2','a3','beta1','beta2','Kp','Ki'};
     lb = log10([c.a1b0_bounds(1); c.a2_bounds(1); c.a3_bounds(1); c.beta1_bounds(1); c.beta2_bounds(1); c.Kp_bounds(1); c.Ki_bounds(1)]);
     ub = log10([c.a1b0_bounds(2); c.a2_bounds(2); c.a3_bounds(2); c.beta1_bounds(2); c.beta2_bounds(2); c.Kp_bounds(2); c.Ki_bounds(2)]);
@@ -56,9 +57,21 @@ function r = err(x, w, y, c)
     h = freqs(num, den, w);
     in_band = w >= 2 * pi * c.fit_band_hz(1) & w <= 2 * pi * c.fit_band_hz(2);
     mw = ones(size(w)); mw(in_band) = c.magnitude_weight;
-    r = [mw .* (log10(abs(h) + eps) - log10(abs(y) + eps)); ...
-        c.phase_weight * mw .* ((unwrap(angle(h)) - unwrap(angle(y))) / pi)];
+    fw = c.frequency_weight;
+    r = [fw .* mw .* (log10(abs(h) + eps) - log10(abs(y) + eps)); ...
+        c.phase_weight * fw .* mw .* ((unwrap(angle(h)) - unwrap(angle(y))) / pi)];
     r(~isfinite(r)) = 1e6;
+end
+
+function fw = frequency_weight(w, c)
+    if c.frequency_weight_exponent == 0
+        fw = ones(size(w(:)));
+        return
+    end
+
+    f = max(w(:) / (2 * pi), c.frequency_weight_floor_hz);
+    fw = f .^ (-c.frequency_weight_exponent);
+    fw = fw / mean(fw);
 end
 
 function p = pack(v)
@@ -84,6 +97,7 @@ function c = defaults(c)
     % Fill solver and parameter settings used by the nonlinear fit.
     d = struct('mass',38, 'damping',416, 'stiffness',0, ...
         'fit_band_hz',[0.5,40], 'magnitude_weight',3, 'phase_weight',0.35, ...
+        'frequency_weight_exponent',0, 'frequency_weight_floor_hz',0.5, ...
         'num_random_starts',5, 'max_time',Inf, 'display','off', 'solver_display','off', ...
         'max_function_evaluations',4e4, 'max_iterations',2000, ...
         'step_tolerance',1e-12, 'function_tolerance',1e-12, ...

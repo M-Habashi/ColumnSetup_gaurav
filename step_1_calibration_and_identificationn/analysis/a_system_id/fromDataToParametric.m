@@ -19,8 +19,9 @@ max_freq_hz = 80;
 
 %% Setup
 project_root = fileparts(mfilename('fullpath'));
-addpath(project_root);
-addpath(fullfile(project_root, 'utils'));
+step_root = fileparts(fileparts(project_root));
+addpath(fullfile(step_root, 'helpers', 'utils'));
+setup_project_paths(step_root);
 
 output_root = fullfile(project_root, 'models');
 param_output_dir = fullfile(output_root, 'paarametric');
@@ -72,31 +73,35 @@ specimen = load(fullfile(specimen_files(specimen_idx).folder, specimen_name));
 
 %% Configure Transfer-Function Estimate and Identification
 tf_estimate_config = struct( ...
-    'data_file', fullfile(data_files(data_idx).folder, data_name), ...
-    'desc', sprintf('%s Analog Closed Loop', plot_data_name), ...
-    'f_lim', [0.1, max_freq_hz], ...
-    'fit_max_num_order', 1, ...
-    'fit_den_orders', [4, 5, 6], ...
-    'fit_regularization', 1e-5, ...
-    'fit_iterations', 25, ...
-    'fit_coherence_min', 0.8, ...
-    'fit_input_power_range_db', 40, ...
-    'fft_length', 2^15, ...
-    'overlap', 2^14);
+    'data_file', fullfile(data_files(data_idx).folder, data_name), ...  % selected measured data MAT file
+    'desc', sprintf('%s Analog Closed Loop', plot_data_name), ...        % plot title/description text
+    'f_lim', [0.1, max_freq_hz], ...                                     % frequency range used for xfunc output
+    'fit_max_num_order', 1, ...                                          % maximum numerator order for TF fit
+    'fit_den_orders', [5, 6], ...                                        % denominator orders to try for TF fit
+    'fit_regularization', 0, ...                                         % regularization strength for TF fit
+    'fit_iterations', 25, ...                                            % maximum iterations for TF fit
+    'fit_coherence_min', 0.8, ...                                        % minimum coherence for fit data selection
+    'fit_input_power_range_db', 40, ...                                  % input-power window below peak for fit data selection
+    'fft_length', 2^15, ...                                              % FFT segment length for xfunc
+    'overlap', 2^14);                                                    % FFT segment overlap for xfunc
 
 parametric_identification_config = struct( ...
-    'mass', specimen.m, ...
-    'damping', specimen.c, ...
-    'stiffness', specimen.k, ...
-    'specimen_file', fullfile(specimen_files(specimen_idx).folder, specimen_name), ...
-    'fit_band_hz', [0.5, max_freq_hz], ...
-    'magnitude_weight', 3, ...
-    'phase_weight', 0.35, ...
-    'num_random_starts', 5, ...
-    'max_time', Inf);
+    'mass', specimen.m, ...                                                         % specimen mass used in physical model
+    'damping', specimen.c, ...                                                      % specimen damping used in physical model
+    'stiffness', specimen.k, ...                                                    % specimen stiffness used in physical model
+    'specimen_file', fullfile(specimen_files(specimen_idx).folder, specimen_name), ... % selected specimen parameter MAT file
+    'fit_band_hz', [0.5, max_freq_hz], ...                                          % frequency band emphasized in parametric fit
+    'magnitude_weight', 3, ...                                                      % magnitude-error weight inside fit band
+    'phase_weight', 0.35, ...                                                       % phase-error weight relative to magnitude
+    'frequency_weight_exponent', 1, ...  % the higher → gives more weight to lower freq. [KEEP THIS COMMENT]
+    'frequency_weight_floor_hz', 0, ...                                             % lowest frequency used when computing frequency weights
+    'num_random_starts', 5, ...                                                     % number of random starts for MultiStart
+    'max_time', 60);                                                                % maximum MultiStart solve time in seconds
 
 %% Get Discrete Transfer Function from xfunc
 experimental_data = load(tf_estimate_config.data_file);
+experimental_data = trim_recording_time_window(experimental_data);
+trim_time_window = experimental_data.trim_time_window;
 if isfield(experimental_data, 'test_type')
     test_type = char(string(experimental_data.test_type));
 elseif isfield(experimental_data, 'testname')
@@ -110,13 +115,24 @@ if all(isfield(experimental_data, {'dd', 'dm', 'fs'}))
     dd = experimental_data.dd;
     dm = experimental_data.dm;
     fs = experimental_data.fs;
+    if isfield(experimental_data, 't') && numel(experimental_data.t) == numel(dd)
+        t = experimental_data.t(:);
+    elseif isfield(experimental_data, 'tt') && numel(experimental_data.tt) == numel(dd)
+        t = experimental_data.tt(:);
+    else
+        t = (0:numel(dd)-1).' / fs;
+    end
 else
     sig = experimental_data.logsout.FileLogSignals{1}.Values;
     signal_names = string({sig.DataInfo.Units});
     dd = sig.Data(:, strcmpi(signal_names, 'dd'));
     dm = sig.Data(:, strcmpi(signal_names, 'dm'));
     fs = 1 / mean(diff(sig.Time(:)));
+    t = sig.Time(:);
 end
+dd = dd(:);
+dm = dm(:);
+t = t(:) - t(1);
 
 controller_gains = struct('Kp', NaN, 'Ki', NaN, 'Estimated', true);
 
@@ -186,11 +202,11 @@ for denominator_order = tf_estimate_config.fit_den_orders
             'phase_weight', parametric_identification_config.phase_weight));
     candidate_tf = tf(candidate_num, candidate_den);
     candidate_poles = pole(candidate_tf);
-    candidate_resp = squeeze(freqresp(candidate_tf, tf_fit_freq_rad(2:end)));
+    candidate_resp = squeeze(freqresp(candidate_tf, tf_fit_freq_rad));
     candidate_mag_error = rms(20 * log10(abs(candidate_resp) + eps) - ...
-        20 * log10(abs(tf_fit_points(2:end)) + eps));
+        20 * log10(abs(tf_fit_points) + eps));
     candidate_phase_error = rms(unwrap(angle(candidate_resp)) * 180 / pi - ...
-        unwrap(angle(tf_fit_points(2:end))) * 180 / pi);
+        unwrap(angle(tf_fit_points)) * 180 / pi);
     candidate_score = candidate_mag_error + 0.02 * candidate_phase_error;
     candidate_info.numerator_order = numerator_order;
     candidate_info.denominator_order = denominator_order;
@@ -220,8 +236,8 @@ if isempty(tf_fit)
     tf_fit_info = best_any_info;
     fprintf('No stable standalone fit found; using the lowest-error candidate.\n');
 end
-tf_fit_info.fit_point_count = nnz(fit_idx);
-tf_fit_info.fit_band_hz = [min(freq_hz_all(fit_idx)), max(freq_hz_all(fit_idx))];
+tf_fit_info.fit_point_count = numel(tf_fit_freq_hz);
+tf_fit_info.fit_band_hz = [0, max(freq_hz_all(fit_idx))];
 tf_fit_info.coherence_min = tf_estimate_config.fit_coherence_min;
 tf_fit_info.input_power_range_db = tf_estimate_config.fit_input_power_range_db;
 tf_fit_info.test_type = test_type;
@@ -236,6 +252,12 @@ beta1 = identified_params.beta1;
 beta2 = identified_params.beta2;
 Kp = identified_params.Kp;
 Ki = identified_params.Ki;
+specimen_params = specimen;
+specimen_params.name = specimen_name;
+specimen_params.file = parametric_identification_config.specimen_file;
+specimen_params.m = specimen.m;
+specimen_params.c = specimen.c;
+specimen_params.k = specimen.k;
 
 save(fit_path, 'tf_fit', 'tf_fit_info', 'test_type');
 save(params_path, ...
@@ -246,6 +268,7 @@ save(params_path, ...
     'beta2', ...
     'Kp', ...
     'Ki', ...
+    'specimen_params', ...
     'test_type', ...
     'tf_parametric');
 
@@ -263,13 +286,15 @@ fprintf('Ki = %.12g\n', identified_params.Ki);
 fprintf('RMS magnitude error = %.4f dB\n', parametric_identification.rms_mag_db);
 fprintf('RMS phase error = %.4f deg\n', parametric_identification.rms_phase_deg);
 
-tf_fit_resp = squeeze(freqresp(tf_fit, 2 * pi * freq_hz_all(fit_idx)));
-tf_parametric_resp = squeeze(freqresp(tf_parametric, 2 * pi * freq_hz_all(fit_idx)));
+tf_comparison_freq_hz = tf_fit_freq_hz;
+tf_comparison_points = tf_fit_points;
+tf_fit_resp = squeeze(freqresp(tf_fit, 2 * pi * tf_comparison_freq_hz));
+tf_parametric_resp = squeeze(freqresp(tf_parametric, 2 * pi * tf_comparison_freq_hz));
 mag_fit_db = 20 * log10(abs(tf_fit_resp) + eps);
-mag_discrete_db = 20 * log10(abs(tf_points_all(fit_idx)) + eps);
+mag_discrete_db = 20 * log10(abs(tf_comparison_points) + eps);
 mag_parametric_db = 20 * log10(abs(tf_parametric_resp) + eps);
 phase_fit_deg = unwrap(angle(tf_fit_resp)) * 180 / pi;
-phase_discrete_deg = unwrap(angle(tf_points_all(fit_idx))) * 180 / pi;
+phase_discrete_deg = unwrap(angle(tf_comparison_points)) * 180 / pi;
 phase_parametric_deg = unwrap(angle(tf_parametric_resp)) * 180 / pi;
 
 fprintf('\nStandalone fit RMS comparison over reliable %.3g-%.3g Hz bins\n', ...
@@ -294,3 +319,38 @@ plot_transfer_function_model_comparison( ...
     discrete_tf_estimate.freq_hz, ...
     discrete_tf_estimate.freq_rad, ...
     tf_estimate_config);
+
+%% Time-Domain Measured and Identified Response
+fit_color = [144 21 0] / 255;        % #901500
+parametric_color = [46 158 78] / 255; % darker #39BF5E
+dm_fit = lsim(tf_fit, dd, t);
+dm_parametric = lsim(tf_parametric, dd, t);
+
+figure('Name', 'Time-Domain Transfer-Function Identification', 'Color', 'w');
+plot(t, dd, '--', 'Color', [0 0 0], 'LineWidth', 1.8, ...
+    'DisplayName', 'Input displacement d_d');
+hold on
+plot(t, dm, '-', 'Color', [0 0.486 0.659], 'LineWidth', 1.2, ...
+    'DisplayName', 'Measured displacement d_m');
+plot(t, dm_fit, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
+    'DisplayName', 'tf_{fit} d_m from lsim');
+plot(t, dm_parametric, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
+    'DisplayName', 'tf_{parametric} d_m from lsim');
+grid on
+xlabel('Time (s)');
+ylabel('Displacement');
+title(sprintf('%s Time-Domain Identification', plot_data_name));
+lgd = legend('Location', 'best');
+lgd.ItemHitFcn = @toggle_legend_item;
+
+fprintf('\nDebug data selection\n');
+fprintf('Data file = %s\n', tf_estimate_config.data_file);
+fprintf('Time window = [%.6g, %.6g] s\n', trim_time_window(1), trim_time_window(2));
+
+function toggle_legend_item(~, event)
+    if strcmp(event.Peer.Visible, 'on')
+        event.Peer.Visible = 'off';
+    else
+        event.Peer.Visible = 'on';
+    end
+end
