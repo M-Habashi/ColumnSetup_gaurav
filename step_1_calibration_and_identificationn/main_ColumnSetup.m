@@ -56,7 +56,7 @@ t_ending = 5;                   % Smooth-stop transition time [s]
 % Voltage to Engineering Units
 v2d_gain        = 7.62;     % mm/volts  MTS/SG
 v2d_const       = 0;                % mm
-v2f_gain        = 1000;  % N/volts (1125.4109330128)
+v2f_gain        = 4.448*1000;  % N/volts (1125.4109330128)
 v2f_const       = 0;                % N
 v2a_gain        = -1000/510*9810;       % (mm/s^2)/volts  510mv/g
 v2a_const       = 0;                % mm/s^2
@@ -100,14 +100,14 @@ tend = inf;
 %%% 3- BLWN parameters
 % amp_2_percentile is the filtered BLWN amplitude exceeded by
 % exceed_percentile percent of the samples.
-        amp_2_percentile = 3;
-        exceed_percentile = 1;
+        amp_2_percentile = 0.4;
+        exceed_percentile = 0.5;
         f1 = 20;  % cutoff frequency (MUST be changed in the Simulink filter designer)
 
 %%% 4- Chirp parameters
         f_init = 0.001;
-        f_final = 50;
-        tend_chirp = 90;
+        f_final = 20;
+        tend_chirp = 30;
             
 
 
