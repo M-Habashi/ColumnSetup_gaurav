@@ -1,6 +1,7 @@
 # Agent Instructions
 
 - We are working inside `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn` now. For any command that needs to run outside that folder, ask the user for permission first. Git operations and reading/updating `AGENTS.md` are allowed from the repo root without asking.
+- Treat `master` as the main branch for this repository.
 - For plots, use this color guidance: desired displacement uses black with a thick dashed line, command displacement uses Copperwood `#AC6420`, measured displacement uses blue `#007CA8`, and force uses purple `#74058A`. Other available palette colors are green `#39BF5E` and red `#901500`.
 - For any MATLAB/Simulink experiment-code change, ask the user before running the verification procedure. If the user confirms, run `main_ColumnSetup.m`, run the Simulink model on target, continue the main script after the Simulink run finishes so results are saved, and run the visualization helper script if needed.
 - If the user replies `yes 1 min`, run the verification for 1 minute and stop the target manually/programmatically after 1 minute. If the user replies only `yes`, run the full configured simulation.
