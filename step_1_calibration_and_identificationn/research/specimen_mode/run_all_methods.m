@@ -1,12 +1,24 @@
 clear; clc
 
 root = fileparts(mfilename('fullpath'));
+step_root = fileparts(fileparts(root));
 addpath(fullfile(root, 'methods'))
+addpath(fullfile(step_root, 'helpers', 'utils'))
+setup_project_paths(step_root);
 
-chirp = prep_specimen_data(fullfile(root, 'data', 'chr_sp1.mat'));
-blwn = prep_specimen_data(fullfile(root, 'data', 'BLWN2_sp1.mat'));
-noise = prep_specimen_data(fullfile(root, 'data', 'noi_sp1.mat'));
-slow = prep_specimen_data(fullfile(root, 'data', 'sin_sp1.mat'));
+fprintf('Select chirp data file.\n')
+[~, chirp_file] = load_saved_result_file(step_root, 'tests');
+fprintf('Select BLWN data file.\n')
+[~, blwn_file] = load_saved_result_file(step_root, 'tests');
+fprintf('Select noise data file.\n')
+[~, noise_file] = load_saved_result_file(step_root, 'tests');
+fprintf('Select slow sine data file.\n')
+[~, slow_file] = load_saved_result_file(step_root, 'tests');
+
+chirp = prep_specimen_data(chirp_file);
+blwn = prep_specimen_data(blwn_file);
+noise = prep_specimen_data(noise_file);
+slow = prep_specimen_data(slow_file);
 
 slow_k = estimate_slow_k(slow);
 

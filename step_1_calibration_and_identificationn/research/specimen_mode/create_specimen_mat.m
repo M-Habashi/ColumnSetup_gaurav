@@ -2,24 +2,24 @@ clear; clc
 
 %% Specimen setup
 % Edit this name to choose the output MAT file name.
-specimen_name = 'sp1';
+specimen_name = 'sp1_test';
 
 root = fileparts(mfilename('fullpath'));
+step_root = fileparts(fileparts(root));
 addpath(fullfile(root, 'methods'))
+addpath(fullfile(step_root, 'helpers', 'utils'))
+setup_project_paths(step_root);
 
-specimen_id = 'sp_1';
+specimen_id = 'sp_1_test';
 
-%% Select data files
-% Pick the data files used for the unscaled TSE estimate.
-files = dir(fullfile(root, 'data', '*.mat'));
-for i = 1:numel(files)
-    fprintf('%d) %s\n', i, files(i).name)
-end
-
-idx = input('Select data file number: ');
+%% Select data file
+% Pick the data file used for the unscaled TSE estimate.
+[~, data_file, selected_data_file] = load_saved_result_file(step_root, 'tests');
 
 %% Estimate selected file with TSE
-D = prep_specimen_data(fullfile(files(idx).folder, files(idx).name));
+D = prep_specimen_data(data_file);
+D = trim_recording_time_window(D);
+trim_time_window = D.trim_time_window;
 fit = estimate_tse(D, []);
 
 %% Convert selected estimate
@@ -35,11 +35,17 @@ units.k = 'N/mm';
 
 %% Save specimen MAT file
 source_method = 'TSE';
-source_file = files(idx).name;
-out_file = fullfile(root, [specimen_name '.mat']);
+source_file = selected_data_file;
+source_path = data_file;
+out_dir = fullfile(step_root, 'saved_results', 'specimens');
+if ~exist(out_dir, 'dir')
+    mkdir(out_dir);
+end
+out_file = fullfile(out_dir, [specimen_name '.mat']);
 
 save(out_file, ...
-    'm', 'c', 'k', 'units')
+    'm', 'c', 'k', 'units', 'source_method', 'source_file', 'source_path', ...
+    'specimen_id', 'trim_time_window')
 
 %% Print summary
 fprintf('Saved %s using unscaled TSE.\n', out_file)

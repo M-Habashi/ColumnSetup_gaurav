@@ -1,15 +1,19 @@
 clear; clc; close all
 
-data_folder = 'data';
-files = dir(fullfile(data_folder, '*.mat'));
-for i = 1:numel(files)
-    fprintf('%d) %s\n', i, files(i).name);
-end
+root = fileparts(mfilename('fullpath'));
+step_root = fileparts(fileparts(root));
+addpath(fullfile(step_root, 'helpers', 'utils'))
+setup_project_paths(step_root);
 
-k = input('Select file number: ');
-load(fullfile(files(k).folder, files(k).name))
+[data, ~, selected_file] = load_saved_result_file(step_root, 'tests');
 
-figure('Name', files(k).name)
+t = data.t;
+dd = data.dd;
+dc = data.dc;
+dm = data.dm;
+fm = data.fm;
+
+figure('Name', selected_file)
 
 subplot(2,1,1)
 plot(t, dd, 'k--', 'LineWidth', 1.8)
@@ -19,7 +23,7 @@ plot(t, dm, 'Color', '#007CA8')
 grid on
 ylabel('Displacement')
 legend('desired', 'command', 'measured')
-title(files(k).name, 'Interpreter', 'none')
+title(selected_file, 'Interpreter', 'none')
 
 subplot(2,1,2)
 plot(t, fm, 'Color', '#74058A')

@@ -1,6 +1,11 @@
-function [data, filePath, selectedFileName] = load_saved_result_file(projectFolder)
+function [data, filePath, selectedFileName] = load_saved_result_file(projectFolder, resultSubfolder)
 
-rootFolder = fullfile(projectFolder, 'saved_results');
+if nargin < 2 || isempty(resultSubfolder)
+    resultSubfolder = 'tests';
+end
+
+resultSubfolder = normalizeSubfolder(resultSubfolder);
+rootFolder = fullfile(projectFolder, 'saved_results', resultSubfolder);
 files = dir(fullfile(rootFolder, '**', '*.mat'));
 [~, order] = sort(string(fullfile({files.folder}, {files.name})));
 files = files(order);
@@ -8,8 +13,12 @@ files = files(order);
 if evalin('caller', 'exist(''outputVerificationFile'', ''var'')')
     filePath = evalin('caller', 'outputVerificationFile');
 else
-    fprintf('\nAvailable saved result files:\n\n');
-    printFileTree(rootFolder, files);
+    if isempty(files)
+        error('No MAT files found under %s.', rootFolder);
+    end
+
+    fprintf('\nAvailable files:\n\n');
+    printFileTree(resultSubfolder, rootFolder, files);
     selection = input('\nSelect file number to load: ');
     filePath = fullfile(files(selection).folder, files(selection).name);
 end
@@ -20,9 +29,9 @@ data = load(filePath);
 
 end
 
-function printFileTree(rootFolder, files)
+function printFileTree(rootLabel, rootFolder, files)
     currentFolder = "";
-    fprintf('saved_results\n');
+    fprintf('%s\n', rootLabel);
     for k = 1:numel(files)
         relFolder = getRelativeFolder(rootFolder, files(k).folder);
         if relFolder ~= currentFolder
@@ -41,6 +50,12 @@ function printFileTree(rootFolder, files)
         end
         fprintf('%s[%d] %s\n', repmat('    ', 1, indentLevel), k, files(k).name);
     end
+end
+
+function resultSubfolder = normalizeSubfolder(resultSubfolder)
+    resultSubfolder = char(string(resultSubfolder));
+    resultSubfolder = strrep(resultSubfolder, '/', filesep);
+    resultSubfolder = strrep(resultSubfolder, '\', filesep);
 end
 
 function relFolder = getRelativeFolder(rootFolder, folder)

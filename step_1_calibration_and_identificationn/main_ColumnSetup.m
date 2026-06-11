@@ -41,7 +41,7 @@ disp('                        Simulation Tool                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'no_specimen';
+test_type = 'sp_1_ori_P15_I30';
 testname = test_type;
 
 %% Simulation Parameters
@@ -70,16 +70,16 @@ ch.dd = 5;         % Actuator command analog output
 command_channel_selector = double((1:7)' == ch.dd);
 
 % Saturation Limit
-sat_limit = 60; % mm
+sat_limit = 1; % mm
                    
 % Test File Name % IMPORTANT!
 timestamp = datestr(now,'yyyymmdd_HHMM');
 projectFolder = fileparts(mfilename('fullpath'));
-saveFolder = fullfile(projectFolder, 'saved_results', datestr(now,'yyyymmdd'));
+saveFolder = fullfile(projectFolder, 'saved_results', 'tests', datestr(now,'yyyymmdd'));
 file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
 
 % Make sure there is a folder named 'yyyymmdd'
-% inside the 'saved_results' folder
+% inside the 'saved_results/tests' folder
 if ~exist(saveFolder, 'dir')
        mkdir(saveFolder)
        disp('A New Test Folder was created')
@@ -102,7 +102,7 @@ tend = inf;
 % exceed_percentile percent of the samples.
         amp_2_percentile = 0.4;
         exceed_percentile = 0.5;
-        f1 = 20;  % cutoff frequency (MUST be changed in the Simulink filter designer)
+        f1 = 50;  % cutoff frequency (MUST be changed in the Simulink filter designer)
 
 %%% 4- Chirp parameters
         f_init = 0.001;
@@ -122,7 +122,7 @@ model = 'model_ColumnSetup_00';
 % Clearing output variable
 clear logsout
 
-% If running Simulink directly:
+tg = connect_speedgoat_target;
 open_system(model);
 disp('*** Run the Simulink model ***')
 disp('*** Click on "Run on Target" button under the "REAL-TIME" tab ***') 

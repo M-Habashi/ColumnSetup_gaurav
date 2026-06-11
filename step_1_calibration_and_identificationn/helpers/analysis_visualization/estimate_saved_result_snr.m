@@ -10,7 +10,7 @@ scriptFolder = fileparts(mfilename('fullpath'));
 projectFolder = fullfile(scriptFolder, '..', '..');
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
-[data, filePath, selectedFileName] = load_saved_result_file(projectFolder);
+[data, filePath, selectedFileName] = load_saved_result_file(projectFolder, 'tests');
 channels = {'dm', 'fm', 'am'};
 test_type = getTestType(data);
 

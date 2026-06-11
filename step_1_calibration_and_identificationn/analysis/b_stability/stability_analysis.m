@@ -11,26 +11,15 @@ step_root = fileparts(fileparts(project_root));
 addpath(fullfile(step_root, 'helpers', 'utils'));
 setup_project_paths(step_root);
 
-parametric_model_dir = fullfile(project_root, '..', 'a_system_id', 'models', 'paarametric');
-parametric_model_files = dir(fullfile(parametric_model_dir, '*.mat'));
-[~, order] = sort(string({parametric_model_files.name}));
-parametric_model_files = parametric_model_files(order);
-
-fprintf('Available parametric identification models:\n');
-for i = 1:numel(parametric_model_files)
-    fprintf('  [%d] %s\n', i, parametric_model_files(i).name);
-end
-parametric_model_idx = input('Select parametric model index: ');
-parametric_model_file = fullfile(parametric_model_files(parametric_model_idx).folder, ...
-    parametric_model_files(parametric_model_idx).name);
-parametric_model = load(parametric_model_file);
+[parametric_model, parametric_model_file, parametric_model_file_name] = ...
+    load_saved_result_file(step_root, fullfile('models', 'paarametric'));
 [~, parametric_model_name] = fileparts(parametric_model_file);
 
 if strlength(strtrim(controller_name)) == 0
     controller_name = string(parametric_model_name);
 end
 controller_file_name = regexprep(char(controller_name), '[^\w.-]', '_');
-saved_controller_dir = fullfile(project_root, 'saved_controllers');
+saved_controller_dir = fullfile(step_root, 'saved_results', 'models', 'controllers');
 if ~exist(saved_controller_dir, 'dir')
     mkdir(saved_controller_dir);
 end
@@ -43,7 +32,7 @@ else
 end
 specimen_params = parametric_model.specimen_params;
 fprintf('Using specimen parameters from: %s\n', specimen_params.name);
-fprintf('Using actuator/plant parameters from identification model: %s\n', parametric_model_files(parametric_model_idx).name);
+fprintf('Using actuator/plant parameters from identification model: %s\n', parametric_model_file_name);
 
 %% Run RUN_vRTHS_demo first and add this folder to tha path
 % Load Case_1.mat first
@@ -170,7 +159,7 @@ info_red = stepinfo(digital_cl_r_ex);
 fprintf('\n%% ========================================\n');
 fprintf('%% Controller Summary\n');
 fprintf('%% ========================================\n');
-fprintf('%% Parametric model = %s\n', parametric_model_files(parametric_model_idx).name);
+fprintf('%% Parametric model = %s\n', parametric_model_file_name);
 fprintf('%% Specimen: m = %.6g, c = %.6g, k = %.6g, zeta = %.6g\n', mp, cp, kp, zeta);
 fprintf('%% Analog PI controller\n');
 fprintf('%%   base Kp = %.6g, multiplier = %.6g, final Kp = %.6g\n', ...
@@ -236,6 +225,31 @@ plot_step_toggle_compare(ax2, {digital_cl, digital_cl_r_ex}, ...
     sprintf('Original digital closed loop (t_s = %.3f s)', info_nom.SettlingTime), ...
     sprintf('Reduced-stiffness digital closed loop (\\alpha = %.2f, t_s = %.3f s)', factor, info_red.SettlingTime), ...
     }, 'Digital Closed Loop', step_plot_opts);
+
+plot_colors = get_plot_colors();
+analog_labels = { ...
+    'Original analog closed loop', ...
+    sprintf('Reduced-stiffness analog closed loop (\\alpha = %.2f)', factor)};
+digital_labels = { ...
+    'Original digital closed loop', ...
+    sprintf('Reduced-stiffness digital closed loop (\\alpha = %.2f)', factor)};
+bode_freq_hz = logspace(-1, 2, 600);
+
+figure('Name', 'Closed-Loop Bode Diagrams', 'Color', 'w');
+tiledlayout(2, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+plot_bode_compare(nexttile, nexttile, {analog_cl, analog_cl_r_ex}, ...
+    analog_labels, 'Analog Closed Loop', bode_freq_hz, ...
+    {plot_colors.blue, plot_colors.red});
+plot_bode_compare(nexttile, nexttile, {digital_cl, digital_cl_r_ex}, ...
+    digital_labels, 'Digital Closed Loop', bode_freq_hz, ...
+    {plot_colors.purple, plot_colors.green});
+
+figure('Name', 'Closed-Loop Poles and Zeros', 'Color', 'w');
+tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+plot_pole_zero_compare(nexttile, {analog_cl, analog_cl_r_ex}, ...
+    analog_labels, 'Analog Closed Loop', {plot_colors.blue, plot_colors.red});
+plot_pole_zero_compare(nexttile, {digital_cl, digital_cl_r_ex}, ...
+    digital_labels, 'Digital Closed Loop', {plot_colors.purple, plot_colors.green});
 %% Loop Through Stiffness Factors and Compute Margins
 % Define the vector of stiffness factors to test (from 0 to 1)
 factors = 1:-0.01:0;
@@ -376,6 +390,83 @@ function plot_step_toggle_compare(ax, systems, settling_times, labels, plot_titl
     lgd = legend(ax, 'Location', 'best');
     lgd.ItemHitFcn = @toggle_legend_item;
     hold(ax, 'off')
+end
+
+function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_hz, colors)
+    freq_rad = 2*pi*freq_hz;
+    hold(ax_mag, 'on')
+    hold(ax_phase, 'on')
+    for i = 1:numel(systems)
+        [mag, phase] = bode(systems{i}, freq_rad);
+        mag_db = 20*log10(squeeze(mag) + eps);
+        phase_deg = unwrap(squeeze(phase)*pi/180)*180/pi;
+        semilogx(ax_mag, freq_hz, mag_db, '-', 'Color', colors{i}, ...
+            'LineWidth', 1.4, 'DisplayName', labels{i});
+        semilogx(ax_phase, freq_hz, phase_deg, '-', 'Color', colors{i}, ...
+            'LineWidth', 1.4, 'DisplayName', labels{i});
+    end
+    grid(ax_mag, 'on')
+    grid(ax_phase, 'on')
+    xlim(ax_mag, [freq_hz(1), freq_hz(end)])
+    xlim(ax_phase, [freq_hz(1), freq_hz(end)])
+    ylabel(ax_mag, 'Magnitude (dB)')
+    ylabel(ax_phase, 'Phase (deg)')
+    xlabel(ax_phase, 'Frequency (Hz)')
+    title(ax_mag, plot_title)
+    legend(ax_mag, 'Location', 'best')
+    legend(ax_phase, 'Location', 'best')
+    hold(ax_mag, 'off')
+    hold(ax_phase, 'off')
+end
+
+function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
+    hold(ax, 'on')
+    for i = 1:numel(systems)
+        plot_model_poles_and_zeros(ax, systems{i}, colors{i});
+    end
+    xline(ax, 0, 'k:')
+    yline(ax, 0, 'k:')
+    grid(ax, 'on')
+    box(ax, 'on')
+    axis(ax, 'equal')
+    xlabel(ax, 'Real')
+    ylabel(ax, 'Imaginary')
+    title(ax, plot_title)
+
+    legend_handles = gobjects(numel(systems), 1);
+    for i = 1:numel(systems)
+        legend_handles(i) = plot(ax, nan, nan, '-', 'Color', colors{i}, ...
+            'LineWidth', 1.6, 'DisplayName', labels{i});
+    end
+    legend(ax, legend_handles, 'Location', 'best')
+    hold(ax, 'off')
+end
+
+function plot_model_poles_and_zeros(ax, sys, marker_color)
+    zeros = zero(sys);
+    poles = pole(sys);
+
+    if ~isempty(zeros)
+        plot(ax, real(zeros), imag(zeros), 'o', 'Color', marker_color, ...
+            'MarkerSize', 8, 'LineWidth', 1.4, 'HandleVisibility', 'off');
+    end
+    if ~isempty(poles)
+        plot(ax, real(poles), imag(poles), 'x', 'Color', marker_color, ...
+            'MarkerSize', 8, 'LineWidth', 1.4, 'HandleVisibility', 'off');
+    end
+end
+
+function colors = get_plot_colors()
+    colors.black = [0 0 0];
+    colors.blue = hex_to_rgb('007CA8');
+    colors.copperwood = hex_to_rgb('AC6420');
+    colors.green = hex_to_rgb('39BF5E');
+    colors.red = hex_to_rgb('901500');
+    colors.purple = hex_to_rgb('74058A');
+end
+
+function rgb = hex_to_rgb(hex_color)
+    rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
 end
 
 function toggle_legend_item(~, event)

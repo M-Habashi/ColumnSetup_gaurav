@@ -11,7 +11,7 @@ scriptFolder = fileparts(mfilename('fullpath'));
 projectFolder = fullfile(scriptFolder, '..', '..');
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
-[data, ~, selectedFileName] = load_saved_result_file(projectFolder);
+[data, ~, selectedFileName] = load_saved_result_file(projectFolder, 'tests');
 t = data.t(:);
 fs = data.fs;
 dd = data.dd(:);

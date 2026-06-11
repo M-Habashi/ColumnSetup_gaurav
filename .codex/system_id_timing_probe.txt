@@ -1,0 +1,4 @@
+timing probe started 09-Jun-2026 12:28:38
+xfunc 0.308283 s
+parametric max_time_5 7.163391 s
+regularized_order4 0.272075 s

@@ -14,7 +14,7 @@ rng(0);
 % YOU MUST REVISE fit_config INPUTS FIRST 
 
 %% Inputs
-model_name = "";
+model_name = "test";
 max_freq_hz = 80;
 
 %% Setup
@@ -23,7 +23,7 @@ step_root = fileparts(fileparts(project_root));
 addpath(fullfile(step_root, 'helpers', 'utils'));
 setup_project_paths(step_root);
 
-output_root = fullfile(project_root, 'models');
+output_root = fullfile(step_root, 'saved_results', 'models');
 param_output_dir = fullfile(output_root, 'paarametric');
 fit_output_dir = fullfile(output_root, 'fit');
 
@@ -38,18 +38,7 @@ if ~exist(fit_output_dir, 'dir')
 end
 
 %% Select Experimental Data
-data_dir = fullfile(project_root, 'datafiles');
-data_files = dir(fullfile(data_dir, '*.mat'));
-[~, order] = sort(string({data_files.name}));
-data_files = data_files(order);
-
-fprintf('Available data files:\n');
-for i = 1:numel(data_files)
-    fprintf('  [%d] %s\n', i, data_files(i).name);
-end
-
-data_idx = input('Select data file index: ');
-data_name = data_files(data_idx).name;
+[experimental_data, data_file, data_name] = load_saved_result_file(step_root, 'tests');
 params_file_name = erase(data_name, '.mat');
 if strlength(strtrim(model_name)) > 0
     params_file_name = strtrim(model_name);
@@ -57,23 +46,11 @@ end
 plot_data_name = strrep(params_file_name, '_', '\_');
 
 %% Select Specimen Parameters
-specimen_dir = fullfile(project_root, 'data_speciment');
-specimen_files = dir(fullfile(specimen_dir, '*.mat'));
-[~, order] = sort(string({specimen_files.name}));
-specimen_files = specimen_files(order);
-
-fprintf('Available specimen files:\n');
-for i = 1:numel(specimen_files)
-    fprintf('  [%d] %s\n', i, specimen_files(i).name);
-end
-
-specimen_idx = input('Select specimen file index: ');
-specimen_name = specimen_files(specimen_idx).name;
-specimen = load(fullfile(specimen_files(specimen_idx).folder, specimen_name));
+[specimen, specimen_file, specimen_name] = load_saved_result_file(step_root, 'specimens');
 
 %% Configure Transfer-Function Estimate and Identification
 tf_estimate_config = struct( ...
-    'data_file', fullfile(data_files(data_idx).folder, data_name), ...  % selected measured data MAT file
+    'data_file', data_file, ...                                         % selected measured data MAT file
     'desc', sprintf('%s Analog Closed Loop', plot_data_name), ...        % plot title/description text
     'f_lim', [0.1, max_freq_hz], ...                                     % frequency range used for xfunc output
     'fit_max_num_order', 1, ...                                          % maximum numerator order for TF fit
@@ -89,7 +66,7 @@ parametric_identification_config = struct( ...
     'mass', specimen.m, ...                                                         % specimen mass used in physical model
     'damping', specimen.c, ...                                                      % specimen damping used in physical model
     'stiffness', specimen.k, ...                                                    % specimen stiffness used in physical model
-    'specimen_file', fullfile(specimen_files(specimen_idx).folder, specimen_name), ... % selected specimen parameter MAT file
+    'specimen_file', specimen_file, ...                                            % selected specimen parameter MAT file
     'fit_band_hz', [0.5, max_freq_hz], ...                                          % frequency band emphasized in parametric fit
     'magnitude_weight', 3, ...                                                      % magnitude-error weight inside fit band
     'phase_weight', 0.35, ...                                                       % phase-error weight relative to magnitude
@@ -99,7 +76,6 @@ parametric_identification_config = struct( ...
     'max_time', 60);                                                                % maximum MultiStart solve time in seconds
 
 %% Get Discrete Transfer Function from xfunc
-experimental_data = load(tf_estimate_config.data_file);
 experimental_data = trim_recording_time_window(experimental_data);
 trim_time_window = experimental_data.trim_time_window;
 if isfield(experimental_data, 'test_type')

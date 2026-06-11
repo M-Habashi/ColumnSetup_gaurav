@@ -33,12 +33,19 @@
    Optional pause:
 
    - Use switch 2 to pause.
-   - Before turning simulation back on, check what needs to be verified.
+   - Before turning simulation back on
 
    Optional manual command:
 
    - Disable control and send manual command if needed.
    - Decide the next action before re-enabling the simulation.
+
+   optional changing signal (not during test):
+   - pause
+   - stop simulation
+   - change signal
+   - resume / unpause
+   - continue / unstop
 
 ## Finishing the test
 5. Set switch 3 down to pause.
@@ -51,3 +58,14 @@
 
 ## Saving results
 2. In MATLAB, press space to save.
+
+
+##############################################
+##Analysis work flow:
+###identification
+1- run simulink on target with BLWN (without controller)
+2- create_specimen_mat
+3- run fromDatatoParametric
+
+###controller design:
+4- stabilility analysis
