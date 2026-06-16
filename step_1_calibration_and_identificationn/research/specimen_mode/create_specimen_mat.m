@@ -2,7 +2,7 @@ clear; clc
 
 %% Specimen setup
 % Edit this name to choose the output MAT file name.
-specimen_name = 'sp1_test';
+specimen_name = 'sp1_ori_3';
 
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));

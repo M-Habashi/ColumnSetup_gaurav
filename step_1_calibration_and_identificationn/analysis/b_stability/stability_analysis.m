@@ -3,7 +3,7 @@ P_analog_multiplier = 1;
 I_analog_multiplier = 1;
 include_bg = true; % Set to false to hide bg plot
 digital_phase_margin = 70;
-digital_bandwidth = 40;
+digital_bandwidth = 20;
 factor = 0.1;
 
 project_root = fileparts(mfilename('fullpath'));
@@ -19,7 +19,7 @@ if strlength(strtrim(controller_name)) == 0
     controller_name = string(parametric_model_name);
 end
 controller_file_name = regexprep(char(controller_name), '[^\w.-]', '_');
-saved_controller_dir = fullfile(step_root, 'saved_results', 'models', 'controllers');
+saved_controller_dir = fullfile(step_root, 'saved_results', 'controllers');
 if ~exist(saved_controller_dir, 'dir')
     mkdir(saved_controller_dir);
 end

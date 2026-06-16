@@ -20,31 +20,36 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
     figure('Name', 'Analog Closed-Loop Identification Comparison', 'Color', 'w');
     tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 
-    nexttile;
-    semilogx(freq_hz, mag_discrete_db, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
+    ax_mag = nexttile;
+    h_mag(1) = semilogx(freq_hz, mag_discrete_db, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
     hold on
-    semilogx(freq_hz, mag_fit_db, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
+    h_mag(2) = semilogx(freq_hz, mag_fit_db, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
         'DisplayName', 'tf_{fit} (regularized)');
-    semilogx(freq_hz, mag_parametric_db, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
+    h_mag(3) = semilogx(freq_hz, mag_parametric_db, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
         'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
     ylabel('Magnitude (dB)');
     title(plot_config.desc);
-    legend('Location', 'best');
+    lgd = legend(h_mag, 'Location', 'best');
+    lgd.ItemHitFcn = @toggle_legend_item;
 
-    nexttile;
-    semilogx(freq_hz, phase_discrete_deg, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
+    ax_phase = nexttile;
+    h_phase(1) = semilogx(freq_hz, phase_discrete_deg, 'kx', 'DisplayName', 'tf_{discrete} (xfunc)');
     hold on
-    semilogx(freq_hz, phase_fit_deg, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
+    h_phase(2) = semilogx(freq_hz, phase_fit_deg, '-', 'Color', fit_color, 'LineWidth', 1.4, ...
         'DisplayName', 'tf_{fit} (regularized)');
-    semilogx(freq_hz, phase_parametric_deg, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
+    h_phase(3) = semilogx(freq_hz, phase_parametric_deg, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
         'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
     xlabel('Frequency (Hz)');
     ylabel('Phase (deg)');
-    legend('Location', 'best');
+    lgd = legend(h_phase, 'Location', 'best');
+    lgd.ItemHitFcn = @toggle_legend_item;
+    link_legend_pairs(h_mag, h_phase);
+    setappdata(ax_mag, 'LinkedLegendAxes', ax_phase);
+    setappdata(ax_phase, 'LinkedLegendAxes', ax_mag);
 
     figure('Name', 'Poles and Zeros for Transfer-Function Models', 'Color', 'w');
     plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color);
@@ -53,8 +58,8 @@ end
 function plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color)
     % Plot fitted and parametric model pole-zero locations together.
     hold on
-    plot_model_poles_and_zeros(tf_fit, fit_color);
-    plot_model_poles_and_zeros(tf_parametric, parametric_color);
+    [fit_poles, fit_zeros] = plot_model_poles_and_zeros(tf_fit, fit_color);
+    [parametric_poles, parametric_zeros] = plot_model_poles_and_zeros(tf_parametric, parametric_color);
     xline(0, 'k:');
     yline(0, 'k:');
     grid on
@@ -68,20 +73,59 @@ function plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color
         'DisplayName', 'tf_{fit}');
     parametric_legend = plot(nan, nan, '-', 'Color', parametric_color, 'LineWidth', 1.6, ...
         'DisplayName', 'tf_{parametric}');
-    legend([fit_legend, parametric_legend], 'Location', 'best');
+    setappdata(fit_legend, 'LinkedLegendItems', [fit_poles, fit_zeros]);
+    setappdata(parametric_legend, 'LinkedLegendItems', [parametric_poles, parametric_zeros]);
+    lgd = legend([fit_legend, parametric_legend], 'Location', 'best');
+    lgd.ItemHitFcn = @toggle_legend_item;
 end
 
-function plot_model_poles_and_zeros(sys, marker_color)
+function [pole_plot, zero_plot] = plot_model_poles_and_zeros(sys, marker_color)
     % Draw poles as x markers and zeros as circle markers.
     poles = pole(sys);
     zeros = zero(sys);
+    pole_plot = gobjects(0);
+    zero_plot = gobjects(0);
 
     if ~isempty(zeros)
-        plot(real(zeros), imag(zeros), 'o', 'Color', marker_color, ...
+        zero_plot = plot(real(zeros), imag(zeros), 'o', 'Color', marker_color, ...
             'MarkerSize', 8, 'LineWidth', 1.4, 'HandleVisibility', 'off');
     end
     if ~isempty(poles)
-        plot(real(poles), imag(poles), 'x', 'Color', marker_color, ...
+        pole_plot = plot(real(poles), imag(poles), 'x', 'Color', marker_color, ...
             'MarkerSize', 8, 'LineWidth', 1.4, 'HandleVisibility', 'off');
+    end
+end
+
+function link_legend_pairs(h_mag, h_phase)
+    for i = 1:numel(h_mag)
+        setappdata(h_mag(i), 'LinkedLegendItems', h_phase(i));
+        setappdata(h_phase(i), 'LinkedLegendItems', h_mag(i));
+    end
+end
+
+function toggle_legend_item(~, event)
+    ax = ancestor(event.Peer, 'axes');
+    x_limits = xlim(ax);
+    y_limits = ylim(ax);
+    linked_ax = getappdata(ax, 'LinkedLegendAxes');
+    if ~isempty(linked_ax) && isvalid(linked_ax)
+        linked_x_limits = xlim(linked_ax);
+        linked_y_limits = ylim(linked_ax);
+    end
+
+    linked_items = getappdata(event.Peer, 'LinkedLegendItems');
+    targets = [event.Peer, linked_items];
+    targets = targets(isvalid(targets));
+    if strcmp(event.Peer.Visible, 'on')
+        set(targets, 'Visible', 'off');
+    else
+        set(targets, 'Visible', 'on');
+    end
+
+    xlim(ax, x_limits);
+    ylim(ax, y_limits);
+    if ~isempty(linked_ax) && isvalid(linked_ax)
+        xlim(linked_ax, linked_x_limits);
+        ylim(linked_ax, linked_y_limits);
     end
 end

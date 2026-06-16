@@ -10,9 +10,8 @@
 
 
 ## MATLAB Run
-
-1. Make sure all dashboard switches are down.
-2. Run the MATLAB main script.
+1. Run the MATLAB main script.
+2. Make sure all dashboard switches are down.
 3. Click Run on target.
 4. Make sure the command is zero.
 5. If the command is not zero, use the Constant block to send to zero.

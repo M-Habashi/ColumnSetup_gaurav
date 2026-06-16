@@ -41,7 +41,7 @@ disp('                        Simulation Tool                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'sp_1_ori_P15_I30';
+test_type = 'sp_1_ori_P20_I40_D01';
 testname = test_type;
 
 %% Simulation Parameters
@@ -70,7 +70,7 @@ ch.dd = 5;         % Actuator command analog output
 command_channel_selector = double((1:7)' == ch.dd);
 
 % Saturation Limit
-sat_limit = 1; % mm
+sat_limit = 2; % mm
                    
 % Test File Name % IMPORTANT!
 timestamp = datestr(now,'yyyymmdd_HHMM');

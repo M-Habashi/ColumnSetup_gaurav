@@ -14,7 +14,6 @@ rng(0);
 % YOU MUST REVISE fit_config INPUTS FIRST 
 
 %% Inputs
-model_name = "test";
 max_freq_hz = 80;
 
 %% Setup
@@ -39,10 +38,7 @@ end
 
 %% Select Experimental Data
 [experimental_data, data_file, data_name] = load_saved_result_file(step_root, 'tests');
-params_file_name = erase(data_name, '.mat');
-if strlength(strtrim(model_name)) > 0
-    params_file_name = strtrim(model_name);
-end
+[~, params_file_name] = fileparts(data_file);
 plot_data_name = strrep(params_file_name, '_', '\_');
 
 %% Select Specimen Parameters
@@ -163,7 +159,6 @@ tf_fit_freq_rad = 2 * pi * tf_fit_freq_hz;
 tf_fit_weight = ones(size(tf_fit_freq_hz));
 
 best_fit_score = Inf;
-best_any_score = Inf;
 tf_fit = [];
 for denominator_order = tf_estimate_config.fit_den_orders
     numerator_order = min(tf_estimate_config.fit_max_num_order, denominator_order - 1);
@@ -176,7 +171,9 @@ for denominator_order = tf_estimate_config.fit_den_orders
         tf_fit_weight, ...
         struct('max_iterations', tf_estimate_config.fit_iterations, ...
             'phase_weight', parametric_identification_config.phase_weight));
-    candidate_tf = tf(candidate_num, candidate_den);
+    raw_candidate_tf = tf(candidate_num, candidate_den);
+    [candidate_tf, was_stabilized] = stabilize_transfer_function(raw_candidate_tf);
+    [candidate_num, candidate_den] = tfdata(candidate_tf, 'v');
     candidate_poles = pole(candidate_tf);
     candidate_resp = squeeze(freqresp(candidate_tf, tf_fit_freq_rad));
     candidate_mag_error = rms(20 * log10(abs(candidate_resp) + eps) - ...
@@ -190,13 +187,7 @@ for denominator_order = tf_estimate_config.fit_den_orders
     candidate_info.rms_mag_db = candidate_mag_error;
     candidate_info.rms_phase_deg = candidate_phase_error;
     candidate_info.is_stable = all(real(candidate_poles) < 0);
-    if candidate_score < best_any_score
-        best_any_score = candidate_score;
-        best_any_tf = candidate_tf;
-        best_any_num = candidate_num;
-        best_any_den = candidate_den;
-        best_any_info = candidate_info;
-    end
+    candidate_info.was_stabilized = was_stabilized;
     if all(real(candidate_poles) < 0) && candidate_score < best_fit_score
         best_fit_score = candidate_score;
         tf_fit = candidate_tf;
@@ -206,17 +197,34 @@ for denominator_order = tf_estimate_config.fit_den_orders
     end
 end
 if isempty(tf_fit)
-    tf_fit = best_any_tf;
-    tf_fit_num = best_any_num;
-    tf_fit_den = best_any_den;
-    tf_fit_info = best_any_info;
-    fprintf('No stable standalone fit found; using the lowest-error candidate.\n');
+    error('No stable standalone fit found.');
 end
 tf_fit_info.fit_point_count = numel(tf_fit_freq_hz);
 tf_fit_info.fit_band_hz = [0, max(freq_hz_all(fit_idx))];
 tf_fit_info.coherence_min = tf_estimate_config.fit_coherence_min;
 tf_fit_info.input_power_range_db = tf_estimate_config.fit_input_power_range_db;
 tf_fit_info.test_type = test_type;
+tf_fit_open_loop = minreal(tf_fit / (1 - tf_fit), [], false);
+tf_parametric_open_loop = minreal(tf_parametric / (1 - tf_parametric), [], false);
+[tf_fit_gain_margin, tf_fit_phase_margin, tf_fit_gain_margin_freq_rad, tf_fit_phase_margin_freq_rad] = open_loop_margins(tf_fit_open_loop);
+[tf_parametric_gain_margin, tf_parametric_phase_margin, ~, ~] = open_loop_margins(tf_parametric_open_loop);
+tf_fit_info.open_loop_margin_model = 'tf_fit / (1 - tf_fit)';
+tf_fit_info.gain_margin = tf_fit_gain_margin;
+tf_fit_info.gain_margin_db = 20 * log10(tf_fit_gain_margin);
+tf_fit_info.gain_margin_hz = tf_fit_gain_margin_freq_rad / (2 * pi);
+tf_fit_info.phase_margin_deg = tf_fit_phase_margin;
+tf_fit_info.phase_margin_hz = tf_fit_phase_margin_freq_rad / (2 * pi);
+margin_table = table( ...
+    ["tf_fit (red)"; "tf_parametric"], ...
+    [tf_fit_gain_margin; tf_parametric_gain_margin], ...
+    20 * log10([tf_fit_gain_margin; tf_parametric_gain_margin]), ...
+    [tf_fit_phase_margin; tf_parametric_phase_margin], ...
+    'VariableNames', {'Model', 'GainMargin', 'GainMargin_dB', 'PhaseMargin_deg'});
+
+fprintf('\n========================================\n');
+fprintf('Margins estimated from fitted closed-loop models\n');
+disp(margin_table)
+fprintf('========================================\n');
 
 %% Save Identified Parameters and Models
 params_path = fullfile(param_output_dir, sprintf('%s.mat', params_file_name));
@@ -235,7 +243,7 @@ specimen_params.m = specimen.m;
 specimen_params.c = specimen.c;
 specimen_params.k = specimen.k;
 
-save(fit_path, 'tf_fit', 'tf_fit_info', 'test_type');
+save(fit_path, 'tf_fit', 'tf_fit_open_loop', 'tf_fit_info', 'margin_table', 'test_type');
 save(params_path, ...
     'a1b0', ...
     'a2', ...
@@ -246,6 +254,8 @@ save(params_path, ...
     'Ki', ...
     'specimen_params', ...
     'test_type', ...
+    'tf_parametric_open_loop', ...
+    'margin_table', ...
     'tf_parametric');
 
 %% Conclusion: Three Transfer-Function Models
@@ -287,6 +297,8 @@ fprintf('\nThree transfer-function models used in the comparison\n');
 fprintf('tf_discrete (xfunc): experimental transfer-function estimate from xfunc\n');
 fprintf('tf_fit (regularized): rational fitted transfer function from regularized LS\n');
 fprintf('tf_parametric: physical parametric model from the identification\n');
+fprintf('Saved fit model = %s\n', fit_path);
+fprintf('Saved parametric model = %s\n', params_path);
 
 plot_transfer_function_model_comparison( ...
     tf_discrete, ...
@@ -329,4 +341,29 @@ function toggle_legend_item(~, event)
     else
         event.Peer.Visible = 'on';
     end
+end
+
+function [sys_stable, was_stabilized] = stabilize_transfer_function(sys)
+    poles = pole(sys);
+    was_stabilized = any(real(poles) >= 0);
+    if was_stabilized
+        zeros = zero(sys);
+        [~, ~, gain] = zpkdata(sys, 'v');
+        unstable_idx = real(poles) >= 0;
+        poles(unstable_idx) = -abs(real(poles(unstable_idx))) + ...
+            1i * imag(poles(unstable_idx));
+        marginal_idx = real(poles) == 0;
+        poles(marginal_idx) = -eps + 1i * imag(poles(marginal_idx));
+        sys_stable = tf(zpk(zeros, poles, gain));
+    else
+        sys_stable = sys;
+    end
+end
+
+function [gain_margin, phase_margin, gain_margin_freq_rad, phase_margin_freq_rad] = open_loop_margins(open_loop_sys)
+    [gain_margin, phase_margin, gain_margin_freq_rad, phase_margin_freq_rad] = margin(open_loop_sys);
+    if isempty(gain_margin), gain_margin = NaN; end
+    if isempty(phase_margin), phase_margin = NaN; end
+    if isempty(gain_margin_freq_rad), gain_margin_freq_rad = NaN; end
+    if isempty(phase_margin_freq_rad), phase_margin_freq_rad = NaN; end
 end
