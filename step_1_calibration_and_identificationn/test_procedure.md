@@ -5,64 +5,50 @@
 1. Turn on the MTS pressure.
 2. Enable manual command.
 3. Move the actuator until the force is approximately zero.
-
+4. Turn off the manual command.
 
 ## MATLAB Run
-1. Run the MATLAB main script.
-2. Make sure all dashboard switches are down.
-3. Click Run on target.
-4. Make sure the command is zero.
-5. If the command is not zero, use the Constant block to send to zero.
-6. Select the right signal and the right parameters.
+5. Run the MATLAB main script.
+6. Make sure all dashboard switches are down.
+7. Click Run on target.
+8. Make sure the command is zero.
+   [If the command is not zero, use the Constant block to send to zero.]
+9. Select the right signal and the right parameters.
+10. Set switch 2 up: zero measurement.
+11. Check displacement and force measurement are zero.
+12. Set switch 2 down.
 
 ## External Command Run
-
-1. Run external command in MTS.
+13- in the external command tab check target setpoint = measurement
+14- check the external signal is zero
+15. Run external command in MTS.
 
 ## Starting the test
-
-1. Set switch 2 up: zero measurement.
-2. Check displacement and force measurement go to zero.
-3. Set switch 2 down.
-
-4. Set switch 3 up: simulation start.
-
-   Optional pause:
-
-   - Use switch 2 to pause.
-   - Before turning simulation back on
-
-   Optional manual command:
-
-   - Disable control and send manual command if needed.
-   - Decide the next action before re-enabling the simulation.
-
-   optional changing signal (not during test):
-   - pause
-   - stop simulation
-   - change signal
-   - resume / unpause
-   - continue / unstop
+16. Set switch 3 up: simulation start.
 
 ## Finishing the test
-5. Set switch 3 down to pause.
-6. Set switch 4 up: ramp to relative zero (initial position).
-7. Stop Simulink.
-8. Set switch 4 down.
+17. Set switch 3 down to pause.
+18. Set switch 4 up to ramp to initial position.
 
-## MTS External command stop
-1. Stop External command.
+19. Stop external command from MTS
 
-## Saving results
-2. In MATLAB, press space to save.
+20. Stop Simulink.
+21. In MATLAB command line, press space to save.
+
+## Optional
+   Optional pause:
+   - Use switch 3 to pause / unpause smoothly.
+
+   Optional if MTS interlock is triggered OR to chang the signal:
+   - In Simulink set both switch 3 down 
+   - In Simulink set switch 4 up to stop simulation
+   - In MTS turn on pressure (if triggered directly → increase gains)
+   - In MTS use manual command to move to initial position
+   - In MTS make sure: target stepoint = measurement AND external command = zero
+   - In Simulink zero measurement
+   - In simulink turn off the controller then turn on the controller
+   - In MTS run external command
+   - In Simulink set switch 4 down
+   - IN Simulink set switch 3 up
 
 
-##############################################
-##Analysis work flow:
-###identification
-1- run simulink on target with BLWN (without controller)
-2- create_specimen_mat
-3- run fromDatatoParametric
-
-###controller design:
-4- stabilility analysis
