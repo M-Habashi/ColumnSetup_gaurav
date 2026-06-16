@@ -51,4 +51,12 @@
    - In Simulink set switch 4 down
    - IN Simulink set switch 3 up
 
+   Retuning:
+   - Pause
+   - set the square signal setpoint and amplitude
+   - switch the signal type to square
+   - tune
+   - switch back to the correct signal
+   - resume
+
 
