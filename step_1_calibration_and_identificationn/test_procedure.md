@@ -5,8 +5,6 @@
 1. Turn on the MTS pressure.
 2. Enable manual command.
 3. Move the actuator until the force is approximately zero.
-4. In the external command tab, make sure:
-   setpoint = measured displacement
 
 
 ## MATLAB Run
