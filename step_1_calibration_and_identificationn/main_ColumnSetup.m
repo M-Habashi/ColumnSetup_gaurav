@@ -153,8 +153,21 @@ dc = Results{1}(:,2);
 dm = Results{1}(:,3);
 fm = Results{1}(:,4);
 am = Results{1}(:,5);
+m_hat = [];
+c_hat = [];
+k_hat = [];
+tse_valid = [];
+tse_method = [];
+if size(Results{1}, 2) >= 10
+    m_hat = Results{1}(:,6);
+    c_hat = Results{1}(:,7);
+    k_hat = Results{1}(:,8);
+    tse_valid = Results{1}(:,9);
+    tse_method = Results{1}(:,10);
+end
 
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
+    'm_hat', 'c_hat', 'k_hat', 'tse_valid', 'tse_method', ...
     'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', '-v7.3')
 
 disp('*** Data file saved! ***')

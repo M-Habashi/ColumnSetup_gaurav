@@ -16,14 +16,24 @@ dc = data.dc(:);
 dm = data.dm(:);
 fm = data.fm(:);
 am = data.am(:);
+hasTseEstimate = isfield(data, 'm_hat') && isfield(data, 'c_hat') ...
+    && isfield(data, 'k_hat') && ~isempty(data.m_hat);
 
 n = min([numel(t), numel(dd), numel(dc), numel(dm), numel(fm), numel(am)]);
+if hasTseEstimate
+    n = min([n, numel(data.m_hat), numel(data.c_hat), numel(data.k_hat)]);
+end
 t = t(1:n);
 dd = dd(1:n);
 dc = dc(1:n);
 dm = dm(1:n);
 fm = fm(1:n);
 am = am(1:n);
+if hasTseEstimate
+    m_hat = data.m_hat(1:n);
+    c_hat = data.c_hat(1:n);
+    k_hat = data.k_hat(1:n);
+end
 
 trackingError = dd - dm;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
@@ -83,6 +93,29 @@ lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 linkaxes(ax, 'x')
+
+if hasTseEstimate
+    figure('Name', [selectedFileName ' - Online TSE'], 'WindowState', 'maximized');
+    ax_tse(1) = subplot(3, 1, 1);
+    plot(t, k_hat, 'Color', colors.blue, 'LineWidth', 1.0, 'DisplayName', 'k hat');
+    grid on
+    ylabel('k (N/mm)')
+    title('Online TSE Stiffness')
+
+    ax_tse(2) = subplot(3, 1, 2);
+    plot(t, m_hat, 'Color', colors.purple, 'LineWidth', 1.0, 'DisplayName', 'm hat');
+    grid on
+    ylabel('m (kg)')
+    title('Online TSE Mass')
+
+    ax_tse(3) = subplot(3, 1, 3);
+    plot(t, c_hat, 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'c hat');
+    grid on
+    xlabel('Time (s)')
+    ylabel('c (N s/mm)')
+    title('Online TSE Damping')
+    linkaxes(ax_tse, 'x')
+end
 
 function colors = getPlotColors()
     colors.green = hexToRgb('39BF5E');
