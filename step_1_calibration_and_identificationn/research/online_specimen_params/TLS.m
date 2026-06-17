@@ -117,7 +117,7 @@ function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r
 
     n_window = max(4, round(window_s / dt));
     [tc, theta_win, cov_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, r_routing_max, theta0);
-    theta_kf = parameter_kf(theta_win, cov_win, method_id, theta0, dt, ...
+    [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, method_id, theta0, dt, ...
         q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max);
 
     plot_step = max(1, floor(numel(tc) / 12000));
@@ -125,6 +125,7 @@ function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r
     tp = tc(ip);
     winp = theta_win(ip, :);
     kfp = theta_kf(ip, :);
+    cip = 1.96 * sqrt(max(pdiag_kf(ip, :), 0));
 
     plot(ax(1), t, x, 'Color', blue, 'LineWidth', 1.0)
     grid(ax(1), 'on')
@@ -136,9 +137,9 @@ function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r
     grid(ax(2), 'on')
     ylabel(ax(2), 'F (N)')
 
-    plot_param(ax(3), tp, winp(:, 3), kfp(:, 3), blue, 'k (N/mm)')
-    plot_param(ax(4), tp, winp(:, 1), kfp(:, 1), purple, 'm (kg)')
-    plot_param(ax(5), tp, winp(:, 2), kfp(:, 2), copperwood, 'c (N s/mm)')
+    plot_param(ax(3), tp, winp(:, 3), kfp(:, 3), cip(:, 3), blue, 'k (N/mm)')
+    plot_param(ax(4), tp, winp(:, 1), kfp(:, 1), cip(:, 1), purple, 'm (kg)')
+    plot_param(ax(5), tp, winp(:, 2), kfp(:, 2), cip(:, 2), copperwood, 'c (N s/mm)')
     xlabel(ax(5), 'Time (s)')
     linkaxes(ax, 'x')
 
@@ -219,9 +220,10 @@ function [tc, theta_win, cov_win, method_id] = incremental_window_tls(t, x, v, a
     end
 end
 
-function theta_kf = parameter_kf(theta_win, cov_win, method_id, theta0, dt, q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max)
+function [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, method_id, theta0, dt, q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max)
     n = size(theta_win, 1);
     theta_kf = zeros(n, 3);
+    pdiag_kf = zeros(n, 3);
     q_std = [0.02; 0.0002; 20];
     r_floor = [0.02; 0.0002; 20];
     Q_kf = q_scale * diag(q_std .^ 2) * dt;
@@ -258,13 +260,16 @@ function theta_kf = parameter_kf(theta_win, cov_win, method_id, theta0, dt, q_sc
         end
 
         theta_kf(i, :) = theta';
+        pdiag_kf(i, :) = diag(P)';
     end
 end
 
-function plot_param(ax, tp, winp, kfp, color, ytext)
+function plot_param(ax, tp, winp, kfp, cip, color, ytext)
     light_color = 0.65 * color + 0.35 * [1 1 1];
-    plot(ax, tp, winp, ':', 'Color', light_color, 'LineWidth', 0.9)
+    fill(ax, [tp; flipud(tp)], [kfp - cip; flipud(kfp + cip)], ...
+        color, 'FaceAlpha', 0.12, 'EdgeColor', 'none')
     hold(ax, 'on')
+    plot(ax, tp, winp, ':', 'Color', light_color, 'LineWidth', 0.9)
     plot(ax, tp, kfp, 'Color', color, 'LineWidth', 1.2)
     hold(ax, 'off')
     grid(ax, 'on')
