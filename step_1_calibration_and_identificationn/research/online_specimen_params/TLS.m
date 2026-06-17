@@ -1,6 +1,7 @@
 % Windowed incremental total least squares specimen parameters.
 % Each causal window is locally demeaned to estimate tangent-like [m, c, k].
-% Healthy windows use unscaled TLS and low-force windows hold the last value.
+% Healthy windows use unscaled TLS; low-force or high-residual windows fall
+% back to hold/LSE.
 
 clear; clc; close all
 
@@ -28,23 +29,28 @@ uicontrol(fig, 'Style', 'text', 'String', 'F min', ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
 fmin_edit = uicontrol(fig, 'Style', 'edit', 'String', '50', ...
     'Units', 'normalized', 'Position', [0.30 0.947 0.06 0.035]);
+uicontrol(fig, 'Style', 'text', 'String', 'R max', ...
+    'Units', 'normalized', 'Position', [0.39 0.945 0.05 0.035], ...
+    'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
+resmax_edit = uicontrol(fig, 'Style', 'edit', 'String', '2', ...
+    'Units', 'normalized', 'Position', [0.44 0.947 0.05 0.035]);
 uicontrol(fig, 'Style', 'text', 'String', 'm0', ...
-    'Units', 'normalized', 'Position', [0.41 0.945 0.03 0.035], ...
+    'Units', 'normalized', 'Position', [0.52 0.945 0.03 0.035], ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
 m0_edit = uicontrol(fig, 'Style', 'edit', 'String', '2.04', ...
-    'Units', 'normalized', 'Position', [0.44 0.947 0.06 0.035]);
+    'Units', 'normalized', 'Position', [0.55 0.947 0.06 0.035]);
 uicontrol(fig, 'Style', 'text', 'String', 'c0', ...
-    'Units', 'normalized', 'Position', [0.53 0.945 0.03 0.035], ...
+    'Units', 'normalized', 'Position', [0.64 0.945 0.03 0.035], ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
 c0_edit = uicontrol(fig, 'Style', 'edit', 'String', '0.012', ...
-    'Units', 'normalized', 'Position', [0.56 0.947 0.06 0.035]);
+    'Units', 'normalized', 'Position', [0.67 0.947 0.06 0.035]);
 uicontrol(fig, 'Style', 'text', 'String', 'k0', ...
-    'Units', 'normalized', 'Position', [0.65 0.945 0.03 0.035], ...
+    'Units', 'normalized', 'Position', [0.76 0.945 0.03 0.035], ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
 k0_edit = uicontrol(fig, 'Style', 'edit', 'String', '7028', ...
-    'Units', 'normalized', 'Position', [0.68 0.947 0.07 0.035]);
+    'Units', 'normalized', 'Position', [0.79 0.947 0.07 0.035]);
 status_text = uicontrol(fig, 'Style', 'text', 'String', 'Done', ...
-    'Units', 'normalized', 'Position', [0.78 0.945 0.06 0.035], ...
+    'Units', 'normalized', 'Position', [0.89 0.945 0.06 0.035], ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
 
 ax(1) = subplot(5, 1, 1, 'Parent', fig);
@@ -54,22 +60,23 @@ ax(4) = subplot(5, 1, 4, 'Parent', fig);
 ax(5) = subplot(5, 1, 5, 'Parent', fig);
 set(ax, 'PositionConstraint', 'innerposition')
 
-controls = [window_edit, fmin_edit, m0_edit, c0_edit, k0_edit];
+controls = [window_edit, fmin_edit, resmax_edit, m0_edit, c0_edit, k0_edit];
 for i = 1:numel(controls)
-    controls(i).Callback = @(~, ~)update_plot(window_edit, fmin_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
-    controls(i).KeyReleaseFcn = @(~, ~)update_plot(window_edit, fmin_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
+    controls(i).Callback = @(~, ~)update_plot(window_edit, fmin_edit, resmax_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
+    controls(i).KeyReleaseFcn = @(~, ~)update_plot(window_edit, fmin_edit, resmax_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
 end
-update_plot(window_edit, fmin_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+update_plot(window_edit, fmin_edit, resmax_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
 
-function update_plot(window_edit, fmin_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+function update_plot(window_edit, fmin_edit, resmax_edit, m0_edit, c0_edit, k0_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
     blue = [0 124 168] / 255;
     purple = [116 5 138] / 255;
     copperwood = [172 100 32] / 255;
 
     window_s = str2double(window_edit.String);
     f_min = str2double(fmin_edit.String);
+    residual_ratio_max = str2double(resmax_edit.String);
     theta0 = [str2double(m0_edit.String); str2double(c0_edit.String); str2double(k0_edit.String)];
-    if any(isnan([window_s f_min theta0'])) || window_s <= 0 || f_min < 0
+    if any(isnan([window_s f_min residual_ratio_max theta0'])) || window_s <= 0 || f_min < 0 || residual_ratio_max <= 0
         return
     end
     status_text.String = 'Calculating...';
@@ -77,7 +84,7 @@ function update_plot(window_edit, fmin_edit, m0_edit, c0_edit, k0_edit, ax, stat
     drawnow
 
     n_window = max(4, round(window_s / dt));
-    [tc, theta_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, theta0);
+    [tc, theta_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, residual_ratio_max, theta0);
 
     plot_step = max(1, floor(numel(tc) / 12000));
     ip = 1:plot_step:numel(tc);
@@ -105,7 +112,7 @@ function update_plot(window_edit, fmin_edit, m0_edit, c0_edit, k0_edit, ax, stat
     drawnow
 end
 
-function [tc, theta_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, theta0)
+function [tc, theta_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, residual_ratio_max, theta0)
     Sa = movsum(a_mps2, [n_window - 1 0], 'Endpoints', 'discard');
     Sv = movsum(v, [n_window - 1 0], 'Endpoints', 'discard');
     Sx = movsum(x, [n_window - 1 0], 'Endpoints', 'discard');
@@ -146,15 +153,24 @@ function [tc, theta_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F,
         if F_rms <= f_min
             theta = theta_last;
         else
+            theta_lse = pinv(G) * b;
             C = [G, b; b', FF(i)];
             [V, D] = eig((C + C') / 2);
             [~, j] = min(diag(D));
             tls_vec = V(:, j);
             if tls_vec(4) ~= 0
                 theta = -tls_vec(1:3) / tls_vec(4);
-                method_id(i) = 1;
+                sse_lse = max(FF(i) - theta_lse' * b, 0);
+                sse_tls = max(theta' * G * theta - 2 * theta' * b + FF(i), 0);
+                residual_ratio = sqrt(sse_tls / max(sse_lse, eps));
+                if isfinite(residual_ratio) && residual_ratio <= residual_ratio_max
+                    method_id(i) = 1;
+                else
+                    theta = theta_lse;
+                    method_id(i) = 2;
+                end
             else
-                theta = pinv(G) * b;
+                theta = theta_lse;
                 method_id(i) = 2;
             end
         end
