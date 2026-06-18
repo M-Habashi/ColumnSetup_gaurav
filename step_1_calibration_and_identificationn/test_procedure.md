@@ -6,24 +6,28 @@
 2. Enable manual command.
 3. Move the actuator until the force is approximately zero.
 4. Turn off the manual command.
+5. Check the interlock limits
 
 ## MATLAB Run
+6. check the file name in the main script
 5. Run the MATLAB main script.
 6. Make sure all dashboard switches are down.
 7. Click Run on target.
-8. Make sure the command is zero.
-   [If the command is not zero, use the Constant block to send to zero.]
+8. Make sure the dd is zero.
+   [If the dd is not zero, use the Constant block to send to zero.]
 9. Select the right signal and the right parameters.
-10. Set switch 2 up: zero measurement.
+10. Set switch 1 up: zero measurement.
 11. Check displacement and force measurement are zero.
-12. Set switch 2 down.
+12. Set switch 1 down.
 
 ## External Command Run
-13- in the external command tab check target setpoint = measurement
-14- check the external signal is zero
+13. in the external command tab check target setpoint = measurement.
+14. check the external signal is zero
 15. Run external command in MTS.
 
 ## Starting the test
+16. Check the outer controller command is following dd (zero)
+16. Switch 2 up → to run the outer controller
 16. Set switch 3 up: simulation start.
 
 ## Finishing the test
@@ -31,8 +35,9 @@
 18. Set switch 4 up to ramp to initial position.
 
 19. Stop external command from MTS
-
+21. Set switch 2 down
 20. Stop Simulink.
+21. Set switch 4 down
 21. In MATLAB command line, press space to save.
 
 ## Optional

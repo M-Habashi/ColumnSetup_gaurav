@@ -50,7 +50,7 @@ tf_estimate_config = struct( ...
     'desc', sprintf('%s Analog Closed Loop', plot_data_name), ...        % plot title/description text
     'f_lim', [0.1, max_freq_hz], ...                                     % frequency range used for xfunc output
     'fit_max_num_order', 1, ...                                          % maximum numerator order for TF fit
-    'fit_den_orders', [5, 6], ...                                        % denominator orders to try for TF fit
+    'fit_den_orders', [3, 4, 5, 6], ...                                        % denominator orders to try for TF fit
     'fit_regularization', 0, ...                                         % regularization strength for TF fit
     'fit_iterations', 25, ...                                            % maximum iterations for TF fit
     'fit_coherence_min', 0.8, ...                                        % minimum coherence for fit data selection

@@ -41,7 +41,7 @@ disp('                        Simulation Tool                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'sp_1_ori_P20_I40_D01';
+test_type = 'sp_1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015';
 testname = test_type;
 
 %% Simulation Parameters
@@ -70,7 +70,7 @@ ch.dd = 5;         % Actuator command analog output
 command_channel_selector = double((1:7)' == ch.dd);
 
 % Saturation Limit
-sat_limit = 2; % mm
+sat_limit = 70; % mm
                    
 % Test File Name % IMPORTANT!
 timestamp = datestr(now,'yyyymmdd_HHMM');
@@ -102,7 +102,7 @@ tend = inf;
 % exceed_percentile percent of the samples.
         amp_2_percentile = 0.4;
         exceed_percentile = 0.5;
-        f1 = 50;  % cutoff frequency (MUST be changed in the Simulink filter designer)
+        f1 = 5;  % cutoff frequency (MUST be changed in the Simulink filter designer)
 
 %%% 4- Chirp parameters
         f_init = 0.001;
@@ -156,18 +156,16 @@ am = Results{1}(:,5);
 m_hat = [];
 c_hat = [];
 k_hat = [];
-tse_valid = [];
-tse_method = [];
-if size(Results{1}, 2) >= 10
+tse_fallback = [];
+if size(Results{1}, 2) >= 9
     m_hat = Results{1}(:,6);
     c_hat = Results{1}(:,7);
     k_hat = Results{1}(:,8);
-    tse_valid = Results{1}(:,9);
-    tse_method = Results{1}(:,10);
+    tse_fallback = Results{1}(:,9);
 end
 
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
-    'm_hat', 'c_hat', 'k_hat', 'tse_valid', 'tse_method', ...
+    'm_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
     'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', '-v7.3')
 
 disp('*** Data file saved! ***')
