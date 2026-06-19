@@ -97,7 +97,8 @@ linkaxes(ax, 'x')
 
 % Hysteresis shows the measured restoring force versus measured displacement.
 figure('Name', [selectedFileName ' - Hysteresis']);
-plot(dm, fm, '-', 'Color', colors.purple, 'LineWidth', 1.0);
+patch(dm, fm, zeros(size(dm)), 'FaceColor', 'none', ...
+    'EdgeColor', colors.purple, 'EdgeAlpha', 0.3, 'LineWidth', 1.0);
 grid on
 xlabel('Measured displacement (mm)')
 ylabel('Measured force (N)')
