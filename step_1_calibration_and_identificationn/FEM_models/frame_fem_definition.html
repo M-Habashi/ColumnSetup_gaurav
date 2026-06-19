@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Three-Story Steel Frame — FEM Definition</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f0f0f;
+      --surface: #181818;
+      --surface-2: #202020;
+      --line: #393939;
+      --text: #eeeeea;
+      --muted: #a6a69f;
+      --accent: #e0c536;
+      --warm: #c47a42;
+      --green: #77a875;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #121212;
+    }
+
+    .header-inner,
+    main {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 22px 0 18px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 3px; font-size: 25px; font-weight: 620; letter-spacing: -0.02em; }
+    h2 { margin-bottom: 16px; font-size: 18px; font-weight: 620; }
+    h3 { margin-bottom: 8px; font-size: 14px; font-weight: 620; }
+    .subtitle { margin: 0; color: var(--muted); }
+
+    nav { display: flex; gap: 20px; white-space: nowrap; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a:hover, nav a:focus { color: var(--text); }
+
+    main { padding: 28px 0 48px; }
+
+    section {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .frame-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(250px, 0.7fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .drawing {
+      padding: 16px;
+      background: #090909;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    svg { display: block; width: 100%; height: auto; }
+    .member { stroke: #e8e8e2; stroke-width: 2; }
+    .base { stroke: var(--warm); stroke-width: 2; }
+    .dimension { stroke: var(--accent); stroke-width: 1.3; }
+    .label { fill: #ededE8; font: 15px Georgia, serif; }
+    .dim-label { fill: var(--accent); font: 14px "IBM Plex Sans", sans-serif; }
+    .dof { fill: var(--green); font: 13px "IBM Plex Sans", sans-serif; }
+
+    .model-notes {
+      border-top: 2px solid var(--text);
+    }
+
+    .definition-list {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+    }
+
+    .definition-list dt,
+    .definition-list dd {
+      margin: 0;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .definition-list dt { color: var(--muted); }
+    .definition-list dd { padding-left: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-size: 13px; font-weight: 560; }
+    td:last-child, th:last-child { text-align: right; }
+    tbody tr:hover { background: var(--surface); }
+    .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .strong-row td { color: var(--accent); font-weight: 620; }
+
+    .equations {
+      border-left: 3px solid var(--accent);
+      padding: 3px 0 3px 18px;
+    }
+
+    .equations p { margin: 0 0 8px; }
+    .equations p:last-child { margin-bottom: 0; }
+
+    .assumption {
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    .assumption + .assumption { margin-top: 10px; }
+    .assumption p { margin: 0; color: var(--muted); }
+
+    .hybrid-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .experimental-member { stroke: #d43c32; stroke-width: 6; }
+    .interface-node { fill: #d43c32; stroke: #fff; stroke-width: 1.5; }
+    .callout-line { stroke: #d43c32; stroke-width: 1.5; fill: none; }
+    .callout-text { fill: #f06a61; font: 14px "IBM Plex Sans", sans-serif; }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-line { width: 26px; border-top: 3px solid #e8e8e2; }
+    .legend-line.red { border-color: #d43c32; border-width: 5px; }
+
+    footer {
+      padding-top: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 780px) {
+      .header-inner { display: block; }
+      nav { margin-top: 14px; overflow-x: auto; }
+      .frame-layout, .grid-2, .hybrid-layout { grid-template-columns: 1fr; }
+      .header-inner, main { width: min(100% - 24px, 1180px); }
+    }
+
+    @media print {
+      :root { color-scheme: light; --bg: #fff; --surface: #f4f4f2; --line: #bbb; --text: #111; --muted: #555; }
+      body, header { background: #fff; }
+      nav { display: none; }
+      main { padding-top: 16px; }
+      section { break-inside: avoid; }
+      .drawing { background: #090909; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1>Three-Story Steel Frame — FEM Definition</h1>
+        <p class="subtitle">Geometry, member assignments, loading, mass idealization, and dynamic assumptions</p>
+      </div>
+      <nav aria-label="Page sections">
+        <a href="#geometry">Geometry</a>
+        <a href="#loads">Loads</a>
+        <a href="#idealization">Idealization</a>
+        <a href="#hybrid">Hybrid simulation</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="geometry" aria-labelledby="geometry-heading">
+      <h2 id="geometry-heading">Frame geometry and member schedule</h2>
+      <div class="frame-layout">
+        <div class="drawing">
+          <svg viewBox="0 0 820 475" role="img" aria-labelledby="frame-title frame-description">
+            <title id="frame-title">Three-story, three-bay steel moment frame</title>
+            <desc id="frame-description">Each bay is 10 feet wide and each story is 6.67 feet high. Exterior columns are W8 by 28, interior columns are W8 by 35, and all beams are W8 by 24.</desc>
+
+            <g class="member">
+              <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
+              <path d="M55 50H745 M55 163H745 M55 276H745"/>
+            </g>
+
+            <g class="base">
+              <path d="M37 390H73 M267 390H303 M497 390H533 M727 390H763"/>
+              <path d="M40 397l7-7m3 7 7-7m3 7 7-7 M270 397l7-7m3 7 7-7m3 7 7-7 M500 397l7-7m3 7 7-7m3 7 7-7 M730 397l7-7m3 7 7-7m3 7 7-7"/>
+            </g>
+
+            <g class="label" text-anchor="middle">
+              <text x="170" y="42">W8×24</text><text x="400" y="42">W8×24</text><text x="630" y="42">W8×24</text>
+              <text x="170" y="155">W8×24</text><text x="400" y="155">W8×24</text><text x="630" y="155">W8×24</text>
+              <text x="170" y="268">W8×24</text><text x="400" y="268">W8×24</text><text x="630" y="268">W8×24</text>
+            </g>
+
+            <g class="label" text-anchor="middle">
+              <text transform="translate(45 106) rotate(-90)">W8×28</text><text transform="translate(275 106) rotate(-90)">W8×35</text><text transform="translate(505 106) rotate(-90)">W8×35</text><text transform="translate(735 106) rotate(-90)">W8×28</text>
+              <text transform="translate(45 220) rotate(-90)">W8×28</text><text transform="translate(275 220) rotate(-90)">W8×35</text><text transform="translate(505 220) rotate(-90)">W8×35</text><text transform="translate(735 220) rotate(-90)">W8×28</text>
+              <text transform="translate(45 333) rotate(-90)">W8×28</text><text transform="translate(275 333) rotate(-90)">W8×35</text><text transform="translate(505 333) rotate(-90)">W8×35</text><text transform="translate(735 333) rotate(-90)">W8×28</text>
+            </g>
+
+            <g class="dimension" fill="none">
+              <path d="M55 410V448 M285 410V448 M515 410V448 M745 410V448 M55 438H745"/>
+              <path d="M55 438l12-4v8z M285 438l-12-4v8z M285 438l12-4v8z M515 438l-12-4v8z M515 438l12-4v8z M745 438l-12-4v8z" fill="var(--accent)"/>
+              <path d="M770 390H805 M770 276H805 M770 163H805 M770 50H805 M795 390V50"/>
+              <path d="M795 390l-4-12h8z M795 276l-4 12h8z M795 276l-4-12h8z M795 163l-4 12h8z M795 163l-4-12h8z M795 50l-4 12h8z" fill="var(--accent)"/>
+            </g>
+
+            <g class="dim-label" text-anchor="middle">
+              <text x="170" y="462">10.00 ft</text><text x="400" y="462">10.00 ft</text><text x="630" y="462">10.00 ft</text>
+              <text x="785" y="336" transform="rotate(-90 785 336)">6.67 ft</text><text x="785" y="220" transform="rotate(-90 785 220)">6.67 ft</text><text x="785" y="106" transform="rotate(-90 785 106)">6.67 ft</text>
+            </g>
+
+            <g class="dof">
+              <text x="665" y="83">u₃ →</text><text x="665" y="196">u₂ →</text><text x="665" y="309">u₁ →</text>
+            </g>
+          </svg>
+        </div>
+
+        <aside class="model-notes" aria-label="Model definition summary">
+          <dl class="definition-list">
+            <dt>Structural system</dt><dd>2D moment frame</dd>
+            <dt>Bays</dt><dd>3 × 10.00 ft</dd>
+            <dt>Stories</dt><dd>3 × 6.67 ft</dd>
+            <dt>Level 3</dt><dd>Roof</dd>
+            <dt>Total width</dt><dd>30.00 ft</dd>
+            <dt>Total height</dt><dd>20.01 ft</dd>
+            <dt>Beam sections</dt><dd>W8×24</dd>
+            <dt>Exterior columns</dt><dd>W8×28</dd>
+            <dt>Interior columns</dt><dd>W8×35</dd>
+            <dt>Base restraints</dt><dd>Fixed</dd>
+            <dt>Floor diaphragm</dt><dd>Rigid</dd>
+            <dt>Retained DOFs</dt><dd>u₁, u₂, u₃</dd>
+            <dt>Damping ratio ζ</dt><dd>2%</dd>
+          </dl>
+        </aside>
+      </div>
+    </section>
+
+    <section id="loads" aria-labelledby="loads-heading">
+      <h2 id="loads-heading">Gravity and earthquake load definition</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Input assumptions</h3>
+          <table>
+            <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Concrete density</td><td class="mono">150 pcf</td></tr>
+              <tr><td>Dead area load</td><td class="mono">100 psf</td></tr>
+              <tr><td>Floor live area load</td><td class="mono">50 psf</td></tr>
+              <tr><td>Roof live load</td><td class="mono">0.5 × floor LL</td></tr>
+              <tr><td>Tributary width</td><td class="mono">10 ft</td></tr>
+              <tr><td>Earthquake combination</td><td class="mono">1.2D + 0.5L ± E</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h3>Factored gravity line loads</h3>
+          <div class="equations mono">
+            <p>w<sub>DL</sub> = 1.2(1.024) = 1.229 kip/ft</p>
+            <p>w<sub>LL,floor</sub> = 0.5(0.50) = 0.250 kip/ft</p>
+            <p>w<sub>floor</sub> = 1.229 + 0.250 = 1.479 kip/ft</p>
+            <p>w<sub>LL,roof</sub> = 0.5(0.5 × 0.50) = 0.125 kip/ft</p>
+            <p>w<sub>roof</sub> = 1.229 + 0.125 = 1.354 kip/ft</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="mass-heading">
+      <h2 id="mass-heading">Span, floor, and roof weight</h2>
+      <table>
+        <thead>
+          <tr><th>Quantity</th><th>Expression</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>One 10-ft bay, Levels 1–2</td><td class="mono">1.479 kip/ft × 10 ft</td><td class="mono">≈ 6,707 kgf</td></tr>
+          <tr><td>Complete floor, Levels 1–2</td><td class="mono">6,707 kgf × 3</td><td class="mono">≈ 20,121 kgf</td></tr>
+          <tr><td>One 10-ft bay, roof</td><td class="mono">1.354 kip/ft × 10 ft</td><td class="mono">≈ 6,142 kgf</td></tr>
+          <tr class="strong-row"><td>Complete roof, 3 bays</td><td class="mono">6,142 kgf × 3</td><td class="mono">≈ 18,426 kgf</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="idealization" aria-labelledby="idealization-heading">
+      <h2 id="idealization-heading">FEM idealization</h2>
+      <div class="grid-2">
+        <div class="assumption">
+          <h3>Rigid floor diaphragms</h3>
+          <p>All nodes at a given floor share one horizontal displacement. Vertical and rotational floor coordinates are condensed, leaving three lateral generalized coordinates: u₁, u₂, and u₃.</p>
+        </div>
+        <div class="assumption">
+          <h3>Dynamic model</h3>
+          <p>Use a three-DOF lateral system with the corresponding level weight lumped at each diaphragm. Levels 1–2 use the full floor live load in the stated earthquake combination; the roof uses 0.5 of the floor live load. Apply 2% damping (ζ = 0.02) to the selected modes and evaluate both signs of the earthquake action, ±E.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="hybrid" aria-labelledby="hybrid-heading">
+      <h2 id="hybrid-heading">Hybrid-simulation substructuring</h2>
+      <div class="hybrid-layout">
+        <div>
+          <div class="drawing">
+            <svg viewBox="0 0 820 475" role="img" aria-labelledby="hybrid-frame-title hybrid-frame-description">
+              <title id="hybrid-frame-title">Hybrid simulation frame partition</title>
+              <desc id="hybrid-frame-description">The lower half of the first-story left exterior W8 by 28 column is red and represents the experimental substructure. The remainder of the frame is numerical.</desc>
+
+              <g class="member">
+                <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
+                <path d="M55 50H745 M55 163H745 M55 276H745"/>
+              </g>
+
+              <path class="experimental-member" d="M55 390V333"/>
+              <circle class="interface-node" cx="55" cy="333" r="5"/>
+
+              <g class="base">
+                <path d="M37 390H73 M267 390H303 M497 390H533 M727 390H763"/>
+                <path d="M40 397l7-7m3 7 7-7m3 7 7-7 M270 397l7-7m3 7 7-7m3 7 7-7 M500 397l7-7m3 7 7-7m3 7 7-7 M730 397l7-7m3 7 7-7m3 7 7-7"/>
+              </g>
+
+              <g class="label" text-anchor="middle">
+                <text x="170" y="42">W8×24</text><text x="400" y="42">W8×24</text><text x="630" y="42">W8×24</text>
+                <text x="170" y="155">W8×24</text><text x="400" y="155">W8×24</text><text x="630" y="155">W8×24</text>
+                <text x="170" y="268">W8×24</text><text x="400" y="268">W8×24</text><text x="630" y="268">W8×24</text>
+                <text transform="translate(45 106) rotate(-90)">W8×28</text><text transform="translate(275 106) rotate(-90)">W8×35</text><text transform="translate(505 106) rotate(-90)">W8×35</text><text transform="translate(735 106) rotate(-90)">W8×28</text>
+                <text transform="translate(45 220) rotate(-90)">W8×28</text><text transform="translate(275 220) rotate(-90)">W8×35</text><text transform="translate(505 220) rotate(-90)">W8×35</text><text transform="translate(735 220) rotate(-90)">W8×28</text>
+                <text transform="translate(45 305) rotate(-90)">W8×28</text><text transform="translate(275 333) rotate(-90)">W8×35</text><text transform="translate(505 333) rotate(-90)">W8×35</text><text transform="translate(735 333) rotate(-90)">W8×28</text>
+              </g>
+
+              <g class="dimension" fill="none">
+                <path d="M55 410V448 M285 410V448 M515 410V448 M745 410V448 M55 438H745"/>
+                <path d="M55 438l12-4v8z M285 438l-12-4v8z M285 438l12-4v8z M515 438l-12-4v8z M515 438l12-4v8z M745 438l-12-4v8z" fill="var(--accent)"/>
+                <path d="M770 390H805 M770 276H805 M770 163H805 M770 50H805 M795 390V50"/>
+                <path d="M795 390l-4-12h8z M795 276l-4 12h8z M795 276l-4-12h8z M795 163l-4 12h8z M795 163l-4-12h8z M795 50l-4 12h8z" fill="var(--accent)"/>
+              </g>
+
+              <g class="dim-label" text-anchor="middle">
+                <text x="170" y="462">10.00 ft</text><text x="400" y="462">10.00 ft</text><text x="630" y="462">10.00 ft</text>
+                <text x="785" y="336" transform="rotate(-90 785 336)">6.67 ft</text><text x="785" y="220" transform="rotate(-90 785 220)">6.67 ft</text><text x="785" y="106" transform="rotate(-90 785 106)">6.67 ft</text>
+              </g>
+
+              <path class="callout-line" d="M61 362H92L110 347"/>
+              <text class="callout-text" x="118" y="342">Experimental</text>
+              <text class="callout-text" x="118" y="359">substructure</text>
+            </svg>
+          </div>
+          <div class="legend" aria-label="Hybrid model legend">
+            <div class="legend-item"><span class="legend-line red"></span>Experimental</div>
+            <div class="legend-item"><span class="legend-line"></span>Numerical</div>
+          </div>
+        </div>
+
+        <aside class="model-notes" aria-label="Hybrid simulation partition summary">
+          <dl class="definition-list">
+            <dt>Experimental member</dt><dd>W8×28 exterior column</dd>
+            <dt>Experimental length</dt><dd>Lower half-story</dd>
+            <dt>Physical location</dt><dd>First story, left side</dd>
+            <dt>Remaining structure</dt><dd>Numerical model</dd>
+            <dt>Partition boundary</dt><dd>Column midheight</dd>
+            <dt>Column behavior</dt><dd>Double curvature</dd>
+            <dt>Interface command</dt><dd>d<sub>exp</sub> = Δ₁ / 2</dd>
+            <dt>Half-column stiffness</dt><dd>k<sub>exp</sub> = 2k<sub>col</sub></dd>
+            <dt>Returned force</dt><dd>F<sub>exp</sub> = k<sub>exp</sub>d<sub>exp</sub></dd>
+          </dl>
+          <div class="assumption" style="margin-top: 18px;">
+            <h3>Coupling concept</h3>
+            <p>The numerical solution supplies half of the first-story drift to the midheight interface. For double-curvature response, the lower half-column is twice as stiff with respect to this interface displacement: F<sub>exp</sub> = (2k<sub>col</sub>)(Δ₁/2) = k<sub>col</sub>Δ₁. The measured restoring force is returned at the first-floor DOF. The numerical first-story stiffness excludes the one complete W8×28 column represented by the specimen, preventing double counting.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <footer>
+      Preliminary modeling basis. Dimensions are in feet; verify section properties, units, mass conversion, and load distribution before analysis.
+    </footer>
+  </main>
+</body>
+</html>

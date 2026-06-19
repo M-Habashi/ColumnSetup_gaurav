@@ -1,5 +1,9 @@
 # Agent Instructions
 
+- Every time an HTML file is created or edited, load and follow the `uncodixify` skill, then run its validator on the changed HTML until it exits successfully.
+- On Windows, if the uncodixify Bash wrapper fails while attaching a WSL disk with `ERROR_PATH_NOT_FOUND`, do not retry WSL. Run the same validator natively from the skill directory with `pnpm exec tsx toolchain/uncodixify.ts <absolute-html-path>`.
+- In the in-app browser, `browser.user.openTabs()` can list a user-opened `file://` tab whose ID is not attachable through `browser.tabs.get()`. If `tabs.get` says the ID is absent, do not retry or navigate an alternate tab to the blocked file URL; leave the user tab intact and ask the user to refresh it manually.
+- Run repository-level Git checks such as `git diff --check` from the `ColumnSetup_gaurav` repository root, not from an external skill directory used by the preceding command.
 - We are working inside `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn` now. For any command that needs to run outside that folder, ask the user for permission first. Git operations and reading/updating `AGENTS.md` are allowed from the repo root without asking.
 - Treat `master` as the main branch for this repository.
 - For plots, use this color guidance: desired displacement uses black with a thick dashed line, command displacement uses Copperwood `#AC6420`, measured displacement uses blue `#007CA8`, and force uses purple `#74058A`. Other available palette colors are green `#39BF5E` and red `#901500`.
