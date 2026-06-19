@@ -3,8 +3,8 @@ clear; clc
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
 addpath(fullfile(root, 'methods'))
-addpath(fullfile(step_root, 'helpers', 'utils'))
-setup_project_paths(step_root);
+addpath(step_root)
+addpaths();
 
 fprintf('Select chirp data file.\n')
 [~, chirp_file] = load_saved_result_file(step_root, 'tests');

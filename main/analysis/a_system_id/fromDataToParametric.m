@@ -19,8 +19,8 @@ max_freq_hz = 80;
 %% Setup
 project_root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(project_root));
-addpath(fullfile(step_root, 'helpers', 'utils'));
-setup_project_paths(step_root);
+addpath(step_root);
+addpaths();
 
 output_root = fullfile(step_root, 'saved_results', 'models');
 param_output_dir = fullfile(output_root, 'paarametric');

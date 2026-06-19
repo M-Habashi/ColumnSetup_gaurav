@@ -2,8 +2,8 @@ clear; clc; close all
 
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
-addpath(fullfile(step_root, 'helpers', 'utils'))
-setup_project_paths(step_root);
+addpath(step_root)
+addpaths();
 
 [data, ~, selected_file] = load_saved_result_file(step_root, 'tests');
 

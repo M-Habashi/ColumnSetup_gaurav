@@ -33,7 +33,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Preparing the Workspace
 clear; clc; close all
-addpath(genpath('helpers'));
+addpaths();
 
 disp('===============================================================')
 disp('                         Column Setup                          ')

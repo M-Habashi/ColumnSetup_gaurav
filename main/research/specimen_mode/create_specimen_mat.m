@@ -7,8 +7,8 @@ specimen_name = 'sp1_ori_3';
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
 addpath(fullfile(root, 'methods'))
-addpath(fullfile(step_root, 'helpers', 'utils'))
-setup_project_paths(step_root);
+addpath(step_root)
+addpaths();
 
 specimen_id = 'sp_1_test';
 

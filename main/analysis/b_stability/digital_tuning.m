@@ -15,8 +15,8 @@ digital_bandwidth = 20;
 %% Setup
 project_root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(project_root));
-addpath(fullfile(step_root, 'helpers', 'utils'));
-setup_project_paths(step_root);
+addpath(step_root);
+addpaths();
 
 model_source = normalize_model_source(model_source);
 [model_data, model_file, model_file_name] = load_saved_result_file(step_root, fullfile('models', model_source));

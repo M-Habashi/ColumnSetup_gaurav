@@ -8,8 +8,8 @@ factor = 0.1;
 
 project_root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(project_root));
-addpath(fullfile(step_root, 'helpers', 'utils'));
-setup_project_paths(step_root);
+addpath(step_root);
+addpaths();
 
 [parametric_model, parametric_model_file, parametric_model_file_name] = ...
     load_saved_result_file(step_root, fullfile('models', 'paarametric'));
