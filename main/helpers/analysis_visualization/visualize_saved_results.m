@@ -1,6 +1,7 @@
 %% Visualize Saved Column Setup Results
 % Lists saved result MAT files, prompts for one file, prints a compact
-% report, and plots displacement tracking plus measured force.
+% report, displacement tracking, measured force, and force-displacement
+% hysteresis.
 
 clc; close all
 
@@ -93,6 +94,14 @@ lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 linkaxes(ax, 'x')
+
+% Hysteresis shows the measured restoring force versus measured displacement.
+figure('Name', [selectedFileName ' - Hysteresis']);
+plot(dm, fm, '-', 'Color', colors.purple, 'LineWidth', 1.0);
+grid on
+xlabel('Measured displacement (mm)')
+ylabel('Measured force (N)')
+title('Force-Displacement Hysteresis')
 
 if hasTseEstimate
     figure('Name', [selectedFileName ' - Online TSE'], 'WindowState', 'maximized');
