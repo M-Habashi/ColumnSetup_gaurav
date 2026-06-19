@@ -158,6 +158,16 @@ end
 %% ACCURACY CHECK
 maximum_error = max(abs(u_num_exp-u_reference), [], 'all');
 
+% J1-J3 require separate commanded and measured actuator displacement
+% histories. This numerical experiment only provides structural responses,
+% so only the applicable response-validation metrics J4-J7 are evaluated.
+addpath(fullfile(script_dir, '..', 'helpers', 'analysis_visualization'));
+metric = validation_metrics();
+J4 = metric.J4(u_num_exp(:, 1), u_reference(:, 1));
+J5 = metric.J5(u_num_exp(:, 1), u_reference(:, 1));
+J6 = metric.J6(u_num_exp(:, 2), u_reference(:, 2));
+J7 = metric.J7(u_num_exp(:, 3), u_reference(:, 3));
+
 fprintf('\n%s numerical-experimental partition\n', record_names{earthquake_id});
 fprintf('Experimental k: %.6f N/mm (reduction factor: %.3f)\n', ...
     k_experimental, exp_k_reduction);
@@ -168,6 +178,11 @@ for floor_id = 1:n_story
         floor_id, max(abs(u_reference(:, floor_id))), ...
         max(abs(u_num_exp(:, floor_id))));
 end
+fprintf('\nValid validation metrics:\n');
+fprintf('J4 - first-floor normalized RMS error: %.2f%%\n', J4);
+fprintf('J5 - first-floor normalized peak error: %.2f%%\n', J5);
+fprintf('J6 - second-floor normalized RMS error: %.2f%%\n', J6);
+fprintf('J7 - third-floor normalized RMS error: %.2f%%\n\n', J7);
 
 %% TIME-HISTORY OVERLAY
 floor_colors = lines(n_story);
