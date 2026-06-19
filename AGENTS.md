@@ -4,7 +4,8 @@
 - On Windows, if the uncodixify Bash wrapper fails while attaching a WSL disk with `ERROR_PATH_NOT_FOUND`, do not retry WSL. Run the same validator natively from the skill directory with `pnpm exec tsx toolchain/uncodixify.ts <absolute-html-path>`.
 - In the in-app browser, `browser.user.openTabs()` can list a user-opened `file://` tab whose ID is not attachable through `browser.tabs.get()`. If `tabs.get` says the ID is absent, do not retry or navigate an alternate tab to the blocked file URL; leave the user tab intact and ask the user to refresh it manually.
 - Run repository-level Git checks such as `git diff --check` from the `ColumnSetup_gaurav` repository root, not from an external skill directory used by the preceding command.
-- We are working inside `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn` now. For any command that needs to run outside that folder, ask the user for permission first. Git operations and reading/updating `AGENTS.md` are allowed from the repo root without asking.
+- Before renaming a tracked directory with `git mv`, run `git status --short` and check for deleted tracked files inside it. If any are already deleted, rename the directory with PowerShell `Move-Item` instead; `git mv` can fail with `fatal: bad source` when it reaches the missing file.
+- We are working inside `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main` now. For any command that needs to run outside that folder, ask the user for permission first. Git operations and reading/updating `AGENTS.md` are allowed from the repo root without asking.
 - Treat `master` as the main branch for this repository.
 - For plots, use this color guidance: desired displacement uses black with a thick dashed line, command displacement uses Copperwood `#AC6420`, measured displacement uses blue `#007CA8`, and force uses purple `#74058A`. Other available palette colors are green `#39BF5E` and red `#901500`.
 - For any MATLAB/Simulink experiment-code change, ask the user before running the verification procedure. If the user confirms, run `main_ColumnSetup.m`, run the Simulink model on target, continue the main script after the Simulink run finishes so results are saved, and run the visualization helper script if needed.
@@ -13,7 +14,7 @@
 - Store all temporary verification/test artifacts under repo-level `.codex`, for example `.codex\verification\<task_name>\`. This includes baseline/after MAT files, plots, and comparison metrics. If the MATLAB workflow first writes a verification MAT file under `saved_results`, copy/move the needed evidence into `.codex\verification\<task_name>\` and remove duplicate temporary verification files from the step folder.
 - If the user asks to verify/vrify, treat that as explicit permission to run the physical Speedgoat workflow. It is considered safe and does not need an additional confirmation prompt.
 - Output verification procedure:
-  1. Work in `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn`.
+  1. Work in `C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main`.
   2. In MATLAB, run `dbstop in main_ColumnSetup at 201`, then run `main_ColumnSetup.m`.
   3. Wait until MATLAB stops at line 201 (`pause`). At this point offsets are read, `model_ColumnSetup_00` is open, and the main script is waiting for the target run.
   4. Run the physical Speedgoat target from MATLAB:
@@ -33,7 +34,7 @@
   5. Confirm `savedfile_flag` exists. The saved MAT file path is in `file_name`.
   6. Run the visualization on the exact saved file:
      ```matlab
-     projectFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn';
+     projectFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main';
      cd(projectFolder)
      outputVerificationFile = fullfile(projectFolder, file_name);
      run(fullfile(projectFolder, 'helpers', 'visualization', 'visualize_saved_results.m'))

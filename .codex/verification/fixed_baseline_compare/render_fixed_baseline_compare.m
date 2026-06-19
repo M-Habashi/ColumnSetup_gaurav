@@ -1,4 +1,4 @@
-projectFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn';
+projectFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main';
 repoFolder = fileparts(projectFolder);
 outputFolder = fullfile(repoFolder, '.codex', 'verification', 'fixed_baseline_compare');
 if ~exist(outputFolder, 'dir')

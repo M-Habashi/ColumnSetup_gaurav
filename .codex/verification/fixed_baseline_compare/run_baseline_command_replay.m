@@ -1,5 +1,5 @@
 repoFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav';
-projectFolder = fullfile(repoFolder, 'step_1_calibration_and_identificationn');
+projectFolder = fullfile(repoFolder, 'main');
 outputFolder = fullfile(repoFolder, '.codex', 'verification', 'fixed_baseline_compare');
 baselineFile = fullfile(repoFolder, '.codex', 'verification', 'file_log_move_test', 'baseline_pre_move.mat');
 

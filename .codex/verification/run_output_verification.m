@@ -9,7 +9,7 @@ if exist(fullfile(originalFolder, 'main_ColumnSetup.m'), 'file')
 else
     scriptFolder = fileparts(mfilename('fullpath'));
     repoFolder = fileparts(fileparts(scriptFolder));
-    projectFolder = fullfile(repoFolder, 'step_1_calibration_and_identificationn');
+    projectFolder = fullfile(repoFolder, 'main');
 end
 
 [~, projectAttributes] = fileattrib(projectFolder);

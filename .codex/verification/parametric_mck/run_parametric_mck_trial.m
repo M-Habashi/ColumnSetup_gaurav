@@ -1,7 +1,7 @@
 function result = run_parametric_mck_trial()
 %RUN_PARAMETRIC_MCK_TRIAL Scratch m/c/k-variable parametric ID trial.
 
-    project_root = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn';
+    project_root = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main';
     output_dir = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\.codex\verification\parametric_mck';
     data_name = 'gg_04_k.mat';
     profile_name = 'gg_04_k.mat';

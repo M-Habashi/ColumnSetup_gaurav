@@ -1,4 +1,4 @@
-projectFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn';
+projectFolder = 'C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main';
 cd(projectFolder)
 addpath(genpath(fullfile(projectFolder, 'helpers')))
 

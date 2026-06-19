@@ -7,7 +7,7 @@ Use output verification when the goal is to prove that the active step workflow 
 1. Start MATLAB in the active step folder, for example:
 
    ```text
-   C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn
+   C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\main
    ```
 
 2. Run:
