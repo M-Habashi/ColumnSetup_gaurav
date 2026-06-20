@@ -1,3 +1,13 @@
+# Pending
+- Sap folder organization (only keep the files that i care about in sap folder and move others into utils_sap)
+- sap building_rf should ask me about the specimen
+- clear running files can be added to the cleanup to or separate cleaning
+- close sap after finishing
+- it should create ref_[specimen].mat
+- ref and ref_all and nume_exp should ask about the specimen and load the corresponding ref_[specimen].mat if not existing ot should inform the user to run build_ref first
+- now test the num_exp with the correct k
+- now the rlation between the feedback and numerical is not 2 anymore, this number must be very clear.
+
 # Things to test
 1- make the assumptions of FEM clear
     - no shear deformation

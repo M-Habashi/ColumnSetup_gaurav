@@ -2,7 +2,7 @@ function frame = sapTemplateFrameDefinition()
 %SAPTEMPLATEFRAMEDEFINITION Inputs reproduced from sap/template.sdb.
 %   The SAP model stores the base spring rounded to the nearest 1e8
 %   N*mm/rad. Its unrounded value is calibrated from sp1_ori_2.mat by the
-%   same equation used in build_ref_model.m.
+%   same equation used in build_FEM.m.
 
 script_dir = fileparts(mfilename('fullpath'));
 project_root = fileparts(script_dir);

@@ -14,6 +14,7 @@ TABLE:  "CASE - MODAL 1 - GENERAL"
  
 TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"
    Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1
+   Case=MODE1_EQ   LoadType="Load pattern"   LoadName=MODE1_EQ   LoadSF=1
  
 TABLE:  "CONNECTIVITY - FRAME"
    Frame=B_L1_B1   JointI=J_L1_G0   JointJ=J_L1_G1   IsCurved=No   GUID=5fc34fb4-f9d4-4edd-a4a0-d9a1e689fc58
@@ -264,22 +265,25 @@ TABLE:  "JOINT COORDINATES"
    Joint=J_L0_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=0   SpecialJt=Yes   GUID=cf60bdfe-41f9-4df3-b99a-6255bcea14fc
    Joint=J_L0_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=0   SpecialJt=Yes   GUID=9cba372f-40d2-47fb-8279-3681baf199dd
    Joint=J_L0_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=0   SpecialJt=Yes   GUID=504ea9e0-9479-42f4-8399-71cbc9c9ee56
-   Joint=J_L1_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=2033.016   SpecialJt=Yes   GUID=95cf0ac9-bcde-4cc7-b19c-55ce71267233
-   Joint=J_L1_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=2033.016   SpecialJt=Yes   GUID=679be148-970b-41be-9d92-73a236af7270
-   Joint=J_L1_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=2033.016   SpecialJt=Yes   GUID=94ac60d9-0cd3-484d-8b6b-cede6be86852
-   Joint=J_L1_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=2033.016   SpecialJt=Yes   GUID=045c5f28-b7e2-4c72-b27b-54c882927394
-   Joint=J_L2_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=4066.032   SpecialJt=Yes   GUID=7672964a-e7c7-4c45-8709-b8792a669ccd
-   Joint=J_L2_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=4066.032   SpecialJt=Yes   GUID=26ae0c18-a301-47a4-93a2-7a531312911c
-   Joint=J_L2_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=4066.032   SpecialJt=Yes   GUID=cc3ab438-909b-4c68-9757-858af1cb928b
-   Joint=J_L2_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=4066.032   SpecialJt=Yes   GUID=57025ea9-646c-437d-9ee2-6bf76c5333d2
-   Joint=J_L3_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=6099.048000000001   SpecialJt=Yes   GUID=97172786-7693-45e3-84a3-ba29a27648c1
-   Joint=J_L3_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=6099.048000000001   SpecialJt=Yes   GUID=be53ce11-c1d6-445f-b9eb-df1537cc6fac
-   Joint=J_L3_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=6099.048000000001   SpecialJt=Yes   GUID=ec1606be-95e3-4268-ba25-0aad79a15096
-   Joint=J_L3_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=6099.048000000001   SpecialJt=Yes   GUID=3ab4f17b-2033-4cd0-8826-ad41254ca6da
-   Joint=J_INTERFACE   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=1016.508   SpecialJt=Yes   GUID=e4e12ac8-34ec-4a61-b1ab-a4f39ac1ab1e
+   Joint=J_L1_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=1943.7564618695412   SpecialJt=Yes   GUID=95cf0ac9-bcde-4cc7-b19c-55ce71267233
+   Joint=J_L1_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=1943.7564618695412   SpecialJt=Yes   GUID=679be148-970b-41be-9d92-73a236af7270
+   Joint=J_L1_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=1943.7564618695412   SpecialJt=Yes   GUID=94ac60d9-0cd3-484d-8b6b-cede6be86852
+   Joint=J_L1_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=1943.7564618695412   SpecialJt=Yes   GUID=045c5f28-b7e2-4c72-b27b-54c882927394
+   Joint=J_L2_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=3887.5129237390825   SpecialJt=Yes   GUID=7672964a-e7c7-4c45-8709-b8792a669ccd
+   Joint=J_L2_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=3887.5129237390825   SpecialJt=Yes   GUID=26ae0c18-a301-47a4-93a2-7a531312911c
+   Joint=J_L2_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=3887.5129237390825   SpecialJt=Yes   GUID=cc3ab438-909b-4c68-9757-858af1cb928b
+   Joint=J_L2_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=3887.5129237390825   SpecialJt=Yes   GUID=57025ea9-646c-437d-9ee2-6bf76c5333d2
+   Joint=J_L3_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=5831.269385608623   SpecialJt=Yes   GUID=97172786-7693-45e3-84a3-ba29a27648c1
+   Joint=J_L3_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3048   Y=0   Z=5831.269385608623   SpecialJt=Yes   GUID=be53ce11-c1d6-445f-b9eb-df1537cc6fac
+   Joint=J_L3_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6096   Y=0   Z=5831.269385608623   SpecialJt=Yes   GUID=ec1606be-95e3-4268-ba25-0aad79a15096
+   Joint=J_L3_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9144   Y=0   Z=5831.269385608623   SpecialJt=Yes   GUID=3ab4f17b-2033-4cd0-8826-ad41254ca6da
+   Joint=J_INTERFACE   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=1016   SpecialJt=Yes   GUID=e4e12ac8-34ec-4a61-b1ab-a4f39ac1ab1e
  
 TABLE:  "JOINT LOADS - FORCE"
    Joint=J_L1_G0   LoadPat=DEAD   CoordSys=GLOBAL   F1=1000   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=5499ca27-7e68-464a-a945-901d13413519
+   Joint=J_L1_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=204.24259271359043   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=8e9424b2-2816-4aea-9fa7-da15c8d804c8
+   Joint=J_L2_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=368.9719116846283   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=c78d02da-c27b-46ef-b85b-e098cbdcf9b5
+   Joint=J_L3_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=426.78549560178124   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=944aae66-79a9-47b3-815d-0328d571f009
  
 TABLE:  "JOINT PATTERN DEFINITIONS"
    Pattern=Default
@@ -297,11 +301,13 @@ TABLE:  "JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED"
    Joint=J_L0_G3   CoordSys=GLOBAL   U1=0   U2=0   U3=0   R1=0   R2=10379827104.331835   R3=0
  
 TABLE:  "LOAD CASE DEFINITIONS"
-   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes   GUID=2e9af43c-c8db-4be8-a9da-cbe125b6c4fe
-   Case=MODAL   Type=LinModal   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=Yes   GUID=3e488eb8-2e12-4b55-9387-9abf7e304f7c
+   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=No   GUID=2e9af43c-c8db-4be8-a9da-cbe125b6c4fe
+   Case=MODAL   Type=LinModal   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=No   GUID=3e488eb8-2e12-4b55-9387-9abf7e304f7c
+   Case=MODE1_EQ   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=Yes   GUID=3bb8bb95-e94e-413c-9493-a256115cc5a8
  
 TABLE:  "LOAD PATTERN DEFINITIONS"
    LoadPat=DEAD   DesignType=Dead   SelfWtMult=0   GUID=4aae938d-9f89-4d17-9aae-632089f3279b
+   LoadPat=MODE1_EQ   DesignType=Other   SelfWtMult=0   GUID=31f16fdd-67e6-40f5-9c2f-4a75ab433cba
  
 TABLE:  "MASS SOURCE"
    MassSource=MSSSRC1   Elements=Yes   Masses=Yes   Loads=No   IsDefault=Yes

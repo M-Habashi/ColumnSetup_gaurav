@@ -1,8 +1,14 @@
-function [data, filePath, selectedFileName] = load_saved_result_file(projectFolder, resultSubfolder)
+function [data, filePath, selectedFileName] = load_saved_result_file( ...
+        projectFolder, resultSubfolder, forcePrompt)
 
 if nargin < 2 || isempty(resultSubfolder)
     resultSubfolder = 'tests';
 end
+if nargin < 3 || isempty(forcePrompt)
+    forcePrompt = false;
+end
+validateattributes(forcePrompt, {'logical'}, {'scalar'}, mfilename, ...
+    'forcePrompt');
 
 resultSubfolder = normalizeSubfolder(resultSubfolder);
 rootFolder = fullfile(projectFolder, 'saved_results', resultSubfolder);
@@ -10,7 +16,8 @@ files = dir(fullfile(rootFolder, '**', '*.mat'));
 [~, order] = sort(string(fullfile({files.folder}, {files.name})));
 files = files(order);
 
-if evalin('caller', 'exist(''outputVerificationFile'', ''var'')')
+if ~forcePrompt && ...
+        evalin('caller', 'exist(''outputVerificationFile'', ''var'')')
     filePath = evalin('caller', 'outputVerificationFile');
 else
     if isempty(files)
