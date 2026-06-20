@@ -1,3 +1,4 @@
+% Uses the unscaled TSE method implemented in research/specimen_mode/methods/estimate_tse.m.
 clear; clc
 
 %% Specimen setup
@@ -6,7 +7,7 @@ specimen_name = 'sp1_ori_3';
 
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
-addpath(fullfile(root, 'methods'))
+addpath(fullfile(step_root, 'research', 'specimen_mode', 'methods'))
 addpath(step_root)
 addpaths();
 

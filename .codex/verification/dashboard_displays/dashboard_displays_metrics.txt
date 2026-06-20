@@ -1,7 +1,0 @@
-saved_mat_original=C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\step_1_calibration_and_identificationn\saved_results\20260607\20260607_1107_config.mat
-saved_mat_verification=C:\Users\BOWN1111PC1\Documents\Mohamed\ColumnSetup_gaurav\.codex\verification\dashboard_displays\20260607_1107_config.mat
-duration_s=60
-sample_count=122881
-fs=2048
-dt=0.00048828125
-rms_dd_dm=0.00502767940468

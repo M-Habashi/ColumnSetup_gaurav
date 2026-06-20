@@ -25,7 +25,8 @@ else
     end
 
     fprintf('\nAvailable files:\n\n');
-    printFileTree(resultSubfolder, rootFolder, files);
+    printFileTree(fullfile('saved_results', resultSubfolder), ...
+        rootFolder, files);
     selection = input('\nSelect file number to load: ');
     filePath = fullfile(files(selection).folder, files(selection).name);
 end
@@ -37,25 +38,35 @@ data = load(filePath);
 end
 
 function printFileTree(rootLabel, rootFolder, files)
-    currentFolder = "";
-    fprintf('%s\n', rootLabel);
+    rootParts = strsplit(char(rootLabel), filesep);
+    rootParts = rootParts(~cellfun('isempty', rootParts));
+    fprintf('%s\n', rootParts{1});
+    for rootDepth = 2:numel(rootParts)
+        fprintf('%s|-- %s\n', repmat('  ', 1, rootDepth - 1), ...
+            rootParts{rootDepth});
+    end
+
+    baseDepth = numel(rootParts) - 1;
+    printedFolders = strings(0, 1);
     for k = 1:numel(files)
         relFolder = getRelativeFolder(rootFolder, files(k).folder);
-        if relFolder ~= currentFolder
-            currentFolder = relFolder;
-            if currentFolder ~= "."
-                parts = split(currentFolder, filesep);
-                for p = 1:numel(parts)
-                    fprintf('%s%s\n', repmat('    ', 1, p), char(parts(p)));
+        folderParts = strings(0, 1);
+        if relFolder ~= "."
+            folderParts = split(relFolder, filesep);
+            for folderDepth = 1:numel(folderParts)
+                folderKey = join(folderParts(1:folderDepth), filesep);
+                if ~any(strcmpi(printedFolders, folderKey))
+                    fprintf('%s|-- %s\n', repmat('  ', 1, ...
+                        baseDepth + folderDepth), ...
+                        folderParts(folderDepth));
+                    printedFolders(end + 1, 1) = folderKey; %#ok<AGROW>
                 end
             end
         end
-        if currentFolder == "."
-            indentLevel = 1;
-        else
-            indentLevel = numel(split(currentFolder, filesep)) + 1;
-        end
-        fprintf('%s[%d] %s\n', repmat('    ', 1, indentLevel), k, files(k).name);
+
+        fileDepth = baseDepth + numel(folderParts) + 1;
+        fprintf('%s|-- [%d] %s\n', repmat('  ', 1, fileDepth), ...
+            k, files(k).name);
     end
 end
 

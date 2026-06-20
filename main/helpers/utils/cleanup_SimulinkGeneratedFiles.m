@@ -1,5 +1,6 @@
-%% Clean Simulink Generated Files
-% Deletes generated Simulink cache, backup, and build files.
+%% Clean Generated Files
+% Deletes generated Simulink files and SAP analysis/output files. SAP model
+% databases (*.sdb) and text backups (*.$2k) are preserved.
 
 clear; clc
 
@@ -47,10 +48,27 @@ for i = 1:numel(filePatterns)
     end
 end
 
+%% SAP generated analysis files
+sapFolder = fullfile(root, 'FEM_models', 'sap');
+if isfolder(sapFolder)
+    sapItems = dir(sapFolder);
+    sapItems = sapItems(~[sapItems.isdir]);
+    sapNames = lower(string({sapItems.name}));
+    keepSapFile = endsWith(sapNames, '.sdb') | ...
+        endsWith(sapNames, '.$2k');
+
+    for i = find(~keepSapFile)
+        p = fullfile(sapItems(i).folder, sapItems(i).name);
+        delete(p);
+        nDeleted = nDeleted + 1;
+        deleted{nDeleted, 1} = relpath(p, root); %#ok<SAGROW>
+    end
+end
+
 fprintf('Cleanup complete.\n')
 
 if isempty(deleted)
-    fprintf('No generated Simulink backup/cache files were found.\n')
+    fprintf('No generated files were found.\n')
 else
     fprintf('Deleted files and folders:\n')
     printTree(sort(deleted(:)), root)
