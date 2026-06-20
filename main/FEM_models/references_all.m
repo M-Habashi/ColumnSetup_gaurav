@@ -17,26 +17,12 @@ validateattributes(damping_ratio, {'numeric'}, ...
 
 %% MODEL DEFINITION
 g0 = 9806.65;                       % gravitational acceleration [mm/s^2]
-ft_to_mm = 304.8;                   % [mm/ft]
-n_story = 3;
-story_height = 6.67*ft_to_mm;       % [mm]
-
-E = 200000;                         % [N/mm^2]
-nu = 0.30;
-G = E/(2*(1+nu));                   % [N/mm^2]
-
-W8x28 = struct('d', 205, 'tw', 7.24, 'Ix', 40.8e6);
-W8x35 = struct('d', 206, 'tw', 7.87, 'Ix', 52.9e6);
-W8x28.Av = W8x28.d*W8x28.tw;
-W8x35.Av = W8x35.d*W8x35.tw;
-
-k_ext = columnLateralStiffness(E, G, W8x28.Ix, W8x28.Av, story_height);
-k_int = columnLateralStiffness(E, G, W8x35.Ix, W8x35.Av, story_height);
-k_story = 2*k_ext + 2*k_int;        % [N/mm]
-
-K = k_story*[2, -1,  0;
-            -1,  2, -1;
-             0, -1,  1];           % [N/mm]
+frame = sapTemplateFrameDefinition();
+n_story = frame.n_story;
+[K, ~] = assembleCondensedFrameStiffness( ...
+    frame.n_story, frame.n_bay, frame.bay_width, frame.story_height, ...
+    frame.E, frame.section, frame.beam_connection_k, ...
+    frame.base_rotation_k);         % [N/mm]
 
 floor_mass_kg = [20121; 20121; 18426];
 M = diag(floor_mass_kg)/1000;       % [N*s^2/mm]
@@ -130,11 +116,6 @@ subtitle(response_layout, sprintf(['Scale = %.3g; damping = %.1f%%; ' ...
 linkaxes([ground_axes; response_axes], 'x');
 
 %% LOCAL FUNCTIONS
-function k = columnLateralStiffness(E, G, Ix, Av, L)
-phi = 12*E*Ix/(G*Av*L^2);
-k = 12*E*Ix/(L^3*(1+phi));
-end
-
 function u = newmarkAverageAcceleration(time, M, C, K, force)
 n_step = numel(time);
 n_dof = size(M, 1);

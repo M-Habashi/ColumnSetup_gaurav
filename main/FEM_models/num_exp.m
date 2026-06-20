@@ -1,13 +1,16 @@
 %% NUMERICAL-EXPERIMENTAL SUBSTRUCTURE COMPARISON
-% The lower half of the first-story left W8x28 column is experimental.
+% The physical column is defined by experimentalColumnDefinition.
 
 clear; clc; close all;
 
 %% INPUTS
-earthquake_id = 4;
+earthquake_id = 1;
 earthquake_scale = 1.0;
 damping_ratio = 0.02;
-exp_k_reduction = 0.34;                                 % 0.9 = 10% reduction
+exp_k_reduction = 1;                                 % 0.9 = 10% reduction
+frame = sapTemplateFrameDefinition();
+beam_connection_k = frame.beam_connection_k;
+base_rotation_k = frame.base_rotation_k;             % [N*mm/rad]
 
 validateattributes(earthquake_id, {'numeric'}, ...
     {'scalar', 'integer', '>=', 1, '<=', 10});
@@ -19,25 +22,20 @@ validateattributes(exp_k_reduction, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative', '<=', 1});
 
 %% REFERENCE MODEL
-ft_to_mm = 304.8;
-n_story = 3;
-story_height = 6.67*ft_to_mm;
-E = 200000;                                           % [N/mm^2]
-nu = 0.30;
-G = E/(2*(1+nu));
+n_story = frame.n_story;
+n_bay = frame.n_bay;
+bay_width = frame.bay_width;
+story_height = frame.story_height;
+E = frame.E;                                          % [N/mm^2]
+experimental_column = experimentalColumnDefinition();
 
-W8x28 = struct('d', 205, 'tw', 7.24, 'Ix', 40.8e6);
-W8x35 = struct('d', 206, 'tw', 7.87, 'Ix', 52.9e6);
-W8x28.Av = W8x28.d*W8x28.tw;
-W8x35.Av = W8x35.d*W8x35.tw;
+section = frame.section;
 
-phi_ext = 12*E*W8x28.Ix/(G*W8x28.Av*story_height^2);
-phi_int = 12*E*W8x35.Ix/(G*W8x35.Av*story_height^2);
-k_ext = 12*E*W8x28.Ix/(story_height^3*(1+phi_ext));
-k_int = 12*E*W8x35.Ix/(story_height^3*(1+phi_int));
-k_story = 2*k_ext+2*k_int;
+% Full 2-D frame assembly followed by static condensation of rotations.
+[K_reference, frame_model] = assembleCondensedFrameStiffness( ...
+    n_story, n_bay, bay_width, story_height, E, section, ...
+    beam_connection_k, base_rotation_k);
 
-K_reference = k_story*[2, -1, 0; -1, 2, -1; 0, -1, 1];
 M = diag([20121; 20121; 18426])/1000;
 influence = ones(n_story, 1);
 
@@ -51,7 +49,14 @@ end
 C = M*modes*diag(2*damping_ratio*omega)*modes'*M;
 
 %% NUMERICAL-EXPERIMENTAL PARTITION
-% The numerical model excludes one complete first-story exterior column.
+% The single-actuator partition still exchanges only horizontal displacement
+% and shear. Its fixed-fixed half-column approximation is retained until the
+% experiment can exchange interface rotation and moment as well.
+k_ext = 12*E*section.W8x28.Ix/story_height^3;
+
+% Remove the same scalar restoring contribution that the experimental
+% substructure returns. This preserves the reference solution when the
+% experimental reduction factor is one.
 K_numerical = K_reference;
 K_numerical(1, 1) = K_numerical(1, 1)-k_ext;
 
@@ -169,6 +174,10 @@ J6 = metric.J6(u_num_exp(:, 2), u_reference(:, 2));
 J7 = metric.J7(u_num_exp(:, 3), u_reference(:, 3));
 
 fprintf('\n%s numerical-experimental partition\n', record_names{earthquake_id});
+fprintf('Model: condensed 2-D frame FEM (%d full DOFs)\n', ...
+    size(frame_model.K_full, 1));
+fprintf('Beam-column rotational stiffness: Inf (rigid)\n');
+fprintf('Base rotational stiffness: %.12g N*mm/rad\n', base_rotation_k);
 fprintf('Experimental k: %.6f N/mm (reduction factor: %.3f)\n', ...
     k_experimental, exp_k_reduction);
 fprintf('Maximum displacement difference: %.6e mm\n', maximum_error);
@@ -200,7 +209,7 @@ for floor_id = 1:n_story
     if floor_id == 1, legend(ax, 'Location', 'best'); end
 end
 xlabel(ax, 'Time (s)');
-title(time_layout, sprintf('%s: reference and num\_exp response', ...
+title(time_layout, sprintf('%s: reference and num\\_exp response', ...
     record_names{earthquake_id}));
 subtitle(time_layout, sprintf('Maximum difference = %.3e mm', maximum_error));
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
@@ -242,11 +251,9 @@ subtitle(fft_layout, 'One-sided amplitude spectrum');
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 %% NUMERICAL-EXPERIMENTAL FRAME PARTITION
-n_bay = 3;
-bay_width = 10*ft_to_mm;
 frame_x = (0:n_bay)*bay_width;
 frame_y = (0:n_story)*story_height;
-interface_y = story_height/2;
+interface_y = experimental_column.height_mm;
 
 figure('Color', 'w', 'Name', 'Numerical-experimental frame partition');
 hold on;
@@ -294,7 +301,8 @@ text(frame_x(1)+0.12*bay_width, interface_y, ...
     'Interface: d_{exp} = u_1/2', 'Color', [0.75 0.05 0.05], ...
     'FontWeight', 'bold', 'VerticalAlignment', 'bottom');
 text(frame_x(1)+0.12*bay_width, 0.20*story_height, ...
-    'Experimental W8x28 half-column', 'Color', [0.75 0.05 0.05]);
+    sprintf('Experimental %s column', experimental_column.shape), ...
+    'Color', [0.75 0.05 0.05]);
 
 legend([h_numerical, h_experimental, h_interface], 'Location', 'northoutside', ...
     'Orientation', 'horizontal');

@@ -1,7 +1,7 @@
 %% THREE-STORY FRAME RESPONSE TO EARTHQUAKE EXCITATION
-% Three-DOF shear-building FEM reference model based on
-% frame_fem_definition.html. Column bending and shear flexibility are
-% included. Floor responses are plotted as displacements relative to ground.
+% Condensed 2-D frame FEM based on frame_fem_definition.html. Column and
+% beam and column bending, joint rotations, semi-rigid
+% beam connections, and base rotational springs are represented.
 
 clear;
 clc;
@@ -21,11 +21,16 @@ earthquake_scale = 1.0;
 % Modal damping ratio applied to all three modes.
 damping_ratio = 0.02;
 
+% Reproduce the geometry, AISC properties, and calibrated base spring in
+% sap/template.sdb.
+frame = sapTemplateFrameDefinition();
+beam_connection_k = frame.beam_connection_k;
+base_rotation_k = frame.base_rotation_k;
+
 %% UNIT CONSTANTS AND INPUT CHECKS
 % The analysis uses only kg, N, mm, and s. Acceleration is converted to
 % mm/s^2 for the analysis and divided by g0 only when it is plotted.
 g0 = 9806.65;                       % gravitational acceleration [mm/s^2]
-ft_to_mm = 304.8;                   % [mm/ft]
 
 validateattributes(earthquake_id, {'numeric'}, ...
     {'scalar', 'integer', '>=', 1, '<=', 10}, mfilename, 'earthquake_id');
@@ -35,45 +40,22 @@ validateattributes(damping_ratio, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'positive', '<', 1}, mfilename, 'damping_ratio');
 
 %% FRAME GEOMETRY AND MATERIAL
-n_story = 3;
-n_bay = 3;
-bay_width = 10.00 * ft_to_mm;       % [mm]
-story_height = 6.67 * ft_to_mm;     % [mm]
-
-E = 200000;                         % steel elastic modulus [N/mm^2]
-nu = 0.30;                          % Poisson ratio [-]
-G = E / (2 * (1 + nu));             % steel shear modulus [N/mm^2]
+n_story = frame.n_story;
+n_bay = frame.n_bay;
+bay_width = frame.bay_width;         % [mm]
+story_height = frame.story_height;   % [mm]
+E = frame.E;                         % [N/mm^2]
 
 %% AISC W-SECTION PROPERTIES
-% Metric properties from the AISC Shapes Database v16.0. Ix values in the
-% database are reported in 10^6 mm^4. The web shear area is Av = d*tw.
-% W8x24 is used for plotting the beams; beam stiffness is not included in
-% this three-DOF shear-building idealization.
-section.W8x24 = struct('d', 201, 'tw', 6.22, 'Ix', 34.4e6);  % [mm, mm, mm^4]
-section.W8x28 = struct('d', 205, 'tw', 7.24, 'Ix', 40.8e6);  % [mm, mm, mm^4]
-section.W8x35 = struct('d', 206, 'tw', 7.87, 'Ix', 52.9e6);  % [mm, mm, mm^4]
+% Exact SAP2000 v26 AISC15 section properties [mm^4].
+section = frame.section;
 
-section.W8x28.Av = section.W8x28.d * section.W8x28.tw;       % [mm^2]
-section.W8x35.Av = section.W8x35.d * section.W8x35.tw;       % [mm^2]
-
-%% COLUMN AND STORY STIFFNESS INCLUDING SHEAR DEFORMATION
-% For a fixed-fixed Timoshenko column:
-%   phi = 12*E*Ix/(G*Av*L^2)
-%   k    = 12*E*Ix/(L^3*(1 + phi))
-% Each story contains two exterior W8x28 columns and two interior W8x35
-% columns. Stiffness values are therefore entirely in N/mm.
-[k_ext, k_ext_EB] = columnLateralStiffness( ...
-    E, G, section.W8x28.Ix, section.W8x28.Av, story_height);
-[k_int, k_int_EB] = columnLateralStiffness( ...
-    E, G, section.W8x35.Ix, section.W8x35.Av, story_height);
-
-k_story = 2 * k_ext + 2 * k_int;    % identical story stiffnesses [N/mm]
-story_k = repmat(k_story, n_story, 1);
-
-% Three-DOF shear-building stiffness matrix [N/mm].
-K = [story_k(1) + story_k(2), -story_k(2),              0;
-    -story_k(2),               story_k(2) + story_k(3), -story_k(3);
-     0,                       -story_k(3),               story_k(3)];
+%% FRAME STIFFNESS AND STATIC CONDENSATION
+% Joint rotations are assembled explicitly. They are statically condensed,
+% leaving the three rigid-diaphragm floor translations for time integration.
+[K, frame_model] = assembleCondensedFrameStiffness( ...
+    n_story, n_bay, bay_width, story_height, E, section, ...
+    beam_connection_k, base_rotation_k);                 % [N/mm]
 
 %% LUMPED FLOOR MASS MATRIX
 % The HTML level values are used numerically as physical lumped masses.
@@ -104,8 +86,8 @@ assert(all(eig(M) > 0), 'The mass matrix must be positive definite.');
 assert(norm(K-K', 'fro') < 1e-10*norm(K, 'fro'), ...
     'The stiffness matrix must be symmetric.');
 assert(all(eig(K) > 0), 'The stiffness matrix must be positive definite.');
-assert(k_ext < k_ext_EB && k_int < k_int_EB, ...
-    'Column shear flexibility must reduce the column stiffness.');
+assert(size(frame_model.K_full, 1) > n_story, ...
+    'The frame FEM must contain rotational DOFs before condensation.');
 
 %% LOAD THE EARTHQUAKE
 script_dir = fileparts(mfilename('fullpath'));
@@ -143,7 +125,11 @@ if earthquake_scale == 0
 end
 
 %% REPORT MODEL PROPERTIES
-fprintf('\nThree-story shear-building FEM reference model\n');
+fprintf('\nThree-story condensed frame FEM reference model\n');
+fprintf('Beam-column rotational stiffness: %s N*mm/rad\n', ...
+    stiffnessText(beam_connection_k));
+fprintf('Base rotational stiffness: %s N*mm/rad\n', ...
+    stiffnessText(base_rotation_k));
 fprintf('\nNATURAL FREQUENCIES OF THE BUILDING\n');
 for mode_id = 1:n_story
     fprintf('  Mode %d: %.4f Hz\n', mode_id, frequency_hz(mode_id));
@@ -188,11 +174,12 @@ plotFrameModel(n_bay, n_story, bay_width, story_height, ...
     floor_mass_kg, ag(peak_index)/g0);
 
 %% LOCAL FUNCTIONS
-function [k_timoshenko, k_euler, phi] = columnLateralStiffness(E, G, Ix, Av, L)
-% Return fixed-fixed column lateral stiffness with and without shear [N/mm].
-phi = 12*E*Ix/(G*Av*L^2);
-k_euler = 12*E*Ix/L^3;
-k_timoshenko = k_euler/(1 + phi);
+function value = stiffnessText(stiffness)
+if isinf(stiffness)
+    value = 'Inf (rigid)';
+else
+    value = sprintf('%.6g', stiffness);
+end
 end
 
 function [u, v, a] = newmarkAverageAcceleration(time, M, C, K, force)
