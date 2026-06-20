@@ -1,4 +1,4 @@
-File C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\Gaurav Setup\ColumnSetup_gaurav\main\fem_modeling\sap\sp1_ori_2.$2k was saved on m/d/yy at h:mm:ss
+File C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\Gaurav Setup\ColumnSetup_gaurav\main\control_and_HS\d_fem_modeling\sap\sp1_ori_2.$2k was saved on m/d/yy at h:mm:ss
  
 TABLE:  "ACTIVE DEGREES OF FREEDOM"
    UX=Yes   UY=No   UZ=Yes   RX=No   RY=Yes   RZ=No
@@ -281,9 +281,9 @@ TABLE:  "JOINT COORDINATES"
  
 TABLE:  "JOINT LOADS - FORCE"
    Joint=J_L1_G0   LoadPat=DEAD   CoordSys=GLOBAL   F1=1000   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=5499ca27-7e68-464a-a945-901d13413519
-   Joint=J_L1_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=204.24259271359043   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=8e9424b2-2816-4aea-9fa7-da15c8d804c8
-   Joint=J_L2_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=368.9719116846283   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=c78d02da-c27b-46ef-b85b-e098cbdcf9b5
-   Joint=J_L3_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=426.78549560178124   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=944aae66-79a9-47b3-815d-0328d571f009
+   Joint=J_L1_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=204.24259271359043   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=e43a78c6-449e-4d2a-8e50-2bc110032b14
+   Joint=J_L2_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=368.9719116846283   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=35570478-2db3-4a62-837b-c6ae185bb18f
+   Joint=J_L3_G0   LoadPat=MODE1_EQ   CoordSys=GLOBAL   F1=426.78549560178124   F2=0   F3=0   M1=0   M2=0   M3=0   GUID=cb2afff4-abba-41bc-ac35-c33411949e07
  
 TABLE:  "JOINT PATTERN DEFINITIONS"
    Pattern=Default
@@ -303,11 +303,11 @@ TABLE:  "JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED"
 TABLE:  "LOAD CASE DEFINITIONS"
    Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=No   GUID=2e9af43c-c8db-4be8-a9da-cbe125b6c4fe
    Case=MODAL   Type=LinModal   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=No   GUID=3e488eb8-2e12-4b55-9387-9abf7e304f7c
-   Case=MODE1_EQ   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=Yes   GUID=3bb8bb95-e94e-413c-9493-a256115cc5a8
+   Case=MODE1_EQ   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=Yes   GUID=108c4c72-ab9a-4e0b-a8eb-bef5602b91d3
  
 TABLE:  "LOAD PATTERN DEFINITIONS"
    LoadPat=DEAD   DesignType=Dead   SelfWtMult=0   GUID=4aae938d-9f89-4d17-9aae-632089f3279b
-   LoadPat=MODE1_EQ   DesignType=Other   SelfWtMult=0   GUID=31f16fdd-67e6-40f5-9c2f-4a75ab433cba
+   LoadPat=MODE1_EQ   DesignType=Other   SelfWtMult=0   GUID=6e72b965-0595-4341-964f-1d7c9275b8ce
  
 TABLE:  "MASS SOURCE"
    MassSource=MSSSRC1   Elements=Yes   Masses=Yes   Loads=No   IsDefault=Yes

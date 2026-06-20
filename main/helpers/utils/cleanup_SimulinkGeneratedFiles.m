@@ -49,7 +49,7 @@ for i = 1:numel(filePatterns)
 end
 
 %% SAP generated analysis files
-sapFolder = fullfile(root, 'fem_modeling', 'sap');
+sapFolder = fullfile(root, 'control_and_HS', 'd_fem_modeling', 'sap');
 if isfolder(sapFolder)
     sapItems = dir(sapFolder);
     sapItems = sapItems(~[sapItems.isdir]);

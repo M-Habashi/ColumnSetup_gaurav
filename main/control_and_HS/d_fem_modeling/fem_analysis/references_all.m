@@ -7,7 +7,7 @@ clc;
 close all;
 
 script_dir = fileparts(mfilename('fullpath'));
-project_root = fileparts(fileparts(script_dir));
+project_root = fileparts(fileparts(fileparts(script_dir)));
 addpath(fullfile(fileparts(script_dir), 'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 

@@ -43,7 +43,7 @@ clc;
 
 %% PATHS AND SPECIMEN SELECTION
 script_dir = fileparts(mfilename('fullpath'));
-project_root = fileparts(script_dir);
+project_root = fileparts(fileparts(script_dir));
 addpath(fullfile(script_dir, 'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 if ~exist('update_sap_model', 'var')

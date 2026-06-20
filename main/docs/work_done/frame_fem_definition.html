@@ -150,6 +150,7 @@
 
     .experimental-member { stroke: #d43c32; stroke-width: 6; }
     .interface-node { fill: #d43c32; stroke: #fff; stroke-width: 1.5; }
+    .joint-rotation { fill: var(--surface); stroke: var(--accent); stroke-width: 1.25; }
     .roller-support { stroke: #d43c32; stroke-width: 1.5; fill: var(--surface); }
     .callout-line { stroke: #d43c32; stroke-width: 1.5; fill: none; }
     .callout-text { fill: #f06a61; font: 14px "IBM Plex Sans", sans-serif; }
@@ -219,6 +220,13 @@
               <path d="M55 50H745 M55 163H745 M55 276H745"/>
             </g>
 
+            <g class="joint-rotation" aria-label="Independent rotational degree of freedom at every frame joint">
+              <circle cx="55" cy="50" r="3.5"/><circle cx="285" cy="50" r="3.5"/><circle cx="515" cy="50" r="3.5"/><circle cx="745" cy="50" r="3.5"/>
+              <circle cx="55" cy="163" r="3.5"/><circle cx="285" cy="163" r="3.5"/><circle cx="515" cy="163" r="3.5"/><circle cx="745" cy="163" r="3.5"/>
+              <circle cx="55" cy="276" r="3.5"/><circle cx="285" cy="276" r="3.5"/><circle cx="515" cy="276" r="3.5"/><circle cx="745" cy="276" r="3.5"/>
+              <circle cx="55" cy="390" r="3.5"/><circle cx="285" cy="390" r="3.5"/><circle cx="515" cy="390" r="3.5"/><circle cx="745" cy="390" r="3.5"/>
+            </g>
+
             <g class="base">
               <path d="M37 390H73 M267 390H303 M497 390H533 M727 390H763"/>
               <path d="M40 397l7-7m3 7 7-7m3 7 7-7 M270 397l7-7m3 7 7-7m3 7 7-7 M500 397l7-7m3 7 7-7m3 7 7-7 M730 397l7-7m3 7 7-7m3 7 7-7"/>
@@ -268,6 +276,7 @@
             <dt>Base restraints</dt><dd>Fixed translation; calibrated rotation spring</dd>
             <dt>Floor diaphragm</dt><dd>Rigid</dd>
             <dt>Retained DOFs</dt><dd>u₁, u₂, u₃</dd>
+            <dt>Joint rotations</dt><dd>One rotational DOF at every joint</dd>
             <dt>Damping ratio ζ</dt><dd>2%</dd>
           </dl>
         </aside>
@@ -325,7 +334,11 @@
       <div class="grid-2">
         <div class="assumption">
           <h3>Rigid floor diaphragms</h3>
-          <p>All nodes at a given floor share one horizontal displacement. Joint rotations remain independent during frame assembly and are then statically condensed, leaving three lateral generalized coordinates: u₁, u₂, and u₃.</p>
+          <p>All nodes at a given floor share one horizontal displacement. Every beam-column and base joint has a rotational degree of freedom. Rotations at different joints remain independent during assembly and are then statically condensed, leaving three lateral generalized coordinates: u₁, u₂, and u₃.</p>
+        </div>
+        <div class="assumption">
+          <h3>Base rotational springs</h3>
+          <p>Each numerical column base is represented as a translationally restrained hinge with rotational coordinate θ<sub>b</sub> connected to the calibrated spring k<sub>θ</sub>. The spring supplies moment M<sub>b</sub> = k<sub>θ</sub>θ<sub>b</sub> while permitting finite base rotation.</p>
         </div>
         <div class="assumption">
           <h3>Dynamic model</h3>
