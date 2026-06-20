@@ -1,15 +1,23 @@
 % Uses the unscaled TSE method implemented in research/specimen_mode/methods/estimate_tse.m.
 clear; clc
 
-%% Specimen setup
-% Edit this name to choose the output MAT file name.
-specimen_name = 'sp1_ori_3';
-
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
 addpath(fullfile(step_root, 'research', 'specimen_mode', 'methods'))
 addpath(step_root)
 addpaths();
+
+%% Specimen setup
+out_dir = fullfile(step_root, 'saved_results', 'specimens');
+if ~exist(out_dir, 'dir')
+    mkdir(out_dir);
+end
+
+specimen_name = input('Enter specimen name (without .mat): ', 's');
+out_file = fullfile(out_dir, [specimen_name '.mat']);
+if isfile(out_file)
+    error('Specimen file already exists: %s', out_file)
+end
 
 specimen_id = 'sp_1_test';
 
@@ -38,11 +46,10 @@ units.k = 'N/mm';
 source_method = 'TSE';
 source_file = selected_data_file;
 source_path = data_file;
-out_dir = fullfile(step_root, 'saved_results', 'specimens');
-if ~exist(out_dir, 'dir')
-    mkdir(out_dir);
+
+if isfile(out_file)
+    error('Specimen file already exists: %s', out_file)
 end
-out_file = fullfile(out_dir, [specimen_name '.mat']);
 
 save(out_file, ...
     'm', 'c', 'k', 'units', 'source_method', 'source_file', 'source_path', ...
