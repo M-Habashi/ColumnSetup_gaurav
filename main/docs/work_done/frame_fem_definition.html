@@ -150,6 +150,7 @@
 
     .experimental-member { stroke: #d43c32; stroke-width: 6; }
     .interface-node { fill: #d43c32; stroke: #fff; stroke-width: 1.5; }
+    .roller-support { stroke: #d43c32; stroke-width: 1.5; fill: var(--surface); }
     .callout-line { stroke: #d43c32; stroke-width: 1.5; fill: none; }
     .callout-text { fill: #f06a61; font: 14px "IBM Plex Sans", sans-serif; }
 
@@ -264,7 +265,7 @@
             <dt>Beam sections</dt><dd>W8×24</dd>
             <dt>Exterior columns</dt><dd>W8×28</dd>
             <dt>Interior columns</dt><dd>W8×35</dd>
-            <dt>Base restraints</dt><dd>Fixed</dd>
+            <dt>Base restraints</dt><dd>Fixed translation; calibrated rotation spring</dd>
             <dt>Floor diaphragm</dt><dd>Rigid</dd>
             <dt>Retained DOFs</dt><dd>u₁, u₂, u₃</dd>
             <dt>Damping ratio ζ</dt><dd>2%</dd>
@@ -324,7 +325,7 @@
       <div class="grid-2">
         <div class="assumption">
           <h3>Rigid floor diaphragms</h3>
-          <p>All nodes at a given floor share one horizontal displacement. Vertical and rotational floor coordinates are condensed, leaving three lateral generalized coordinates: u₁, u₂, and u₃.</p>
+          <p>All nodes at a given floor share one horizontal displacement. Joint rotations remain independent during frame assembly and are then statically condensed, leaving three lateral generalized coordinates: u₁, u₂, and u₃.</p>
         </div>
         <div class="assumption">
           <h3>Dynamic model</h3>
@@ -340,7 +341,7 @@
           <div class="drawing">
             <svg viewBox="0 0 820 475" role="img" aria-labelledby="hybrid-frame-title hybrid-frame-description">
               <title id="hybrid-frame-title">Hybrid simulation frame partition</title>
-              <desc id="hybrid-frame-description">The lower half of the first-story left exterior W8 by 28 column is red and represents the experimental substructure. The remainder of the frame is numerical.</desc>
+              <desc id="hybrid-frame-description">The lower 40-inch portion of the first-story left exterior W8 by 28 column is red and represents the experimental scalar lateral stiffness. A roller at its upper interface carries the vertical reaction in the numerical model, while only horizontal force is exchanged with the experiment.</desc>
 
               <g class="member">
                 <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
@@ -349,6 +350,11 @@
 
               <path class="experimental-member" d="M55 390V333"/>
               <circle class="interface-node" cx="55" cy="333" r="5"/>
+              <g class="roller-support" aria-label="Vertical reaction roller at the interface">
+                <path d="M45 347L55 334L65 347Z"/>
+                <circle cx="49" cy="351" r="3"/><circle cx="61" cy="351" r="3"/>
+                <path d="M42 356H68"/>
+              </g>
 
               <g class="base">
                 <path d="M37 390H73 M267 390H303 M497 390H533 M727 390H763"/>
@@ -377,8 +383,9 @@
               </g>
 
               <path class="callout-line" d="M61 362H92L110 347"/>
-              <text class="callout-text" x="118" y="342">Experimental</text>
-              <text class="callout-text" x="118" y="359">substructure</text>
+              <text class="callout-text" x="118" y="337">40 in experimental k</text>
+              <text class="callout-text" x="118" y="354">horizontal force only</text>
+              <text class="callout-text" x="118" y="371">roller carries vertical reaction</text>
             </svg>
           </div>
           <div class="legend" aria-label="Hybrid model legend">
@@ -390,18 +397,20 @@
         <aside class="model-notes" aria-label="Hybrid simulation partition summary">
           <dl class="definition-list">
             <dt>Experimental member</dt><dd>W8×28 exterior column</dd>
-            <dt>Experimental length</dt><dd>Lower half-story</dd>
+            <dt>Experimental length</dt><dd>40 in</dd>
             <dt>Physical location</dt><dd>First story, left side</dd>
             <dt>Remaining structure</dt><dd>Numerical model</dd>
-            <dt>Partition boundary</dt><dd>Column midheight</dd>
-            <dt>Column behavior</dt><dd>Double curvature</dd>
-            <dt>Interface command</dt><dd>d<sub>exp</sub> = Δ₁ / 2</dd>
-            <dt>Half-column stiffness</dt><dd>k<sub>exp</sub> = 2k<sub>col</sub></dd>
-            <dt>Returned force</dt><dd>F<sub>exp</sub> = k<sub>exp</sub>d<sub>exp</sub></dd>
+            <dt>Partition boundary</dt><dd>Specimen tip</dd>
+            <dt>Experimental model</dt><dd>Scalar lateral stiffness k</dd>
+            <dt>Interface command</dt><dd>d<sub>exp</sub> = u<sub>I</sub></dd>
+            <dt>Returned force</dt><dd>F<sub>exp</sub> = ku<sub>I</sub></dd>
+            <dt>Axial transfer</dt><dd>None from experiment</dd>
+            <dt>Moment transfer</dt><dd>None from experiment</dd>
+            <dt>Vertical reaction</dt><dd>Numerical roller</dd>
           </dl>
           <div class="assumption" style="margin-top: 18px;">
             <h3>Coupling concept</h3>
-            <p>The numerical solution supplies half of the first-story drift to the midheight interface. For double-curvature response, the lower half-column is twice as stiff with respect to this interface displacement: F<sub>exp</sub> = (2k<sub>col</sub>)(Δ₁/2) = k<sub>col</sub>Δ₁. The measured restoring force is returned at the first-floor DOF. The numerical first-story stiffness excludes the one complete W8×28 column represented by the specimen, preventing double counting.</p>
+            <p>The numerical FEM retains the interface horizontal translation u<sub>I</sub> explicitly and removes the lower 40-inch left exterior column segment. The experiment is represented only by its measured lateral stiffness k and returns F<sub>exp</sub> = ku<sub>I</sub> at that interface coordinate. A numerical roller supplies the vertical reaction, so the experiment receives no axial load; the released interface also transfers no experimental moment. No half-drift or factor-of-two stiffness assumption is used.</p>
           </div>
         </aside>
       </div>

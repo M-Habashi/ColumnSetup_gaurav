@@ -86,14 +86,14 @@ if ($sapProcesses.Count -eq 0) {
     Write-Output 'SAP stage: automatically started an API instance.'
 }
 elseif ($sapProcesses.Count -gt 1) {
-    throw 'More than one visible SAP2000 instance is open. Keep one instance open and rerun build_FEM.m.'
+    throw 'More than one visible SAP2000 instance is open. Keep one instance open and rerun build_fem.m.'
 }
 else {
     $sapProcessInfo = Get-CimInstance Win32_Process -Filter `
         "ProcessId = $($sapProcesses[0].Id)"
     if ($sapProcessInfo.CommandLine -notmatch '(^|\s)/A(\s|$)') {
         throw ('The visible SAP2000 instance was not API-launched. ' +
-            'Close it and rerun build_FEM.m; the script will start SAP automatically.')
+            'Close it and rerun build_fem.m; the script will start SAP automatically.')
     }
     $application = $helper.GetObjectProcess(
         'CSI.SAP2000.API.SapObject',

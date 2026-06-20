@@ -2,9 +2,14 @@
 % Runs the reference model for every available earthquake and overlays the
 % ground accelerations and relative floor displacements.
 
-clear;
+clearvars -except outputVerificationFile;
 clc;
 close all;
+
+script_dir = fileparts(mfilename('fullpath'));
+project_root = fileparts(fileparts(script_dir));
+addpath(fullfile(fileparts(script_dir), 'utils_fem'));
+addpath(fullfile(project_root, 'helpers', 'utils'));
 
 %% INPUTS
 earthquake_scale = 1.0;
@@ -17,16 +22,17 @@ validateattributes(damping_ratio, {'numeric'}, ...
 
 %% MODEL DEFINITION
 g0 = 9806.65;                       % gravitational acceleration [mm/s^2]
-frame = sapTemplateFrameDefinition();
+[fem_data, fem_file, ~] = load_saved_result_file( ...
+    project_root, fullfile('fem', 'ref'), false);
+assert(isfield(fem_data, 'fem_ref'), ...
+    'The selected file does not contain fem_ref.');
+fem_ref = fem_data.fem_ref;
+frame = fem_ref.frame;
 n_story = frame.n_story;
-[K, ~] = assembleCondensedFrameStiffness( ...
-    frame.n_story, frame.n_bay, frame.bay_width, frame.story_height, ...
-    frame.E, frame.section, frame.beam_connection_k, ...
-    frame.base_rotation_k);         % [N/mm]
-
-floor_mass_kg = [20121; 20121; 18426];
-M = diag(floor_mass_kg)/1000;       % [N*s^2/mm]
-influence = ones(n_story, 1);
+K = fem_ref.K;                      % [N/mm]
+M = fem_ref.M;                      % [N*s^2/mm]
+influence = fem_ref.influence;
+fprintf('Reference FEM: %s\n', fem_file);
 
 [modes, omega2] = eig(K, M, 'vector');
 [omega, mode_order] = sort(sqrt(omega2));
@@ -48,7 +54,7 @@ record_names = {'El Centro 1940', 'Northridge 1994', 'Kobe 1995', ...
 n_record = numel(record_fields);
 
 script_dir = fileparts(mfilename('fullpath'));
-earthquake_file = fullfile(script_dir, '..', 'input_signals', 'earthquakes.mat');
+earthquake_file = fullfile(project_root, 'input_signals', 'earthquakes.mat');
 assert(isfile(earthquake_file), 'Earthquake file not found: %s', earthquake_file);
 earthquake_data = load(earthquake_file, record_fields{:});
 

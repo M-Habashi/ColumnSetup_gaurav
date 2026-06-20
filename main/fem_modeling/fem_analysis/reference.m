@@ -1,11 +1,16 @@
 %% THREE-STORY FRAME RESPONSE TO EARTHQUAKE EXCITATION
-% Condensed 2-D frame FEM based on frame_fem_definition.html. Column and
+% Condensed 2-D frame FEM based on docs/work_done/frame_fem_definition.html. Column and
 % beam and column bending, joint rotations, semi-rigid
 % beam connections, and base rotational springs are represented.
 
-clear;
+clearvars -except outputVerificationFile;
 clc;
 close all;
+
+script_dir = fileparts(mfilename('fullpath'));
+project_root = fileparts(fileparts(script_dir));
+addpath(fullfile(fileparts(script_dir), 'utils_fem'));
+addpath(fullfile(project_root, 'helpers', 'utils'));
 
 %% INPUTS
 % Earthquake record: 1 = El Centro,      2 = Northridge,
@@ -21,9 +26,12 @@ earthquake_scale = 1.0;
 % Modal damping ratio applied to all three modes.
 damping_ratio = 0.02;
 
-% Reproduce the geometry, AISC properties, and calibrated base spring in
-% sap/template.sdb.
-frame = sapTemplateFrameDefinition();
+[fem_data, fem_file, ~] = load_saved_result_file( ...
+    project_root, fullfile('fem', 'ref'), false);
+assert(isfield(fem_data, 'fem_ref'), ...
+    'The selected file does not contain fem_ref.');
+fem_ref = fem_data.fem_ref;
+frame = fem_ref.frame;
 beam_connection_k = frame.beam_connection_k;
 base_rotation_k = frame.base_rotation_k;
 
@@ -50,23 +58,20 @@ E = frame.E;                         % [N/mm^2]
 % Exact SAP2000 v26 AISC15 section properties [mm^4].
 section = frame.section;
 
-%% FRAME STIFFNESS AND STATIC CONDENSATION
-% Joint rotations are assembled explicitly. They are statically condensed,
-% leaving the three rigid-diaphragm floor translations for time integration.
-[K, frame_model] = assembleCondensedFrameStiffness( ...
-    n_story, n_bay, bay_width, story_height, E, section, ...
-    beam_connection_k, base_rotation_k);                 % [N/mm]
+%% SAVED FRAME STIFFNESS
+K = fem_ref.K;                                           % [N/mm]
+frame_model = fem_ref.assembly;
 
 %% LUMPED FLOOR MASS MATRIX
 % The HTML level values are used numerically as physical lumped masses.
-floor_mass_kg = [20121; 20121; 18426];                    % [kg]
+floor_mass_kg = fem_ref.floor_mass_kg;                    % [kg]
 M_kg = diag(floor_mass_kg);                               % physical mass [kg]
 
 % In an N-mm-s equation, 1 kg = 0.001 N*s^2/mm. This conversion makes the
 % dynamic mass matrix exactly consistent with K [N/mm], acceleration
 % [mm/s^2], and generalized force [N].
-M = M_kg / 1000;                                          % [N*s^2/mm]
-influence = ones(n_story, 1);
+M = fem_ref.M;                                            % [N*s^2/mm]
+influence = fem_ref.influence;
 
 %% MODAL PROPERTIES AND DAMPING MATRIX
 [modes, omega2] = eig(K, M, 'vector');
@@ -91,7 +96,7 @@ assert(size(frame_model.K_full, 1) > n_story, ...
 
 %% LOAD THE EARTHQUAKE
 script_dir = fileparts(mfilename('fullpath'));
-earthquake_file = fullfile(script_dir, '..', 'input_signals', 'earthquakes.mat');
+earthquake_file = fullfile(project_root, 'input_signals', 'earthquakes.mat');
 assert(isfile(earthquake_file), 'Earthquake file not found: %s', earthquake_file);
 
 record_fields = {'el_centro', 'northridge', 'kobe', 'loma_prieta', ...
@@ -126,6 +131,7 @@ end
 
 %% REPORT MODEL PROPERTIES
 fprintf('\nThree-story condensed frame FEM reference model\n');
+fprintf('FEM file: %s\n', fem_file);
 fprintf('Beam-column rotational stiffness: %s N*mm/rad\n', ...
     stiffnessText(beam_connection_k));
 fprintf('Base rotational stiffness: %s N*mm/rad\n', ...
