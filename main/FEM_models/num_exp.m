@@ -166,7 +166,7 @@ maximum_error = max(abs(u_num_exp-u_reference), [], 'all');
 % J1-J3 require separate commanded and measured actuator displacement
 % histories. This numerical experiment only provides structural responses,
 % so only the applicable response-validation metrics J4-J7 are evaluated.
-addpath(fullfile(script_dir, '..', 'helpers', 'analysis_visualization'));
+addpath(fullfile(script_dir, '..', 'results_analysis'));
 metric = validation_metrics();
 J4 = metric.J4(u_num_exp(:, 1), u_reference(:, 1));
 J5 = metric.J5(u_num_exp(:, 1), u_reference(:, 1));

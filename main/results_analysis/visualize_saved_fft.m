@@ -8,7 +8,7 @@ fmax = 100; % Hz
 clc; close all
 
 scriptFolder = fileparts(mfilename('fullpath'));
-projectFolder = fullfile(scriptFolder, '..', '..');
+projectFolder = fullfile(scriptFolder, '..');
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
 [data, ~, selectedFileName] = load_saved_result_file(projectFolder, 'tests');

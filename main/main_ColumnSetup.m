@@ -180,7 +180,7 @@ disp('===============================================================')
 %% Plotting Simulation Data
 
 outputVerificationFile = file_name;
-run(fullfile(projectFolder, 'helpers', 'analysis_visualization', 'visualize_saved_results.m'))
+run(fullfile(projectFolder, 'results_analysis', 'visualize_saved_results.m'))
 
 
 %slrtExplorer
