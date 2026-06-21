@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ColumnSetup Codebase Review</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-2: #27272a;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --line: #3f3f46;
+      --accent: #ac6420;
+      --blue: #007ca8;
+      --green: #39bf5e;
+      --red: #c25445;
+      --amber: #d69a53;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    a { color: #7dd3fc; text-underline-offset: 3px; }
+    code {
+      padding: 0.08rem 0.3rem;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--surface-2);
+      color: #e4e4e7;
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 15rem minmax(0, 50rem);
+      gap: 3rem;
+      width: min(100% - 2rem, 72rem);
+      margin: 0 auto;
+      padding: 3rem 0 5rem;
+    }
+    nav {
+      position: sticky;
+      top: 2rem;
+      align-self: start;
+      border-top: 2px solid var(--accent);
+      padding-top: 1rem;
+    }
+    nav strong {
+      display: block;
+      margin-bottom: 0.6rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    nav a:hover { color: var(--text); }
+    main { min-width: 0; }
+    header {
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--line);
+    }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 {
+      max-width: 16ch;
+      margin: 0;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      letter-spacing: -0.05em;
+    }
+    header p {
+      max-width: 62ch;
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    section {
+      padding: 2.6rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    section:last-child { border-bottom: 0; }
+    h2 {
+      margin: 0 0 1.4rem;
+      font-size: 1.55rem;
+      letter-spacing: -0.02em;
+    }
+    h3 {
+      margin: 0 0 0.65rem;
+      font-size: 1.05rem;
+    }
+    p { margin: 0.6rem 0 0; }
+    ul, ol { margin: 0; padding-left: 1.35rem; }
+    li { margin: 0.75rem 0; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 1.75rem;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .summary div { padding: 1rem; }
+    .summary div + div { border-left: 1px solid var(--line); }
+    .summary span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .summary strong { display: block; margin-top: 0.15rem; font-size: 1.3rem; }
+    .finding {
+      padding: 1.2rem 0;
+      border-top: 1px solid var(--line);
+    }
+    .finding:first-of-type { border-top: 0; padding-top: 0; }
+    .tag {
+      display: inline-block;
+      margin-right: 0.5rem;
+      padding: 0.1rem 0.35rem;
+      border: 1px solid currentColor;
+      border-radius: 3px;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      vertical-align: 0.12rem;
+    }
+    .confirmed { color: var(--green); }
+    .hypothesis { color: var(--amber); }
+    .risk { color: var(--red); }
+    .note {
+      margin-top: 1.2rem;
+      padding: 1rem;
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+    }
+    .note p { margin: 0; }
+    .status-list { list-style: none; padding: 0; }
+    .status-list li {
+      padding-left: 1.4rem;
+      position: relative;
+    }
+    .status-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.72rem;
+      width: 0.45rem;
+      height: 0.45rem;
+      background: var(--blue);
+    }
+
+    @media (max-width: 760px) {
+      .layout { display: block; padding-top: 1.5rem; }
+      nav { position: static; margin-bottom: 2.5rem; }
+      nav a { display: inline-block; margin-right: 1rem; }
+      .summary { grid-template-columns: 1fr; }
+      .summary div + div { border-left: 0; border-top: 1px solid var(--line); }
+    }
+
+    @media print {
+      :root { color-scheme: light; --bg: #fff; --surface: #f4f4f5; --surface-2: #e4e4e7; --text: #18181b; --muted: #52525b; --line: #d4d4d8; }
+      nav { display: none; }
+      .layout { display: block; width: 100%; padding: 0; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav aria-label="Report sections">
+      <strong>Contents</strong>
+      <a href="#revisions">Implemented revisions</a>
+      <a href="#findings">High-priority findings</a>
+      <a href="#contradictions">Contradictions</a>
+      <a href="#next-steps">Independent next steps</a>
+      <a href="#verification">Verification</a>
+    </nav>
+
+    <main>
+      <header>
+        <h1>Codebase review</h1>
+        <p>Independent audit of the ColumnSetup MATLAB, Simulink, identification, control, and FEM workflows. Findings distinguish verified code behavior from hypotheses and risk inferences.</p>
+        <div class="summary" aria-label="Review summary">
+          <div><span>Offline tests</span><strong>7 passing</strong></div>
+          <div><span>Priority findings</span><strong>10 open</strong></div>
+          <div><span>Physical run</span><strong>Not performed</strong></div>
+        </div>
+      </header>
+
+      <section id="revisions">
+        <h2>Implemented revisions</h2>
+        <ul>
+          <li>Corrected one-sided FFT normalization for DC, Nyquist, odd-length signals, and frequency limiting; added regression tests.</li>
+          <li>Replaced the hard-coded stability threshold with the first unstable stiffness-sweep value, reused computed margins, and removed explicit matrix inverses.</li>
+          <li>Prevented infeasible destabilizing-controller results from being cached, returned, or saved as usable controllers.</li>
+          <li>Corrected the unit boundary between specimen data and identification. Specimen data remain in kg, N·s/mm, and N/mm; physical identification and stability models receive kg, N·s/m, and N/m. New parametric files carry an SI model-convention marker.</li>
+          <li>Removed the implicit caller-workspace override from <code>load_saved_result_file</code>. Its API now verifies an explicit file against the requested result category, while visualization wrappers retain the legacy ambient bridge.</li>
+          <li>Added a guard for the common case where no new Speedgoat file-log row appears, added seconds to result filenames, and refused overwrites.</li>
+          <li>Made the W8x28 experimental and frame definitions use the same exact section moment of inertia.</li>
+          <li>Added MATLAB tests for FFT scaling, saved-result category enforcement, and specimen-unit conversion.</li>
+          <li>Corrected the active workspace path in <code>AGENTS.md</code> and ignored SAP <code>.tlog</code> scratch files.</li>
+        </ul>
+      </section>
+
+      <section id="findings">
+        <h2>Unresolved high-priority findings</h2>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>1. Parametric identification is structurally non-identifiable</h3>
+          <p>The fit estimates <code>a1b0</code>, <code>Kp</code>, and <code>Ki</code> independently, but the model uses only <code>Kp*a1b0</code> and <code>Ki*a1b0</code>. Scaling plant gain while inversely scaling both controller gains leaves the transfer function unchanged. Fix one measured quantity or fit the two identifiable products directly.</p>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>2. “Digital” control is continuous-time</h3>
+          <p><code>pidtune</code>, <code>feedback</code>, and the margin calculations omit sample time, zero-order hold, computation and DAQ delay, quantization, rate limits, and saturation. The results are continuous outer-loop results, not sampled-data guarantees.</p>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>3. Tuned controllers are disconnected from the experiment</h3>
+          <p>Tuning scripts save controller MAT files, but <code>main_ColumnSetup.m</code> does not load them and the Simulink controller uses literal Constant blocks. Physical results also omit the actual P/I/D/N values.</p>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>4. Unscaled TSE/TLS depends on units and column scaling</h3>
+          <p>Offline and embedded online estimators use different acceleration scaling. TLS column scaling can change every estimated parameter, not only mass. Overlapping windows are repeatedly assimilated and the covariance model is OLS-based.</p>
+          <div class="note"><p><span class="tag risk">Risk inference</span>Treat the online uncertainty band as heuristic until interval coverage is calibrated. Use dimensionless or noise-whitened parameter estimation.</p></div>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>5. Reference/hybrid equivalence is only first-mode exact</h3>
+          <p>Story height zeros the first-mode interface moment, while the hybrid model releases interface moment during broadband excitation.</p>
+          <div class="note"><p><span class="tag hypothesis">Hypothesis</span>Higher-mode interface moments may contribute to J4–J7. Quantify this using modal and record-level comparisons with a rotational-interface model before assigning causality.</p></div>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>6. Black-box fitting modifies stability evidence</h3>
+          <p>The fit inserts an exact synthetic DC point, reflects unstable poles into the left half-plane, selects model order using in-sample error, and derives margins from <code>H/(1-H)</code>.</p>
+          <div class="note"><p><span class="tag risk">Risk inference</span>These operations can make stability appear stronger than the raw fit supports. Use constrained stable identification, held-out validation, and uncertainty intervals.</p></div>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>7. Experimental provenance is incomplete</h3>
+          <p>The row-count guard catches the common no-new-row case but cannot prove run identity when retention holds table height constant or ordering changes. Saved results omit calibration, channel mapping, signal configuration, controller profile, target run ID, repository state, and model checksum.</p>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>8. Other optimization paths can accept infeasible candidates</h3>
+          <p>The general digital and settling-time optimizers choose the lowest returned objective without checking final constraints and solver status. Apply the feasible-candidate rule now used by the destabilizing optimizer.</p>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>9. Partial online recomputation leaves inconsistent state</h3>
+          <p>Recomputing one TLS/KF interval changes its terminal posterior, so later estimates must also be invalidated and propagated. Window and configuration changes can currently mix estimates created under different settings.</p>
+        </article>
+
+        <article class="finding">
+          <h3><span class="tag confirmed">Confirmed</span>10. The advertised tuning cache is missing</h3>
+          <p>Both optimizer utilities call <code>tuning_cache</code> when caching is enabled, but no implementation exists. Remove the option or implement deterministic cache keys and schema checks.</p>
+        </article>
+      </section>
+
+      <section id="contradictions">
+        <h2>Contradictions and documentation drift</h2>
+        <ul>
+          <li>The FEM HTML presents fixed 6.67-ft stories, while <code>build_fem.m</code> computes specimen-specific story height. Its mass and load explanation also requires review because code treats level values as physical mass.</li>
+          <li>The reference plot draws fixed bases although the analyzed model uses finite base rotational springs.</li>
+          <li>The damage sweep lowers damping with stiffness to preserve damping ratio. This is a specific damage law, not a neutral stiffness-only sensitivity study.</li>
+          <li><code>AGENTS.md</code> contains obsolete breakpoint lines, a missing helper directory, an infinite configured “full” run, conflicting physical-run approval rules, and R2020b-specific advice despite this audit running under R2025b.</li>
+          <li>The persisted directory name <code>paarametric</code> is misspelled throughout the workflow. Migrate with backward-compatible reads rather than renaming it in place.</li>
+        </ul>
+      </section>
+
+      <section id="next-steps">
+        <h2>Independent next steps</h2>
+        <ol>
+          <li>Build a physics-consistent synthetic digital twin with known time-varying specimen parameters, actuator dynamics, controller, synchronized sensor noise, bias, saturation, and delay. Measure estimator bias, RMSE, interval coverage, detection delay, and false alarms.</li>
+          <li>Reparameterize closed-loop identification into identifiable products or fix independently measured controller or plant gains. Use block bootstrap or profile likelihood and propagate a model ensemble into stability margins.</li>
+          <li>Create a sampled-data, multirate model with ZOH and a measured delay distribution. Evaluate robust stability over specimen, model, and delay uncertainty.</li>
+          <li>Add an interface energy and passivity observer as an independent real-time safety channel for nonlinear or time-varying specimens.</li>
+          <li>Quantify hybrid partition approximation with modal MAC, frequency and FRF errors, and record-level response errors. Compare translation-only with translation-plus-rotation or condensed dynamic impedance.</li>
+          <li>Use constraint-aware experiment design—such as multisine or PRBS selected through Fisher information—within stroke, force, and velocity limits.</li>
+          <li>Introduce a versioned MAT schema and experiment registry with content hashes and lineage from raw run to specimen, identified model, controller, and FEM. Separate offline CI from opt-in physical HIL verification.</li>
+        </ol>
+      </section>
+
+      <section id="verification">
+        <h2>Verification status</h2>
+        <ul class="status-list">
+          <li>MATLAB static analysis reports no issues in changed MATLAB files.</li>
+          <li>Seven offline tests pass. They cover FFT scaling, saved-result category enforcement, and specimen-unit conversion—not Speedgoat identity, optimizer feasibility, or stability plots.</li>
+          <li>No physical Speedgoat run was performed.</li>
+        </ul>
+        <div class="note"><p>Identification and controllers must be regenerated because existing parametric files used the inconsistent unit convention.</p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

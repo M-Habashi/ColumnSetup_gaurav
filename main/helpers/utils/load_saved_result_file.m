@@ -1,11 +1,14 @@
 function [data, filePath, selectedFileName] = load_saved_result_file( ...
-        projectFolder, resultSubfolder, forcePrompt)
+        projectFolder, resultSubfolder, forcePrompt, preferredFile)
 
 if nargin < 2 || isempty(resultSubfolder)
     resultSubfolder = 'tests';
 end
 if nargin < 3 || isempty(forcePrompt)
     forcePrompt = false;
+end
+if nargin < 4
+    preferredFile = '';
 end
 validateattributes(forcePrompt, {'logical'}, {'scalar'}, mfilename, ...
     'forcePrompt');
@@ -16,9 +19,13 @@ files = dir(fullfile(rootFolder, '**', '*.mat'));
 [~, order] = sort(string(fullfile({files.folder}, {files.name})));
 files = files(order);
 
-if ~forcePrompt && ...
-        evalin('caller', 'exist(''outputVerificationFile'', ''var'')')
-    filePath = evalin('caller', 'outputVerificationFile');
+if ~forcePrompt && ~isempty(preferredFile)
+    filePath = char(string(preferredFile));
+    assert(isfile(filePath), 'Preferred result file not found: %s', filePath);
+    if ~isPathUnderRoot(filePath, rootFolder)
+        error('load_saved_result_file:PreferredFileOutsideRoot', ...
+            'Preferred result file must be under %s.', rootFolder);
+    end
 else
     if isempty(files)
         error('No MAT files found under %s.', rootFolder);
@@ -68,6 +75,12 @@ function printFileTree(rootLabel, rootFolder, files)
         fprintf('%s|-- [%d] %s\n', repmat('  ', 1, fileDepth), ...
             k, files(k).name);
     end
+end
+
+function tf = isPathUnderRoot(filePath, rootFolder)
+    filePath = string(char(java.io.File(filePath).getCanonicalPath()));
+    rootFolder = string(char(java.io.File(rootFolder).getCanonicalPath()));
+    tf = startsWith(lower(filePath), lower(rootFolder+filesep));
 end
 
 function resultSubfolder = normalizeSubfolder(resultSubfolder)

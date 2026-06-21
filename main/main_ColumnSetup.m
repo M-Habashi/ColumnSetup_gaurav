@@ -73,10 +73,16 @@ command_channel_selector = double((1:7)' == ch.dd);
 sat_limit = 70; % mm
                    
 % Test File Name % IMPORTANT!
-timestamp = datestr(now,'yyyymmdd_HHMM');
+runStartTime = datetime('now');
+timestampValue = runStartTime;
+timestampValue.Format = 'yyyyMMdd_HHmmss';
+timestamp = char(timestampValue);
 projectFolder = fileparts(mfilename('fullpath'));
-saveFolder = fullfile(projectFolder, 'saved_results', 'tests', datestr(now,'yyyymmdd'));
+dateValue = runStartTime;
+dateValue.Format = 'yyyyMMdd';
+saveFolder = fullfile(projectFolder, 'saved_results', 'tests', char(dateValue));
 file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
+assert(~isfile(file_name), 'Refusing to overwrite existing result: %s', file_name);
 
 % Make sure there is a folder named 'yyyymmdd'
 % inside the 'saved_results/tests' folder
@@ -123,6 +129,7 @@ model = 'model_ColumnSetup_00';
 clear logsout
 
 tg = connect_speedgoat_target;
+fileLogRunCountBefore = height(list(tg.FileLog));
 open_system(model);
 disp('*** Run the Simulink model ***')
 disp('*** Click on "Run on Target" button under the "REAL-TIME" tab ***') 
@@ -138,8 +145,10 @@ projectFolder = fileparts(mfilename('fullpath'));
 model = 'model_ColumnSetup_00';
 
 if ~exist('logsout', 'var')
-    tg = slrealtime;
     fileLogRuns = list(tg.FileLog);
+    assert(height(fileLogRuns) > fileLogRunCountBefore, ...
+        ['No new Speedgoat file-log run was found. Refusing to import ' ...
+         'and relabel an older experiment.']);
     tg.FileLog.import(fileLogRuns(end, :));
     logsout = evalin('base', 'logsout');
 end
@@ -166,7 +175,8 @@ end
 
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
     'm_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
-    'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', '-v7.3')
+    'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', ...
+    'runStartTime', '-v7.3')
 
 disp('*** Data file saved! ***')
 disp(file_name)

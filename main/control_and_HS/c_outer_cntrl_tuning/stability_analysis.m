@@ -31,15 +31,21 @@ else
     fprintf('Numerical model file not found. Skipping numerical stability indicator: %s\n', case_file);
 end
 specimen_params = parametric_model.specimen_params;
+assert(isfield(parametric_model, 'id_units') ...
+    && isfield(parametric_model.id_units, 'schema_version') ...
+    && parametric_model.id_units.schema_version >= 2, ...
+    ['The selected parametric model predates the SI-unit correction. ' ...
+     'Rerun sys_id.m, then retune the controller.']);
 fprintf('Using specimen parameters from: %s\n', specimen_params.name);
 fprintf('Using actuator/plant parameters from identification model: %s\n', parametric_model_file_name);
 
 %% Run RUN_vRTHS_demo first and add this folder to tha path
 % Load Case_1.mat first
 %% specimen
-mp = specimen_params.m; % kg
-kp = specimen_params.k; % N/m
-cp = specimen_params.c; % N.s/m
+specimen_si = specimen_params_si(specimen_params);
+mp = specimen_si.mass;      % kg
+kp = specimen_si.stiffness; % N/m
+cp = specimen_si.damping;   % N*s/m
 zeta = cp / (2*sqrt(kp*mp));
 %% Numerical system (needed for margin 1 only)
 if use_numerical_model
@@ -65,7 +71,7 @@ if use_numerical_model
         -MN\KN -MN\CN];
     B_ns = [...
         zeros(n,1)      zeros(n);
-        -(MN\M)*iota    -inv(MN)];
+        -(MN\M)*iota    -(MN\eye(n))];
     C_ns = [...
         eye(n)              zeros(n);
         zeros(n)            eye(n);
@@ -73,7 +79,7 @@ if use_numerical_model
     D_ns = [...
         zeros(n,1)            zeros(n);
         zeros(n,1)            zeros(n);
-        (-MN\M + eye(n))*iota    -inv(MN)];     % for TOTAL acc
+        (-MN\M + eye(n))*iota    -(MN\eye(n))]; % for TOTAL acc
     sys_num = ss(A_ns,B_ns,C_ns,D_ns);
 end
 %%%%
@@ -253,8 +259,6 @@ plot_pole_zero_compare(nexttile, {digital_cl, digital_cl_r_ex}, ...
 %% Loop Through Stiffness Factors and Compute Margins
 % Define the vector of stiffness factors to test (from 0 to 1)
 factors = 1:-0.01:0;
-% Pre-allocate an array to store the margin results for efficiency
-margins = zeros(size(factors));
 if use_numerical_model
     margins1 = zeros(size(factors));
 else
@@ -264,6 +268,7 @@ margins2 = zeros(size(factors));
 margins3 = zeros(size(factors));
 margins4 = zeros(size(factors));
 margins5 = zeros(size(factors));
+closed_loop_stable = false(size(factors));
 % Loop over each factor
 if use_numerical_model
     n = size(C_ns,1); AA_p = zeros(n); BB_p = eye(n); CC_p = zeros(1,n);
@@ -277,8 +282,8 @@ for i = 1:length(factors)
     digital_cl_r = feedback(sys, 1);
     % profile on
     gain_phase_margins = allmargin(sys);
-    dm = min(gain_phase_margins.DelayMargin)*gain_phase_margins.Stable;
-    ncfmargin_value = ncfmargin(analog_cl_r, digital_cntrlr)*isstable(feedback(sys, 1));
+    closed_loop_stable(i) = gain_phase_margins.Stable;
+    ncfmargin_value = ncfmargin(analog_cl_r, digital_cntrlr)*closed_loop_stable(i);
     % profile viewer
     % profile off
     if use_numerical_model
@@ -289,13 +294,17 @@ for i = 1:length(factors)
         ss_phy = ss(AA_p,BB_p, CC_p, DD_p);
         ss_comb = series(sys_num, -ss_phy);
         temp = evalc('n_p_sys = minreal(ss_comb(:,2));');
-        margins1(i) = min([min(allmargin(n_p_sys).DelayMargin)*allmargin(n_p_sys).Stable, inf]);
-        margins3(i) = min([min(allmargin(n_p_sys).GainMargin)*allmargin(n_p_sys).Stable, inf]); %ignore this one
+        numerical_margins = allmargin(n_p_sys);
+        margins1(i) = min([min(numerical_margins.DelayMargin) ...
+            *numerical_margins.Stable, inf]);
+        margins3(i) = min([min(numerical_margins.GainMargin) ...
+            *numerical_margins.Stable, inf]); %ignore this one
     end
-    margins2(i) = min([min(allmargin(sys).DelayMargin)*allmargin(sys).Stable, inf]);
-    margins4(i) = min([db(min(allmargin(sys).GainMargin))*allmargin(sys).Stable, inf]);
+    margins2(i) = min([min(gain_phase_margins.DelayMargin) ...
+        *closed_loop_stable(i), inf]);
+    margins4(i) = min([20*log10(min(gain_phase_margins.GainMargin)) ...
+        *closed_loop_stable(i), inf]);
     margins5(i) = ncfmargin_value;
-    margins(i) = margins2(i);
 end
 %% Plotting the Results (Formatted for Single Column Manuscript / Review Draft)
 % Dimensions: 6.5 inches is standard text width (8.5" page - 2x1" margins)
@@ -337,10 +346,16 @@ lgd = legend(ax, legend_labels, ...
        'Interpreter','latex','FontName','Times New Roman','FontSize',14,'Location','northeast');
 lgd.ItemTokenSize = [20, 18]; % Standard token size for wider plot
 % === 4) Instability marker & annotation ===
-alpha_instability = 0.23;
-xline(ax,alpha_instability,'--','Color','k','LineWidth',1.5,'HandleVisibility','off');
-text(ax,0.245,1.1,'Instability at $\alpha = 0.23$', ...
-     'Rotation',90,'Color','k','FontName','Times New Roman','FontSize',14,'Interpreter','latex');
+first_unstable = find(~closed_loop_stable, 1, 'first');
+if ~isempty(first_unstable)
+    alpha_instability = factors(first_unstable);
+    xline(ax,alpha_instability,'--','Color','k','LineWidth',1.5, ...
+        'HandleVisibility','off');
+    text(ax,alpha_instability+0.015,1.1, ...
+        sprintf('First unstable sample at $\\alpha = %.2f$', alpha_instability), ...
+        'Rotation',90,'Color','k','FontName','Times New Roman', ...
+        'FontSize',14,'Interpreter','latex');
+end
 hold(ax,'off');
 % === 5) Copy to Clipboard ===
 copygraphics(fig, 'ContentType', 'vector'); 

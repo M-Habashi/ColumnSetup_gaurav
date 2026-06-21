@@ -1,19 +1,26 @@
 function [Y_f, freq] = fft_c(y_t, fs, fmax)
+%FFT_C Return the correctly scaled one-sided FFT of a real signal.
 
-%% FFT
-Ts=1/fs;
-N = length(y_t);
-Y_fft = fft(y_t)/(N-1);  % Normalized FFT
-% Frequency vector
-freq = (0:N-1)/Ts/N; % Hz
-if nargin > 2 && ~isempty(fmax)
-    max_idx = find(freq <= fmax, 1, 'last');
-    idx = 1:max_idx;
+y_t = y_t(:);
+N = numel(y_t);
+Y_f = fft(y_t)/N;
+
+last_idx = floor(N/2)+1;
+Y_f = Y_f(1:last_idx);
+freq = (0:last_idx-1)'*fs/N;
+
+% Double only bins that have a distinct negative-frequency counterpart.
+if mod(N, 2) == 0
+    Y_f(2:end-1) = 2*Y_f(2:end-1);
 else
-    idx = 1:(length(freq)/2+1);
+    Y_f(2:end) = 2*Y_f(2:end);
 end
-freq = freq(idx);
-Y_f = 2*Y_fft(idx);
+
+if nargin > 2 && ~isempty(fmax)
+    keep = freq <= fmax;
+    freq = freq(keep);
+    Y_f = Y_f(keep);
+end
 
 if (nargout == 0)
     figure;

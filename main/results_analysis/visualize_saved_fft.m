@@ -8,10 +8,15 @@ fmax = 100; % Hz
 clc; close all
 
 scriptFolder = fileparts(mfilename('fullpath'));
-projectFolder = fullfile(scriptFolder, '..');
+projectFolder = fileparts(scriptFolder);
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
-[data, ~, selectedFileName] = load_saved_result_file(projectFolder, 'tests');
+preferredFile = '';
+if exist('outputVerificationFile', 'var')
+    preferredFile = outputVerificationFile;
+end
+[data, ~, selectedFileName] = load_saved_result_file( ...
+    projectFolder, 'tests', false, preferredFile);
 t = data.t(:);
 fs = data.fs;
 dd = data.dd(:);

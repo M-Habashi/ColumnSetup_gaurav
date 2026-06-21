@@ -6,6 +6,7 @@ main/*.mldatx
 main/*.slxc
 main/*_slrealtime_rtw/
 main/slprj/
+*.tlog
 main/control_and_HS/system_id/datafiles/gg_03_BLWN2.mat
 main/control_and_HS/system_id/models/fit/gg_03_BLWN2_fit.mat
 main/control_and_HS/system_id/models/paarametric/gg_03_BLWN2.mat

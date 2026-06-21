@@ -7,10 +7,15 @@ clc
 noiseWindowSeconds = 0.05;
 
 scriptFolder = fileparts(mfilename('fullpath'));
-projectFolder = fullfile(scriptFolder, '..');
+projectFolder = fileparts(scriptFolder);
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
 
-[data, filePath, selectedFileName] = load_saved_result_file(projectFolder, 'tests');
+preferredFile = '';
+if exist('outputVerificationFile', 'var')
+    preferredFile = outputVerificationFile;
+end
+[data, filePath, selectedFileName] = load_saved_result_file( ...
+    projectFolder, 'tests', false, preferredFile);
 channels = {'dm', 'fm', 'am'};
 test_type = getTestType(data);
 

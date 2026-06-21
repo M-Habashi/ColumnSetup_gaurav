@@ -30,6 +30,11 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
     if opts.use_cache
         [cache_hit, cached_tuning, cache_file] = tuning_cache('load', cache_spec);
         if cache_hit
+            if ~isfield(cached_tuning, 'found_solution') ...
+                    || ~cached_tuning.found_solution
+                error('Cached destabilizing tuning is infeasible: %s', ...
+                    cache_file);
+            end
             fprintf('\n%% Using cached destabilizing tuning: %s\n', cache_file);
             tuning = cached_tuning;
             return;
@@ -57,11 +62,14 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
     cleanup_warnings = onCleanup(@() warning(warning_state));
     for i = 1:n_starts
         x0 = min(max(seeds(i, :), opts.lb), opts.ub);
-        [x_try, f_try] = fmincon(@(x)objective(x, transfer_sys, analog_cntrlr), ...
+        [x_try, f_try, exitflag_try] = fmincon( ...
+            @(x)objective(x, transfer_sys, analog_cntrlr), ...
             x0, [], [], [], [], opts.lb, opts.ub, ...
             @(x)specific_constraint(x, transfer_sys, reduced_transfer_sys, analog_cntrlr), optim_opts);
         [c_try, ~] = specific_constraint(x_try, transfer_sys, reduced_transfer_sys, analog_cntrlr);
-        if all(c_try <= 1e-6) && f_try < best_feasible.f
+        candidate_feasible = exitflag_try > 0 && isfinite(f_try) ...
+            && f_try < 1e6 && all(c_try <= 1e-6);
+        if candidate_feasible && f_try < best_feasible.f
             best_feasible.f = f_try;
             best_feasible.x = x_try;
         end
@@ -76,12 +84,13 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
     fprintf('\n');
 
     if isempty(best_feasible.x)
-        best = best_fallback;
-        found_solution = false;
-    else
-        best = best_feasible;
-        found_solution = true;
+        [fallback_constraints, ~] = specific_constraint(best_fallback.x, ...
+            transfer_sys, reduced_transfer_sys, analog_cntrlr);
+        error('No feasible destabilizing tuning was found. Best fallback constraint values: [%s].', ...
+            sprintf(' %.6g', fallback_constraints));
     end
+    best = best_feasible;
+    found_solution = true;
 
     [analog_cl, digital_cntrlr, digital_cl] = build_loops(best.x, transfer_sys, analog_cntrlr);
     analog_cl_r = feedback(analog_cntrlr * reduced_transfer_sys, 1);
