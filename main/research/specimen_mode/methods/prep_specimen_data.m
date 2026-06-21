@@ -1,5 +1,9 @@
 function D = prep_specimen_data(file_name)
+% Units:
+%   Input file stores t [s], dm/dc/dd [mm], fm [N], am [g].
+%   Output D uses t [s], x/xc [m], v/vc [m/s], a/ac [m/s^2], F [N].
 S = load(file_name);
+S = saved_result_si(S);
 
 D.file = file_name;
 D.t = S.t(:);

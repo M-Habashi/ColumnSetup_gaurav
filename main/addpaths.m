@@ -1,5 +1,6 @@
 function addpaths()
 %ADDPATHS Add project folders to the MATLAB path.
+% Units: path inputs and side effects are unitless.
 
 project_root = fileparts(mfilename('fullpath'));
 project_folders = strsplit(genpath(project_root), pathsep);

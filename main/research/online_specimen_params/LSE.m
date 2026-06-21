@@ -1,16 +1,19 @@
 clear; clc; close all
 
+%% Units
+% Input file: t [s], dm [mm], fm [N]. Internal: x [m], v [m/s],
+% a [m/s^2]. Plots: x [mm], F [N], m [kg], c [N*s/m], k [N/m].
+
 root = fileparts(mfilename('fullpath'));
 data_file = fullfile(root, 'data', 'sp_1_ori_P30_I0_t430_590.mat');
 
 S = load(data_file);
 t = S.t(:);
-x = S.dm(:);
+x = S.dm(:)/1000;
 F = S.fm(:);
 dt = S.dt;
 v = gradient(x, dt);
 a = gradient(v, dt);
-a_mps2 = a / 1000;
 
 fig = figure('Name', 'Windowed LSE specimen parameters', ...
     'NumberTitle', 'off', 'Color', 'w', 'Position', [100 100 1100 750]);
@@ -30,11 +33,12 @@ ax(4) = subplot(5, 1, 4, 'Parent', fig);
 ax(5) = subplot(5, 1, 5, 'Parent', fig);
 set(ax, 'PositionConstraint', 'innerposition')
 
-window_edit.Callback = @(src, ~)update_plot(src, ax, status_text, fig, t, x, v, a_mps2, F, dt);
-window_edit.KeyReleaseFcn = @(src, ~)update_plot(src, ax, status_text, fig, t, x, v, a_mps2, F, dt);
-update_plot(window_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+    window_edit.Callback = @(src, ~)update_plot(src, ax, status_text, fig, t, x, v, a, F, dt);
+    window_edit.KeyReleaseFcn = @(src, ~)update_plot(src, ax, status_text, fig, t, x, v, a, F, dt);
+    update_plot(window_edit, ax, status_text, fig, t, x, v, a, F, dt)
 
-function update_plot(window_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+function update_plot(window_edit, ax, status_text, fig, t, x, v, a, F, dt)
+% Units: t/dt [s], x [m], v [m/s], a [m/s^2], F [N]; estimates are SI.
     blue = [0 124 168] / 255;
     purple = [116 5 138] / 255;
     copperwood = [172 100 32] / 255;
@@ -49,13 +53,13 @@ function update_plot(window_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
 
     n_window = max(3, round(window_s / dt));
 
-    aa = movsum(a_mps2 .* a_mps2, [n_window - 1 0], 'Endpoints', 'discard');
-    av = movsum(a_mps2 .* v, [n_window - 1 0], 'Endpoints', 'discard');
-    axx = movsum(a_mps2 .* x, [n_window - 1 0], 'Endpoints', 'discard');
+    aa = movsum(a .* a, [n_window - 1 0], 'Endpoints', 'discard');
+    av = movsum(a .* v, [n_window - 1 0], 'Endpoints', 'discard');
+    axx = movsum(a .* x, [n_window - 1 0], 'Endpoints', 'discard');
     vv = movsum(v .* v, [n_window - 1 0], 'Endpoints', 'discard');
     vx = movsum(v .* x, [n_window - 1 0], 'Endpoints', 'discard');
     xx = movsum(x .* x, [n_window - 1 0], 'Endpoints', 'discard');
-    aF = movsum(a_mps2 .* F, [n_window - 1 0], 'Endpoints', 'discard');
+    aF = movsum(a .* F, [n_window - 1 0], 'Endpoints', 'discard');
     vF = movsum(v .* F, [n_window - 1 0], 'Endpoints', 'discard');
     xF = movsum(x .* F, [n_window - 1 0], 'Endpoints', 'discard');
     FF = movsum(F .* F, [n_window - 1 0], 'Endpoints', 'discard');
@@ -93,7 +97,7 @@ function update_plot(window_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
     mcip = m_ci(ip);
     ccip = c_ci(ip);
 
-    plot(ax(1), t, x, 'Color', blue, 'LineWidth', 1.0)
+    plot(ax(1), t, 1000*x, 'Color', blue, 'LineWidth', 1.0)
     grid(ax(1), 'on')
     ylabel(ax(1), 'x (mm)')
     title(ax(1), sprintf('Sliding window LSE, %.3g s causal window', window_s))
@@ -110,7 +114,7 @@ function update_plot(window_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
     plot(ax(3), tp, kp, 'Color', blue, 'LineWidth', 1.2)
     hold(ax(3), 'off')
     grid(ax(3), 'on')
-    ylabel(ax(3), 'k (N/mm)')
+    ylabel(ax(3), 'k (N/m)')
 
     fill(ax(4), [tp; flipud(tp)], [mp - mcip; flipud(mp + mcip)], ...
         purple, 'FaceAlpha', 0.18, 'EdgeColor', 'none')
@@ -131,7 +135,7 @@ function update_plot(window_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
     hold(ax(5), 'off')
     grid(ax(5), 'on')
     xlabel(ax(5), 'Time (s)')
-    ylabel(ax(5), 'c (N s/mm)')
+    ylabel(ax(5), 'c (N s/m)')
     linkaxes(ax, 'x')
     status_text.String = 'Done';
     fig.Pointer = 'arrow';

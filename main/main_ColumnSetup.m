@@ -1,5 +1,11 @@
 %% Script Header (Read First)
 
+%% Units
+% Inputs and stored raw outputs use: t/dt [s], fs [Hz], dd/dc/dm [mm],
+% fm [N], and am [g]. Online estimates are m_hat [kg], c_hat [N*s/m],
+% and k_hat [N/m]. Convert raw data to SI only for physical calculations;
+% raw displacement and acceleration visualizations remain in mm and g.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %              ***  Simulation Tool for ColumnSetup ***                   %
 %                     MATLAB/SIMULINK Version R2020b                      %
@@ -58,8 +64,8 @@ v2d_gain        = 7.62;     % mm/volts  MTS/SG
 v2d_const       = 0;                % mm
 v2f_gain        = 4.448*1000;  % N/volts (1125.4109330128)
 v2f_const       = 0;                % N
-v2a_gain        = -1000/510*9810;       % (mm/s^2)/volts  510mv/g
-v2a_const       = 0;                % mm/s^2
+        v2a_gain        = -1000/510;         % g/volt, 510 mV/g
+        v2a_const       = 0;                 % g
 correction_gain = 1.013;     % This to address the minor change in input and output displacement calibration gain (should be close to 1)
 
 % Hardware Channel Configuration
@@ -173,8 +179,14 @@ if size(Results{1}, 2) >= 9
     tse_fallback = Results{1}(:,9);
 end
 
+units = struct('t', 's', 'dt', 's', 'fs', 'Hz', ...
+    'dd', 'mm', 'dc', 'mm', 'dm', 'mm', ...
+    'fm', 'N', 'am', 'g', 'm_hat', 'kg', 'c_hat', 'N*s/m', ...
+    'k_hat', 'N/m', 'tse_fallback', 'dimensionless');
+
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
     'm_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
+    'units', ...
     'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', ...
     'runStartTime', '-v7.3')
 

@@ -1,4 +1,5 @@
 function fit = fit_frf_method(D, estimator, use_coherence_weight)
+% Units: D.x [m], D.F [N], D.fs [Hz]; fit m [kg], c [N*s/m], k [N/m].
 x = D.x - mean(D.x);
 F = D.F - mean(D.F);
 

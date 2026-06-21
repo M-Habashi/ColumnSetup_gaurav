@@ -1,5 +1,9 @@
 function [Xfer21,FreqV,P] = xfunc(x,y,fs,m,noverlap)
 
+% Units: x and y must use compatible units; Xfer21 has units y/x,
+% FreqV and fs are Hz, Pxx/Pyy are squared input/output units per Hz,
+% and Pxy is input*output units per Hz. m and noverlap are sample counts.
+
 %  [XFER21,FREQV,P] = XFUNC(X,Y,FS,M,NOVERLAP) will estimate the 
 %	complex transfer function given time histories of the 
 %	input, X, and the output, Y. Given the complex response, 
@@ -100,7 +104,7 @@ if (nargout == 0)
 	plot(FreqV,db(Xfer21),color);grid
 	% plot(FreqV,Xfer21,color);grid
 	xlabel('Frequency (Hz)')
-	ylabel('Gain (dB)')
+	ylabel('Gain (dB, dimensionless ratio)')
 	title('Transfer Function')
 	limits1	= axis;hold on
     limits1(2)=50;  % By me

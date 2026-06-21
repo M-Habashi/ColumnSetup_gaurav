@@ -1,4 +1,7 @@
 %% THREE-STORY FRAME RESPONSE TO ALL EARTHQUAKE RECORDS
+%% Units
+% FEM inputs/outputs: displacement [m], mass [kg], force [N], acceleration
+% [m/s^2], K [N/m], C [N*s/m]. Ground plots are [g].
 % Runs the reference model for every available earthquake and overlays the
 % ground accelerations and relative floor displacements.
 
@@ -21,7 +24,7 @@ validateattributes(damping_ratio, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'positive', '<', 1}, mfilename, 'damping_ratio');
 
 %% MODEL DEFINITION
-g0 = 9806.65;                       % gravitational acceleration [mm/s^2]
+g0 = 9.80665;                       % gravitational acceleration [m/s^2]
 [fem_data, fem_file, ~] = load_saved_result_file( ...
     project_root, fullfile('fem', 'ref'), false);
 assert(isfield(fem_data, 'fem_ref'), ...
@@ -29,8 +32,8 @@ assert(isfield(fem_data, 'fem_ref'), ...
 fem_ref = fem_data.fem_ref;
 frame = fem_ref.frame;
 n_story = frame.n_story;
-K = fem_ref.K;                      % [N/mm]
-M = fem_ref.M;                      % [N*s^2/mm]
+K = fem_ref.K;                      % [N/m]
+M = fem_ref.M;                      % [kg]
 influence = fem_ref.influence;
 fprintf('Reference FEM: %s\n', fem_file);
 
@@ -68,7 +71,7 @@ for record_id = 1:n_record
         record_names{record_id});
 
     time = record(:, 1);                                  % [s]
-    ag = record(:, 2)*1000*earthquake_scale;              % [mm/s^2]
+    ag = record(:, 2)*earthquake_scale;                   % [m/s^2]
     assert(all(diff(time) > 0), '%s time must be strictly increasing.', ...
         record_names{record_id});
 
@@ -80,7 +83,7 @@ for record_id = 1:n_record
     responses{record_id} = struct('time', time, 'ag', ag, ...
         'u_relative', u_relative);
     peak_floor_displacement = max(abs(u_relative), [], 1);
-    fprintf(['%-22s PGA = %7.4f g; peak relative displacement [mm]: ' ...
+    fprintf(['%-22s PGA = %7.4f g; peak relative displacement [m]: ' ...
         'F1 = %9.4f, F2 = %9.4f, F3 = %9.4f\n'], ...
         record_names{record_id}, max(abs(ag))/g0, peak_floor_displacement);
 end
@@ -111,7 +114,7 @@ for floor_id = 1:n_story
             'Color', record_colors(record_id, :), 'LineWidth', 0.9);
     end
     hold(response_axes(floor_id), 'off');
-    ylabel(response_axes(floor_id), sprintf('Floor %d (mm)', floor_id));
+    ylabel(response_axes(floor_id), sprintf('Floor %d (m)', floor_id));
     grid(response_axes(floor_id), 'on');
 end
 xlabel(response_axes(end), 'Time (s)');
@@ -123,6 +126,7 @@ linkaxes([ground_axes; response_axes], 'x');
 
 %% LOCAL FUNCTIONS
 function u = newmarkAverageAcceleration(time, M, C, K, force)
+% Units: time [s], M [kg], C [N*s/m], K [N/m], force [N], output u [m].
 n_step = numel(time);
 n_dof = size(M, 1);
 u = zeros(n_step, n_dof);

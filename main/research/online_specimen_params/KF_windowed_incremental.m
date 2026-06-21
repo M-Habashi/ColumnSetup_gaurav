@@ -1,16 +1,18 @@
 clear; clc; close all
 % 1.5 0.001 10000
+%% Units
+% Input file: t [s], dm [mm], fm [N]. Internal: x [m], v [m/s],
+% a [m/s^2]. Plots: x [mm], F [N], m [kg], c [N*s/m], k [N/m].
 root = fileparts(mfilename('fullpath'));
 data_file = fullfile(root, 'data', 'sp_1_ori_P30_I0_t430_590.mat');
 
 S = load(data_file);
 t = S.t(:);
-x = S.dm(:);
+x = S.dm(:)/1000;
 F = S.fm(:);
 dt = S.dt;
 v = gradient(x, dt);
 a = gradient(v, dt);
-a_mps2 = a / 1000;
 
 fig = figure('Name', 'Windowed incremental KF specimen parameters', ...
     'NumberTitle', 'off', 'Color', 'w', 'Position', [100 100 1100 750]);
@@ -42,12 +44,13 @@ set(ax, 'PositionConstraint', 'innerposition')
 
 controls = [window_edit, q_edit, r_edit];
 for i = 1:numel(controls)
-    controls(i).Callback = @(~, ~)update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
-    controls(i).KeyReleaseFcn = @(~, ~)update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
+    controls(i).Callback = @(~, ~)update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a, F, dt);
+    controls(i).KeyReleaseFcn = @(~, ~)update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a, F, dt);
 end
-update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a, F, dt)
 
-function update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+function update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v, a, F, dt)
+% Units: t/dt [s], x [m], v [m/s], a [m/s^2], F [N]; estimates are SI.
     blue = [0 124 168] / 255;
     purple = [116 5 138] / 255;
     copperwood = [172 100 32] / 255;
@@ -63,7 +66,7 @@ function update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v,
     drawnow
 
     n_window = max(4, round(window_s / dt));
-    [tc, theta_win, cov_win] = incremental_window_estimate(t, x, v, a_mps2, F, n_window);
+    [tc, theta_win, cov_win] = incremental_window_estimate(t, x, v, a, F, n_window);
     [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, q_scale, r_scale);
 
     plot_step = max(1, floor(numel(tc) / 12000));
@@ -73,7 +76,7 @@ function update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v,
     kfp = theta_kf(ip, :);
     cip = 1.96 * sqrt(max(pdiag_kf(ip, :), 0));
 
-    plot(ax(1), t, x, 'Color', blue, 'LineWidth', 1.0)
+    plot(ax(1), t, 1000*x, 'Color', blue, 'LineWidth', 1.0)
     grid(ax(1), 'on')
     ylabel(ax(1), 'x (mm)')
     title(ax(1), sprintf('Incremental window estimate + KF, %.3g s causal window', window_s))
@@ -82,9 +85,9 @@ function update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v,
     grid(ax(2), 'on')
     ylabel(ax(2), 'F (N)')
 
-    plot_param(ax(3), tp, winp(:, 3), kfp(:, 3), cip(:, 3), blue, 'k (N/mm)')
+    plot_param(ax(3), tp, winp(:, 3), kfp(:, 3), cip(:, 3), blue, 'k (N/m)')
     plot_param(ax(4), tp, winp(:, 1), kfp(:, 1), cip(:, 1), purple, 'm (kg)')
-    plot_param(ax(5), tp, winp(:, 2), kfp(:, 2), cip(:, 2), copperwood, 'c (N s/mm)')
+    plot_param(ax(5), tp, winp(:, 2), kfp(:, 2), cip(:, 2), copperwood, 'c (N s/m)')
     xlabel(ax(5), 'Time (s)')
     linkaxes(ax, 'x')
 
@@ -93,19 +96,20 @@ function update_plot(window_edit, q_edit, r_edit, ax, status_text, fig, t, x, v,
     drawnow
 end
 
-function [tc, theta_win, cov_win] = incremental_window_estimate(t, x, v, a_mps2, F, n_window)
-    Sa = movsum(a_mps2, [n_window - 1 0], 'Endpoints', 'discard');
+function [tc, theta_win, cov_win] = incremental_window_estimate(t, x, v, a, F, n_window)
+% Units: input SI kinematics/force; theta columns [kg, N*s/m, N/m].
+    Sa = movsum(a, [n_window - 1 0], 'Endpoints', 'discard');
     Sv = movsum(v, [n_window - 1 0], 'Endpoints', 'discard');
     Sx = movsum(x, [n_window - 1 0], 'Endpoints', 'discard');
     SF = movsum(F, [n_window - 1 0], 'Endpoints', 'discard');
 
-    Saa = movsum(a_mps2 .* a_mps2, [n_window - 1 0], 'Endpoints', 'discard');
-    Sav = movsum(a_mps2 .* v, [n_window - 1 0], 'Endpoints', 'discard');
-    Sax = movsum(a_mps2 .* x, [n_window - 1 0], 'Endpoints', 'discard');
+    Saa = movsum(a .* a, [n_window - 1 0], 'Endpoints', 'discard');
+    Sav = movsum(a .* v, [n_window - 1 0], 'Endpoints', 'discard');
+    Sax = movsum(a .* x, [n_window - 1 0], 'Endpoints', 'discard');
     Svv = movsum(v .* v, [n_window - 1 0], 'Endpoints', 'discard');
     Svx = movsum(v .* x, [n_window - 1 0], 'Endpoints', 'discard');
     Sxx = movsum(x .* x, [n_window - 1 0], 'Endpoints', 'discard');
-    SaF = movsum(a_mps2 .* F, [n_window - 1 0], 'Endpoints', 'discard');
+    SaF = movsum(a .* F, [n_window - 1 0], 'Endpoints', 'discard');
     SvF = movsum(v .* F, [n_window - 1 0], 'Endpoints', 'discard');
     SxF = movsum(x .* F, [n_window - 1 0], 'Endpoints', 'discard');
     SFF = movsum(F .* F, [n_window - 1 0], 'Endpoints', 'discard');
@@ -137,6 +141,7 @@ function [tc, theta_win, cov_win] = incremental_window_estimate(t, x, v, a_mps2,
 end
 
 function [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, q_scale, r_scale)
+% Units: theta [kg, N*s/m, N/m]; covariance uses squared parameter units.
     n = size(theta_win, 1);
     theta_kf = zeros(n, 3);
     pdiag_kf = zeros(n, 3);
@@ -160,6 +165,7 @@ function [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, q_scale, r_scal
 end
 
 function plot_param(ax, tp, winp, kfp, cip, color, ytext)
+% Units: time [s]; estimates/interval share the unit stated by ytext.
     light_color = 0.65 * color + 0.35 * [1 1 1];
 
     fill(ax, [tp; flipud(tp)], [kfp - cip; flipud(kfp + cip)], ...

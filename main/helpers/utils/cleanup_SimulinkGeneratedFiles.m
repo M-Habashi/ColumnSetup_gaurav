@@ -1,6 +1,7 @@
 %% Clean Generated Files
 % Deletes generated Simulink files and SAP analysis/output files. SAP model
 % databases (*.sdb) and text backups (*.$2k) are preserved.
+% Units: file paths, names, counters, and all script outputs are unitless.
 
 clear; clc
 
@@ -75,10 +76,12 @@ else
 end
 
 function out = relpath(p, root)
+% Units: input and output paths are unitless.
 out = strrep(p, [root filesep], '');
 end
 
 function printTree(paths, rootName)
+% Units: paths, labels, and printed tree output are unitless.
 fprintf('%s\n', getLastFolder(rootName))
 
 nodes = {};
@@ -97,5 +100,6 @@ end
 end
 
 function name = getLastFolder(p)
+% Units: input path and output name are unitless.
 [~, name] = fileparts(p);
 end

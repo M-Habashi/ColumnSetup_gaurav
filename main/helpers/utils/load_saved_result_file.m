@@ -1,5 +1,8 @@
 function [data, filePath, selectedFileName] = load_saved_result_file( ...
         projectFolder, resultSubfolder, forcePrompt, preferredFile)
+% Units:
+%   Input paths and options are unitless. Output data preserves every unit
+%   exactly as stored in the selected MAT file; no conversion is performed.
 
 if nargin < 2 || isempty(resultSubfolder)
     resultSubfolder = 'tests';
@@ -45,6 +48,7 @@ data = load(filePath);
 end
 
 function printFileTree(rootLabel, rootFolder, files)
+% Units: path labels and file indices are unitless.
     rootParts = strsplit(char(rootLabel), filesep);
     rootParts = rootParts(~cellfun('isempty', rootParts));
     fprintf('%s\n', rootParts{1});
@@ -78,18 +82,21 @@ function printFileTree(rootLabel, rootFolder, files)
 end
 
 function tf = isPathUnderRoot(filePath, rootFolder)
+% Units: input paths and logical output are unitless.
     filePath = string(char(java.io.File(filePath).getCanonicalPath()));
     rootFolder = string(char(java.io.File(rootFolder).getCanonicalPath()));
     tf = startsWith(lower(filePath), lower(rootFolder+filesep));
 end
 
 function resultSubfolder = normalizeSubfolder(resultSubfolder)
+% Units: input and output paths are unitless.
     resultSubfolder = char(string(resultSubfolder));
     resultSubfolder = strrep(resultSubfolder, '/', filesep);
     resultSubfolder = strrep(resultSubfolder, '\', filesep);
 end
 
 function relFolder = getRelativeFolder(rootFolder, folder)
+% Units: input and output paths are unitless.
     rootFolder = string(rootFolder);
     folder = string(folder);
     rootWithSeparator = rootFolder + filesep;

@@ -1,5 +1,9 @@
 clear; clc
 
+%% Units
+% Source/output raw channels: t [s], dd/dc/dm [mm], fm [N], am [g].
+% Force multipliers are dimensionless and force_offset is [N].
+
 % Build a play-data file from one saved physical run.
 % The displacement/velocity/acceleration channels are kept unchanged, while
 % the force channel is modified in five equal time blocks. Some blocks use a
@@ -45,7 +49,11 @@ am = S.am(idx);
 dt = S.dt;
 fs = S.fs;
 source = source_file;
+units = struct('t', 's', 't_abs', 's', 'dd', 'mm', 'dc', 'mm', ...
+    'dm', 'mm', 'fm', 'N', 'fm_raw', 'N', 'fm_noise', 'N', ...
+    'am', 'g', 'force_multiplier', 'dimensionless', 'force_offset', 'N');
 
 save(data_file, 't', 't_abs', 'dd', 'dc', 'dm', 'fm', 'fm_raw', 'fm_noise', 'am', ...
-    'dt', 'fs', 'time_window', 'force_multiplier', 'force_offset', 'force_offset_idx', 'source')
+    'dt', 'fs', 'time_window', 'force_multiplier', 'force_offset', ...
+    'force_offset_idx', 'source', 'units')
 fprintf('Saved %s (%d samples, %.3f s)\\n', data_file, numel(t), t(end));

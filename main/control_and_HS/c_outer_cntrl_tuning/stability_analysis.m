@@ -1,4 +1,7 @@
 controller_name = "controller_01";
+% Units: transfer functions, gains, step amplitudes, and normalized
+% stability indicators are dimensionless. Time is s, frequency Hz or
+% rad/s, phase deg; specimen mass is kg, damping N*s/m, stiffness N/m.
 P_analog_multiplier = 1;
 I_analog_multiplier = 1;
 include_bg = true; % Set to false to hide bg plot
@@ -11,8 +14,15 @@ step_root = fileparts(fileparts(project_root));
 addpath(step_root);
 addpaths();
 
-[parametric_model, parametric_model_file, parametric_model_file_name] = ...
-    load_saved_result_file(step_root, fullfile('models', 'paarametric'));
+if exist('parametric_model_file_override', 'var') && ...
+        ~isempty(parametric_model_file_override)
+    [parametric_model, parametric_model_file, parametric_model_file_name] = ...
+        load_saved_result_file(step_root, fullfile('models', 'paarametric'), ...
+        false, parametric_model_file_override);
+else
+    [parametric_model, parametric_model_file, parametric_model_file_name] = ...
+        load_saved_result_file(step_root, fullfile('models', 'paarametric'));
+end
 [~, parametric_model_name] = fileparts(parametric_model_file);
 
 if strlength(strtrim(controller_name)) == 0
@@ -99,7 +109,9 @@ tuning_config = struct( ...
     'specimen_params', specimen_params, ...
     'P_analog_multiplier', P_analog_multiplier, ...
     'I_analog_multiplier', I_analog_multiplier);
-optimize_choice = input('Do you want to optimize settling time? [y/n]: ', 's');
+if ~exist('optimize_choice', 'var')
+    optimize_choice = input('Do you want to optimize settling time? [y/n]: ', 's');
+end
 
 if strcmpi(optimize_choice, 'y')
     tuning = optimize_settling_time_tuning(transfer_sys, analog_cntrlr, struct( ...
@@ -120,23 +132,20 @@ if strcmpi(optimize_choice, 'y')
     fprintf('%% Optimal original settling time = %.6g s\n', tuning.settling_time);
     fprintf('%% ========================================\n');
 else
-    destabilizing_optimize_choice = input('Do you want to run the destabilizing optimization? [y/n]: ', 's');
+    if ~exist('destabilizing_optimize_choice', 'var')
+        destabilizing_optimize_choice = input( ...
+            'Do you want to run the destabilizing optimization? [y/n]: ', 's');
+    end
     if strcmpi(destabilizing_optimize_choice, 'y')
         tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_sys, analog_cntrlr, struct( ...
             'x0', [digital_phase_margin, digital_bandwidth], ...
-            'use_cache', false, ...
+            'use_cache', true, ...
             'cache_context', tuning_config));
-        digital_phase_margin = tuning.x(1);
-        digital_bandwidth = tuning.x(2);
-        analog_cntrlr = tuning.analog_cntrlr;
-        digital_cntrlr = tuning.digital_cntrlr;
-        analog_cl = tuning.analog_cl;
-        digital_cl = tuning.digital_cl;
         fprintf('\n%% ========================================\n');
         fprintf('%% Destabilizing Optimization Result\n');
         fprintf('%% ========================================\n');
-        fprintf('%% digital phase margin = %.6g\n', digital_phase_margin);
-        fprintf('%% digital bandwidth    = %.6g\n', digital_bandwidth);
+        fprintf('%% digital phase margin = %.6g\n', tuning.x(1));
+        fprintf('%% digital bandwidth    = %.6g\n', tuning.x(2));
         if tuning.found_solution
             fprintf('%% Destabilizing solution found     = yes\n');
         else
@@ -145,9 +154,17 @@ else
         fprintf('%% Analog settling time  = %.6g s\n', tuning.analog_settling_time);
         fprintf('%% Digital settling time = %.6g s\n', tuning.digital_settling_time);
         fprintf('%% Cost                  = %.6g\n', tuning.cost);
+        fprintf('%% Constraint values [analog peak, digital peak, instability] = [%s]\n', ...
+            sprintf(' %.6g', tuning.constraint_values));
         fprintf('%% Reduced system unstable at alpha = %.2f -> %s\n', factor, string(tuning.reduced_is_unstable));
         fprintf('%% Reduced max real pole            = %.6g\n', tuning.reduced_max_real_pole);
         fprintf('%% ========================================\n');
+        digital_phase_margin = tuning.x(1);
+        digital_bandwidth = tuning.x(2);
+        analog_cntrlr = tuning.analog_cntrlr;
+        digital_cntrlr = tuning.digital_cntrlr;
+        analog_cl = tuning.analog_cl;
+        digital_cl = tuning.digital_cl;
     else
         opts = pidtuneOptions('PhaseMargin', digital_phase_margin);
         [digital_cntrlr, info_d] = pidtune(analog_cl, 'PI', digital_bandwidth, opts);
@@ -339,7 +356,7 @@ end
 
 % === 3) Title, labels, legend ===font
 xlabel(ax,'$\bf{\alpha}$','Interpreter','latex','FontName','Times New Roman','FontSize',14);
-ylabel(ax,'Normalized Stability Indicator ($SI_{\alpha}/SI_{\alpha=1}$)', ... 
+ylabel(ax,'Normalized Stability Indicator ($SI_{\alpha}/SI_{\alpha=1}$, dimensionless)', ...
        'Interpreter','latex','FontName','Times New Roman','FontSize',14);
 % Legend
 lgd = legend(ax, legend_labels, ...
@@ -362,6 +379,7 @@ copygraphics(fig, 'ContentType', 'vector');
 
 %% Useful functions
 function transfer_sys = build_identified_open_loop(p, m, c, k)
+% Units: m kg, c N*s/m, k N/m; output displacement ratio is dimensionless.
     plant_den = [m, ...
         c + p.a3*m + p.beta1*m, ...
         p.a2 + k + p.a3*c + p.beta1*c + p.beta2*m + p.a3*p.beta1*m, ...
@@ -372,6 +390,7 @@ function transfer_sys = build_identified_open_loop(p, m, c, k)
 end
 
 function y = normalize_indicator(x)
+% Units: input and normalized output are dimensionless.
     y = x;
     ref = x(find(isfinite(x) & abs(x) > eps, 1, 'first'));
     if isempty(ref)
@@ -383,6 +402,7 @@ function y = normalize_indicator(x)
 end
 
 function plot_step_toggle_compare(ax, systems, settling_times, labels, plot_title, opts)
+% Units: step amplitude is dimensionless, time and settling times are s.
     if nargin < 6
         opts = struct();
     end
@@ -401,13 +421,14 @@ function plot_step_toggle_compare(ax, systems, settling_times, labels, plot_titl
     grid(ax, 'on')
     title(ax, plot_title)
     xlabel(ax, 'Time (s)')
-    ylabel(ax, 'Response')
+    ylabel(ax, 'Response (dimensionless)')
     lgd = legend(ax, 'Location', 'best');
     lgd.ItemHitFcn = @toggle_legend_item;
     hold(ax, 'off')
 end
 
 function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_hz, colors)
+% Units: magnitude is dimensionless (dB), phase deg, frequency Hz.
     freq_rad = 2*pi*freq_hz;
     hold(ax_mag, 'on')
     hold(ax_phase, 'on')
@@ -424,7 +445,7 @@ function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_h
     grid(ax_phase, 'on')
     xlim(ax_mag, [freq_hz(1), freq_hz(end)])
     xlim(ax_phase, [freq_hz(1), freq_hz(end)])
-    ylabel(ax_mag, 'Magnitude (dB)')
+    ylabel(ax_mag, 'Magnitude (dB, dimensionless ratio)')
     ylabel(ax_phase, 'Phase (deg)')
     xlabel(ax_phase, 'Frequency (Hz)')
     title(ax_mag, plot_title)
@@ -435,6 +456,7 @@ function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_h
 end
 
 function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
+% Units: pole/zero coordinates are rad/s; handles, labels, and colors are unitless.
     hold(ax, 'on')
     for i = 1:numel(systems)
         plot_model_poles_and_zeros(ax, systems{i}, colors{i});
@@ -444,8 +466,8 @@ function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
     grid(ax, 'on')
     box(ax, 'on')
     axis(ax, 'equal')
-    xlabel(ax, 'Real')
-    ylabel(ax, 'Imaginary')
+    xlabel(ax, 'Real (rad/s)')
+    ylabel(ax, 'Imaginary (rad/s)')
     title(ax, plot_title)
 
     legend_handles = gobjects(numel(systems), 1);
@@ -458,6 +480,7 @@ function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
 end
 
 function plot_model_poles_and_zeros(ax, sys, marker_color)
+% Units: sys is dimensionless; pole/zero coordinates are rad/s.
     zeros = zero(sys);
     poles = pole(sys);
 
@@ -472,6 +495,7 @@ function plot_model_poles_and_zeros(ax, sys, marker_color)
 end
 
 function colors = get_plot_colors()
+% Units: RGB outputs are dimensionless.
     colors.black = [0 0 0];
     colors.blue = hex_to_rgb('007CA8');
     colors.copperwood = hex_to_rgb('AC6420');
@@ -481,10 +505,12 @@ function colors = get_plot_colors()
 end
 
 function rgb = hex_to_rgb(hex_color)
+% Units: hexadecimal input and RGB output are dimensionless.
     rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
 end
 
 function toggle_legend_item(~, event)
+% Units: graphics handles and visibility state are unitless.
     if strcmp(event.Peer.Visible, 'on')
         event.Peer.Visible = 'off';
     else

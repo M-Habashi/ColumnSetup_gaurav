@@ -1,4 +1,7 @@
 %% BUILD THE REFERENCE AND NUMERICAL FEM MODELS
+%% Units
+% Input specimen: m [kg], c [N*s/m], k [N/m]. FEM/SAP geometry [m],
+% force [N], mass [kg], K [N/m], C [N*s/m], rotational stiffness [N*m/rad].
 % Goal: build specimen-specific reference and numerical FEMs that satisfy:
 % 1. The experimental specimen lateral stiffness matches the
 %    corresponding numerical part. This is achieved by adjusting the base
@@ -12,13 +15,13 @@
 %    the calculated base rotational stiffness and floor heights.
 %
 % CONSTANT MODELING ASSUMPTIONS
-% - Three stories and three 10 ft bays; linear Euler-Bernoulli bending.
+% - Three stories and three 3.048 m bays; linear Euler-Bernoulli bending.
 % - W8x24 beams, W8x28 exterior columns, W8x35 interior columns.
-% - E = 200000 N/mm^2; rigid beam-column connections.
+% - E = 200 GPa; rigid beam-column connections.
 % - Each rigid floor diaphragm enforces one common lateral translation but
 %   does not tie joint rotations; rotations are assembled then condensed.
 % - Floor masses are [20121, 20121, 18426] kg. Axial deformation is omitted.
-% - The physical W8x28 column is 40 in tall and is represented only by its
+% - The physical W8x28 column is 1.016 m tall and is represented only by its
 %   measured scalar lateral stiffness k.
 % - At the hybrid interface, a numerical roller carries the vertical/axial
 %   reaction. The experiment transfers horizontal force only: F_exp = k*u_I.
@@ -35,7 +38,7 @@
 %                     :          |          |          |
 %                 [ experimental k ]        |          |
 %                     |__________|__________|__________|
-%                          <------ 10 ft bays ------>
+%                          <----- 3.048 m bays ----->
 %   The common story height and base rotational stiffness are calibrated
 %   for the selected specimen; the listed geometry/material data stay fixed.
 
@@ -50,16 +53,21 @@ if ~exist('update_sap_model', 'var')
     update_sap_model = true;
 end
 
-[specimen, specimen_file, specimen_name] = ...
-    load_saved_result_file(project_root, 'specimens', false);
+if exist('specimen_file_override', 'var') && ~isempty(specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, specimen_file_override);
+else
+    [specimen, specimen_file, specimen_name] = ...
+        load_saved_result_file(project_root, 'specimens', false);
+end
 
 assert(isfield(specimen, 'k'), ...
     'The selected specimen file must contain lateral stiffness k.');
 validateattributes(specimen.k, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'positive'}, mfilename, 'specimen.k');
 if isfield(specimen, 'units') && isfield(specimen.units, 'k')
-    assert(strcmpi(strrep(string(specimen.units.k), ' ', ''), 'N/mm'), ...
-        'Specimen stiffness must use N/mm; the selected file reports %s.', ...
+    assert(strcmpi(strrep(string(specimen.units.k), ' ', ''), 'N/m'), ...
+        'Specimen stiffness must use N/m; the selected file reports %s.', ...
         string(specimen.units.k));
 end
 
@@ -71,35 +79,34 @@ end
 %
 % Solve this expression for the only unknown, k_theta.
 column = experimentalColumnDefinition();
-k_experimental = specimen.k;        % [N/mm]
+k_experimental = specimen.k;         % [N/m]
 [base_rotation_k, ~] = calculateBaseRotationStiffness( ...
-    k_experimental, column);         % [N*mm/rad]
+    k_experimental, column);         % [N*m/rad]
 
 fprintf('\nReference-model calibration: %s\n', specimen_name);
 fprintf('Specimen file: %s\n', specimen_file);
-fprintf('Experimental column: %s, height = %.3f mm (40 in)\n', ...
-    column.shape, column.height_mm);
-fprintf('Measured lateral stiffness: %.6g N/mm\n', k_experimental);
-fprintf('Required base rotational stiffness: %.12g N*mm/rad\n\n', ...
+fprintf('Experimental column: %s, height = %.6g m\n', ...
+    column.shape, column.height);
+fprintf('Measured lateral stiffness: %.6g N/m\n', k_experimental);
+fprintf('Required base rotational stiffness: %.12g N*m/rad\n\n', ...
     base_rotation_k);
 
 %% STEP 2: PLACE THE FIRST-MODE INFLECTION POINT AT THE INTERFACE
 frame = sapTemplateFrameDefinition();
 floor_mass_kg = [20121; 20121; 18426];
 height_result = findFirstModeInflectionHeight( ...
-    frame, base_rotation_k, floor_mass_kg, column.height_mm);
-story_height = height_result.story_height;              % [mm]
+    frame, base_rotation_k, floor_mass_kg, column.height);
+story_height = height_result.story_height;              % [m]
 first_mode_floor_forces = height_result.floor_forces;    % [N]
 
 assert(height_result.normalized_interface_moment < 1e-10, ...
     'The optimized MATLAB interface moment is not sufficiently close to zero.');
-fprintf('Optimized common floor height: %.12g mm (%.9g in, %.9g ft)\n', ...
-    story_height, story_height/25.4, story_height/304.8);
+fprintf('Optimized common floor height: %.12g m\n', story_height);
 fprintf('First-mode frequency: %.9g Hz\n', ...
     height_result.first_mode_frequency_hz);
 fprintf('First-mode equivalent floor forces [N]: %.9g, %.9g, %.9g\n', ...
     first_mode_floor_forces);
-fprintf('MATLAB interface moment: %.6e N*mm\n\n', ...
+fprintf('MATLAB interface moment: %.6e N*m\n\n', ...
     height_result.interface_moment);
 
 %% STEP 3: SAVE THE REFERENCE AND NUMERICAL FEM DEFINITIONS
@@ -110,10 +117,10 @@ frame.base_rotation_k = base_rotation_k;
     frame.E, frame.section, frame.beam_connection_k, ...
     frame.base_rotation_k);
 [K_numerical, numerical_assembly] = ...
-    assembleNumericalSubstructureStiffness(frame, column.height_mm);
+    assembleNumericalSubstructureStiffness(frame, column.height);
 
-M_reference = diag(floor_mass_kg)/1000;        % [N*s^2/mm]
-M_numerical = diag([floor_mass_kg; 0])/1000;   % massless interface DOF
+M_reference = diag(floor_mass_kg);              % [kg] = [N*s^2/m]
+M_numerical = diag([floor_mass_kg; 0]);         % massless interface DOF
 [~, specimen_stem] = fileparts(specimen_name);
 reference_name = ['fem_ref_' specimen_stem '.mat'];
 numerical_name = ['fem_num_' specimen_stem '.mat'];
@@ -134,6 +141,7 @@ fem_ref.experimental_column = column;
 fem_ref.floor_mass_kg = floor_mass_kg;
 fem_ref.K = K_reference;
 fem_ref.M = M_reference;
+fem_ref.units = femUnits();
 fem_ref.influence = ones(frame.n_story, 1);
 fem_ref.assembly = reference_assembly;
 fem_ref.assumptions = struct( ...
@@ -150,12 +158,13 @@ fem_num.experimental_k = k_experimental;
 fem_num.floor_mass_kg = floor_mass_kg;
 fem_num.K = K_numerical;
 fem_num.M = M_numerical;
+fem_num.units = femUnits();
 fem_num.influence = [ones(frame.n_story, 1); 0];
 fem_num.floor_dofs = numerical_assembly.floor_dofs;
 fem_num.interface_dof = numerical_assembly.interface_dof;
 fem_num.assembly = numerical_assembly;
 fem_num.interface = struct( ...
-    'height_mm', column.height_mm, ...
+    'height', column.height, ...
     'restraint', 'roller restrains vertical translation', ...
     'transferred_load', 'horizontal force only', ...
     'axial_force_from_experiment', false, ...
@@ -202,7 +211,7 @@ if update_sap_model
              '-ExperimentalHeightText "%.17g" -FloorForcesText "%s"'], ...
             powershell_executable, sap_update_script, sap_template_file, ...
             sap_reference_file, base_rotation_k, story_height, ...
-            column.height_mm, sprintf('%.17g,%.17g,%.17g', ...
+            column.height, sprintf('%.17g,%.17g,%.17g', ...
             first_mode_floor_forces));
         [sap_update_status, sap_update_output] = system(command);
         if sap_update_status ~= 0
@@ -221,9 +230,8 @@ if update_sap_model
 end
 
 fprintf('\nMATLAB FEM CALCULATION COMPLETE\n');
-fprintf('Base rotational stiffness: %.12g N*mm/rad\n', base_rotation_k);
-fprintf('Common floor height: %.12g mm (%.9g in)\n', ...
-    story_height, story_height/25.4);
+fprintf('Base rotational stiffness: %.12g N*m/rad\n', base_rotation_k);
+fprintf('Common floor height: %.12g m\n', story_height);
 if sap_model_updated
     fprintf('SAP reference model created and updated: %s\n\n', ...
         sap_reference_file);
@@ -231,4 +239,11 @@ elseif ~update_sap_model
     fprintf('SAP update skipped.\n\n');
 else
     fprintf('SAP reference model: NOT CREATED OR UPDATE NOT CONFIRMED\n\n');
+end
+
+function units = femUnits()
+% Units: output strings document the SI FEM storage convention.
+units = struct('length', 'm', 'force', 'N', 'mass', 'kg', ...
+    'stiffness', 'N/m', 'damping', 'N*s/m', ...
+    'rotational_stiffness', 'N*m/rad', 'acceleration', 'm/s^2');
 end

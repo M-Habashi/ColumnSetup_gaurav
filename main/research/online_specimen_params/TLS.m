@@ -21,6 +21,10 @@
 % holds, the state and covariance are both held because there is no informative
 % parameter evolution to track.
 
+%% Units
+% Input file: t [s], dm [mm], fm [N]. Internal: x [m], v [m/s],
+% a [m/s^2]. Plots: x [mm], F [N], m [kg], c [N*s/m], k [N/m].
+
 clear; clc; close all
 
 root = fileparts(mfilename('fullpath'));
@@ -28,12 +32,11 @@ data_file = fullfile(root, 'data', 'sp_1_ori_P30_I0_t430_590.mat');
 
 S = load(data_file);
 t = S.t(:);
-x = S.dm(:);
+x = S.dm(:)/1000;
 F = S.fm(:);
 dt = S.dt;
 v = gradient(x, dt);
 a = gradient(v, dt);
-a_mps2 = a / 1000;
 
 fig = figure('Name', 'Moving window TLS specimen parameters', ...
     'NumberTitle', 'off', 'Color', 'w', 'Position', [100 100 1100 750]);
@@ -83,12 +86,12 @@ m0_edit = uicontrol(fig, 'Style', 'edit', 'String', '2.04', ...
 uicontrol(fig, 'Style', 'text', 'String', 'c0', ...
     'Units', 'normalized', 'Position', [0.13 0.915 0.03 0.030], ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
-c0_edit = uicontrol(fig, 'Style', 'edit', 'String', '0.012', ...
+c0_edit = uicontrol(fig, 'Style', 'edit', 'String', '12', ...
     'Units', 'normalized', 'Position', [0.16 0.917 0.05 0.030]);
 uicontrol(fig, 'Style', 'text', 'String', 'k0', ...
     'Units', 'normalized', 'Position', [0.23 0.915 0.03 0.030], ...
     'BackgroundColor', 'w', 'HorizontalAlignment', 'left');
-k0_edit = uicontrol(fig, 'Style', 'edit', 'String', '7028', ...
+k0_edit = uicontrol(fig, 'Style', 'edit', 'String', '7028000', ...
     'Units', 'normalized', 'Position', [0.26 0.917 0.06 0.030]);
 uicontrol(fig, 'Style', 'text', 'String', 't1', ...
     'Units', 'normalized', 'Position', [0.35 0.915 0.03 0.030], ...
@@ -111,10 +114,11 @@ ax(5) = subplot(5, 1, 5, 'Parent', fig);
 set(ax, 'PositionConstraint', 'innerposition')
 layout_axes(ax)
 
-calculate_button.Callback = @(~, ~)update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r_lse_edit, r_up_edit, m0_edit, c0_edit, k0_edit, t1_edit, t2_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt);
-update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r_lse_edit, r_up_edit, m0_edit, c0_edit, k0_edit, t1_edit, t2_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+calculate_button.Callback = @(~, ~)update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r_lse_edit, r_up_edit, m0_edit, c0_edit, k0_edit, t1_edit, t2_edit, ax, status_text, fig, t, x, v, a, F, dt);
+update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r_lse_edit, r_up_edit, m0_edit, c0_edit, k0_edit, t1_edit, t2_edit, ax, status_text, fig, t, x, v, a, F, dt)
 
 function layout_axes(ax)
+% Units: normalized figure coordinates are dimensionless.
     plot_top = 0.84;
     plot_bottom = 0.075;
     plot_gap = 0.052;
@@ -126,7 +130,8 @@ function layout_axes(ax)
     end
 end
 
-function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r_lse_edit, r_up_edit, m0_edit, c0_edit, k0_edit, t1_edit, t2_edit, ax, status_text, fig, t, x, v, a_mps2, F, dt)
+function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r_lse_edit, r_up_edit, m0_edit, c0_edit, k0_edit, t1_edit, t2_edit, ax, status_text, fig, t, x, v, a, F, dt)
+% Units: t/dt [s], x [m], v [m/s], a [m/s^2], F [N]; theta is SI.
     blue = [0 124 168] / 255;
     purple = [116 5 138] / 255;
     copperwood = [172 100 32] / 255;
@@ -162,7 +167,7 @@ function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r
     do_redraw = full_update || isempty(state) || ~isfield(state, 'tc');
 
     if do_redraw
-        [tc, theta_win, cov_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, r_routing_max, theta0);
+        [tc, theta_win, cov_win, method_id] = incremental_window_tls(t, x, v, a, F, n_window, f_min, r_routing_max, theta0);
         [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, method_id, theta0, dt, ...
             q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max);
         state = struct('tc', tc, 'theta_win', theta_win, 'cov_win', cov_win, ...
@@ -189,10 +194,10 @@ function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r
         else
             theta_tls0 = theta0;
             theta_kf0 = theta0;
-            P0 = diag([0.5; 0.05; 1000] .^ 2);
+            P0 = diag([0.5; 50; 1e6] .^ 2);
         end
 
-        [~, theta_win, cov_win, method_id] = incremental_window_tls_samples(t, x, v, a_mps2, F, n_window, raw_idx, f_min, r_routing_max, theta_tls0, theta0);
+        [~, theta_win, cov_win, method_id] = incremental_window_tls_samples(t, x, v, a, F, n_window, raw_idx, f_min, r_routing_max, theta_tls0, theta0);
         [theta_kf, pdiag_kf] = parameter_kf_segment(theta_win, cov_win, method_id, theta_kf0, P0, theta0, dt, ...
             q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max);
         state.theta_win(idx, :) = theta_win;
@@ -214,6 +219,7 @@ function update_plot(window_edit, fmin_edit, routing_edit, q_edit, r_tls_edit, r
 end
 
 function state = draw_tls_results(ax, t, x, F, state, highlight_range, blue, purple, copperwood, title_text, do_redraw)
+% Units: t [s], x [m], F [N]; state theta [kg, N*s/m, N/m].
     plot_step = max(1, floor(numel(state.tc) / 12000));
     ip = 1:plot_step:numel(state.tc);
     tp = state.tc(ip);
@@ -223,7 +229,7 @@ function state = draw_tls_results(ax, t, x, F, state, highlight_range, blue, pur
 
     have_handles = isfield(state, 'h') && isfield(state.h, 'kf') && all(isgraphics(state.h.kf));
     if do_redraw || ~have_handles
-        plot(ax(1), t, x, 'Color', blue, 'LineWidth', 1.0)
+        plot(ax(1), t, 1000*x, 'Color', blue, 'LineWidth', 1.0)
         grid(ax(1), 'on')
         ylabel(ax(1), 'x (mm)')
 
@@ -231,9 +237,9 @@ function state = draw_tls_results(ax, t, x, F, state, highlight_range, blue, pur
         grid(ax(2), 'on')
         ylabel(ax(2), 'F (N)')
 
-        [state.h.ci(1), state.h.win(1), state.h.kf(1)] = plot_param(ax(3), tp, winp(:, 3), kfp(:, 3), cip(:, 3), blue, 'k (N/mm)');
+        [state.h.ci(1), state.h.win(1), state.h.kf(1)] = plot_param(ax(3), tp, winp(:, 3), kfp(:, 3), cip(:, 3), blue, 'k (N/m)');
         [state.h.ci(2), state.h.win(2), state.h.kf(2)] = plot_param(ax(4), tp, winp(:, 1), kfp(:, 1), cip(:, 1), purple, 'm (kg)');
-        [state.h.ci(3), state.h.win(3), state.h.kf(3)] = plot_param(ax(5), tp, winp(:, 2), kfp(:, 2), cip(:, 2), copperwood, 'c (N s/mm)');
+        [state.h.ci(3), state.h.win(3), state.h.kf(3)] = plot_param(ax(5), tp, winp(:, 2), kfp(:, 2), cip(:, 2), copperwood, 'c (N s/m)');
         xlabel(ax(5), 'Time (s)')
         linkaxes(ax, 'x')
     else
@@ -248,12 +254,14 @@ function state = draw_tls_results(ax, t, x, F, state, highlight_range, blue, pur
 end
 
 function update_param(h_ci, h_win, h_kf, tp, winp, kfp, cip)
+% Units: tp [s]; estimate and confidence arrays share one parameter unit.
     set(h_ci, 'XData', [tp; flipud(tp)], 'YData', [kfp - cip; flipud(kfp + cip)])
     set(h_win, 'XData', tp, 'YData', winp)
     set(h_kf, 'XData', tp, 'YData', kfp)
 end
 
 function h_highlight = update_highlight(ax, state, t_range)
+% Units: t_range [s]; axis data units pass through unchanged.
     if isfield(state, 'h') && isfield(state.h, 'highlight')
         h_highlight = state.h.highlight;
     else
@@ -281,28 +289,30 @@ function h_highlight = update_highlight(ax, state, t_range)
     end
 end
 
-function [tc, theta_win, cov_win, method_id] = incremental_window_tls(t, x, v, a_mps2, F, n_window, f_min, r_routing_max, theta0)
+function [tc, theta_win, cov_win, method_id] = incremental_window_tls(t, x, v, a, F, n_window, f_min, r_routing_max, theta0)
+% Units: SI kinematics/force in; theta [kg, N*s/m, N/m] out.
     sample_idx = n_window:numel(t);
-    [tc, theta_win, cov_win, method_id] = incremental_window_tls_samples(t, x, v, a_mps2, F, n_window, sample_idx, f_min, r_routing_max, theta0, theta0);
+    [tc, theta_win, cov_win, method_id] = incremental_window_tls_samples(t, x, v, a, F, n_window, sample_idx, f_min, r_routing_max, theta0, theta0);
 end
 
-function [tc, theta_win, cov_win, method_id] = incremental_window_tls_samples(t, x, v, a_mps2, F, n_window, sample_idx, f_min, r_routing_max, theta_seed, theta_ref)
+function [tc, theta_win, cov_win, method_id] = incremental_window_tls_samples(t, x, v, a, F, n_window, sample_idx, f_min, r_routing_max, theta_seed, theta_ref)
+% Units: SI kinematics/force in; theta/covariance use SI parameter units.
     sample_idx = sample_idx(:);
     sample_idx = sample_idx(sample_idx >= n_window & sample_idx <= numel(t));
     i1 = sample_idx - n_window + 1;
     i2 = sample_idx;
 
-    Sa = window_sum(a_mps2, i1, i2);
+    Sa = window_sum(a, i1, i2);
     Sv = window_sum(v, i1, i2);
     Sx = window_sum(x, i1, i2);
     SF = window_sum(F, i1, i2);
-    Saa = window_sum(a_mps2 .* a_mps2, i1, i2);
-    Sav = window_sum(a_mps2 .* v, i1, i2);
-    Sax = window_sum(a_mps2 .* x, i1, i2);
+    Saa = window_sum(a .* a, i1, i2);
+    Sav = window_sum(a .* v, i1, i2);
+    Sax = window_sum(a .* x, i1, i2);
     Svv = window_sum(v .* v, i1, i2);
     Svx = window_sum(v .* x, i1, i2);
     Sxx = window_sum(x .* x, i1, i2);
-    SaF = window_sum(a_mps2 .* F, i1, i2);
+    SaF = window_sum(a .* F, i1, i2);
     SvF = window_sum(v .* F, i1, i2);
     SxF = window_sum(x .* F, i1, i2);
     SFF = window_sum(F .* F, i1, i2);
@@ -364,22 +374,25 @@ function [tc, theta_win, cov_win, method_id] = incremental_window_tls_samples(t,
 end
 
 function s = window_sum(y, i1, i2)
+% Units: output sum retains the input y unit.
     cy = [0; cumsum(y(:))];
     s = cy(i2 + 1) - cy(i1);
 end
 
 function [theta_kf, pdiag_kf] = parameter_kf(theta_win, cov_win, method_id, theta0, dt, q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max)
-    P = diag([0.5; 0.05; 1000] .^ 2);
+% Units: theta [kg, N*s/m, N/m]; covariance uses squared parameter units.
+    P = diag([0.5; 50; 1e6] .^ 2);
     [theta_kf, pdiag_kf] = parameter_kf_segment(theta_win, cov_win, method_id, theta0(:), P, theta0, dt, ...
         q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max);
 end
 
 function [theta_kf, pdiag_kf] = parameter_kf_segment(theta_win, cov_win, method_id, theta, P, theta0, dt, q_scale, r_tls_scale, r_lse_scale, r_up_factor, innovation_down_max, innovation_up_max)
+% Units: theta [kg, N*s/m, N/m], dt [s], covariance in squared units.
     n = size(theta_win, 1);
     theta_kf = zeros(n, 3);
     pdiag_kf = zeros(n, 3);
-    q_std = [0.02; 0.0002; 20];
-    r_floor = [0.02; 0.0002; 20];
+    q_std = [0.02; 0.2; 20000];
+    r_floor = [0.02; 0.2; 20000];
     Q_kf = q_scale * diag(q_std .^ 2) * dt;
     [theta_min, theta_max] = parameter_bounds(theta0, 0.02);
     theta = clamp_parameters(theta, theta_min, theta_max);
@@ -423,16 +436,19 @@ function [theta_kf, pdiag_kf] = parameter_kf_segment(theta_win, cov_win, method_
 end
 
 function [theta_min, theta_max] = parameter_bounds(theta0, rel_limit)
+% Units: theta bounds retain [kg, N*s/m, N/m]; rel_limit is dimensionless.
     theta0 = theta0(:);
     theta_min = theta0 * rel_limit;
     theta_max = inf(size(theta0));
 end
 
 function theta = clamp_parameters(theta, theta_min, theta_max)
+% Units: all theta vectors retain [kg, N*s/m, N/m].
     theta = min(max(theta(:), theta_min), theta_max);
 end
 
 function [h_ci, h_win, h_kf] = plot_param(ax, tp, winp, kfp, cip, color, ytext)
+% Units: tp [s]; estimate/interval unit is stated by ytext.
     light_color = 0.65 * color + 0.35 * [1 1 1];
     h_ci = fill(ax, [tp; flipud(tp)], [kfp - cip; flipud(kfp + cip)], ...
         color, 'FaceAlpha', 0.28, 'EdgeColor', 'none');

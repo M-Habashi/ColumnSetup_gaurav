@@ -1,5 +1,7 @@
 function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_parametric, freq_hz, freq_rad, plot_config)
 %PLOT_TRANSFER_FUNCTION_MODEL_COMPARISON Plot Bode and pole-zero comparisons.
+% Units: transfer functions/magnitude are dimensionless, frequency is Hz
+% or rad/s, phase is deg, and pole/zero coordinates are rad/s.
 
     %% Evaluate each model on the measured frequency grid
     tf_discrete_resp = squeeze(freqresp(tf_discrete, freq_rad));
@@ -29,7 +31,7 @@ function plot_transfer_function_model_comparison(tf_discrete, tf_fit, tf_paramet
         'DisplayName', 'tf_{parametric}');
     grid on
     xlim(plot_config.f_lim);
-    ylabel('Magnitude (dB)');
+    ylabel('Magnitude (dB, dimensionless ratio)');
     title(plot_config.desc);
     lgd = legend(h_mag, 'Location', 'best');
     lgd.ItemHitFcn = @toggle_legend_item;
@@ -57,6 +59,7 @@ end
 
 function plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color)
     % Plot fitted and parametric model pole-zero locations together.
+    % Units: transfer functions are dimensionless; pole/zero coordinates are rad/s.
     hold on
     [fit_poles, fit_zeros] = plot_model_poles_and_zeros(tf_fit, fit_color);
     [parametric_poles, parametric_zeros] = plot_model_poles_and_zeros(tf_parametric, parametric_color);
@@ -65,8 +68,8 @@ function plot_poles_and_zeros(tf_fit, tf_parametric, fit_color, parametric_color
     grid on
     box on
     axis equal
-    xlabel('Real');
-    ylabel('Imaginary');
+    xlabel('Real (rad/s)');
+    ylabel('Imaginary (rad/s)');
     title('Poles and Zeros');
 
     fit_legend = plot(nan, nan, '-', 'Color', fit_color, 'LineWidth', 1.6, ...
@@ -81,6 +84,7 @@ end
 
 function [pole_plot, zero_plot] = plot_model_poles_and_zeros(sys, marker_color)
     % Draw poles as x markers and zeros as circle markers.
+    % Units: sys is dimensionless; plotted coordinates are rad/s; colors are unitless.
     poles = pole(sys);
     zeros = zero(sys);
     pole_plot = gobjects(0);
@@ -97,6 +101,7 @@ function [pole_plot, zero_plot] = plot_model_poles_and_zeros(sys, marker_color)
 end
 
 function link_legend_pairs(h_mag, h_phase)
+    % Units: graphics handles and links are unitless.
     for i = 1:numel(h_mag)
         setappdata(h_mag(i), 'LinkedLegendItems', h_phase(i));
         setappdata(h_phase(i), 'LinkedLegendItems', h_mag(i));
@@ -104,6 +109,7 @@ function link_legend_pairs(h_mag, h_phase)
 end
 
 function toggle_legend_item(~, event)
+    % Units: graphics handles, visibility, and cached limits are unitless.
     ax = ancestor(event.Peer, 'axes');
     x_limits = xlim(ax);
     y_limits = ylim(ax);

@@ -1,4 +1,7 @@
 %% NUMERICAL-EXPERIMENTAL SUBSTRUCTURE COMPARISON
+%% Units
+% Input FEM: geometry/displacement [m], K [N/m], M [kg], C [N*s/m].
+% Earthquake acceleration [m/s^2], force [N]; plotted displacement [m].
 % Load a saved numerical FEM and couple its retained interface translation
 % to the specimen's measured scalar stiffness k.
 %
@@ -74,7 +77,7 @@ earthquake_file = fullfile(project_root, 'input_signals', 'earthquakes.mat');
 data = load(earthquake_file, record_fields{earthquake_id});
 record = data.(record_fields{earthquake_id});
 time = record(:, 1);
-ag = record(:, 2)*1000*earthquake_scale;               % [mm/s^2]
+ag = record(:, 2)*earthquake_scale;                    % [m/s^2]
 
 reference_load = -(M_reference*fem_ref.influence)*ag'; % [N]
 numerical_mass = fem_num.M(floor_dofs, floor_dofs);
@@ -142,10 +145,10 @@ fprintf('Numerical FEM: %s\n', numerical_file);
 fprintf('Reference FEM: %s\n', reference_file);
 fprintf('Experimental reduction factor: %.3f\n', ...
     k_exp_r);
-fprintf('Reduced experimental stiffness k: %.6f N/mm\n', k_experimental);
+fprintf('Reduced experimental stiffness k: %.6f N/m\n', k_experimental);
 fprintf('Interface: horizontal force only; roller carries axial reaction\n');
-fprintf('Maximum floor displacement difference: %.6e mm\n', maximum_error);
-fprintf('Peak interface displacement: %.6f mm\n', ...
+fprintf('Maximum floor displacement difference: %.6e m\n', maximum_error);
+fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
 fprintf('J4 = %.2f%%, J5 = %.2f%%, J6 = %.2f%%, J7 = %.2f%%\n\n', ...
@@ -164,19 +167,19 @@ for floor_id = 1:n_story
         'Color', floor_colors(floor_id, :), 'LineWidth', 1.1, ...
         'DisplayName', 'Numerical-experimental');
     hold(ax, 'off'); grid(ax, 'on');
-    ylabel(ax, sprintf('Floor %d (mm)', floor_id));
+    ylabel(ax, sprintf('Floor %d (m)', floor_id));
     if floor_id == 1, legend(ax, 'Location', 'best'); end
 end
 xlabel(ax, 'Time (s)');
 title(layout, sprintf('%s: reference and numerical-experimental response', ...
     record_names{earthquake_id}));
-subtitle(layout, sprintf('Maximum floor difference = %.3e mm', maximum_error));
+subtitle(layout, sprintf('Maximum floor difference = %.3e m', maximum_error));
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 %% PARTITION GEOMETRY
 frame_x = (0:frame.n_bay)*frame.bay_width;
 frame_y = (0:frame.n_story)*frame.story_height;
-interface_y = fem_num.interface.height_mm;
+interface_y = fem_num.interface.height;
 figure('Color', 'w', 'Name', 'Numerical-experimental partition');
 hold on;
 for level_id = 2:numel(frame_y)

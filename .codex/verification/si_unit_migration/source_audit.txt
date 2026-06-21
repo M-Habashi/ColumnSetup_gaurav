@@ -1,0 +1,24 @@
+Source and visualization unit audit
+
+MATLAB source files checked: 62
+MATLAB functions/local functions checked: 149
+Missing function unit contracts: 0
+MATLAB scripts checked: 22
+Missing script unit contracts: 0
+Ambiguous axis labels found: 0
+Simulink model migration: deferred by user request
+Embedded Simulink MATLAB functions migrated: 0/7
+Required migrated Simulink signal labels present: 2/8
+Stiffness scope scaled to N/m: no
+Simulink implementation instructions:
+- main/docs/work_done/simulink_si_unit_migration.md
+
+HTML validation:
+- docs/codebase_review.html: uncodixify passed
+- docs/work_done/frame_fem_definition.html: uncodixify passed
+
+Compile/physical verification blocker:
+- MATLAB R2025b has no slrealtime function.
+- speedgoatlib_IO112, speedgoatlib_IO113, and slrealtimeloglib are unavailable.
+- No-target update, SLRT compilation, target connection, and the requested
+  one-minute Speedgoat run cannot execute in this installation.

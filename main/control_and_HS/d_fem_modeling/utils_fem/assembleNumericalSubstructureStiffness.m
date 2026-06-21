@@ -4,6 +4,8 @@ function [K_retained, model] = assembleNumericalSubstructureStiffness( ...
 %   The experimental lower-left column is removed. The retained interface
 %   DOF is horizontal translation only; its rotation is released and its
 %   vertical translation is restrained by the numerical roller.
+% Units: geometry [m], E [N/m^2], I [m^4], rotational stiffness [N*m/rad],
+% output stiffness matrices [N/m].
 
 n_story = frame.n_story;
 n_bay = frame.n_bay;
@@ -128,6 +130,7 @@ model.interface_transfers = 'horizontal force only';
 end
 
 function k = bendingStiffness(E, I, L)
+% Units: E [N/m^2], I [m^4], L [m]; output uses consistent N-m units.
 k = E*I/L^3* ...
     [12,    6*L,   -12,    6*L;
      6*L, 4*L^2,  -6*L, 2*L^2;
@@ -136,6 +139,7 @@ k = E*I/L^3* ...
 end
 
 function K = assembleElement(K, k_element, dofs)
+% Units: K/k_element use consistent N-m units; dofs are unitless indices.
 active = dofs > 0;
 dofs = dofs(active);
 K(dofs, dofs) = K(dofs, dofs)+k_element(active, active);

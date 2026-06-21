@@ -1,4 +1,5 @@
 function fit = estimate_twice_integrated(D, ~)
+% Units: D uses m, m/s, m/s^2, N; fit uses kg, N*s/m, N/m.
 ix = cumtrapz(D.t, D.x);
 iix = cumtrapz(D.t, ix);
 iiF = cumtrapz(D.t, cumtrapz(D.t, D.F));

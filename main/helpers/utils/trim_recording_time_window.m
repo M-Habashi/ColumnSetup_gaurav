@@ -1,5 +1,6 @@
 function data = trim_recording_time_window(data)
 %TRIM_RECORDING_TIME_WINDOW Select and apply a time-window trim to recording data.
+% Units: time and trim window are s; all signal fields retain their original units.
 
     [t, y] = get_time_and_displacement(data);
     t = t(:);
@@ -12,6 +13,7 @@ function data = trim_recording_time_window(data)
 end
 
 function [t, y] = get_time_and_displacement(data)
+% Units: t is s; y preserves stored displacement units (normally mm).
     if isfield(data, 'dm')
         y = data.dm;
         t = get_time_vector(data, numel(y));
@@ -31,6 +33,7 @@ function [t, y] = get_time_and_displacement(data)
 end
 
 function t = get_time_vector(data, n)
+% Units: output t is s; n is a unitless sample count.
     if isfield(data, 't') && numel(data.t) == n
         t = data.t;
     elseif isfield(data, 'tt') && numel(data.tt) == n
@@ -45,6 +48,7 @@ function t = get_time_vector(data, n)
 end
 
 function data = trim_data(data, keep, selected_window, t)
+% Units: selected_window and t are s; signal field units pass through unchanged.
     n = numel(keep);
     names = fieldnames(data);
     for i = 1:numel(names)
@@ -64,6 +68,7 @@ function data = trim_data(data, keep, selected_window, t)
 end
 
 function value = trim_numeric(value, keep, n)
+% Units: value preserves its input unit; keep and n are unitless indexing data.
     if isvector(value) && numel(value) == n
         value = value(keep);
     elseif size(value, 1) == n
@@ -74,6 +79,7 @@ function value = trim_numeric(value, keep, n)
 end
 
 function logsout = trim_logsout(logsout, selected_window)
+% Units: selected_window is s; logged signal units pass through unchanged.
     sig = logsout.FileLogSignals{1}.Values;
     keep = sig.Time >= selected_window(1) & sig.Time <= selected_window(2);
     sig = getsamples(sig, find(keep));

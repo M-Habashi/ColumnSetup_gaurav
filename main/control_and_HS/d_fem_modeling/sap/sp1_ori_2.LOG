@@ -6,7 +6,7 @@
 
 
 
- B E G I N   A N A L Y S I S                                2026/06/20  07:30:02
+ B E G I N   A N A L Y S I S                                2026/06/21  13:35:41
 
 
  RUNNING ANALYSIS WITHIN THE GUI PROCESS
@@ -22,8 +22,8 @@
  NUMBER OF LOAD CASES                      =           1
  NUMBER OF MASS SOURCES                    =           1
 
- UNITS (FORCE, LENGTH, TEMPERATURE, TIME)  = N, mm, °C, sec
- GRAVITATIONAL ACCELERATION                =    9806.650
+ UNITS (FORCE, LENGTH, TEMPERATURE, TIME)  = N, m, °C, sec
+ GRAVITATIONAL ACCELERATION                =    9.806650
 
  ADDRESSABLE PHYSICAL MEMORY (RAM)         =      15.343 GB
 
@@ -38,13 +38,13 @@
  NUMBER OF THREADS: FORM (AUTOMATIC)       =           8
 
 
- E L E M E N T   F O R M A T I O N                                      07:30:02
+ E L E M E N T   F O R M A T I O N                                      13:35:41
 
 
  NUMBER OF COUPLED CONSTRAINT EQUATIONS    =           0
 
 
- L I N E A R   E Q U A T I O N   S O L U T I O N                        07:30:02
+ L I N E A R   E Q U A T I O N   S O L U T I O N                        13:35:41
 
  FORMING STIFFNESS AT ZERO (UNSTRESSED) INITIAL CONDITIONS
 
@@ -61,7 +61,7 @@
  ---------------------------------
 
 
- L I N E A R   S T A T I C   C A S E S                                  07:30:02
+ L I N E A R   S T A T I C   C A S E S                                  13:35:41
 
  USING STIFFNESS AT ZERO (UNSTRESSED) INITIAL CONDITIONS
 
@@ -73,4 +73,4 @@
  CASE: MODE1_EQ
 
 
- A N A L Y S I S   C O M P L E T E                          2026/06/20  07:30:02
+ A N A L Y S I S   C O M P L E T E                          2026/06/21  13:35:41

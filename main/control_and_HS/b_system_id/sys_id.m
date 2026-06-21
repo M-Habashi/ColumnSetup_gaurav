@@ -4,6 +4,11 @@
  % 3- Fit a continuous rational transfer function with regularized LS
  % 4- Compare the three transfer-function models
 
+%% Units
+% Loaded dd and dm are stored in mm; their ratio and all transfer functions
+% are dimensionless. Time is s, frequency is Hz or rad/s, mass is kg,
+% damping is N*s/m, and stiffness is N/m.
+
 %% Startup
 clear
 clc
@@ -329,7 +334,7 @@ plot(t, dm_parametric, '--', 'Color', parametric_color, 'LineWidth', 1.6, ...
     'DisplayName', 'tf_{parametric} d_m from lsim');
 grid on
 xlabel('Time (s)');
-ylabel('Displacement');
+ylabel('Displacement (mm)');
 title(sprintf('%s Time-Domain Identification', plot_data_name));
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggle_legend_item;
@@ -339,6 +344,7 @@ fprintf('Data file = %s\n', tf_estimate_config.data_file);
 fprintf('Time window = [%.6g, %.6g] s\n', trim_time_window(1), trim_time_window(2));
 
 function toggle_legend_item(~, event)
+% Units: graphics handles and visibility state are unitless.
     if strcmp(event.Peer.Visible, 'on')
         event.Peer.Visible = 'off';
     else
@@ -347,6 +353,7 @@ function toggle_legend_item(~, event)
 end
 
 function [sys_stable, was_stabilized] = stabilize_transfer_function(sys)
+% Units: input and output transfer functions are dimensionless.
     poles = pole(sys);
     was_stabilized = any(real(poles) >= 0);
     if was_stabilized
@@ -364,6 +371,7 @@ function [sys_stable, was_stabilized] = stabilize_transfer_function(sys)
 end
 
 function [gain_margin, phase_margin, gain_margin_freq_rad, phase_margin_freq_rad] = open_loop_margins(open_loop_sys)
+% Units: gain margin is dimensionless, phase margin is deg, frequencies are rad/s.
     [gain_margin, phase_margin, gain_margin_freq_rad, phase_margin_freq_rad] = margin(open_loop_sys);
     if isempty(gain_margin), gain_margin = NaN; end
     if isempty(phase_margin), phase_margin = NaN; end

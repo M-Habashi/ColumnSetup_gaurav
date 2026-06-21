@@ -207,7 +207,7 @@
           <li>Corrected one-sided FFT normalization for DC, Nyquist, odd-length signals, and frequency limiting; added regression tests.</li>
           <li>Replaced the hard-coded stability threshold with the first unstable stiffness-sweep value, reused computed margins, and removed explicit matrix inverses.</li>
           <li>Prevented infeasible destabilizing-controller results from being cached, returned, or saved as usable controllers.</li>
-          <li>Corrected the unit boundary between specimen data and identification. Specimen data remain in kg, N·s/mm, and N/mm; physical identification and stability models receive kg, N·s/m, and N/m. New parametric files carry an SI model-convention marker.</li>
+          <li>Standardized specimen parameters and physical calculations in kg, N·s/m, and N/m while retaining raw experimental displacement in mm and acceleration in g for storage and visualization.</li>
           <li>Removed the implicit caller-workspace override from <code>load_saved_result_file</code>. Its API now verifies an explicit file against the requested result category, while visualization wrappers retain the legacy ambient bridge.</li>
           <li>Added a guard for the common case where no new Speedgoat file-log row appears, added seconds to result filenames, and refused overwrites.</li>
           <li>Made the W8x28 experimental and frame definitions use the same exact section moment of inertia.</li>
@@ -276,7 +276,7 @@
       <section id="contradictions">
         <h2>Contradictions and documentation drift</h2>
         <ul>
-          <li>The FEM HTML presents fixed 6.67-ft stories, while <code>build_fem.m</code> computes specimen-specific story height. Its mass and load explanation also requires review because code treats level values as physical mass.</li>
+          <li>The FEM definition now presents specimen-specific story height in metres and distinguishes level mass in kg from derived weight in N.</li>
           <li>The reference plot draws fixed bases although the analyzed model uses finite base rotational springs.</li>
           <li>The damage sweep lowers damping with stiffness to preserve damping ratio. This is a specific damage law, not a neutral stiffness-only sensitivity study.</li>
           <li><code>AGENTS.md</code> contains obsolete breakpoint lines, a missing helper directory, an infinite configured “full” run, conflicting physical-run approval rules, and R2020b-specific advice despite this audit running under R2025b.</li>

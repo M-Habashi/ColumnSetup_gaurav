@@ -1,5 +1,7 @@
 function out = identify_analog_closed_loop_params(discrete_tf_estimate, fit_config)
 %IDENTIFY_ANALOG_CLOSED_LOOP_PARAMS Fit analog closed-loop physical parameters.
+% Units: input/output transfer responses are dimensionless; frequency is
+% rad/s or Hz; mass is kg, damping is N*s/m, and stiffness is N/m.
 
     %% Prepare target response and fit configuration
     if nargin < 2, fit_config = struct(); end
@@ -52,6 +54,7 @@ function out = identify_analog_closed_loop_params(discrete_tf_estimate, fit_conf
 end
 
 function r = err(x, w, y, c)
+    % Units: w is rad/s; y, model response, weights, and residual are dimensionless.
     % Compare model and measured response in magnitude and phase.
     [num, den] = model_poly(pack(10 .^ x), c);
     h = freqs(num, den, w);
@@ -64,6 +67,7 @@ function r = err(x, w, y, c)
 end
 
 function fw = frequency_weight(w, c)
+    % Units: w is rad/s; c frequency fields are Hz; fw is dimensionless.
     if c.frequency_weight_exponent == 0
         fw = ones(size(w(:)));
         return
@@ -76,12 +80,14 @@ end
 
 function p = pack(v)
     % Store the optimized parameter vector in named fields.
+    % Units: coefficient units follow the continuous-time polynomial; gains are dimensionless.
     p = struct('a1b0', v(1), 'a2', v(2), 'a3', v(3), 'beta1', v(4), ...
         'beta2', v(5), 'Kp', v(6), 'Ki', v(7), 'a1', v(1), 'b1', v(4), 'b2', v(5));
 end
 
 function [num, den] = model_poly(p, c)
     % Assemble the analog closed-loop transfer-function polynomials.
+    % Units: c mass is kg, damping N*s/m, stiffness N/m; output TF is dimensionless.
     m = c.mass; d = c.damping; k = c.stiffness;
     num = [p.Kp * p.a1b0, p.Ki * p.a1b0];
     den = [m, ...
@@ -95,6 +101,7 @@ end
 
 function c = defaults(c)
     % Fill solver and parameter settings used by the nonlinear fit.
+    % Units: mass kg, damping N*s/m, stiffness N/m, frequency Hz; other settings unitless.
     d = struct('mass',38, 'damping',416, 'stiffness',0, ...
         'fit_band_hz',[0.5,40], 'magnitude_weight',3, 'phase_weight',0.35, ...
         'frequency_weight_exponent',0, 'frequency_weight_floor_hz',0.5, ...

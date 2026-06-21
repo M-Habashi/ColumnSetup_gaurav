@@ -1,5 +1,6 @@
 % Five-second triangle command for the Signal Generation time-history mode.
 % Columns are [time_s dd_mm].
+% Units: input dt is s; output time_history columns are [s, mm].
 
 time_history = [
     0.5  2

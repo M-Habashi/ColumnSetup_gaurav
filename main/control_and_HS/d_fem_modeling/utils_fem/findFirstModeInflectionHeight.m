@@ -3,6 +3,8 @@ function result = findFirstModeInflectionHeight( ...
 %FINDFIRSTMODEINFLECTIONHEIGHT Find a common story height for zero moment.
 %   The target is zero bending moment at experimental_height in the
 %   first-story left exterior column under first-mode equivalent forces.
+% Units: geometry [m], mass [kg], stiffness [N/m or N*m/rad], force [N],
+% moment [N*m], frequency [Hz].
 
 validateattributes(base_rotation_k, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'positive'});
@@ -23,8 +25,8 @@ end
 
 bracket_ids = find(scan_moments(1:end-1).*scan_moments(2:end) <= 0);
 assert(~isempty(bracket_ids), ...
-    ['No zero-moment story height was found between %.3f and %.3f mm. ' ...
-     'The scanned moment range was [%.6g, %.6g] N*mm.'], ...
+    ['No zero-moment story height was found between %.6g and %.6g m. ' ...
+     'The scanned moment range was [%.6g, %.6g] N*m.'], ...
     minimum_height, maximum_height, min(scan_moments), max(scan_moments));
 
 options = optimset('Display', 'off', 'TolX', 1e-9);
@@ -58,6 +60,7 @@ end
 function [moment, floor_forces, frequency_hz, moment_scale] = ...
         interfaceMoment(story_height, frame, base_rotation_k, ...
         floor_mass_kg, experimental_height)
+% Units: lengths [m], mass [kg], force [N], moment [N*m], frequency [Hz].
 frame_at_height = frame;
 frame_at_height.story_height = story_height;
 [K, model] = assembleCondensedFrameStiffness( ...
@@ -66,7 +69,7 @@ frame_at_height.story_height = story_height;
     frame_at_height.E, frame_at_height.section, ...
     frame_at_height.beam_connection_k, base_rotation_k);
 
-M = diag(floor_mass_kg(:))/1000;     % [N*s^2/mm]
+M = diag(floor_mass_kg(:));          % [kg] = [N*s^2/m]
 [mode_shapes, eigenvalues] = eig(K, M, 'vector');
 [eigenvalues, order] = sort(real(eigenvalues));
 assert(eigenvalues(1) > 0, 'The first eigenvalue must be positive.');
@@ -105,6 +108,7 @@ moment_scale = max(max(abs(end_moments)), 1);
 end
 
 function operator = curvatureOperator(x, length)
+% Units: x/length [m]; output has consistent inverse-length units.
 xi = x/length;
 operator = [ ...
     (-6+12*xi)/length^2, ...

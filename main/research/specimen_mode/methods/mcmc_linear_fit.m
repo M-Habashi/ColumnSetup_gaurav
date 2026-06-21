@@ -1,4 +1,5 @@
 function p = mcmc_linear_fit(X, y, seed)
+% Units: X/y may be dimensional; each output coefficient has y/X-column units.
 rng(seed)
 
 n = min(size(X, 1), 5000);

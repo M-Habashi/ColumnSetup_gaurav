@@ -1,5 +1,7 @@
 function tuning = optimize_settling_time_tuning(transfer_sys, analog_cntrlr, opts)
 %OPTIMIZE_SETTLING_TIME_TUNING Multi-start digital tuning for minimum settling time.
+% Units: transfer functions/controllers are dimensionless; decision vector
+% is [phase margin deg, bandwidth Hz]; settling-time outputs are s.
 
     if nargin < 3
         opts = struct();
@@ -88,6 +90,7 @@ function tuning = optimize_settling_time_tuning(transfer_sys, analog_cntrlr, opt
 end
 
 function f = objective(x, transfer_sys, analog_cntrlr)
+% Units: x is [deg, Hz]; transfer functions are dimensionless; f is s.
     try
         [analog_cl, ~, digital_cl] = build_loops(x, transfer_sys, analog_cntrlr);
         [~, info_a] = evalc('stepinfo(analog_cl)');
@@ -104,6 +107,7 @@ function f = objective(x, transfer_sys, analog_cntrlr)
 end
 
 function [c, ceq] = overshoot_constraint(x, transfer_sys, analog_cntrlr)
+% Units: x is [deg, Hz]; constraint outputs are normalized dimensionless values.
     ceq = [];
     try
         [analog_cl, ~, digital_cl] = build_loops(x, transfer_sys, analog_cntrlr);
@@ -119,6 +123,7 @@ function [c, ceq] = overshoot_constraint(x, transfer_sys, analog_cntrlr)
 end
 
 function [analog_cl, digital_cntrlr, digital_cl] = build_loops(x, transfer_sys, analog_cntrlr)
+% Units: x is [deg, Hz]; transfer functions/controllers are dimensionless.
     analog_cl = feedback(analog_cntrlr * transfer_sys, 1);
     opts_d = pidtuneOptions('PhaseMargin', x(1));
     [digital_cntrlr, ~] = pidtune(analog_cl, 'PI', x(2), opts_d);
@@ -126,6 +131,7 @@ function [analog_cl, digital_cntrlr, digital_cl] = build_loops(x, transfer_sys, 
 end
 
 function cache_spec = local_build_cache_spec(transfer_sys, analog_cntrlr, opts)
+% Units: transfer functions are dimensionless; cached tuning settings retain their units.
     cache_spec = struct( ...
         'kind', 'settling_time_tuning', ...
         'context', opts.cache_context, ...
@@ -139,6 +145,7 @@ function cache_spec = local_build_cache_spec(transfer_sys, analog_cntrlr, opts)
 end
 
 function signature = local_tf_signature(sys)
+% Units: sys is dimensionless; output signature stores its coefficient units unchanged.
     sys_ss = ss(sys);
     [A, B, C, D] = ssdata(sys_ss);
     signature = struct('A', A, 'B', B, 'C', C, 'D', D, 'Ts', sys_ss.Ts);

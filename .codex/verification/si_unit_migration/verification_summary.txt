@@ -1,0 +1,19 @@
+SI unit migration verification
+Historical tests verified: 3
+Maximum raw/Results mismatch: 0
+Maximum logged/Results mismatch: 0
+saved_result_si raw mutation: 0
+saved_result_si displacement error [m]: 0
+saved_result_si acceleration error [m/s^2]: 0
+Specimens verified: 3
+Parametric models rebuilt without refit: 13
+FEM first-mode frequency [Hz]: 2.09346983831
+SAP template/model N-m-C: 1/1
+SAP normalized interface moment: 2.707910e-12
+Embedded unit contracts: 0/7
+Online estimator SI: 0
+Model signal labels complete: 0
+Stiffness scope scaled to N/m: 0
+Simulink migration deferred: 1
+Physical verification completed: 0
+Physical blocker: R2025b installation lacks slrealtime, speedgoatlib_IO112/IO113, and slrealtimeloglib.

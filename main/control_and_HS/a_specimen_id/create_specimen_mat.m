@@ -1,4 +1,7 @@
 % Uses the unscaled TSE method implemented in research/specimen_mode/methods/estimate_tse.m.
+%% Units
+% Input saved data: t [s], displacement [mm], force [N], acceleration [g].
+% Output specimen: m [kg], c [N*s/m], k [N/m].
 clear; clc
 
 root = fileparts(mfilename('fullpath'));
@@ -39,8 +42,8 @@ k = fit.k;
 
 %% Parameter units
 units.m = 'kg';
-units.c = 'N*s/mm';
-units.k = 'N/mm';
+units.c = 'N*s/m';
+units.k = 'N/m';
 
 %% Save specimen MAT file
 source_method = 'TSE';
@@ -58,5 +61,5 @@ save(out_file, ...
 %% Print summary
 fprintf('Saved %s using unscaled TSE.\n', out_file)
 fprintf('m = %.6g kg\n', m)
-fprintf('c = %.6g N*s/mm\n', c)
-fprintf('k = %.6g N/mm\n', k)
+fprintf('c = %.6g N*s/m\n', c)
+fprintf('k = %.6g N/m\n', k)

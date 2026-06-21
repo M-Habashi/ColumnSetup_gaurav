@@ -1,6 +1,10 @@
 %% Digital Controller Tuning
 % Tune the digital PI controller around one identified analog closed-loop model.
 
+%% Units
+% Transfer functions, controller gains, and response amplitudes are
+% dimensionless. Time is s, frequency is Hz or rad/s, phase is deg.
+
 clear
 clc
 close all
@@ -110,6 +114,7 @@ plot_pole_zero_compare(gca, {analog_cl, digital_cl}, ...
     {plot_colors.blue, plot_colors.purple});
 
 function model_source = normalize_model_source(model_source)
+% Units: input and output labels are unitless text.
     model_source = lower(strtrim(string(model_source)));
     if any(model_source == ["parametric", "paarametric"])
         model_source = "paarametric";
@@ -121,6 +126,7 @@ function model_source = normalize_model_source(model_source)
 end
 
 function [analog_cl, model_label] = get_analog_closed_loop_model(model_data, model_source)
+% Units: model transfer function and label are dimensionless.
     if model_source == "fit"
         analog_cl = model_data.tf_fit;
         model_label = 'tf_fit (red)';
@@ -136,6 +142,7 @@ function [analog_cl, model_label] = get_analog_closed_loop_model(model_data, mod
 end
 
 function tuning = optimize_digital_tuning(analog_cl, opts)
+% Units: analog_cl is dimensionless; phase settings are deg, bandwidth Hz, time s.
     defaults = struct( ...
         'x0', [70, 20], ...
         'lb', [30, 1], ...
@@ -188,6 +195,7 @@ function tuning = optimize_digital_tuning(analog_cl, opts)
 end
 
 function f = digital_objective(x, analog_cl)
+% Units: x is [deg, Hz], analog_cl is dimensionless, objective is s.
     try
         [~, digital_cl] = build_digital_loop(x, analog_cl);
         info_d = stepinfo(digital_cl);
@@ -201,6 +209,7 @@ function f = digital_objective(x, analog_cl)
 end
 
 function [c, ceq] = digital_constraint(x, analog_cl)
+% Units: x is [deg, Hz]; constraints are normalized dimensionless values.
     ceq = [];
     try
         [~, digital_cl] = build_digital_loop(x, analog_cl);
@@ -214,12 +223,14 @@ function [c, ceq] = digital_constraint(x, analog_cl)
 end
 
 function [digital_cntrlr, digital_cl] = build_digital_loop(x, analog_cl)
+% Units: x is [deg, Hz]; transfer functions and controller are dimensionless.
     opts_d = pidtuneOptions('PhaseMargin', x(1));
     [digital_cntrlr, ~] = pidtune(analog_cl, 'PI', x(2), opts_d);
     digital_cl = feedback(digital_cntrlr * analog_cl, 1);
 end
 
 function plot_step_toggle_compare(ax, systems, settling_times, labels, plot_title, colors)
+% Units: step amplitude is dimensionless, time and settling times are s.
     hold(ax, 'on')
     for i = 1:numel(systems)
         [y, t] = step(systems{i});
@@ -232,13 +243,14 @@ function plot_step_toggle_compare(ax, systems, settling_times, labels, plot_titl
     grid(ax, 'on')
     title(ax, plot_title)
     xlabel(ax, 'Time (s)')
-    ylabel(ax, 'Response')
+    ylabel(ax, 'Response (dimensionless)')
     lgd = legend(ax, 'Location', 'best');
     lgd.ItemHitFcn = @toggle_legend_item;
     hold(ax, 'off')
 end
 
 function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_hz, colors)
+% Units: magnitude is dimensionless (dB), phase deg, frequency Hz.
     freq_rad = 2 * pi * freq_hz;
     hold(ax_mag, 'on')
     hold(ax_phase, 'on')
@@ -253,7 +265,7 @@ function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_h
     grid(ax_phase, 'on')
     xlim(ax_mag, [freq_hz(1), freq_hz(end)])
     xlim(ax_phase, [freq_hz(1), freq_hz(end)])
-    ylabel(ax_mag, 'Magnitude (dB)')
+    ylabel(ax_mag, 'Magnitude (dB, dimensionless ratio)')
     ylabel(ax_phase, 'Phase (deg)')
     xlabel(ax_phase, 'Frequency (Hz)')
     title(ax_mag, plot_title)
@@ -266,6 +278,7 @@ function plot_bode_compare(ax_mag, ax_phase, systems, labels, plot_title, freq_h
 end
 
 function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
+% Units: pole/zero coordinates are rad/s; handles, labels, and colors are unitless.
     hold(ax, 'on')
     for i = 1:numel(systems)
         plot_model_poles_and_zeros(ax, systems{i}, colors{i});
@@ -275,8 +288,8 @@ function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
     grid(ax, 'on')
     box(ax, 'on')
     axis(ax, 'equal')
-    xlabel(ax, 'Real')
-    ylabel(ax, 'Imaginary')
+    xlabel(ax, 'Real (rad/s)')
+    ylabel(ax, 'Imaginary (rad/s)')
     title(ax, plot_title)
 
     legend_handles = gobjects(numel(systems), 1);
@@ -290,6 +303,7 @@ function plot_pole_zero_compare(ax, systems, labels, plot_title, colors)
 end
 
 function plot_model_poles_and_zeros(ax, sys, marker_color)
+% Units: sys is dimensionless; pole/zero coordinates are rad/s.
     zeros = zero(sys);
     poles = pole(sys);
     if ~isempty(zeros)
@@ -303,6 +317,7 @@ function plot_model_poles_and_zeros(ax, sys, marker_color)
 end
 
 function colors = get_plot_colors()
+% Units: RGB outputs are dimensionless.
     colors.black = [0 0 0];
     colors.blue = hex_to_rgb('007CA8');
     colors.copperwood = hex_to_rgb('AC6420');
@@ -312,10 +327,12 @@ function colors = get_plot_colors()
 end
 
 function rgb = hex_to_rgb(hex_color)
+% Units: hexadecimal input and RGB output are dimensionless.
     rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
 end
 
 function toggle_legend_item(~, event)
+% Units: graphics handles and visibility state are unitless.
     if strcmp(event.Peer.Visible, 'on')
         event.Peer.Visible = 'off';
     else

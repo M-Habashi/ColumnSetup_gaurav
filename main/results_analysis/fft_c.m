@@ -1,5 +1,7 @@
 function [Y_f, freq] = fft_c(y_t, fs, fmax)
 %FFT_C Return the correctly scaled one-sided FFT of a real signal.
+% Units:
+%   Input y_t and output Y_f share the same amplitude unit; fs/fmax/freq [Hz].
 
 y_t = y_t(:);
 N = numel(y_t);
@@ -26,7 +28,7 @@ if (nargout == 0)
     figure;
     plot(freq, abs(Y_f));
     xlabel('Frequency (Hz)');
-    ylabel('|Y(f)|');
+    ylabel('|Y(f)| (same unit as y_t)');
     title('FFT of y');
 end
 

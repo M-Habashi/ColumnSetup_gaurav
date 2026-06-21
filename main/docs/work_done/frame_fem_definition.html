@@ -213,7 +213,7 @@
         <div class="drawing">
           <svg viewBox="0 0 820 475" role="img" aria-labelledby="frame-title frame-description">
             <title id="frame-title">Three-story, three-bay steel moment frame</title>
-            <desc id="frame-description">Each bay is 10 feet wide and each story is 6.67 feet high. Exterior columns are W8 by 28, interior columns are W8 by 35, and all beams are W8 by 24.</desc>
+            <desc id="frame-description">Each bay is 3.048 metres wide and the common story height h is calibrated for the selected specimen. Exterior columns are W8 by 28, interior columns are W8 by 35, and all beams are W8 by 24.</desc>
 
             <g class="member">
               <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
@@ -252,8 +252,8 @@
             </g>
 
             <g class="dim-label" text-anchor="middle">
-              <text x="170" y="462">10.00 ft</text><text x="400" y="462">10.00 ft</text><text x="630" y="462">10.00 ft</text>
-              <text x="785" y="336" transform="rotate(-90 785 336)">6.67 ft</text><text x="785" y="220" transform="rotate(-90 785 220)">6.67 ft</text><text x="785" y="106" transform="rotate(-90 785 106)">6.67 ft</text>
+              <text x="170" y="462">3.048 m</text><text x="400" y="462">3.048 m</text><text x="630" y="462">3.048 m</text>
+              <text x="785" y="336" transform="rotate(-90 785 336)">h (m)</text><text x="785" y="220" transform="rotate(-90 785 220)">h (m)</text><text x="785" y="106" transform="rotate(-90 785 106)">h (m)</text>
             </g>
 
             <g class="dof">
@@ -265,11 +265,11 @@
         <aside class="model-notes" aria-label="Model definition summary">
           <dl class="definition-list">
             <dt>Structural system</dt><dd>2D moment frame</dd>
-            <dt>Bays</dt><dd>3 × 10.00 ft</dd>
-            <dt>Stories</dt><dd>3 × 6.67 ft</dd>
+            <dt>Bays</dt><dd>3 × 3.048 m</dd>
+            <dt>Stories</dt><dd>3 × calibrated h (m)</dd>
             <dt>Level 3</dt><dd>Roof</dd>
-            <dt>Total width</dt><dd>30.00 ft</dd>
-            <dt>Total height</dt><dd>20.01 ft</dd>
+            <dt>Total width</dt><dd>9.144 m</dd>
+            <dt>Total height</dt><dd>3h (m)</dd>
             <dt>Beam sections</dt><dd>W8×24</dd>
             <dt>Exterior columns</dt><dd>W8×28</dd>
             <dt>Interior columns</dt><dd>W8×35</dd>
@@ -284,47 +284,46 @@
     </section>
 
     <section id="loads" aria-labelledby="loads-heading">
-      <h2 id="loads-heading">Gravity and earthquake load definition</h2>
+      <h2 id="loads-heading">Mass and earthquake input definition</h2>
       <div class="grid-2">
         <div>
-          <h3>Input assumptions</h3>
+          <h3>SI inputs used by the FEM</h3>
           <table>
             <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
             <tbody>
-              <tr><td>Concrete density</td><td class="mono">150 pcf</td></tr>
-              <tr><td>Dead area load</td><td class="mono">100 psf</td></tr>
-              <tr><td>Floor live area load</td><td class="mono">50 psf</td></tr>
-              <tr><td>Roof live load</td><td class="mono">0.5 × floor LL</td></tr>
-              <tr><td>Tributary width</td><td class="mono">10 ft</td></tr>
-              <tr><td>Earthquake combination</td><td class="mono">1.2D + 0.5L ± E</td></tr>
+              <tr><td>Level 1 mass</td><td class="mono">20,121 kg</td></tr>
+              <tr><td>Level 2 mass</td><td class="mono">20,121 kg</td></tr>
+              <tr><td>Roof mass</td><td class="mono">18,426 kg</td></tr>
+              <tr><td>Gravity constant</td><td class="mono">9.80665 m/s²</td></tr>
+              <tr><td>Earthquake records</td><td class="mono">m/s²</td></tr>
+              <tr><td>SAP present units</td><td class="mono">N–m–°C</td></tr>
             </tbody>
           </table>
         </div>
 
         <div>
-          <h3>Factored gravity line loads</h3>
+          <h3>Derived level weights</h3>
           <div class="equations mono">
-            <p>w<sub>DL</sub> = 1.2(1.024) = 1.229 kip/ft</p>
-            <p>w<sub>LL,floor</sub> = 0.5(0.50) = 0.250 kip/ft</p>
-            <p>w<sub>floor</sub> = 1.229 + 0.250 = 1.479 kip/ft</p>
-            <p>w<sub>LL,roof</sub> = 0.5(0.5 × 0.50) = 0.125 kip/ft</p>
-            <p>w<sub>roof</sub> = 1.229 + 0.125 = 1.354 kip/ft</p>
+            <p>W<sub>1</sub> = 20,121 × 9.80665 = 197,320 N</p>
+            <p>W<sub>2</sub> = 20,121 × 9.80665 = 197,320 N</p>
+            <p>W<sub>3</sub> = 18,426 × 9.80665 = 180,697 N</p>
+            <p>K is assembled in N/m.</p>
+            <p>M is assembled in kg and C in N·s/m.</p>
           </div>
         </div>
       </div>
     </section>
 
     <section aria-labelledby="mass-heading">
-      <h2 id="mass-heading">Span, floor, and roof weight</h2>
+      <h2 id="mass-heading">FEM mass and weight values</h2>
       <table>
         <thead>
           <tr><th>Quantity</th><th>Expression</th><th>Result</th></tr>
         </thead>
         <tbody>
-          <tr><td>One 10-ft bay, Levels 1–2</td><td class="mono">1.479 kip/ft × 10 ft</td><td class="mono">≈ 6,707 kgf</td></tr>
-          <tr><td>Complete floor, Levels 1–2</td><td class="mono">6,707 kgf × 3</td><td class="mono">≈ 20,121 kgf</td></tr>
-          <tr><td>One 10-ft bay, roof</td><td class="mono">1.354 kip/ft × 10 ft</td><td class="mono">≈ 6,142 kgf</td></tr>
-          <tr class="strong-row"><td>Complete roof, 3 bays</td><td class="mono">6,142 kgf × 3</td><td class="mono">≈ 18,426 kgf</td></tr>
+          <tr><td>Level 1</td><td class="mono">20,121 kg × 9.80665 m/s²</td><td class="mono">197,320 N</td></tr>
+          <tr><td>Level 2</td><td class="mono">20,121 kg × 9.80665 m/s²</td><td class="mono">197,320 N</td></tr>
+          <tr class="strong-row"><td>Roof</td><td class="mono">18,426 kg × 9.80665 m/s²</td><td class="mono">180,697 N</td></tr>
         </tbody>
       </table>
     </section>
@@ -354,7 +353,7 @@
           <div class="drawing">
             <svg viewBox="0 0 820 475" role="img" aria-labelledby="hybrid-frame-title hybrid-frame-description">
               <title id="hybrid-frame-title">Hybrid simulation frame partition</title>
-              <desc id="hybrid-frame-description">The lower 40-inch portion of the first-story left exterior W8 by 28 column is red and represents the experimental scalar lateral stiffness. A roller at its upper interface carries the vertical reaction in the numerical model, while only horizontal force is exchanged with the experiment.</desc>
+              <desc id="hybrid-frame-description">The lower 1.016-metre portion of the first-story left exterior W8 by 28 column is red and represents the experimental scalar lateral stiffness. A roller at its upper interface carries the vertical reaction in the numerical model, while only horizontal force is exchanged with the experiment.</desc>
 
               <g class="member">
                 <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
@@ -391,12 +390,12 @@
               </g>
 
               <g class="dim-label" text-anchor="middle">
-                <text x="170" y="462">10.00 ft</text><text x="400" y="462">10.00 ft</text><text x="630" y="462">10.00 ft</text>
-                <text x="785" y="336" transform="rotate(-90 785 336)">6.67 ft</text><text x="785" y="220" transform="rotate(-90 785 220)">6.67 ft</text><text x="785" y="106" transform="rotate(-90 785 106)">6.67 ft</text>
+                <text x="170" y="462">3.048 m</text><text x="400" y="462">3.048 m</text><text x="630" y="462">3.048 m</text>
+                <text x="785" y="336" transform="rotate(-90 785 336)">h (m)</text><text x="785" y="220" transform="rotate(-90 785 220)">h (m)</text><text x="785" y="106" transform="rotate(-90 785 106)">h (m)</text>
               </g>
 
               <path class="callout-line" d="M61 362H92L110 347"/>
-              <text class="callout-text" x="118" y="337">40 in experimental k</text>
+              <text class="callout-text" x="118" y="337">1.016 m experimental k</text>
               <text class="callout-text" x="118" y="354">horizontal force only</text>
               <text class="callout-text" x="118" y="371">roller carries vertical reaction</text>
             </svg>
@@ -410,7 +409,7 @@
         <aside class="model-notes" aria-label="Hybrid simulation partition summary">
           <dl class="definition-list">
             <dt>Experimental member</dt><dd>W8×28 exterior column</dd>
-            <dt>Experimental length</dt><dd>40 in</dd>
+            <dt>Experimental length</dt><dd>1.016 m</dd>
             <dt>Physical location</dt><dd>First story, left side</dd>
             <dt>Remaining structure</dt><dd>Numerical model</dd>
             <dt>Partition boundary</dt><dd>Specimen tip</dd>
@@ -423,14 +422,14 @@
           </dl>
           <div class="assumption" style="margin-top: 18px;">
             <h3>Coupling concept</h3>
-            <p>The numerical FEM retains the interface horizontal translation u<sub>I</sub> explicitly and removes the lower 40-inch left exterior column segment. The experiment is represented only by its measured lateral stiffness k and returns F<sub>exp</sub> = ku<sub>I</sub> at that interface coordinate. A numerical roller supplies the vertical reaction, so the experiment receives no axial load; the released interface also transfers no experimental moment. No half-drift or factor-of-two stiffness assumption is used.</p>
+            <p>The numerical FEM retains the interface horizontal translation u<sub>I</sub> explicitly and removes the lower 1.016 m left exterior column segment. The experiment is represented only by its measured lateral stiffness k in N/m and returns F<sub>exp</sub> = ku<sub>I</sub> in N at that interface coordinate. A numerical roller supplies the vertical reaction, so the experiment receives no axial load; the released interface also transfers no experimental moment. No half-drift or factor-of-two stiffness assumption is used.</p>
           </div>
         </aside>
       </div>
     </section>
 
     <footer>
-      Preliminary modeling basis. Dimensions are in feet; verify section properties, units, mass conversion, and load distribution before analysis.
+      SI modeling basis: geometry in m, force in N, mass in kg, stiffness in N/m, and damping in N·s/m.
     </footer>
   </main>
 </body>

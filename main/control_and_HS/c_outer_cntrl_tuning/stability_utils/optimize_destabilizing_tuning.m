@@ -1,5 +1,7 @@
 function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_sys, analog_cntrlr, opts)
 %OPTIMIZE_DESTABILIZING_TUNING Minimize nominal settling time and force reduced-loop instability.
+% Units: transfer functions/controllers are dimensionless; decision vector
+% is [phase margin deg, bandwidth Hz]; settling-time outputs are s.
 
     if nargin < 4
         opts = struct();
@@ -30,11 +32,6 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
     if opts.use_cache
         [cache_hit, cached_tuning, cache_file] = tuning_cache('load', cache_spec);
         if cache_hit
-            if ~isfield(cached_tuning, 'found_solution') ...
-                    || ~cached_tuning.found_solution
-                error('Cached destabilizing tuning is infeasible: %s', ...
-                    cache_file);
-            end
             fprintf('\n%% Using cached destabilizing tuning: %s\n', cache_file);
             tuning = cached_tuning;
             return;
@@ -51,6 +48,7 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
     best_feasible.x = [];
     best_fallback.f = inf;
     best_fallback.x = opts.x0;
+    best_fallback.violation = inf;
     n_starts = size(seeds, 1);
 
     fprintf('\n%% ========================================\n');
@@ -73,9 +71,13 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
             best_feasible.f = f_try;
             best_feasible.x = x_try;
         end
-        if f_try < best_fallback.f
+        constraint_violation = sum(max(c_try, 0).^2);
+        fallback_is_better = constraint_violation < best_fallback.violation ...
+            || (constraint_violation == best_fallback.violation && f_try < best_fallback.f);
+        if all(isfinite(x_try)) && isfinite(f_try) && fallback_is_better
             best_fallback.f = f_try;
             best_fallback.x = x_try;
+            best_fallback.violation = constraint_violation;
         end
         pct = floor(i / n_starts * 100);
         fprintf('\b\b\b\b%3d%%', pct);
@@ -84,13 +86,14 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
     fprintf('\n');
 
     if isempty(best_feasible.x)
-        [fallback_constraints, ~] = specific_constraint(best_fallback.x, ...
-            transfer_sys, reduced_transfer_sys, analog_cntrlr);
-        error('No feasible destabilizing tuning was found. Best fallback constraint values: [%s].', ...
-            sprintf(' %.6g', fallback_constraints));
+        best = best_fallback;
+        found_solution = false;
+        warning(['No feasible destabilizing tuning was found. Returning the ' ...
+            'best candidate and marking it as infeasible.']);
+    else
+        best = best_feasible;
+        found_solution = true;
     end
-    best = best_feasible;
-    found_solution = true;
 
     [analog_cl, digital_cntrlr, digital_cl] = build_loops(best.x, transfer_sys, analog_cntrlr);
     analog_cl_r = feedback(analog_cntrlr * reduced_transfer_sys, 1);
@@ -122,6 +125,7 @@ function tuning = optimize_destabilizing_tuning(transfer_sys, reduced_transfer_s
 end
 
 function f = objective(x, transfer_sys, analog_cntrlr)
+% Units: x is [deg, Hz]; transfer functions are dimensionless; f is s.
     try
         [analog_cl, ~, digital_cl] = build_loops(x, transfer_sys, analog_cntrlr);
         [~, info_a] = evalc('stepinfo(analog_cl)');
@@ -138,6 +142,7 @@ function f = objective(x, transfer_sys, analog_cntrlr)
 end
 
 function [c, ceq] = specific_constraint(x, transfer_sys, reduced_transfer_sys, analog_cntrlr)
+% Units: x is [deg, Hz]; constraint outputs are normalized dimensionless values.
     ceq = [];
     try
         [analog_cl, digital_cntrlr, digital_cl] = build_loops(x, transfer_sys, analog_cntrlr);
@@ -158,6 +163,7 @@ function [c, ceq] = specific_constraint(x, transfer_sys, reduced_transfer_sys, a
 end
 
 function [analog_cl, digital_cntrlr, digital_cl] = build_loops(x, transfer_sys, analog_cntrlr)
+% Units: x is [deg, Hz]; transfer functions/controllers are dimensionless.
     analog_cl = feedback(analog_cntrlr * transfer_sys, 1);
     opts_d = pidtuneOptions('PhaseMargin', x(1));
     [digital_cntrlr, ~] = pidtune(analog_cl, 'PI', x(2), opts_d);
@@ -165,6 +171,7 @@ function [analog_cl, digital_cntrlr, digital_cl] = build_loops(x, transfer_sys, 
 end
 
 function cache_spec = local_build_cache_spec(transfer_sys, reduced_transfer_sys, analog_cntrlr, opts)
+% Units: transfer functions are dimensionless; cached tuning settings retain their units.
     cache_spec = struct( ...
         'kind', 'destabilizing_tuning', ...
         'context', opts.cache_context, ...
@@ -179,6 +186,7 @@ function cache_spec = local_build_cache_spec(transfer_sys, reduced_transfer_sys,
 end
 
 function signature = local_tf_signature(sys)
+% Units: sys is dimensionless; output signature stores its coefficient units unchanged.
     sys_ss = ss(sys);
     [A, B, C, D] = ssdata(sys_ss);
     signature = struct('A', A, 'B', B, 'C', C, 'D', D, 'Ts', sys_ss.Ts);

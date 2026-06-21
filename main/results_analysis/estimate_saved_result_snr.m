@@ -2,6 +2,9 @@
 % Lists saved result MAT files, prompts for one file, and estimates SNR for
 % measured displacement, force, and acceleration channels.
 
+%% Units
+% Input/RMS: dm [mm], fm [N], am [g]. SNR output [dB].
+
 clc
 
 noiseWindowSeconds = 0.05;
@@ -17,6 +20,7 @@ end
 [data, filePath, selectedFileName] = load_saved_result_file( ...
     projectFolder, 'tests', false, preferredFile);
 channels = {'dm', 'fm', 'am'};
+channelUnits = {'mm', 'N', 'g'};
 test_type = getTestType(data);
 
 fs = data.fs;
@@ -39,8 +43,8 @@ for k = 1:numel(channels)
     snrDb(k) = 20*log10(signalRms(k)/noiseRms(k));
 end
 
-results = table(channels(:), signalRms, noiseRms, snrDb, ...
-    'VariableNames', {'Channel', 'Signal_RMS', 'Noise_RMS', 'SNR_dB'});
+results = table(channels(:), channelUnits(:), signalRms, noiseRms, snrDb, ...
+    'VariableNames', {'Channel', 'Unit', 'Signal_RMS', 'Noise_RMS', 'SNR_dB'});
 
 fprintf('\n===============================================================\n');
 fprintf('                  Saved Result SNR Estimate\n');
@@ -55,6 +59,7 @@ fprintf('===============================================================\n\n');
 disp(results)
 
 function test_type = getTestType(data)
+% Units: metadata input and text output are unitless.
     if isfield(data, 'test_type')
         test_type = char(string(data.test_type));
     elseif isfield(data, 'testname')

@@ -1,5 +1,7 @@
 function selected_window = select_recording_time_window(t, y)
 %SELECT_RECORDING_TIME_WINDOW Select a time window using draggable handles.
+% Units: t and selected_window are s; y and plotted displacement preserve
+% the caller's unit (normally stored mm).
 
     t = t(:);
     y = y(:);
@@ -11,7 +13,7 @@ function selected_window = select_recording_time_window(t, y)
     plot(ax, t, y, 'Color', [0 0.486 0.659], 'LineWidth', 1.2)
     grid(ax, 'on')
     xlabel(ax, 'Time (s)')
-    ylabel(ax, 'Measured displacement')
+    ylabel(ax, 'Measured displacement (mm)')
     title(ax, 'Drag the yellow window handles, then click Continue')
     hold(ax, 'on')
 
@@ -42,14 +44,17 @@ function selected_window = select_recording_time_window(t, y)
     selected_window = sort(selected_window);
 
     function start_drag(side)
+        % Units: side is a unitless index.
         dragging_side = side;
     end
 
     function stop_drag()
+        % Units: callback state is unitless.
         dragging_side = 0;
     end
 
     function drag_window_handle(~, ~)
+        % Units: pointer x-coordinate and selected window are s.
         if dragging_side == 0
             return
         end
@@ -59,6 +64,7 @@ function selected_window = select_recording_time_window(t, y)
     end
 
     function update_window()
+        % Units: selected window is s; y-axis limits preserve y units.
         x1 = selected_window(1);
         x2 = selected_window(2);
         set(patch_handle, 'XData', [x1, x2, x2, x1])

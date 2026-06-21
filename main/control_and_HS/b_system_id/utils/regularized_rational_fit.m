@@ -1,5 +1,7 @@
 function [num, den, info] = regularized_rational_fit(h, w, nb, na, lambda, weights, opts)
 %REGULARIZED_RATIONAL_FIT Scaled iterative ridge fit for H(jw) = B(jw)/A(jw).
+% Units: h and fitted transfer response are dimensionless; w and reported
+% frequency scale are rad/s; polynomial coefficients use continuous-time SI powers.
 
     if nargin < 5 || isempty(lambda), lambda = 1e-6; end
     if nargin < 6 || isempty(weights), weights = ones(size(w)); end
@@ -44,6 +46,7 @@ function [num, den, info] = regularized_rational_fit(h, w, nb, na, lambda, weigh
 end
 
 function r = fit_error(x, q, h, nb, lambda, weights, opts)
+    % Units: q, h, weights, and residual are dimensionless.
     num_q = x(1:nb+1).';
     den_q = [1, x(nb+2:end).'];
     h_fit = polyval(num_q, q) ./ polyval(den_q, q);

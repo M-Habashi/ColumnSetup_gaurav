@@ -3,6 +3,10 @@
 % report, displacement tracking, measured force, and force-displacement
 % hysteresis.
 
+%% Units
+% Input/stored: t [s], dd/dc/dm [mm], fm [N], am [g], m_hat [kg],
+% c_hat [N*s/m], k_hat [N/m]. Plotted outputs preserve those stored units.
+
 clc; close all
 
 scriptFolder = fileparts(mfilename('fullpath'));
@@ -92,7 +96,7 @@ ax(3) = subplot(3, 1, 3);
 plot(t, am, '-', 'Color', colors.green, 'LineWidth', 1.0, 'DisplayName', 'am measured acceleration');
 grid on
 xlabel('Time (s)')
-ylabel('Acceleration')
+ylabel('Acceleration (g)')
 title('Acceleration History')
 set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
 lgd = legend('Location', 'best');
@@ -114,7 +118,7 @@ if hasTseEstimate
     ax_tse(1) = subplot(3, 1, 1);
     plot(t, k_hat, 'Color', colors.blue, 'LineWidth', 1.0, 'DisplayName', 'k hat');
     grid on
-    ylabel('k (N/mm)')
+    ylabel('k (N/m)')
     title('Online TSE Stiffness')
 
     ax_tse(2) = subplot(3, 1, 2);
@@ -127,12 +131,13 @@ if hasTseEstimate
     plot(t, c_hat, 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'c hat');
     grid on
     xlabel('Time (s)')
-    ylabel('c (N s/mm)')
+    ylabel('c (N s/m)')
     title('Online TSE Damping')
     linkaxes(ax_tse, 'x')
 end
 
 function colors = getPlotColors()
+% Units: RGB outputs are dimensionless.
     colors.green = hexToRgb('39BF5E');
     colors.black = [0 0 0];
     colors.blue = hexToRgb('007CA8');
@@ -142,10 +147,12 @@ function colors = getPlotColors()
 end
 
 function rgb = hexToRgb(hexColor)
+% Units: hexadecimal input and RGB output are dimensionless.
     rgb = sscanf(hexColor, '%2x%2x%2x', [1 3]) / 255;
 end
 
 function toggleSignalVisibility(~, event)
+% Units: plotted data and axis limits pass through unchanged.
     ax = ancestor(event.Peer, 'axes');
     xLimits = xlim(ax);
     yLimits = ylim(ax);
@@ -160,6 +167,7 @@ function toggleSignalVisibility(~, event)
 end
 
 function test_type = getTestType(data)
+% Units: metadata input and text output are unitless.
     if isfield(data, 'test_type')
         test_type = char(string(data.test_type));
     elseif isfield(data, 'testname')

@@ -1,4 +1,7 @@
 %% THREE-STORY FRAME RESPONSE TO EARTHQUAKE EXCITATION
+%% Units
+% FEM inputs/outputs: length/displacement [m], mass [kg], force [N],
+% acceleration [m/s^2], K [N/m], C [N*s/m]. Ground plot is [g].
 % Condensed 2-D frame FEM based on docs/work_done/frame_fem_definition.html. Column and
 % beam and column bending, joint rotations, semi-rigid
 % beam connections, and base rotational springs are represented.
@@ -36,9 +39,9 @@ beam_connection_k = frame.beam_connection_k;
 base_rotation_k = frame.base_rotation_k;
 
 %% UNIT CONSTANTS AND INPUT CHECKS
-% The analysis uses only kg, N, mm, and s. Acceleration is converted to
-% mm/s^2 for the analysis and divided by g0 only when it is plotted.
-g0 = 9806.65;                       % gravitational acceleration [mm/s^2]
+% The analysis uses kg, N, m, and s. Acceleration is divided by g0 only
+% when it is plotted in g.
+g0 = 9.80665;                       % gravitational acceleration [m/s^2]
 
 validateattributes(earthquake_id, {'numeric'}, ...
     {'scalar', 'integer', '>=', 1, '<=', 10}, mfilename, 'earthquake_id');
@@ -50,16 +53,16 @@ validateattributes(damping_ratio, {'numeric'}, ...
 %% FRAME GEOMETRY AND MATERIAL
 n_story = frame.n_story;
 n_bay = frame.n_bay;
-bay_width = frame.bay_width;         % [mm]
-story_height = frame.story_height;   % [mm]
-E = frame.E;                         % [N/mm^2]
+bay_width = frame.bay_width;         % [m]
+story_height = frame.story_height;   % [m]
+E = frame.E;                         % [N/m^2]
 
 %% AISC W-SECTION PROPERTIES
-% Exact SAP2000 v26 AISC15 section properties [mm^4].
+% Exact SAP2000 v26 AISC15 section properties [m^4].
 section = frame.section;
 
 %% SAVED FRAME STIFFNESS
-K = fem_ref.K;                                           % [N/mm]
+K = fem_ref.K;                                           % [N/m]
 frame_model = fem_ref.assembly;
 
 %% LUMPED FLOOR MASS MATRIX
@@ -67,10 +70,8 @@ frame_model = fem_ref.assembly;
 floor_mass_kg = fem_ref.floor_mass_kg;                    % [kg]
 M_kg = diag(floor_mass_kg);                               % physical mass [kg]
 
-% In an N-mm-s equation, 1 kg = 0.001 N*s^2/mm. This conversion makes the
-% dynamic mass matrix exactly consistent with K [N/mm], acceleration
-% [mm/s^2], and generalized force [N].
-M = fem_ref.M;                                            % [N*s^2/mm]
+% In an N-m-s equation, kg is numerically N*s^2/m.
+M = fem_ref.M;                                            % [kg]
 influence = fem_ref.influence;
 
 %% MODAL PROPERTIES AND DAMPING MATRIX
@@ -85,7 +86,7 @@ for mode_id = 1:n_story
 end
 
 frequency_hz = omega / (2*pi);                            % [Hz]
-C = M * modes * diag(2*damping_ratio*omega) * modes' * M; % [N*s/mm]
+C = M * modes * diag(2*damping_ratio*omega) * modes' * M; % [N*s/m]
 
 assert(all(eig(M) > 0), 'The mass matrix must be positive definite.');
 assert(norm(K-K', 'fro') < 1e-10*norm(K, 'fro'), ...
@@ -109,7 +110,7 @@ earthquake_data = load(earthquake_file, record_fields{earthquake_id});
 record = earthquake_data.(record_fields{earthquake_id});
 
 time = record(:, 1);                                      % [s]
-ag = record(:, 2) * 1000 * earthquake_scale;              % [mm/s^2]
+ag = record(:, 2) * earthquake_scale;                     % [m/s^2]
 
 assert(size(record, 2) == 2, 'Earthquake record must contain [time, acceleration].');
 assert(all(isfinite(record), 'all'), 'Earthquake record contains nonfinite values.');
@@ -118,7 +119,7 @@ assert(all(diff(time) > 0), 'Earthquake time values must be strictly increasing.
 %% EARTHQUAKE FORCE AND NEWMARK RESPONSE
 % Relative-coordinate equation:
 %   M*u_rel_ddot + C*u_rel_dot + K*u_rel = -M*r*ag
-% M [N*s^2/mm] times ag [mm/s^2] gives force directly in N.
+% M [kg] times ag [m/s^2] gives force directly in N.
 effective_force = -(M * influence) * ag';                 % [N]
 [u_relative, ~, ~] = newmarkAverageAcceleration( ...
     time, M, C, K, effective_force);
@@ -132,9 +133,9 @@ end
 %% REPORT MODEL PROPERTIES
 fprintf('\nThree-story condensed frame FEM reference model\n');
 fprintf('FEM file: %s\n', fem_file);
-fprintf('Beam-column rotational stiffness: %s N*mm/rad\n', ...
+fprintf('Beam-column rotational stiffness: %s N*m/rad\n', ...
     stiffnessText(beam_connection_k));
-fprintf('Base rotational stiffness: %s N*mm/rad\n', ...
+fprintf('Base rotational stiffness: %s N*m/rad\n', ...
     stiffnessText(base_rotation_k));
 fprintf('\nNATURAL FREQUENCIES OF THE BUILDING\n');
 for mode_id = 1:n_story
@@ -143,7 +144,7 @@ end
 fprintf('\nPeak ground acceleration: %.4f g\n\n', max(abs(ag))/g0);
 fprintf('PEAK RELATIVE FLOOR DISPLACEMENTS\n');
 for floor_id = 1:n_story
-    fprintf('  Floor %d: %.4f mm\n', floor_id, ...
+    fprintf('  Floor %d: %.6g m\n', floor_id, ...
         max(abs(u_relative(:, floor_id))));
 end
 fprintf('\n');
@@ -164,7 +165,7 @@ for floor_id = 1:n_story
     nexttile;
     plot(time, u_relative(:, floor_id), 'Color', floor_colors(floor_id, :), ...
         'LineWidth', 1.1);
-    ylabel(sprintf('Floor %d (mm)', floor_id));
+    ylabel(sprintf('Floor %d (m)', floor_id));
     grid on;
 end
 xlabel('Time (s)');
@@ -181,6 +182,7 @@ plotFrameModel(n_bay, n_story, bay_width, story_height, ...
 
 %% LOCAL FUNCTIONS
 function value = stiffnessText(stiffness)
+% Units: stiffness [N*m/rad]; output is formatted text.
 if isinf(stiffness)
     value = 'Inf (rigid)';
 else
@@ -190,11 +192,12 @@ end
 
 function [u, v, a] = newmarkAverageAcceleration(time, M, C, K, force)
 % Integrate M*a+C*v+K*u=force using beta=1/4 and gamma=1/2.
+% Units: time [s], M [kg], C [N*s/m], K [N/m], force [N]; outputs m, m/s, m/s^2.
 n_step = numel(time);
 n_dof = size(M, 1);
-u = zeros(n_step, n_dof);                                 % [mm]
-v = zeros(n_step, n_dof);                                 % [mm/s]
-a = zeros(n_step, n_dof);                                 % [mm/s^2]
+u = zeros(n_step, n_dof);                                 % [m]
+v = zeros(n_step, n_dof);                                 % [m/s]
+a = zeros(n_step, n_dof);                                 % [m/s^2]
 a(1, :) = (M \ (force(:, 1)-C*v(1, :)'-K*u(1, :)'))';
 
 beta = 1/4;
@@ -223,6 +226,7 @@ end
 
 function plotFrameModel(n_bay, n_story, bay_width, story_height, ...
         floor_mass_kg, peak_ag_g)
+% Units: geometry [m], mass [kg], peak_ag_g [g]; figure coordinates [m].
 % Draw the structural idealization and the loads represented by the model.
 figure('Color', 'w', 'Name', 'Three-story frame FEM model');
 hold on;
@@ -256,11 +260,10 @@ for level_id = 1:n_story
     quiver(arrow_x, repmat(y(level_id+1)+arrow_length, size(arrow_x)), ...
         zeros(size(arrow_x)), -arrow_length*ones(size(arrow_x)), 0, ...
         'Color', [0.35, 0.35, 0.35], 'LineWidth', 1, 'MaxHeadSize', 0.8);
-    level_weight_kgf = floor_mass_kg(level_id);
-    level_weight_kip = level_weight_kgf*9.80665/4448.2216152605;
+    level_weight_n = floor_mass_kg(level_id)*9.80665;
     text(x(end)+0.12*bay_width, y(level_id+1)+0.08*story_height, ...
-        sprintf('W = %.2f kip (= %.0f kgf)', level_weight_kip, ...
-        level_weight_kgf), 'Color', [0.25, 0.25, 0.25]);
+        sprintf('W = %.0f N', level_weight_n), ...
+        'Color', [0.25, 0.25, 0.25]);
 end
 
 % Fixed supports.

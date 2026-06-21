@@ -1,5 +1,8 @@
 clear; clc; close all
 
+%% Units
+% Input and plotted output: t [s], dd/dc/dm [mm], fm [N].
+
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
 addpath(step_root)
@@ -21,7 +24,7 @@ hold on
 plot(t, dc, 'Color', '#AC6420')
 plot(t, dm, 'Color', '#007CA8')
 grid on
-ylabel('Displacement')
+ylabel('Displacement (mm)')
 legend('desired', 'command', 'measured')
 title(selected_file, 'Interpreter', 'none')
 
@@ -29,4 +32,4 @@ subplot(2,1,2)
 plot(t, fm, 'Color', '#74058A')
 grid on
 xlabel('Time (s)')
-ylabel('Force')
+ylabel('Force (N)')

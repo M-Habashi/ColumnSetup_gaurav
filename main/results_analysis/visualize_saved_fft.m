@@ -2,6 +2,9 @@
 % Lists saved result MAT files, prompts for one file, and plots each channel
 % FFT in a separate subplot.
 
+%% Units
+% Input and FFT amplitude: dd/dc/dm [mm], fm [N], am [g]; frequency [Hz].
+
 %% User inputs
 fmax = 100; % Hz
 
@@ -40,28 +43,28 @@ ax(1) = subplot(5, 1, 1);
 [Y, freq] = fft_c(dd, fs, fmax);
 plot(freq, abs(Y), '--', 'Color', colors.black, 'LineWidth', 1.8)
 grid on
-ylabel('|dd(f)|')
+ylabel('|dd(f)| (mm)')
 title('dd desired displacement')
 
 ax(2) = subplot(5, 1, 2);
 [Y, freq] = fft_c(dc, fs, fmax);
 plot(freq, abs(Y), '-', 'Color', colors.copperwood, 'LineWidth', 1.0)
 grid on
-ylabel('|dc(f)|')
+ylabel('|dc(f)| (mm)')
 title('dc command displacement')
 
 ax(3) = subplot(5, 1, 3);
 [Y, freq] = fft_c(dm, fs, fmax);
 plot(freq, abs(Y), '-', 'Color', colors.blue, 'LineWidth', 1.0)
 grid on
-ylabel('|dm(f)|')
+ylabel('|dm(f)| (mm)')
 title('dm measured displacement')
 
 ax(4) = subplot(5, 1, 4);
 [Y, freq] = fft_c(fm, fs, fmax);
 plot(freq, abs(Y), '-', 'Color', colors.purple, 'LineWidth', 1.0)
 grid on
-ylabel('|fm(f)|')
+ylabel('|fm(f)| (N)')
 title('fm measured force')
 
 ax(5) = subplot(5, 1, 5);
@@ -69,12 +72,13 @@ ax(5) = subplot(5, 1, 5);
 plot(freq, abs(Y), '-', 'Color', colors.green, 'LineWidth', 1.0)
 grid on
 xlabel('Frequency (Hz)')
-ylabel('|am(f)|')
+ylabel('|am(f)| (g)')
 title('am measured acceleration')
 
 linkaxes(ax, 'x')
 
 function colors = getPlotColors()
+% Units: RGB outputs are dimensionless.
     colors.green = hexToRgb('39BF5E');
     colors.black = [0 0 0];
     colors.blue = hexToRgb('007CA8');
@@ -84,5 +88,6 @@ function colors = getPlotColors()
 end
 
 function rgb = hexToRgb(hexColor)
+% Units: hexadecimal input and RGB output are dimensionless.
     rgb = sscanf(hexColor, '%2x%2x%2x', [1 3]) / 255;
 end

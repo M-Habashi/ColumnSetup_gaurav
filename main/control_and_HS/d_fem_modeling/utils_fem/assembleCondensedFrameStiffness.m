@@ -4,7 +4,9 @@ function [K_floor, model] = assembleCondensedFrameStiffness( ...
 %ASSEMBLECONDENSEDFRAMESTIFFNESS Assemble and condense a 2-D frame FEM.
 %   Floor translations are retained. Column-joint, beam-end, and finite-base
 %   rotations are assembled explicitly and then statically condensed.
-%   Rotational spring units are N*mm/rad. Inf imposes an exact rigid
+% Units: length [m], E [N/m^2], I [m^4], rotational springs [N*m/rad],
+% output stiffness matrices [N/m].
+%   Rotational spring units are N*m/rad. Inf imposes an exact rigid
 %   connection without introducing an artificially large stiffness.
 
 validateattributes(n_story, {'numeric'}, {'scalar','integer','positive'});
@@ -134,6 +136,7 @@ model.base_rotation_k = base_rotation_k;
 end
 
 function k = eulerBernoulliBendingStiffness(E, I, L)
+% Units: E [N/m^2], I [m^4], L [m]; output uses consistent N-m units.
 k = E*I/L^3* ...
     [12,    6*L,   -12,    6*L;
      6*L, 4*L^2,  -6*L, 2*L^2;
@@ -142,6 +145,7 @@ k = E*I/L^3* ...
 end
 
 function K = assembleElement(K, k_element, dofs)
+% Units: K/k_element use consistent N-m units; dofs are unitless indices.
 active = dofs > 0;
 active_dofs = dofs(active);
 K(active_dofs, active_dofs) = K(active_dofs, active_dofs) ...
@@ -149,6 +153,7 @@ K(active_dofs, active_dofs) = K(active_dofs, active_dofs) ...
 end
 
 function validateRotationalStiffness(value, name)
+% Units: value [N*m/rad]; name is unitless text.
 assert(isnumeric(value) && isscalar(value) && isreal(value) ...
     && value > 0 && (isfinite(value) || isinf(value)), ...
     '%s must be a positive finite scalar or Inf.', name);

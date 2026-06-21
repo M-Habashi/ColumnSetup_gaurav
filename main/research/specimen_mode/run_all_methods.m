@@ -1,5 +1,9 @@
 clear; clc
 
+%% Units
+% Input saved data: displacement [mm], force [N]. Internal/output estimates:
+% mass [kg], damping [N*s/m], stiffness [N/m], accuracy [%].
+
 root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(root));
 addpath(fullfile(root, 'methods'))
@@ -67,10 +71,10 @@ T = table(method_name, ...
     chirp_m, chirp_c, chirp_k, chirp_accuracy, ...
     blwn_m, blwn_c, blwn_k, blwn_accuracy);
 T.Properties.VariableNames = {'method', ...
-    'chirp_m (kg)', 'chirp_c (N*s/mm)', 'chirp_k (N/mm)', 'chirp_accuracy (%)', ...
-    'BLWN_m (kg)', 'BLWN_c (N*s/mm)', 'BLWN_k (N/mm)', 'BLWN_accuracy (%)'};
+    'chirp_m (kg)', 'chirp_c (N*s/m)', 'chirp_k (N/m)', 'chirp_accuracy (%)', ...
+    'BLWN_m (kg)', 'BLWN_c (N*s/m)', 'BLWN_k (N/m)', 'BLWN_accuracy (%)'};
 
-fprintf('Slow sine validation k = %.6g N/mm\n\n', slow_k)
+fprintf('Slow sine validation k = %.6g N/m\n\n', slow_k)
 disp(T)
 
 [~, best_chirp] = max(chirp_accuracy);
