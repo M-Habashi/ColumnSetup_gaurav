@@ -1,12 +1,16 @@
-function data = trim_recording_time_window(data)
+function data = trim_recording_time_window(data, preview_function)
 %TRIM_RECORDING_TIME_WINDOW Select and apply a time-window trim to recording data.
 % Units: time and trim window are s; all signal fields retain their original units.
+
+    if nargin < 2
+        preview_function = [];
+    end
 
     [t, y] = get_time_and_displacement(data);
     t = t(:);
     y = y(:);
 
-    selected_window = select_recording_time_window(t, y);
+    selected_window = select_recording_time_window(t, y, preview_function);
     keep = t >= selected_window(1) & t <= selected_window(2);
     data = trim_data(data, keep, selected_window, t);
     data.trim_time_window = selected_window;

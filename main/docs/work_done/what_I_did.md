@@ -21,4 +21,5 @@
       1. The experimental specimen lateral stiffness matches the corresponding numerical part. This achieved by adjusting the base rotational stiffness
       2. The zero-bending-moment position is the control point. This is achieved by changing the numerical model floor height while keeping the experimental substructure matching the actual specimn (40 in)
       3. A copy of sap/template.sdb is named after the specimen and updated with the calculated base rotational stiffness and floor heights (first mode load pattern can be shown as verification).
+      4. Note that we are optimizing for the first mode which creates minor errors (report). Minor errors are accepted especially with the fact that during nonlinearity this point is going to move anyway
 

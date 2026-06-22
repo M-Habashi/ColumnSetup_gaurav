@@ -12,6 +12,12 @@ function teardownOnce(testCase)
 rmpath(testCase.TestData.methods)
 end
 
+function testOfficialConfiguration(testCase)
+config = official_tls_config;
+verifyEqual(testCase, [config.window_s config.filter_hz config.plot_stride ...
+    config.f_min config.q_rel config.r_rel], [0.1 30 64 20 1 1])
+end
+
 function testUnitInvariance(testCase)
 rng(1)
 [a, v, x, F, scale, truth] = syntheticData();
@@ -24,6 +30,18 @@ thetaConverted = noise_whitened_tls(a*kinematicScale, v*kinematicScale, ...
 thetaConverted = thetaConverted*kinematicScale/forceScale;
 
 verifyEqual(testCase, thetaConverted, thetaSI, 'RelTol', 1e-10)
+end
+
+function testWindowedEstimatorInitializesFromTLS(testCase)
+rng(3)
+[a, v, x, F, scale] = syntheticData();
+dt = 1/512;
+t = (0:dt:8)';
+config = official_tls_config;
+config.f_min = 0;
+result = windowed_noise_whitened_tls(t, a, v, x, F, scale, config);
+first = find(result.accepted, 1, 'first');
+verifyEqual(testCase, result.theta_kf(first, :), result.theta_raw(first, :))
 end
 
 function testSyntheticRecoveryAndCoverage(testCase)

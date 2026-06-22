@@ -158,6 +158,11 @@
       background: var(--surface);
     }
     .note p { margin: 0; }
+    .table-wrap { margin-top: 1rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--line); text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; }
     .status-list { list-style: none; padding: 0; }
     .status-list li {
       padding-left: 1.4rem;
@@ -252,10 +257,29 @@
           <div class="note"><p><span class="tag risk">Risk inference</span>Treat the online uncertainty band as heuristic until interval coverage is calibrated. Use dimensionless or noise-whitened parameter estimation.</p></div>
         </article>
 
-        <article class="finding">
-          <h3><span class="tag confirmed">Confirmed</span>5. Reference/hybrid equivalence is only first-mode exact</h3>
-          <p>Story height zeros the first-mode interface moment, while the hybrid model releases interface moment during broadband excitation.</p>
-          <div class="note"><p><span class="tag hypothesis">Hypothesis</span>Higher-mode interface moments may contribute to J4–J7. Quantify this using modal and record-level comparisons with a rotational-interface model before assigning causality.</p></div>
+        <article class="finding is-closed">
+          <h3><span class="tag intentional">Accepted</span>5. Reference/hybrid equivalence is only first-mode exact</h3>
+          <p>Story height zeros the first-mode interface moment. Modes 2 and 3 move the inflection point 10.01 in and 17.15 in below the interface, respectively. A rotational-interface model reproduced the reference stiffness to 3.99 × 10<sup>−16</sup> relative error and returned J4–J7 = 0.00% for every record, confirming that the released higher-mode interface moment causes the errors below within the linear FEM.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Earthquake</th><th>J4</th><th>J5</th><th>J6</th><th>J7</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>El Centro</td><td>0.46%</td><td>0.37%</td><td>0.11%</td><td>0.17%</td></tr>
+                <tr><td>Northridge</td><td>0.68%</td><td>0.76%</td><td>0.17%</td><td>0.26%</td></tr>
+                <tr><td>Kobe</td><td>0.82%</td><td>0.92%</td><td>0.21%</td><td>0.31%</td></tr>
+                <tr><td>Loma Prieta</td><td>1.31%</td><td>1.23%</td><td>0.32%</td><td>0.49%</td></tr>
+                <tr><td>Chi-Chi</td><td>0.14%</td><td>0.16%</td><td>0.03%</td><td>0.05%</td></tr>
+                <tr><td>Imperial Valley</td><td>0.47%</td><td>0.32%</td><td>0.12%</td><td>0.19%</td></tr>
+                <tr><td>Landers</td><td>0.58%</td><td>0.66%</td><td>0.15%</td><td>0.22%</td></tr>
+                <tr><td>Tabas</td><td>3.46%</td><td>3.99%</td><td>0.90%</td><td>1.34%</td></tr>
+                <tr><td>San Fernando</td><td>0.28%</td><td>0.25%</td><td>0.08%</td><td>0.11%</td></tr>
+                <tr><td>Tohoku</td><td>6.09%</td><td>4.57%</td><td>1.58%</td><td>2.34%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="note"><p><span class="tag intentional">Accepted</span>These bounded errors are accepted for the translation-only hybrid interface. <a href="https://github.com/M-Habashi/ColumnSetup_gaurav/issues/5">Issue #5</a> is closed.</p></div>
         </article>
 
         <article class="finding">

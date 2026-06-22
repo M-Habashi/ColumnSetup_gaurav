@@ -1,3 +1,19 @@
+# NOw
+- button in simulink to flag specific times
+- hysterisis
+- HS
+- virtual simulaitons
+- time scale
+- check if i identify inner loop and applied digital controller is this equivalent to identofying outer loop?
+
+# Next set of data
+- data file for each P_inner value
+- one file for the changing P_value but with known time of changing
+- For AI let it experiment while the new where is every changing and what is the model at eacch region
+
+
+
+
 # Pending
 - close sap after finishing
 - Fix the html to reflect correct information on the plots (we may removeee the loads)
@@ -6,7 +22,7 @@
     - floor diaphram unify x translation but doesn't prevent rotation
     - rotational stiffnesses
 - can we print critical time delay from the hybris ss? and the ncf margin too? and  compare with Amin's recommendations? for different values of k factor too 
-- Study what is the source of these minor errors J4 = 0.40%, J5 = 0.33%, J6 = 0.10%, J7 = 0.15%
+
 
 # Things to test
 

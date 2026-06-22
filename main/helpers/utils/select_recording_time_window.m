@@ -1,7 +1,11 @@
-function selected_window = select_recording_time_window(t, y)
+function selected_window = select_recording_time_window(t, y, preview_function)
 %SELECT_RECORDING_TIME_WINDOW Select a time window using draggable handles.
 % Units: t and selected_window are s; y and plotted displacement preserve
 % the caller's unit (normally stored mm).
+
+    if nargin < 3
+        preview_function = [];
+    end
 
     t = t(:);
     y = y(:);
@@ -9,11 +13,11 @@ function selected_window = select_recording_time_window(t, y)
     selected_window = [t(1), t(end)];
     fig = figure('Name', 'Select recording trim window', ...
         'NumberTitle', 'off', 'Color', 'w');
-    ax = axes(fig);
+    ax = axes(fig, 'Position', [0.13 0.20 0.775 0.72]);
     plot(ax, t, y, 'Color', [0 0.486 0.659], 'LineWidth', 1.2)
     grid(ax, 'on')
     xlabel(ax, 'Time (s)')
-    ylabel(ax, 'Measured displacement (mm)')
+    ylabel(ax, 'Measured displacement')
     title(ax, 'Drag the yellow window handles, then click Continue')
     hold(ax, 'on')
 
@@ -31,10 +35,14 @@ function selected_window = select_recording_time_window(t, y)
     uicontrol(fig, 'Style', 'pushbutton', 'String', 'Continue', ...
         'Units', 'normalized', 'Position', [0.43 0.01 0.14 0.06], ...
         'Callback', @(~,~)uiresume(fig));
+    preview_text = uicontrol(fig, 'Style', 'text', 'String', '', ...
+        'Units', 'normalized', 'Position', [0.1 0.09 0.8 0.06], ...
+        'BackgroundColor', 'w', 'FontWeight', 'bold', 'FontSize', 11);
 
     dragging_side = 0;
     set(fig, 'WindowButtonMotionFcn', @drag_window_handle, ...
         'WindowButtonUpFcn', @(~,~)stop_drag());
+    update_preview()
     uiwait(fig)
 
     if isvalid(fig)
@@ -50,6 +58,9 @@ function selected_window = select_recording_time_window(t, y)
 
     function stop_drag()
         % Units: callback state is unitless.
+        if dragging_side ~= 0
+            update_preview()
+        end
         dragging_side = 0;
     end
 
@@ -71,5 +82,12 @@ function selected_window = select_recording_time_window(t, y)
         set(left_line, 'XData', [x1, x1])
         set(right_line, 'XData', [x2, x2])
         drawnow limitrate
+    end
+
+    function update_preview()
+        if ~isempty(preview_function)
+            preview_text.String = preview_function(sort(selected_window));
+            drawnow
+        end
     end
 end

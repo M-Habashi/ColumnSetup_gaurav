@@ -46,14 +46,19 @@ $experimentalHeight = [double]::Parse(
 if ($storyHeight -le $experimentalHeight -or $experimentalHeight -le 0) {
     throw 'Story height must exceed the positive experimental height.'
 }
-[double[]]$floorForces = @(
-    $FloorForcesText.Split(',') | ForEach-Object {
-        [double]::Parse($_, [Globalization.CultureInfo]::InvariantCulture)
+$allFloorForces = @()
+foreach ($forceRow in $FloorForcesText.Split(';')) {
+    [double[]]$values = @(
+        $forceRow.Split(',') | ForEach-Object {
+            [double]::Parse($_, [Globalization.CultureInfo]::InvariantCulture)
+        }
+    )
+    if ($values.Count -ne 3) {
+        throw 'Each FloorForcesText row must contain three comma-separated values.'
     }
-)
-if ($floorForces.Count -ne 3) {
-    throw 'FloorForcesText must contain three comma-separated values.'
+    $allFloorForces += ,$values
 }
+[double[]]$floorForces = $allFloorForces[0]
 
 Add-Type -Path $apiPath
 [CSiAPIv1.cHelper]$helper = [CSiAPIv1.Helper]::new()
@@ -447,6 +452,35 @@ for ($level = 1; $level -le 3; $level++) {
 }
 Write-Output 'SAP stage: assigned and verified first-mode floor forces.'
 
+# Optional semicolon-separated rows add higher-mode equivalent-force cases.
+for ($modeIndex = 1; $modeIndex -lt $allFloorForces.Count; $modeIndex++) {
+    $pattern = 'MODE{0}_EQ' -f ($modeIndex + 1)
+    [void]$model.LoadPatterns.Delete($pattern)
+    if ($model.LoadPatterns.Add(
+            $pattern,
+            [CSiAPIv1.eLoadPatternType]::Other,
+            0.0,
+            $true) -ne 0) {
+        throw "Failed to create load pattern $pattern."
+    }
+    [double[]]$modeForces = $allFloorForces[$modeIndex]
+    for ($level = 1; $level -le 3; $level++) {
+        [double[]]$jointLoad = @($modeForces[$level - 1], 0, 0, 0, 0, 0)
+        $jointName = 'J_L{0}_G0' -f $level
+        if ($model.PointObj.SetLoadForce(
+                $jointName,
+                $pattern,
+                [ref]$jointLoad,
+                $true,
+                'GLOBAL',
+                [CSiAPIv1.eItemType]::Objects) -ne 0) {
+            throw "Failed to assign $pattern at $jointName."
+        }
+    }
+    Write-Output ('SAP stage: assigned {0} floor forces: {1:R}, {2:R}, {3:R} N.' -f `
+        $pattern, $modeForces[0], $modeForces[1], $modeForces[2])
+}
+
 $saveResult = $model.File.Save($resolvedModelPath)
 if ($saveResult -ne 0) {
     throw "SAP2000 failed to save the specimen model (return code $saveResult)."
@@ -456,10 +490,11 @@ Write-Output 'SAP stage: saved the edited specimen model.'
 # Solve the first-mode equivalent static case and verify the moment at the
 # top of the lower experimental-column segment.
 [void]$model.Analyze.SetRunCaseFlag('', $false, $true)
-$caseFlagResult = $model.Analyze.SetRunCaseFlag(
-    $modalPattern, $true, $false)
-if ($caseFlagResult -ne 0) {
-    throw "Failed to select $modalPattern for analysis."
+for ($modeIndex = 0; $modeIndex -lt $allFloorForces.Count; $modeIndex++) {
+    $pattern = 'MODE{0}_EQ' -f ($modeIndex + 1)
+    if ($model.Analyze.SetRunCaseFlag($pattern, $true, $false) -ne 0) {
+        throw "Failed to select $pattern for analysis."
+    }
 }
 $analysisResult = $model.Analyze.RunAnalysis()
 if ($analysisResult -ne 0) {
