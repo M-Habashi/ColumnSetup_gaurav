@@ -54,10 +54,10 @@ tf_estimate_config = struct( ...
     'data_file', data_file, ...                                         % selected measured data MAT file
     'desc', sprintf('%s Analog Closed Loop', plot_data_name), ...        % plot title/description text
     'f_lim', [0.1, max_freq_hz], ...                                     % frequency range used for xfunc output
-    'fit_num_order', 1, ...                                              % numerator order for raw TF fit
-    'fit_den_order', 4, ...                                              % denominator order for raw TF fit
-    'fit_regularization', 0, ...                                         % regularization strength for TF fit
-    'fit_iterations', 25, ...                                            % maximum iterations for TF fit
+    'fit_num_order', 4, ...                                              % numerator order for raw TF fit
+    'fit_den_order', 7, ...                                              % denominator order for raw TF fit
+    'fit_regularization', 1e-5, ...                                         % regularization strength for TF fit
+    'fit_iterations', 100, ...                                            % maximum iterations for TF fit
     'fit_coherence_min', 0.8, ...                                        % minimum coherence for fit data selection
     'fit_input_power_range_db', 40, ...                                  % input-power window below peak for fit data selection
     'fft_length', 2^15, ...                                              % FFT segment length for xfunc
@@ -70,7 +70,7 @@ parametric_identification_config = struct( ...
     'specimen_file', specimen_file, ...                                            % selected specimen parameter MAT file
     'fit_band_hz', [0.5, max_freq_hz], ...                                          % frequency band emphasized in parametric fit
     'magnitude_weight', 3, ...                                                      % magnitude-error weight inside fit band
-    'phase_weight', 0.35, ...                                                       % phase-error weight relative to magnitude
+    'phase_weight', 1, ...                                                       % phase-error weight relative to magnitude
     'frequency_weight_exponent', 1, ...  % the higher → gives more weight to lower freq. [KEEP THIS COMMENT]
     'frequency_weight_floor_hz', 0, ...                                             % lowest frequency used when computing frequency weights
     'num_random_starts', 5, ...                                                     % number of random starts for MultiStart
@@ -79,6 +79,10 @@ parametric_identification_config = struct( ...
 %% Get Discrete Transfer Function from xfunc
 experimental_data = trim_recording_time_window(experimental_data);
 trim_time_window = experimental_data.trim_time_window;
+fprintf('\nSystem identification selections\n');
+fprintf('Experimental data: %s\n', data_file);
+fprintf('Specimen parameters: %s\n', specimen_file);
+fprintf('Trim window: [%.6g, %.6g] s\n', trim_time_window(1), trim_time_window(2));
 if isfield(experimental_data, 'test_type')
     test_type = char(string(experimental_data.test_type));
 elseif isfield(experimental_data, 'testname')
@@ -155,13 +159,19 @@ tf_parametric = parametric_identification.parametric_cl;
 %% Get Continuous Transfer-Function Fit
 band_fit_idx = freq_hz_all >= tf_estimate_config.f_lim(1) & ...
     freq_hz_all <= tf_estimate_config.f_lim(2);
-fit_idx = band_fit_idx & ...
+finite_fit_idx = isfinite(freq_hz_all) & ...
+    isfinite(real(tf_points_all)) & isfinite(imag(tf_points_all)) & ...
+    isfinite(coherence_all) & isfinite(input_power_db_all);
+fit_idx = band_fit_idx & finite_fit_idx & ...
     coherence_all >= tf_estimate_config.fit_coherence_min & ...
-    input_power_db_all >= max(input_power_db_all(band_fit_idx)) - tf_estimate_config.fit_input_power_range_db;
+    input_power_db_all >= max(input_power_db_all(band_fit_idx & finite_fit_idx)) - ...
+    tf_estimate_config.fit_input_power_range_db;
 tf_fit_points = tf_points_all(fit_idx);
 tf_fit_freq_hz = freq_hz_all(fit_idx);
 tf_fit_freq_rad = 2 * pi * tf_fit_freq_hz;
 tf_fit_weight = ones(size(tf_fit_freq_hz));
+fprintf('Black-box fit points: %d finite samples over [%.6g, %.6g] Hz\n', ...
+    numel(tf_fit_points), min(tf_fit_freq_hz), max(tf_fit_freq_hz));
 
 [tf_fit_num, tf_fit_den, tf_fit_info] = regularized_rational_fit( ...
     tf_fit_points, ...

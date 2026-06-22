@@ -211,7 +211,7 @@
         <p>Independent audit of the ColumnSetup MATLAB, Simulink, identification, control, and FEM workflows. Findings distinguish verified code behavior from hypotheses and risk inferences.</p>
         <div class="summary" aria-label="Review summary">
           <div><span>Offline tests</span><strong>8 passing</strong></div>
-          <div><span>Priority findings</span><strong>8 open · 2 closed</strong></div>
+          <div><span>Priority findings</span><strong>6 open · 4 closed</strong></div>
           <div><span>Physical run</span><strong>Not performed</strong></div>
         </div>
       </header>
@@ -230,6 +230,7 @@
           <li>Removed the scale-equivalent degree of freedom from closed-loop identification by fixing <code>a1b0 = 1</code>. Existing <code>Kp</code> and <code>Ki</code> names now hold the identifiable normalized products, with the model polynomial and output descriptions unchanged.</li>
           <li>Corrected the active workspace path in <code>AGENTS.md</code> and ignored SAP <code>.tlog</code> scratch files.</li>
           <li>Documented that controller-tuning analyses are research-only and their saved controller results do not affect simulations.</li>
+          <li>Added an official noise-whitened TLS workflow with displacement-derived acceleration, approximately non-overlapping KF assimilation, stored estimator configuration, and synthetic unit-invariance and coverage tests.</li>
         </ul>
       </section>
 
@@ -251,10 +252,9 @@
           <p>The tuning scripts are research-only analyses. Their saved controller MAT files are not loaded by <code>main_ColumnSetup.m</code> and do not affect the Simulink simulations. <a href="https://github.com/M-Habashi/ColumnSetup_gaurav/issues/3">Issue #3</a> was closed as not planned.</p>
         </article>
 
-        <article class="finding">
-          <h3><span class="tag confirmed">Confirmed</span>4. Unscaled TSE/TLS depends on units and column scaling</h3>
-          <p>Offline and embedded online estimators use different acceleration scaling. TLS column scaling can change every estimated parameter, not only mass. Overlapping windows are repeatedly assimilated and the covariance model is OLS-based.</p>
-          <div class="note"><p><span class="tag risk">Risk inference</span>Treat the online uncertainty band as heuristic until interval coverage is calibrated. Use dimensionless or noise-whitened parameter estimation.</p></div>
+        <article class="finding is-closed">
+          <h3><span class="tag resolved">Resolved</span>4. TSE/TLS estimation is normalized and its uncertainty is calibrated</h3>
+          <p>The official offline and online-style paths now share a noise-whitened TLS estimator, derive acceleration consistently from displacement, and assimilate approximately non-overlapping windows. The saved configuration records the estimator settings, while synthetic tests verify unit invariance, parameter recovery, and the stated empirical coverage target. <a href="https://github.com/M-Habashi/ColumnSetup_gaurav/issues/4">Issue #4</a> is closed.</p>
         </article>
 
         <article class="finding is-closed">
