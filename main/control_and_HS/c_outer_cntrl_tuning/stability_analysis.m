@@ -1,3 +1,4 @@
+% Research-only analysis: saved controller results do not affect simulations.
 controller_name = "controller_01";
 % Units: transfer functions, gains, step amplitudes, and normalized
 % stability indicators are dimensionless. Time is s, frequency Hz or

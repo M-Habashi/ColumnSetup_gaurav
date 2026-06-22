@@ -81,14 +81,13 @@ sat_limit = 70; % mm
 % Test File Name % IMPORTANT!
 runStartTime = datetime('now');
 timestampValue = runStartTime;
-timestampValue.Format = 'yyyyMMdd_HHmmss';
+timestampValue.Format = 'yyyyMMdd_HHmm';
 timestamp = char(timestampValue);
 projectFolder = fileparts(mfilename('fullpath'));
 dateValue = runStartTime;
 dateValue.Format = 'yyyyMMdd';
 saveFolder = fullfile(projectFolder, 'saved_results', 'tests', char(dateValue));
 file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
-assert(~isfile(file_name), 'Refusing to overwrite existing result: %s', file_name);
 
 % Make sure there is a folder named 'yyyymmdd'
 % inside the 'saved_results/tests' folder

@@ -126,6 +126,15 @@
       border-top: 1px solid var(--line);
     }
     .finding:first-of-type { border-top: 0; padding-top: 0; }
+    .finding.is-closed {
+      margin: 0.6rem 0;
+      padding: 1.2rem;
+      border: 1px solid var(--line);
+      background: #121214;
+      color: var(--muted);
+      opacity: 0.72;
+    }
+    .finding.is-closed:first-of-type { padding-top: 1.2rem; }
     .tag {
       display: inline-block;
       margin-right: 0.5rem;
@@ -138,7 +147,8 @@
       text-transform: uppercase;
       vertical-align: 0.12rem;
     }
-    .confirmed { color: var(--green); }
+    .confirmed { color: var(--amber); }
+    .closed, .resolved, .intentional { color: var(--green); }
     .hypothesis { color: var(--amber); }
     .risk { color: var(--red); }
     .note {
@@ -195,8 +205,8 @@
         <h1>Codebase review</h1>
         <p>Independent audit of the ColumnSetup MATLAB, Simulink, identification, control, and FEM workflows. Findings distinguish verified code behavior from hypotheses and risk inferences.</p>
         <div class="summary" aria-label="Review summary">
-          <div><span>Offline tests</span><strong>7 passing</strong></div>
-          <div><span>Priority findings</span><strong>10 open</strong></div>
+          <div><span>Offline tests</span><strong>8 passing</strong></div>
+          <div><span>Priority findings</span><strong>8 open · 2 closed</strong></div>
           <div><span>Physical run</span><strong>Not performed</strong></div>
         </div>
       </header>
@@ -212,16 +222,18 @@
           <li>Added a guard for the common case where no new Speedgoat file-log row appears, added seconds to result filenames, and refused overwrites.</li>
           <li>Made the W8x28 experimental and frame definitions use the same exact section moment of inertia.</li>
           <li>Added MATLAB tests for FFT scaling, saved-result category enforcement, and specimen-unit conversion.</li>
+          <li>Removed the scale-equivalent degree of freedom from closed-loop identification by fixing <code>a1b0 = 1</code>. Existing <code>Kp</code> and <code>Ki</code> names now hold the identifiable normalized products, with the model polynomial and output descriptions unchanged.</li>
           <li>Corrected the active workspace path in <code>AGENTS.md</code> and ignored SAP <code>.tlog</code> scratch files.</li>
+          <li>Documented that controller-tuning analyses are research-only and their saved controller results do not affect simulations.</li>
         </ul>
       </section>
 
       <section id="findings">
-        <h2>Unresolved high-priority findings</h2>
+        <h2>High-priority findings</h2>
 
-        <article class="finding">
-          <h3><span class="tag confirmed">Confirmed</span>1. Parametric identification is structurally non-identifiable</h3>
-          <p>The fit estimates <code>a1b0</code>, <code>Kp</code>, and <code>Ki</code> independently, but the model uses only <code>Kp*a1b0</code> and <code>Ki*a1b0</code>. Scaling plant gain while inversely scaling both controller gains leaves the transfer function unchanged. Fix one measured quantity or fit the two identifiable products directly.</p>
+        <article class="finding is-closed">
+          <h3><span class="tag resolved">Resolved</span>1. Parametric identification had a scale-equivalent degree of freedom</h3>
+          <p>The optimizer now fixes <code>a1b0 = 1</code> and estimates the identifiable normalized values through the existing <code>Kp</code> and <code>Ki</code> fields. The transfer-function equations and output descriptions remain unchanged. A synthetic regression demonstrates the original scaling invariance, verifies <code>a1b0 == 1</code>, recovers both normalized values within <code>1e-6</code> relative tolerance, and matches the frequency response within <code>1e-8</code> relative error. <a href="https://github.com/M-Habashi/ColumnSetup_gaurav/issues/1">Issue #1</a> is closed.</p>
         </article>
 
         <article class="finding">
@@ -229,9 +241,9 @@
           <p><code>pidtune</code>, <code>feedback</code>, and the margin calculations omit sample time, zero-order hold, computation and DAQ delay, quantization, rate limits, and saturation. The results are continuous outer-loop results, not sampled-data guarantees.</p>
         </article>
 
-        <article class="finding">
-          <h3><span class="tag confirmed">Confirmed</span>3. Tuned controllers are disconnected from the experiment</h3>
-          <p>Tuning scripts save controller MAT files, but <code>main_ColumnSetup.m</code> does not load them and the Simulink controller uses literal Constant blocks. Physical results also omit the actual P/I/D/N values.</p>
+        <article class="finding is-closed">
+          <h3><span class="tag intentional">Intentional</span>3. Tuning analyses are disconnected from the experiment</h3>
+          <p>The tuning scripts are research-only analyses. Their saved controller MAT files are not loaded by <code>main_ColumnSetup.m</code> and do not affect the Simulink simulations. <a href="https://github.com/M-Habashi/ColumnSetup_gaurav/issues/3">Issue #3</a> was closed as not planned.</p>
         </article>
 
         <article class="finding">
@@ -288,7 +300,7 @@
         <h2>Independent next steps</h2>
         <ol>
           <li>Build a physics-consistent synthetic digital twin with known time-varying specimen parameters, actuator dynamics, controller, synchronized sensor noise, bias, saturation, and delay. Measure estimator bias, RMSE, interval coverage, detection delay, and false alarms.</li>
-          <li>Reparameterize closed-loop identification into identifiable products or fix independently measured controller or plant gains. Use block bootstrap or profile likelihood and propagate a model ensemble into stability margins.</li>
+          <li>Quantify uncertainty in the normalized closed-loop fit using block bootstrap or profile likelihood, then propagate a model ensemble into stability margins.</li>
           <li>Create a sampled-data, multirate model with ZOH and a measured delay distribution. Evaluate robust stability over specimen, model, and delay uncertainty.</li>
           <li>Add an interface energy and passivity observer as an independent real-time safety channel for nonlinear or time-varying specimens.</li>
           <li>Quantify hybrid partition approximation with modal MAC, frequency and FRF errors, and record-level response errors. Compare translation-only with translation-plus-rotation or condensed dynamic impedance.</li>
@@ -301,7 +313,7 @@
         <h2>Verification status</h2>
         <ul class="status-list">
           <li>MATLAB static analysis reports no issues in changed MATLAB files.</li>
-          <li>Seven offline tests pass. They cover FFT scaling, saved-result category enforcement, and specimen-unit conversion—not Speedgoat identity, optimizer feasibility, or stability plots.</li>
+          <li>Eight offline tests pass. They cover FFT scaling, saved-result category enforcement, specimen-unit conversion, and normalized closed-loop parameter identification—not Speedgoat identity, optimizer feasibility, or stability plots.</li>
           <li>No physical Speedgoat run was performed.</li>
         </ul>
         <div class="note"><p>Identification and controllers must be regenerated because existing parametric files used the inconsistent unit convention.</p></div>

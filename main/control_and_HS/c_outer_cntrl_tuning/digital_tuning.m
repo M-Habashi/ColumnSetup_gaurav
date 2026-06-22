@@ -1,5 +1,6 @@
 %% Digital Controller Tuning
 % Tune the digital PI controller around one identified analog closed-loop model.
+% Research-only analysis: saved controller results do not affect simulations.
 
 %% Units
 % Transfer functions, controller gains, and response amplitudes are

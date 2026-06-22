@@ -9,15 +9,27 @@ function out = identify_analog_closed_loop_params(discrete_tf_estimate, fit_conf
     y = discrete_tf_estimate.tf_points(:);
     w = discrete_tf_estimate.freq_rad(:);
     c.frequency_weight = frequency_weight(w, c);
-    fields = {'a1b0','a2','a3','beta1','beta2','Kp','Ki'};
-    lb = log10([c.a1b0_bounds(1); c.a2_bounds(1); c.a3_bounds(1); c.beta1_bounds(1); c.beta2_bounds(1); c.Kp_bounds(1); c.Ki_bounds(1)]);
-    ub = log10([c.a1b0_bounds(2); c.a2_bounds(2); c.a3_bounds(2); c.beta1_bounds(2); c.beta2_bounds(2); c.Kp_bounds(2); c.Ki_bounds(2)]);
-    x0 = log10(cellfun(@(f)c.initial_params.(f), fields)).';
+    % The closed-loop equations contain a1b0 only through Kp*a1b0 and
+    % Ki*a1b0. Estimating all three creates a scale-equivalent direction:
+    % multiplying a1b0 by any positive factor and dividing Kp and Ki by the
+    % same factor produces exactly the same response. Fix a1b0 to one so
+    % the optimizer estimates that unique normalized representation. Kp
+    % and Ki therefore retain their existing names but contain the two
+    % identifiable products, not independently identified controller gains.
+    fields = {'a2','a3','beta1','beta2','Kp','Ki'};
+    lb = log10([c.a2_bounds(1); c.a3_bounds(1); c.beta1_bounds(1); c.beta2_bounds(1); ...
+        c.a1b0_bounds(1)*c.Kp_bounds(1); c.a1b0_bounds(1)*c.Ki_bounds(1)]);
+    ub = log10([c.a2_bounds(2); c.a3_bounds(2); c.beta1_bounds(2); c.beta2_bounds(2); ...
+        c.a1b0_bounds(2)*c.Kp_bounds(2); c.a1b0_bounds(2)*c.Ki_bounds(2)]);
+    initial_params = c.initial_params;
+    initial_params.Kp = initial_params.a1b0 * initial_params.Kp;
+    initial_params.Ki = initial_params.a1b0 * initial_params.Ki;
+    x0 = log10(cellfun(@(f)initial_params.(f), fields)).';
     known = log10([ ...
-        2.1283e13, 4.2297e6, 3.3, 425, 9.9976e4, 1.0, 0.01; ...
-        2.1283e13, 4.2297e6, 10, 200, 8e4, 1.5, 0.01; ...
-        1e13, 1e7, 30, 100, 2e5, 2.0, 0.1; ...
-        5e13, 1e6, 1.0, 600, 5e4, 0.5, 0.01]);
+        4.2297e6, 3.3, 425, 9.9976e4, 2.1283e13*1.0, 2.1283e13*0.01; ...
+        4.2297e6, 10, 200, 8e4, 2.1283e13*1.5, 2.1283e13*0.01; ...
+        1e7, 30, 100, 2e5, 1e13*2.0, 1e13*0.1; ...
+        1e6, 1.0, 600, 5e4, 5e13*0.5, 5e13*0.01]);
     starts = [x0.'; known; lb.' + rand(c.num_random_starts, numel(lb)) .* (ub - lb).'];
     starts = min(max(starts, lb.'), ub.');
 
@@ -81,8 +93,9 @@ end
 function p = pack(v)
     % Store the optimized parameter vector in named fields.
     % Units: coefficient units follow the continuous-time polynomial; gains are dimensionless.
-    p = struct('a1b0', v(1), 'a2', v(2), 'a3', v(3), 'beta1', v(4), ...
-        'beta2', v(5), 'Kp', v(6), 'Ki', v(7), 'a1', v(1), 'b1', v(4), 'b2', v(5));
+    % a1b0 is fixed to one to remove its scale ambiguity with Kp and Ki.
+    p = struct('a1b0', 1, 'a2', v(1), 'a3', v(2), 'beta1', v(3), ...
+        'beta2', v(4), 'Kp', v(5), 'Ki', v(6), 'a1', 1, 'b1', v(3), 'b2', v(4));
 end
 
 function [num, den] = model_poly(p, c)
