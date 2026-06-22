@@ -63,13 +63,7 @@ end
 
 assert(isfield(specimen, 'k'), ...
     'The selected specimen file must contain lateral stiffness k.');
-validateattributes(specimen.k, {'numeric'}, ...
-    {'scalar', 'real', 'finite', 'positive'}, mfilename, 'specimen.k');
-if isfield(specimen, 'units') && isfield(specimen.units, 'k')
-    assert(strcmpi(strrep(string(specimen.units.k), ' ', ''), 'N/m'), ...
-        'Specimen stiffness must use N/m; the selected file reports %s.', ...
-        string(specimen.units.k));
-end
+specimen_si = specimen_params_si(specimen);
 
 %% STEP 1: MATCH THE MEASURED LATERAL STIFFNESS
 % The experimental column is an Euler-Bernoulli cantilever with a rotational
@@ -79,7 +73,7 @@ end
 %
 % Solve this expression for the only unknown, k_theta.
 column = experimentalColumnDefinition();
-k_experimental = specimen.k;         % [N/m]
+k_experimental = specimen_si.stiffness; % [N/m]
 [base_rotation_k, ~] = calculateBaseRotationStiffness( ...
     k_experimental, column);         % [N*m/rad]
 

@@ -1,4 +1,7 @@
-main/saved_results/
+main/saved_results/*
+!main/saved_results/tests/
+main/saved_results/tests/*
+main/saved_results/tests/important/
 main/next_work.md
 main/notes.md
 main/plan.md
@@ -6,6 +9,7 @@ main/*.mldatx
 main/*.slxc
 main/*_slrealtime_rtw/
 main/slprj/
+step_1_calibration_and_identificationn/
 *.tlog
 main/control_and_HS/system_id/datafiles/gg_03_BLWN2.mat
 main/control_and_HS/system_id/models/fit/gg_03_BLWN2_fit.mat
