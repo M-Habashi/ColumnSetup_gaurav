@@ -10,18 +10,17 @@ addpath(fullfile(root, 'methods'))
 addpath(step_root)
 addpaths();
 
+fprintf(['Each excitation record must begin with 2 s of zero-command, ' ...
+    'stationary data for noise scaling.\n'])
 fprintf('Select chirp data file.\n')
 [~, chirp_file] = load_saved_result_file(step_root, 'tests');
 fprintf('Select BLWN data file.\n')
 [~, blwn_file] = load_saved_result_file(step_root, 'tests');
-fprintf('Select noise data file.\n')
-[~, noise_file] = load_saved_result_file(step_root, 'tests');
 fprintf('Select slow sine data file.\n')
 [~, slow_file] = load_saved_result_file(step_root, 'tests');
 
-chirp = prep_specimen_data(chirp_file);
-blwn = prep_specimen_data(blwn_file);
-noise = prep_specimen_data(noise_file);
+[chirp, chirp_noise] = prep_specimen_data(chirp_file, 2);
+[blwn, blwn_noise] = prep_specimen_data(blwn_file, 2);
 slow = prep_specimen_data(slow_file);
 
 slow_k = estimate_slow_k(slow);
@@ -52,8 +51,8 @@ blwn_k = zeros(n, 1);
 blwn_accuracy = zeros(n, 1);
 
 for i = 1:n
-    chirp_fit = methods{i}(chirp, noise);
-    blwn_fit = methods{i}(blwn, noise);
+    chirp_fit = methods{i}(chirp, chirp_noise);
+    blwn_fit = methods{i}(blwn, blwn_noise);
 
     method_name{i} = chirp_fit.method;
     chirp_m(i) = chirp_fit.m;
