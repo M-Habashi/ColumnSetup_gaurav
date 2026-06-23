@@ -51,6 +51,16 @@ disp('===============================================================')
 test_type = 'sp_1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015';
 testname = test_type;
 
+%% Hybrid Simulation Parameters
+hs = struct( ...
+    'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
+        'fem_sp_1_or.mat'), ... % Run build_fem.m first.
+    'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
+    'intensity_factor', 1.0, ...   % Earthquake acceleration multiplier.
+    'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
+    'force_sign', 1.0);            % Use -1 only if force calibration requires it.
+
+
 %% Simulation Parameters
    
 % Sampling Variables
@@ -58,15 +68,6 @@ fs = 2048;                      % Sampling frequency [Hz]
 dt = 1/fs;                      % Sampling period [s]
 zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
 t_ending = 5;                   % Smooth-stop transition time [s]
-
-%% Hybrid Simulation Parameters
-hs = struct( ...
-    'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-        'fem_<specimen>.mat'), ... % Run build_fem.m first.
-    'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
-    'intensity_factor', 1.0, ...   % Earthquake acceleration multiplier.
-    'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
-    'force_sign', 1.0);            % Use -1 only if force calibration requires it.
 
 % Conversion Factors
 % Voltage to Engineering Units

@@ -135,12 +135,13 @@ interface_displacement = interp1(hs_real_time, ...
 experimental_force = interp1(hs_real_time, experimental_force_sample, ...
     real_time, 'linear');
 
-maximum_error = max(abs(u_num_floors-u_hybrid_reference), [], 'all');
+step_error = max(abs(u_num_floors-u_hybrid_reference), [], 'all');
+reference_error = max(abs(u_num_floors-u_reference), [], 'all');
 metric = validation_metrics();
-J4 = metric.J4(u_num_floors(:, 1), u_hybrid_reference(:, 1));
-J5 = metric.J5(u_num_floors(:, 1), u_hybrid_reference(:, 1));
-J6 = metric.J6(u_num_floors(:, 2), u_hybrid_reference(:, 2));
-J7 = metric.J7(u_num_floors(:, 3), u_hybrid_reference(:, 3));
+J4 = metric.J4(u_num_floors(:, 1), u_reference(:, 1));
+J5 = metric.J5(u_num_floors(:, 1), u_reference(:, 1));
+J6 = metric.J6(u_num_floors(:, 2), u_reference(:, 2));
+J7 = metric.J7(u_num_floors(:, 3), u_reference(:, 3));
 
 fprintf('\n%s Hybrid Simulation partition\n', hs.earthquake_type);
 fprintf('FEM file: %s\n', fem_file);
@@ -151,7 +152,9 @@ fprintf('Experimental reduction factor: %.3f\n', k_exp_r);
 fprintf('Reduced experimental stiffness k: %.6f N/m\n', k_experimental);
 fprintf('Interface: horizontal force only; roller carries axial reaction\n');
 fprintf('Maximum step_HS vs spring-reference floor difference: %.6e m\n', ...
-    maximum_error);
+    step_error);
+fprintf('Maximum Hybrid Simulation vs full-reference floor difference: %.6e m\n', ...
+    reference_error);
 fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
@@ -177,7 +180,8 @@ end
 xlabel(ax, 'Real time (s)');
 title(layout, sprintf('%s: reference and Hybrid Simulation response', ...
     hs.earthquake_type));
-subtitle(layout, sprintf('Maximum floor difference = %.3e m', maximum_error));
+subtitle(layout, sprintf('Maximum hybrid-reference floor difference = %.3e m', ...
+    reference_error));
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 %% PARTITION GEOMETRY
