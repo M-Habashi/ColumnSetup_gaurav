@@ -11,7 +11,7 @@ max_freq_hz = 80;
 
 % controller optimization inputs
 gm = 16;             % Minimum gain margin in dB; use 0 for no constraint.
-pm = 70;             % Minimum phase margin in degrees; use 0 for no constraint.
+pm = 70;             % Minimum phase margin in degree6s; use 0 for no constraint.
 overshooting = 0;    % Maximum step overshoot in percent; use 0 for no constraint.
 d_gain = 0.0015;          % Maximum derivative gain D; use 0 for no constraint.
 noise_random_seed = 0;

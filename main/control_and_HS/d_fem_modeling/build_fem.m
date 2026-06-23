@@ -9,8 +9,8 @@
 % 2. The zero-bending-moment position is the control point. This is 
 %   achieved by changing the numerical model floor height while keeping 
 %   the experimental substructure equal to the actual specimen (40 in).
-% 3. Reference and numerical FEM MAT files are saved under
-%    saved_results/fem/ref and saved_results/fem/num.
+% 3. Reference and numerical FEM definitions are saved together as one
+%    saved_results/fem/fem_<specimen>.mat file.
 % 4. A copy of sap/template.sdb is named after the specimen and updated with
 %    the calculated base rotational stiffness and floor heights.
 %
@@ -116,16 +116,10 @@ frame.base_rotation_k = base_rotation_k;
 M_reference = diag(floor_mass_kg);              % [kg] = [N*s^2/m]
 M_numerical = diag([floor_mass_kg; 0]);         % massless interface DOF
 [~, specimen_stem] = fileparts(specimen_name);
-reference_name = ['fem_ref_' specimen_stem '.mat'];
-numerical_name = ['fem_num_' specimen_stem '.mat'];
-reference_directory = fullfile(project_root, 'saved_results', ...
-    'fem', 'ref');
-numerical_directory = fullfile(project_root, 'saved_results', ...
-    'fem', 'num');
-if ~isfolder(reference_directory), mkdir(reference_directory); end
-if ~isfolder(numerical_directory), mkdir(numerical_directory); end
-reference_file = fullfile(reference_directory, reference_name);
-numerical_file = fullfile(numerical_directory, numerical_name);
+fem_name = ['fem_' specimen_stem '.mat'];
+fem_directory = fullfile(project_root, 'saved_results', 'fem');
+if ~isfolder(fem_directory), mkdir(fem_directory); end
+fem_file = fullfile(fem_directory, fem_name);
 
 fem_ref.kind = 'reference';
 fem_ref.specimen_name = specimen_stem;
@@ -145,7 +139,6 @@ fem_ref.assumptions = struct( ...
 fem_num.kind = 'numerical';
 fem_num.specimen_name = specimen_stem;
 fem_num.specimen_file = specimen_file;
-fem_num.reference_filename = reference_name;
 fem_num.frame = frame;
 fem_num.experimental_column = column;
 fem_num.experimental_k = k_experimental;
@@ -164,10 +157,19 @@ fem_num.interface = struct( ...
     'axial_force_from_experiment', false, ...
     'moment_from_experiment', false);
 
-save(reference_file, 'fem_ref');
-save(numerical_file, 'fem_num');
-fprintf('Reference FEM saved: %s\n', reference_file);
-fprintf('Numerical FEM saved: %s\n\n', numerical_file);
+fem.kind = 'reference_and_numerical';
+fem.schema_version = 1;
+fem.specimen_name = specimen_stem;
+fem.specimen_file = specimen_file;
+fem.story_height_m = story_height;
+fem.floor_mass_kg = floor_mass_kg;
+fem.level_weight_N = floor_mass_kg*9.80665;
+fem.units = femUnits();
+fem.ref = fem_ref;
+fem.num = fem_num;
+
+save(fem_file, 'fem');
+fprintf('FEM saved: %s\n\n', fem_file);
 
 %% STEP 4: CREATE AND UPDATE THE SPECIMEN-SPECIFIC SAP MODEL
 sap_directory = fullfile(script_dir, 'sap');

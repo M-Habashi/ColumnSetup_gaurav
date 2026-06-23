@@ -16,6 +16,7 @@ clearvars -except outputVerificationFile; clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
 project_root = fileparts(fileparts(script_dir));
+addpath(fullfile(script_dir, 'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
 
@@ -26,16 +27,9 @@ damping_ratio = 0.02;
 k_exp_r = 1.0;
 
 %% SAVED FEM
-[numerical_data, numerical_file, ~] = load_saved_result_file( ...
-    project_root, fullfile('fem', 'num'), false);
-assert(isfield(numerical_data, 'fem_num'), ...
-    'The selected file does not contain fem_num.');
-fem_num = numerical_data.fem_num;
-
-reference_file = fullfile(project_root, 'saved_results', 'fem', 'ref', ...
-    fem_num.reference_filename);
-reference_data = load(reference_file, 'fem_ref');
-fem_ref = reference_data.fem_ref;
+[fem, fem_file, ~] = loadFemDefinition(project_root, false);
+fem_num = fem.num;
+fem_ref = fem.ref;
 
 frame = fem_num.frame;
 n_story = frame.n_story;
@@ -141,8 +135,7 @@ J6 = metric.J6(u_num_floors(:, 2), u_reference(:, 2));
 J7 = metric.J7(u_num_floors(:, 3), u_reference(:, 3));
 
 fprintf('\n%s numerical-experimental partition\n', record_names{earthquake_id});
-fprintf('Numerical FEM: %s\n', numerical_file);
-fprintf('Reference FEM: %s\n', reference_file);
+fprintf('FEM file: %s\n', fem_file);
 fprintf('Experimental reduction factor: %.3f\n', ...
     k_exp_r);
 fprintf('Reduced experimental stiffness k: %.6f N/m\n', k_experimental);

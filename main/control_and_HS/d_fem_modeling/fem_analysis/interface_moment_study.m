@@ -8,18 +8,14 @@ clear; clc; close all;
 script_dir = fileparts(mfilename('fullpath'));
 fem_dir = fileparts(script_dir);
 project_root = fileparts(fileparts(fem_dir));
+addpath(fullfile(fem_dir, 'utils_fem'));
+addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
 
 damping_ratio = 0.02;
-numerical_files = dir(fullfile(project_root, 'saved_results', 'fem', ...
-    'num', 'fem_num_*.mat'));
-numerical_file = fullfile(numerical_files(1).folder, numerical_files(1).name);
-data = load(numerical_file, 'fem_num');
-fem_num = data.fem_num;
-reference_file = fullfile(project_root, 'saved_results', 'fem', 'ref', ...
-    fem_num.reference_filename);
-data = load(reference_file, 'fem_ref');
-fem_ref = data.fem_ref;
+[fem, ~, ~] = loadFemDefinition(project_root, false);
+fem_num = fem.num;
+fem_ref = fem.ref;
 
 n = fem_num.frame.n_story;
 floor_dofs = fem_num.floor_dofs;

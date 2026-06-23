@@ -29,11 +29,8 @@ earthquake_scale = 1.0;
 % Modal damping ratio applied to all three modes.
 damping_ratio = 0.02;
 
-[fem_data, fem_file, ~] = load_saved_result_file( ...
-    project_root, fullfile('fem', 'ref'), false);
-assert(isfield(fem_data, 'fem_ref'), ...
-    'The selected file does not contain fem_ref.');
-fem_ref = fem_data.fem_ref;
+[fem, fem_file, ~] = loadFemDefinition(project_root, false);
+fem_ref = fem.ref;
 frame = fem_ref.frame;
 beam_connection_k = frame.beam_connection_k;
 base_rotation_k = frame.base_rotation_k;

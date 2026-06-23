@@ -307,7 +307,7 @@
       <section id="contradictions">
         <h2>Contradictions and documentation drift</h2>
         <ul>
-          <li>The FEM definition now presents specimen-specific story height in metres and distinguishes level mass in kg from derived weight in N.</li>
+          <li>The FEM definition now presents specimen-specific story height in metres, distinguishes level mass in kg from derived weight in N, and stores reference/numerical FEM definitions together as <code>saved_results/fem/fem_&lt;specimen&gt;.mat</code>.</li>
           <li>The reference plot draws fixed bases although the analyzed model uses finite base rotational springs.</li>
           <li>The damage sweep lowers damping with stiffness to preserve damping ratio. This is a specific damage law, not a neutral stiffness-only sensitivity study.</li>
           <li><code>AGENTS.md</code> contains obsolete breakpoint lines, a missing helper directory, an infinite configured “full” run, conflicting physical-run approval rules, and R2020b-specific advice despite this audit running under R2025b.</li>

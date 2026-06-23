@@ -25,11 +25,8 @@ validateattributes(damping_ratio, {'numeric'}, ...
 
 %% MODEL DEFINITION
 g0 = 9.80665;                       % gravitational acceleration [m/s^2]
-[fem_data, fem_file, ~] = load_saved_result_file( ...
-    project_root, fullfile('fem', 'ref'), false);
-assert(isfield(fem_data, 'fem_ref'), ...
-    'The selected file does not contain fem_ref.');
-fem_ref = fem_data.fem_ref;
+[fem, fem_file, ~] = loadFemDefinition(project_root, false);
+fem_ref = fem.ref;
 frame = fem_ref.frame;
 n_story = frame.n_story;
 K = fem_ref.K;                      % [N/m]

@@ -277,6 +277,7 @@
             <dt>Floor diaphragm</dt><dd>Rigid</dd>
             <dt>Retained DOFs</dt><dd>u₁, u₂, u₃</dd>
             <dt>Joint rotations</dt><dd>One rotational DOF at every joint</dd>
+            <dt>Calibrated FEM output</dt><dd>saved_results/fem/fem_&lt;specimen&gt;.mat</dd>
             <dt>Damping ratio ζ</dt><dd>2%</dd>
           </dl>
         </aside>
@@ -341,7 +342,7 @@
         </div>
         <div class="assumption">
           <h3>Dynamic model</h3>
-          <p>Use a three-DOF lateral system with the corresponding level weight lumped at each diaphragm. Levels 1–2 use the full floor live load in the stated earthquake combination; the roof uses 0.5 of the floor live load. Apply 2% damping (ζ = 0.02) to the selected modes and evaluate both signs of the earthquake action, ±E.</p>
+          <p>Use a three-DOF lateral system with the corresponding level mass lumped at each diaphragm. Levels 1–2 use the full floor live load in the stated earthquake combination; the roof uses 0.5 of the floor live load. Weight values are derived only for gravity-load reporting. Apply 2% damping (ζ = 0.02) to the selected modes and evaluate both signs of the earthquake action, ±E.</p>
         </div>
       </div>
     </section>
