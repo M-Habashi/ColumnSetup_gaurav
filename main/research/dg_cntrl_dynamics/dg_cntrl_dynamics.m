@@ -85,6 +85,29 @@ elseif isfield(experimental_data, 'testname')
 else
     test_type = 'unknown';
 end
+if isfield(experimental_data, 'trim_time_window')
+    analysis_time_window = experimental_data.trim_time_window;
+    time_window_source = 'selected trim window';
+elseif isfield(experimental_data, 't') && numel(experimental_data.t) == numel(dm)
+    analysis_time_window = [experimental_data.t(1), experimental_data.t(end)];
+    time_window_source = 'loaded t vector';
+elseif isfield(experimental_data, 'tt') && numel(experimental_data.tt) == numel(dm)
+    analysis_time_window = [experimental_data.tt(1), experimental_data.tt(end)];
+    time_window_source = 'loaded tt vector';
+elseif exist('sig', 'var') && numel(sig.Time) == numel(dm)
+    analysis_time_window = [sig.Time(1), sig.Time(end)];
+    time_window_source = 'logsout time vector';
+else
+    analysis_time_window = [0, (numel(dm) - 1)/fs];
+    time_window_source = 'sample count and fs';
+end
+
+fprintf('\nDigital-controller dynamics selections\n')
+fprintf('Experimental data: %s\n', data_file)
+fprintf('Specimen parameters: %s\n', specimen_file)
+fprintf('Test type: %s\n', test_type)
+fprintf('Analysis time window: [%.6g, %.6g] s (%s)\n', ...
+    analysis_time_window(1), analysis_time_window(2), time_window_source)
 
 %% Identify Both Experimental Systems
 % H_dc_dm: response from the digital-controller output to measurement.
