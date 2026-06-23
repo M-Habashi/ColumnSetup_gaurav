@@ -13,7 +13,7 @@ rng(0);
 
 %% Inputs
 controller_name = "controller_digital_01";
-model_source = "fit";          % "fit" for red tf_fit, "paarametric" for tf_parametric
+model_source = "fit";          % "fit" for tf_fit, "parametric" for tf_parametric
 digital_phase_margin = 70;
 digital_bandwidth = 20;
 
@@ -24,7 +24,7 @@ addpath(step_root);
 addpaths();
 
 model_source = normalize_model_source(model_source);
-[model_data, model_file, model_file_name] = load_saved_result_file(step_root, fullfile('models', model_source));
+[model_data, model_file, model_file_name] = load_saved_result_file(step_root, 'models');
 [analog_cl, model_label] = get_analog_closed_loop_model(model_data, model_source);
 analog_cl = minreal(analog_cl, [], false);
 [~, model_name] = fileparts(model_file);
@@ -117,12 +117,10 @@ plot_pole_zero_compare(gca, {analog_cl, digital_cl}, ...
 function model_source = normalize_model_source(model_source)
 % Units: input and output labels are unitless text.
     model_source = lower(strtrim(string(model_source)));
-    if any(model_source == ["parametric", "paarametric"])
-        model_source = "paarametric";
-    elseif model_source == "fit"
-        model_source = "fit";
+    if model_source == "fit" || model_source == "parametric"
+        return
     else
-        error('model_source must be "fit" or "paarametric".');
+        error('model_source must be "fit" or "parametric".');
     end
 end
 

@@ -4,7 +4,7 @@ function save_actuator_params_profile(profile_name, identified_params, metadata)
 % by metadata and continuous-time model definitions.
 
     step_root = fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))));
-    profile_dir = fullfile(step_root, 'saved_results', 'models', 'paarametric');
+    profile_dir = fullfile(step_root, 'saved_results', 'models');
     if ~exist(profile_dir, 'dir')
         mkdir(profile_dir);
     end

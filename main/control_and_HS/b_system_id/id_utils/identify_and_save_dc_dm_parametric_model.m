@@ -5,13 +5,9 @@ function [H_dc_dm_param, parametric_identification, params_path] = ...
 %IDENTIFY_AND_SAVE_DC_DM_PARAMETRIC_MODEL Identify and save dc -> dm model.
 % The saved MAT variables match control_and_HS/b_system_id/sys_id.m.
 
-    output_root = fullfile(step_root, 'saved_results', 'models');
-    param_output_dir = fullfile(output_root, 'paarametric');
-    if ~exist(output_root, 'dir')
-        mkdir(output_root);
-    end
-    if ~exist(param_output_dir, 'dir')
-        mkdir(param_output_dir);
+    model_output_dir = fullfile(step_root, 'saved_results', 'models');
+    if ~exist(model_output_dir, 'dir')
+        mkdir(model_output_dir);
     end
 
     parametric_fit_band_hz = [0.5, fit_config.f_lim(2)];
@@ -53,7 +49,7 @@ function [H_dc_dm_param, parametric_identification, params_path] = ...
     H_dc_dm_param = tf_parametric;
 
     [~, params_file_name] = fileparts(data_file);
-    params_path = fullfile(param_output_dir, sprintf('%s.mat', params_file_name));
+    params_path = fullfile(model_output_dir, sprintf('%s.mat', params_file_name));
     a1b0 = identified_params.a1b0;
     a2 = identified_params.a2;
     a3 = identified_params.a3;
