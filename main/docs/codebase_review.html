@@ -302,11 +302,6 @@
           <h3><span class="tag confirmed">Confirmed</span>9. Partial online recomputation leaves inconsistent state</h3>
           <p>Recomputing one TLS/KF interval changes its terminal posterior, so later estimates must also be invalidated and propagated. Window and configuration changes can currently mix estimates created under different settings.</p>
         </article>
-
-        <article class="finding">
-          <h3><span class="tag confirmed">Confirmed</span>10. The advertised tuning cache is missing</h3>
-          <p>Both optimizer utilities call <code>tuning_cache</code> when caching is enabled, but no implementation exists. Remove the option or implement deterministic cache keys and schema checks.</p>
-        </article>
       </section>
 
       <section id="contradictions">

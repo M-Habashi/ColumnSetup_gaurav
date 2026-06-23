@@ -11,9 +11,7 @@ function tuning = optimize_settling_time_tuning(transfer_sys, analog_cntrlr, opt
         'x0', [70, 40], ...
         'lb', [30, 1], ...
         'ub', [85, 200], ...
-        'num_random_starts', 6, ...
-        'use_cache', false, ...
-        'cache_context', struct());
+        'num_random_starts', 6);
     names = fieldnames(defaults);
     for i = 1:numel(names)
         if ~isfield(opts, names{i}) || isempty(opts.(names{i}))
@@ -27,16 +25,6 @@ function tuning = optimize_settling_time_tuning(transfer_sys, analog_cntrlr, opt
         70 100; ...
         80 140];
     seeds = [seeds; opts.lb + rand(opts.num_random_starts, 2) .* (opts.ub - opts.lb)];
-
-    cache_spec = local_build_cache_spec(transfer_sys, analog_cntrlr, opts);
-    if opts.use_cache
-        [cache_hit, cached_tuning, cache_file] = tuning_cache('load', cache_spec);
-        if cache_hit
-            fprintf('\n%% Using cached settling-time tuning: %s\n', cache_file);
-            tuning = cached_tuning;
-            return;
-        end
-    end
 
     optim_opts = optimoptions('fmincon', ...
         'Display', 'off', ...
@@ -83,10 +71,6 @@ function tuning = optimize_settling_time_tuning(transfer_sys, analog_cntrlr, opt
     tuning.digital_settling_time = info_d.SettlingTime;
     tuning.settling_time = info_d.SettlingTime;
 
-    if opts.use_cache
-        cache_file = tuning_cache('save', cache_spec, tuning);
-        fprintf('%% Saved settling-time tuning cache: %s\n', cache_file);
-    end
 end
 
 function f = objective(x, transfer_sys, analog_cntrlr)
@@ -128,25 +112,4 @@ function [analog_cl, digital_cntrlr, digital_cl] = build_loops(x, transfer_sys, 
     opts_d = pidtuneOptions('PhaseMargin', x(1));
     [digital_cntrlr, ~] = pidtune(analog_cl, 'PI', x(2), opts_d);
     digital_cl = feedback(digital_cntrlr * analog_cl, 1);
-end
-
-function cache_spec = local_build_cache_spec(transfer_sys, analog_cntrlr, opts)
-% Units: transfer functions are dimensionless; cached tuning settings retain their units.
-    cache_spec = struct( ...
-        'kind', 'settling_time_tuning', ...
-        'context', opts.cache_context, ...
-        'transfer_sys', local_tf_signature(transfer_sys), ...
-        'analog_controller', local_tf_signature(analog_cntrlr), ...
-        'tuning_config', struct( ...
-            'x0', opts.x0, ...
-            'lb', opts.lb, ...
-            'ub', opts.ub, ...
-            'num_random_starts', opts.num_random_starts));
-end
-
-function signature = local_tf_signature(sys)
-% Units: sys is dimensionless; output signature stores its coefficient units unchanged.
-    sys_ss = ss(sys);
-    [A, B, C, D] = ssdata(sys_ss);
-    signature = struct('A', A, 'B', B, 'C', C, 'D', D, 'Ts', sys_ss.Ts);
 end
