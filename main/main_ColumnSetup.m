@@ -54,7 +54,7 @@ testname = test_type;
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-        'fem_sp_1_or.mat'), ... % Run build_fem.m first.
+     'fem_sp_1_or.mat'), ... % Run build_fem.m first.
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
     'intensity_factor', 1.0, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.

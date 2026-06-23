@@ -1,17 +1,18 @@
+# NOW°
+- **VIP** scaling the aaga IS NOT scaling HS time !. Fix This.
+- the vHS should include also num_PID_H_exp and compare the results in a table and in the figure
+- vHS should show dc and maximum dm fm dc in a table
+- button in simulink to flag specific times (maybe just constant logged to b chaged)
+- hysterisis
+- HS (find the scale automatically to achieve desired max displacement, change time scale, load from earthquakes, final accelerations to be sent is zero)
+- virtual simulaitons (load the dc to dm model and the noise level)
+
 # THings to test:
 - New stiffness eestimator
 - New optimized controller (careful)
 - HS (different intensities / different time scales)
 - Pause / Unpause HS
 - Can I change HS speed fromsimulink?
-
-
-# NOw
-- button in simulink to flag specific times (maybe just constant logged to b chaged)
-- hysterisis
-- HS (find the scale automatically to achieve desired max displacement, change time scale, load from earthquakes, final accelerations to be sent is zero)
-- virtual simulaitons (load the dc to dm model and the noise level)
-
 
 # Next set of data
 - data file for each P_inner value
