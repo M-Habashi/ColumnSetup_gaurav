@@ -78,14 +78,20 @@ earthquake = earthquakes.(hs.earthquake_type);
 hs.time = earthquake(:, 1) - earthquake(1, 1);
 hs.ag = hs.intensity_factor*earthquake(:, 2);
 
-%% REFERENCE RESPONSE
+%% SAMPLE GRID AND EARTHQUAKE INPUT
 model_time = hs.time;
 real_time = model_time*hs.time_scale_factor;
 ag = hs.ag;
+hs_sample_dt = 1/2048;
+n_hs_sample = ceil(real_time(end)/hs_sample_dt) + 1;
+hs_real_time = (0:n_hs_sample-1)'*hs_sample_dt;
+hs_model_time = hs_real_time/hs.time_scale_factor;
+ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
 
-reference_load = -(fem_ref.M*fem_ref.influence)*ag';
-u_reference = newmarkAverageAcceleration(model_time, fem_ref.M, hs.C, ...
-    fem_ref.K, reference_load);
+%% REFERENCE RESPONSE
+reference_load_sample = -(fem_ref.M*fem_ref.influence)*ag_sample';
+u_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
+    fem_ref.M, hs.C, fem_ref.K, reference_load_sample);
 
 %% VIRTUAL SPRING-FEEDBACK REFERENCE
 K_coupled = fem_num.K;
@@ -100,11 +106,6 @@ K_hybrid_reference = K_floor_floor - K_floor_interface ...
 interface_from_floors = -(K_interface_interface\K_interface_floor);
 
 %% HYBRID RESPONSE THROUGH THE SHARED STEP FUNCTION
-hs_sample_dt = 1/2048;
-n_hs_sample = ceil(real_time(end)/hs_sample_dt) + 1;
-hs_real_time = (0:n_hs_sample-1)'*hs_sample_dt;
-hs_model_time = hs_real_time/hs.time_scale_factor;
-ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
 numerical_load_sample = hs.ground_force_gain*ag_sample';
 u_hybrid_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
     hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
@@ -128,6 +129,8 @@ end
 
 u_num_floors = interp1(hs_real_time, u_num_floors_sample, real_time, ...
     'linear');
+u_reference = interp1(hs_real_time, u_reference_sample, real_time, ...
+    'linear');
 u_hybrid_reference = interp1(hs_real_time, u_hybrid_reference_sample, ...
     real_time, 'linear');
 interface_displacement = interp1(hs_real_time, ...
@@ -145,6 +148,25 @@ J7 = metric.J7(u_num_floors(:, 3), u_reference(:, 3));
 
 fprintf('\n%s Hybrid Simulation partition\n', hs.earthquake_type);
 fprintf('FEM file: %s\n', fem_file);
+fprintf('FEM schema version: %d\n', fem.schema_version);
+fprintf('Specimen name: %s\n', fem.specimen_name);
+fprintf('Specimen file: %s\n', fem.specimen_file);
+fprintf('Frame: %d stories, %d bays, bay width %.12g m, story height %.12g m\n', ...
+    frame.n_story, frame.n_bay, frame.bay_width, frame.story_height);
+fprintf('Frame E: %.12g Pa; beam connection k: %.12g N*m/rad\n', ...
+    frame.E, frame.beam_connection_k);
+fprintf('Base rotational stiffness: %.12g N*m/rad\n', ...
+    frame.base_rotation_k);
+fprintf('Section Ix [m^4]: W8x24 %.12g, W8x28 %.12g, W8x35 %.12g\n', ...
+    frame.section.W8x24.Ix, frame.section.W8x28.Ix, ...
+    frame.section.W8x35.Ix);
+fprintf('Floor masses [kg]: %.12g, %.12g, %.12g\n', fem.floor_mass_kg);
+fprintf('Damping ratio: %.6g\n', fem.damping_ratio);
+fprintf('Experimental column: %s, height %.12g m, E %.12g Pa, Ix %.12g m^4\n', ...
+    fem_ref.experimental_column.shape, fem_ref.experimental_column.height, ...
+    fem_ref.experimental_column.E, fem_ref.experimental_column.section.Ix);
+fprintf('Interface height: %.12g m; DOFs floors [%s], interface %d\n', ...
+    fem_num.interface.height, num2str(floor_dofs), interface_dof);
 fprintf('Intensity factor: %.3g\n', hs.intensity_factor);
 fprintf(['Time scale factor: %.3g; sample dt is unchanged and the ' ...
     'earthquake is stretched in real time\n'], hs.time_scale_factor);
