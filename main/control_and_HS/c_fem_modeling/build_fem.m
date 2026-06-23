@@ -88,6 +88,7 @@ fprintf('Required base rotational stiffness: %.12g N*m/rad\n\n', ...
 %% STEP 2: PLACE THE FIRST-MODE INFLECTION POINT AT THE INTERFACE
 frame = sapTemplateFrameDefinition();
 floor_mass_kg = [20121; 20121; 18426];
+damping_ratio = 0.02;
 height_result = findFirstModeInflectionHeight( ...
     frame, base_rotation_k, floor_mass_kg, column.height);
 story_height = height_result.story_height;              % [m]
@@ -130,6 +131,7 @@ fem_ref.floor_mass_kg = floor_mass_kg;
 fem_ref.K = K_reference;
 fem_ref.M = M_reference;
 fem_ref.units = femUnits();
+fem_ref.damping_ratio = damping_ratio;
 fem_ref.influence = ones(frame.n_story, 1);
 fem_ref.assembly = reference_assembly;
 fem_ref.assumptions = struct( ...
@@ -146,6 +148,7 @@ fem_num.floor_mass_kg = floor_mass_kg;
 fem_num.K = K_numerical;
 fem_num.M = M_numerical;
 fem_num.units = femUnits();
+fem_num.damping_ratio = damping_ratio;
 fem_num.influence = [ones(frame.n_story, 1); 0];
 fem_num.floor_dofs = numerical_assembly.floor_dofs;
 fem_num.interface_dof = numerical_assembly.interface_dof;
@@ -165,6 +168,7 @@ fem.story_height_m = story_height;
 fem.floor_mass_kg = floor_mass_kg;
 fem.level_weight_N = floor_mass_kg*9.80665;
 fem.units = femUnits();
+fem.damping_ratio = damping_ratio;
 fem.ref = fem_ref;
 fem.num = fem_num;
 

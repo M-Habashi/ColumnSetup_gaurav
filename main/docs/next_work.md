@@ -1,3 +1,11 @@
+# THings to test:
+- New stiffness eestimator
+- New optimized controller (careful)
+- HS (different intensities / different time scales)
+- Pause / Unpause HS
+- Can I change HS speed fromsimulink?
+
+
 # NOw
 - button in simulink to flag specific times (maybe just constant logged to b chaged)
 - hysterisis

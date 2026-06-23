@@ -40,6 +40,7 @@
 %% Preparing the Workspace
 clear; clc; close all
 addpaths();
+projectFolder = fileparts(mfilename('fullpath'));
 
 disp('===============================================================')
 disp('                         Column Setup                          ')
@@ -57,6 +58,15 @@ fs = 2048;                      % Sampling frequency [Hz]
 dt = 1/fs;                      % Sampling period [s]
 zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
 t_ending = 5;                   % Smooth-stop transition time [s]
+
+%% Hybrid Simulation Parameters
+hs = struct( ...
+    'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
+        'fem_<specimen>.mat'), ... % Run build_fem.m first.
+    'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
+    'intensity_factor', 1.0, ...   % Earthquake acceleration multiplier.
+    'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
+    'force_sign', 1.0);            % Use -1 only if force calibration requires it.
 
 % Conversion Factors
 % Voltage to Engineering Units
@@ -83,7 +93,6 @@ runStartTime = datetime('now');
 timestampValue = runStartTime;
 timestampValue.Format = 'yyyyMMdd_HHmm';
 timestamp = char(timestampValue);
-projectFolder = fileparts(mfilename('fullpath'));
 dateValue = runStartTime;
 dateValue.Format = 'yyyyMMdd';
 saveFolder = fullfile(projectFolder, 'saved_results', 'tests', char(dateValue));
@@ -103,6 +112,68 @@ disp(file_name)
 
 % Select the active test signal manually in Simulink.
 tend = inf;
+signal_selector = 3; % 1 time history, 2 sine, 3 BLWN, 4 chirp, 5 zero, 6 square, 7 HS.
+
+data = load(hs.fem_file, 'fem');
+hs.fem = data.fem;
+fem_num = hs.fem.num;
+fem_ref = hs.fem.ref;
+floor_dofs = fem_num.floor_dofs(:)';
+interface_dof = fem_num.interface_dof;
+K_num = fem_num.K;
+K_ff = K_num(floor_dofs, floor_dofs);
+K_fi = K_num(floor_dofs, interface_dof);
+K_if = K_num(interface_dof, floor_dofs);
+K_ii = K_num(interface_dof, interface_dof);
+
+hs.n_floor = numel(floor_dofs);
+hs.M = fem_num.M(floor_dofs, floor_dofs);
+hs.K = K_ff - K_fi*(K_ii\K_if);
+hs.K_if = K_if;
+hs.K_ii = K_ii;
+hs.force_to_floor = K_fi/K_ii;
+hs.interface_from_floor = -K_ii\K_if;
+hs.interface_from_force = -1/K_ii;
+hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
+if isfield(hs.fem, 'damping_ratio')
+    hs.damping_ratio = hs.fem.damping_ratio;
+else
+    hs.damping_ratio = 0.02;
+end
+[modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
+[omega, order] = sort(sqrt(real(omega2)));
+modes = real(modes(:, order));
+for mode_id = 1:size(modes, 2)
+    modes(:, mode_id) = modes(:, mode_id) ...
+        /sqrt(modes(:, mode_id)'*fem_ref.M*modes(:, mode_id));
+end
+hs.C = fem_ref.M*modes*diag(2*hs.damping_ratio*omega)*modes'*fem_ref.M;
+earthquakes = load(fullfile(projectFolder, 'input_signals', ...
+    'earthquakes.mat'), hs.earthquake_type);
+earthquake = earthquakes.(hs.earthquake_type);
+hs.time = earthquake(:, 1) - earthquake(1, 1);
+hs.ag = hs.intensity_factor*earthquake(:, 2);
+
+if signal_selector == 7
+    testname = sprintf('%s_HS_%s_I%g_TS%g', testname, ...
+        hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor);
+    file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
+    disp('Hybrid Simulation Test File Name Updated:')
+    disp(file_name)
+end
+hs_M = hs.M;
+hs_C = hs.C;
+hs_K = hs.K;
+hs_K_if = hs.K_if;
+hs_K_ii = hs.K_ii;
+hs_force_to_floor = hs.force_to_floor;
+hs_interface_from_floor = hs.interface_from_floor;
+hs_interface_from_force = hs.interface_from_force;
+hs_ground_force_gain = hs.ground_force_gain;
+hs_time = hs.time;
+hs_ag = hs.ag;
+hs_time_scale_factor_codegen = hs.time_scale_factor;
+hs_force_sign_codegen = hs.force_sign;
 
 %%% 1- Time history parameters
         run(fullfile(projectFolder, 'input_signals', 'sample_time_history.m'))
@@ -186,6 +257,7 @@ units = struct('t', 's', 'dt', 's', 'fs', 'Hz', ...
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
     'm_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
     'units', ...
+    'signal_selector', 'hs', ...
     'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', ...
     'runStartTime', '-v7.3')
 

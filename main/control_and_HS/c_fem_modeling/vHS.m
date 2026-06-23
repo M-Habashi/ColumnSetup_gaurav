@@ -1,18 +1,10 @@
-%% NUMERICAL-EXPERIMENTAL SUBSTRUCTURE COMPARISON
+%% VIRTUAL HYBRID SIMULATION
 %% Units
 % Input FEM: geometry/displacement [m], K [N/m], M [kg], C [N*s/m].
 % Earthquake acceleration [m/s^2], force [N]; plotted displacement [m].
-% Load a saved numerical FEM and couple its retained interface translation
-% to the specimen's measured scalar stiffness k.
-%
-% The experimental substructure returns horizontal restoring force only:
-%   F_exp = k*u_I.
-% The numerical interface roller carries the vertical reaction, so no axial
-% load is transferred to the experiment. Interface moment is also omitted.
-% The interface displacement is used directly; there is no half-drift or
-% double-curvature factor of two.
+% The Hybrid Simulation path uses the same step_HS function as Simulink.
 
-clearvars -except outputVerificationFile; clc; close all;
+clearvars -except outputVerificationFile fem_file_override; clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
 project_root = fileparts(fileparts(script_dir));
@@ -21,126 +13,145 @@ addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
 
 %% INPUTS
-earthquake_id = 1;
-earthquake_scale = 1.0;
-damping_ratio = 0.02;
+% earthquake_type options: 'el_centro', 'imperial_valley', 'northridge',
+% 'kobe', 'loma_prieta', 'san_fernando', 'tabas', 'chi_chi', 'landers',
+% 'tohoku'.
+hs = struct( ...
+    'earthquake_type', 'el_centro', ...
+    'intensity_factor', 1.0, ...
+    'time_scale_factor', 1.0, ...
+    'force_sign', 1.0);
 k_exp_r = 1.0;
 
-%% SAVED FEM
-[fem, fem_file, ~] = loadFemDefinition(project_root, false);
+%% SAVED FEM AND HS SETUP
+if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
+    [fem, fem_file, ~] = loadFemDefinition(project_root, false, ...
+        fem_file_override);
+else
+    [fem, fem_file, ~] = loadFemDefinition(project_root, false);
+end
+hs.fem_file = fem_file;
+
 fem_num = fem.num;
 fem_ref = fem.ref;
-
 frame = fem_num.frame;
 n_story = frame.n_story;
-floor_dofs = fem_num.floor_dofs;
-interface_dof = fem_num.interface_dof;
 k_experimental = k_exp_r*fem_num.experimental_k;
-K_reference = fem_ref.K;
-M_reference = fem_ref.M;
-K_numerical = fem_num.K;
 
-validateattributes(earthquake_id, {'numeric'}, ...
-    {'scalar', 'integer', '>=', 1, '<=', 10});
-validateattributes(earthquake_scale, {'numeric'}, ...
-    {'scalar', 'real', 'finite', 'nonnegative'});
-validateattributes(damping_ratio, {'numeric'}, ...
-    {'scalar', 'real', 'finite', 'positive', '<', 1});
 validateattributes(k_exp_r, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative', '<=', 1});
 
-%% DAMPING
-[modes, omega2] = eig(K_reference, M_reference, 'vector');
-[omega, order] = sort(sqrt(omega2));
-modes = modes(:, order);
-for mode_id = 1:n_story
-    modes(:, mode_id) = modes(:, mode_id)/ ...
-        sqrt(modes(:, mode_id)'*M_reference*modes(:, mode_id));
+floor_dofs = fem_num.floor_dofs(:)';
+interface_dof = fem_num.interface_dof;
+K_num = fem_num.K;
+K_ff = K_num(floor_dofs, floor_dofs);
+K_fi = K_num(floor_dofs, interface_dof);
+K_if = K_num(interface_dof, floor_dofs);
+K_ii = K_num(interface_dof, interface_dof);
+
+hs.fem = fem;
+hs.n_floor = numel(floor_dofs);
+hs.M = fem_num.M(floor_dofs, floor_dofs);
+hs.K = K_ff - K_fi*(K_ii\K_if);
+hs.K_if = K_if;
+hs.K_ii = K_ii;
+hs.force_to_floor = K_fi/K_ii;
+hs.interface_from_floor = -K_ii\K_if;
+hs.interface_from_force = -1/K_ii;
+hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
+if isfield(fem, 'damping_ratio')
+    hs.damping_ratio = fem.damping_ratio;
+else
+    hs.damping_ratio = 0.02;
 end
-C_reference = M_reference*modes*diag(2*damping_ratio*omega) ...
-    *modes'*M_reference;
+[modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
+[omega, order] = sort(sqrt(real(omega2)));
+modes = real(modes(:, order));
+for mode_id = 1:size(modes, 2)
+    modes(:, mode_id) = modes(:, mode_id) ...
+        /sqrt(modes(:, mode_id)'*fem_ref.M*modes(:, mode_id));
+end
+hs.C = fem_ref.M*modes*diag(2*hs.damping_ratio*omega)*modes'*fem_ref.M;
+earthquakes = load(fullfile(project_root, 'input_signals', ...
+    'earthquakes.mat'), hs.earthquake_type);
+earthquake = earthquakes.(hs.earthquake_type);
+hs.time = earthquake(:, 1) - earthquake(1, 1);
+hs.ag = hs.intensity_factor*earthquake(:, 2);
 
-%% EARTHQUAKE INPUT
-record_fields = {'el_centro', 'northridge', 'kobe', 'loma_prieta', ...
-    'chi_chi', 'imperial_valley', 'landers', 'tabas', ...
-    'san_fernando', 'tohoku'};
-record_names = {'El Centro 1940', 'Northridge 1994', 'Kobe 1995', ...
-    'Loma Prieta 1989', 'Chi-Chi 1999', 'Imperial Valley 1979', ...
-    'Landers 1992', 'Tabas 1978', 'San Fernando 1971', 'Tohoku 2011'};
-earthquake_file = fullfile(project_root, 'input_signals', 'earthquakes.mat');
-data = load(earthquake_file, record_fields{earthquake_id});
-record = data.(record_fields{earthquake_id});
-time = record(:, 1);
-ag = record(:, 2)*earthquake_scale;                    % [m/s^2]
+%% REFERENCE RESPONSE
+model_time = hs.time;
+real_time = model_time*hs.time_scale_factor;
+ag = hs.ag;
 
-reference_load = -(M_reference*fem_ref.influence)*ag'; % [N]
-numerical_mass = fem_num.M(floor_dofs, floor_dofs);
-numerical_load = -(numerical_mass*ones(n_story, 1))*ag'; % [N]
+reference_load = -(fem_ref.M*fem_ref.influence)*ag';
+u_reference = newmarkAverageAcceleration(model_time, fem_ref.M, hs.C, ...
+    fem_ref.K, reference_load);
 
-%% MATLAB TIME INTEGRATION
-% lsim integrates the equivalent continuous-time state-space systems.
-simulation_time = time-time(1);
-integration_dt = min(median(diff(simulation_time)), ...
-    1/(20*max(omega/(2*pi))));
-n_integration_interval = ceil(simulation_time(end)/integration_dt);
-integration_time = linspace(0, simulation_time(end), ...
-    n_integration_interval+1)';
-zero = zeros(n_story);
-identity = eye(n_story);
-
-A_reference = [zero, identity; ...
-    -M_reference\K_reference, -M_reference\C_reference];
-B_reference = [zero; M_reference\identity];
-reference_system = ss(A_reference, B_reference, ...
-    [identity, zero], zero);
-reference_load_fine = interp1(simulation_time, reference_load', ...
-    integration_time, 'linear');
-u_reference_fine = lsim(reference_system, reference_load_fine, ...
-    integration_time);
-u_reference = interp1(integration_time, u_reference_fine, ...
-    simulation_time, 'linear');
-
-% Add the experimental scalar stiffness at the massless interface, then
-% statically condense that interface for the floor-only state-space model.
-K_coupled = K_numerical;
+%% VIRTUAL SPRING-FEEDBACK REFERENCE
+K_coupled = fem_num.K;
 K_coupled(interface_dof, interface_dof) = ...
-    K_coupled(interface_dof, interface_dof)+k_experimental;
+    K_coupled(interface_dof, interface_dof) + k_experimental;
 K_floor_floor = K_coupled(floor_dofs, floor_dofs);
 K_floor_interface = K_coupled(floor_dofs, interface_dof);
 K_interface_floor = K_coupled(interface_dof, floor_dofs);
 K_interface_interface = K_coupled(interface_dof, interface_dof);
-K_hybrid = K_floor_floor-K_floor_interface ...
+K_hybrid_reference = K_floor_floor - K_floor_interface ...
     *(K_interface_interface\K_interface_floor);
-
-A_hybrid = [zero, identity; ...
-    -numerical_mass\K_hybrid, -numerical_mass\C_reference];
-B_hybrid = [zero; numerical_mass\identity];
-hybrid_system = ss(A_hybrid, B_hybrid, [identity, zero], zero);
-numerical_load_fine = interp1(simulation_time, numerical_load', ...
-    integration_time, 'linear');
-u_num_floors_fine = lsim(hybrid_system, numerical_load_fine, ...
-    integration_time);
-u_num_floors = interp1(integration_time, u_num_floors_fine, ...
-    simulation_time, 'linear');
-
 interface_from_floors = -(K_interface_interface\K_interface_floor);
-interface_displacement = (interface_from_floors*u_num_floors')';
-experimental_force = k_experimental*interface_displacement;
 
-maximum_error = max(abs(u_num_floors-u_reference), [], 'all');
+%% HYBRID RESPONSE THROUGH THE SHARED STEP FUNCTION
+hs_sample_dt = 1/2048;
+n_hs_sample = ceil(real_time(end)/hs_sample_dt) + 1;
+hs_real_time = (0:n_hs_sample-1)'*hs_sample_dt;
+hs_model_time = hs_real_time/hs.time_scale_factor;
+ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
+numerical_load_sample = hs.ground_force_gain*ag_sample';
+u_hybrid_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
+    hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
+interface_displacement_reference_sample = ...
+    (interface_from_floors*u_hybrid_reference_sample')';
+measured_force_sample = k_experimental*interface_displacement_reference_sample;
+
+state = [];
+u_num_floors_sample = zeros(numel(hs_real_time), n_story);
+interface_displacement_sample = zeros(numel(hs_real_time), 1);
+experimental_force_sample = zeros(numel(hs_real_time), 1);
+dd_hs_sample = zeros(numel(hs_real_time), 1);
+
+for step = 2:numel(hs_real_time)
+    fm = measured_force_sample(step);
+    [dd_hs_sample(step), state] = step_HS(fm, 0, hs_sample_dt, hs, state);
+    u_num_floors_sample(step, :) = state(1:n_story)';
+    interface_displacement_sample(step) = dd_hs_sample(step)/1000;
+    experimental_force_sample(step) = fm;
+end
+
+u_num_floors = interp1(hs_real_time, u_num_floors_sample, real_time, ...
+    'linear');
+u_hybrid_reference = interp1(hs_real_time, u_hybrid_reference_sample, ...
+    real_time, 'linear');
+interface_displacement = interp1(hs_real_time, ...
+    interface_displacement_sample, real_time, 'linear');
+experimental_force = interp1(hs_real_time, experimental_force_sample, ...
+    real_time, 'linear');
+
+maximum_error = max(abs(u_num_floors-u_hybrid_reference), [], 'all');
 metric = validation_metrics();
-J4 = metric.J4(u_num_floors(:, 1), u_reference(:, 1));
-J5 = metric.J5(u_num_floors(:, 1), u_reference(:, 1));
-J6 = metric.J6(u_num_floors(:, 2), u_reference(:, 2));
-J7 = metric.J7(u_num_floors(:, 3), u_reference(:, 3));
+J4 = metric.J4(u_num_floors(:, 1), u_hybrid_reference(:, 1));
+J5 = metric.J5(u_num_floors(:, 1), u_hybrid_reference(:, 1));
+J6 = metric.J6(u_num_floors(:, 2), u_hybrid_reference(:, 2));
+J7 = metric.J7(u_num_floors(:, 3), u_hybrid_reference(:, 3));
 
-fprintf('\n%s numerical-experimental partition\n', record_names{earthquake_id});
+fprintf('\n%s Hybrid Simulation partition\n', hs.earthquake_type);
 fprintf('FEM file: %s\n', fem_file);
-fprintf('Experimental reduction factor: %.3f\n', ...
-    k_exp_r);
+fprintf('Intensity factor: %.3g\n', hs.intensity_factor);
+fprintf(['Time scale factor: %.3g; sample dt is unchanged and the ' ...
+    'earthquake is stretched in real time\n'], hs.time_scale_factor);
+fprintf('Experimental reduction factor: %.3f\n', k_exp_r);
 fprintf('Reduced experimental stiffness k: %.6f N/m\n', k_experimental);
 fprintf('Interface: horizontal force only; roller carries axial reaction\n');
-fprintf('Maximum floor displacement difference: %.6e m\n', maximum_error);
+fprintf('Maximum step_HS vs spring-reference floor difference: %.6e m\n', ...
+    maximum_error);
 fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
@@ -149,23 +160,23 @@ fprintf('J4 = %.2f%%, J5 = %.2f%%, J6 = %.2f%%, J7 = %.2f%%\n\n', ...
 
 %% RESPONSE COMPARISON
 floor_colors = lines(n_story);
-figure('Color', 'w', 'Name', 'Reference and num-exp comparison');
+figure('Color', 'w', 'Name', 'Reference and HS comparison');
 layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 for floor_id = 1:n_story
     ax = nexttile;
-    plot(ax, time, u_reference(:, floor_id), 'k--', 'LineWidth', 2.2, ...
+    plot(ax, real_time, u_reference(:, floor_id), 'k--', 'LineWidth', 2.2, ...
         'DisplayName', 'Reference');
     hold(ax, 'on');
-    plot(ax, time, u_num_floors(:, floor_id), '-', ...
+    plot(ax, real_time, u_num_floors(:, floor_id), '-', ...
         'Color', floor_colors(floor_id, :), 'LineWidth', 1.1, ...
-        'DisplayName', 'Numerical-experimental');
+        'DisplayName', 'Hybrid Simulation');
     hold(ax, 'off'); grid(ax, 'on');
     ylabel(ax, sprintf('Floor %d (m)', floor_id));
     if floor_id == 1, legend(ax, 'Location', 'best'); end
 end
-xlabel(ax, 'Time (s)');
-title(layout, sprintf('%s: reference and numerical-experimental response', ...
-    record_names{earthquake_id}));
+xlabel(ax, 'Real time (s)');
+title(layout, sprintf('%s: reference and Hybrid Simulation response', ...
+    hs.earthquake_type));
 subtitle(layout, sprintf('Maximum floor difference = %.3e m', maximum_error));
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
@@ -186,7 +197,6 @@ for column_id = 1:numel(frame_x)
         'k-', 'LineWidth', 3);
 end
 
-% Numerical column bases: a hinge rotation DOF connected to k_theta.
 for column_id = 2:numel(frame_x)
     base_x = frame_x(column_id);
     plot(base_x, 0, 'o', 'MarkerSize', 8, ...
@@ -205,7 +215,7 @@ quiver(frame_x(1)+0.5*frame.bay_width, interface_y, ...
     -0.35*frame.bay_width, 0, 0, 'Color', [0.56 0.08 0], ...
     'LineWidth', 1.8, 'MaxHeadSize', 0.8);
 text(frame_x(1)+0.12*frame.bay_width, interface_y, ...
-    'u_I; F_{exp}=k u_I; vertical roller', ...
+    'u_I; F_{exp}; vertical roller', ...
     'Color', [0.56 0.08 0], 'VerticalAlignment', 'bottom');
 title('Hybrid partition: horizontal force only at the interface');
 subtitle(['All joints: rotational DOF. Numerical bases: hinge + k_\theta. ' ...
@@ -214,3 +224,36 @@ axis equal; axis off;
 xlim([-0.45*frame.bay_width, frame_x(end)+0.45*frame.bay_width]);
 ylim([-0.25*frame.story_height, frame_y(end)+0.35*frame.story_height]);
 hold off;
+
+function u = newmarkAverageAcceleration(time, M, C, K, force)
+% Units: time [s], M [kg], C [N*s/m], K [N/m], force [N], output u [m].
+n_step = numel(time);
+n_dof = size(M, 1);
+u = zeros(n_step, n_dof);
+v = zeros(n_step, n_dof);
+a = zeros(n_step, n_dof);
+a(1, :) = (M\(force(:, 1)-C*v(1, :)'-K*u(1, :)'))';
+
+beta = 1/4;
+gamma = 1/2;
+for step = 2:n_step
+    dt = time(step)-time(step-1);
+    a0 = 1/(beta*dt^2);
+    a1 = gamma/(beta*dt);
+    a2 = 1/(beta*dt);
+    a3 = 1/(2*beta)-1;
+    a4 = gamma/beta-1;
+    a5 = dt*(gamma/(2*beta)-1);
+
+    effective_stiffness = K+a0*M+a1*C;
+    effective_rhs = force(:, step) ...
+        + M*(a0*u(step-1, :)'+a2*v(step-1, :)'+a3*a(step-1, :)') ...
+        + C*(a1*u(step-1, :)'+a4*v(step-1, :)'+a5*a(step-1, :)');
+
+    u(step, :) = (effective_stiffness\effective_rhs)';
+    a(step, :) = (a0*(u(step, :)'-u(step-1, :)') ...
+        - a2*v(step-1, :)'-a3*a(step-1, :)')';
+    v(step, :) = (v(step-1, :)'+dt*((1-gamma)*a(step-1, :)' ...
+        + gamma*a(step, :)'))';
+end
+end

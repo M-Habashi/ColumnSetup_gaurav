@@ -30,7 +30,7 @@ keeping the experimental substructure constant:
 
 ## Case 3
 
-- This follows the current `num_exp` modeling idea.
+- This follows the current `vHS` modeling idea.
 - Frame joint and base rotations are assembled explicitly as massless
   internal DOFs.
 - The reference model therefore contains 3 floor translations plus
