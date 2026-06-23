@@ -29,8 +29,7 @@ rng(0)
 script_root = fileparts(mfilename('fullpath'));
 step_root = fileparts(fileparts(script_root));
 addpath(fullfile(step_root, 'helpers', 'utils'))
-addpath(fullfile(step_root, 'control_and_HS', 'b_system_id', 'utils'))
-addpath(fullfile(script_root, 'stability_utils'))
+addpath(fullfile(step_root, 'control_and_HS', 'b_system_id', 'id_utils'))
 
 fit_config = struct( ...
     'f_lim', [0.1, max_freq_hz], ...
