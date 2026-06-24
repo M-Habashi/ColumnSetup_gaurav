@@ -5,7 +5,7 @@
 % The Hybrid Simulation path uses the same step_HS function as Simulink.
 
 clearvars -except outputVerificationFile fem_file_override ...
-    h_dc_dm_model_file_override pid_gain_override phase_lead_override; ...
+    h_dc_dm_model_file_override pid_gain_override; ...
     clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
@@ -23,7 +23,7 @@ addpath(fullfile(project_root, 'control_and_HS', 'b_system_id', ...
 hs = struct( ...
     'earthquake_type', 'el_centro', ...
     'intensity_factor', 0.2, ...
-    'time_scale_factor', 2, ...
+    'time_scale_factor', 1, ...
     'force_sign', 1.0);
 k_exp_r = 1.0;
 hs_sample_dt = 1/2048;
@@ -41,18 +41,16 @@ end
 if ~exist('pid_gain_override', 'var')
     pid_gain_override = [0.15 20 0.0015 512];
 end
-% Phase lead is inserted directly after the numerical dd command:
-% dd_raw -> G_T -> dd_lead -> tracking loop. Use [] to disable it.
-% Use [gain zero_hz pole_hz] or a struct with fields enabled, gain,
-% zero_hz, and pole_hz. For unity DC gain, set gain = pole_hz/zero_hz.
-if ~exist('phase_lead_override', 'var') || isempty(phase_lead_override)
-    %phase_lead_override = [];
-    phase_lead_override = struct('enabled', true, ...
-        'gain', 15, ...
-        'zero_hz', 1.03, ...
-        'pole_hz', 15.49);
+% Phase-lead compensator used on the Hybrid Simulation numerical dd command.
+[delay_comp_data, delay_comp_file, delay_comp_name] = ...
+    load_saved_result_file(project_root, 'phase_lead');
+delay_comp_tf = delay_comp_data.delay_comp_tf;
+delay_comp_tf_discrete = c2d(delay_comp_tf, hs_sample_dt, 'tustin');
+phase_lead = [];
+if isfield(delay_comp_data, 'phase_lead')
+    phase_lead = normalizePhaseLeadConfig(delay_comp_data.phase_lead);
 end
-phase_lead = normalizePhaseLeadConfig(phase_lead_override);
+phase_lead_enabled = isempty(phase_lead) || phase_lead.enabled;
 
 %% SAVED FEM AND HS SETUP
 if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
@@ -164,7 +162,7 @@ end
     dc_pid_sample, experimental_force_pid_sample, ...
     pid_cl_stability] = ...
     hybridResponseWithPidHdcDm(hs, PID_H_dc_dm, pid_h_dc_dm_values, ...
-    k_experimental, hs_sample_dt, phase_lead);
+    k_experimental, hs_sample_dt, delay_comp_tf_discrete);
 
 u_num_floors = interp1(hs_real_time, u_num_floors_sample, real_time, ...
     'linear');
@@ -205,7 +203,7 @@ J5_pid = metric.J5(u_pid_floors(:, 1), u_reference(:, 1));
 J6_pid = metric.J6(u_pid_floors(:, 2), u_reference(:, 2));
 J7_pid = metric.J7(u_pid_floors(:, 3), u_reference(:, 3));
 colors = getPlotColors();
-if phase_lead.enabled
+if phase_lead_enabled
     control_path_label = 'num*G_T*PID*H_{dc,dm}*exp';
 else
     control_path_label = 'num*PID*H_{dc,dm}*exp';
@@ -217,12 +215,15 @@ fprintf('H_dc_dm model file: %s\n', h_dc_dm_model_file);
 fprintf('PID_H_dc_dm gains: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
     pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, ...
     pid_h_dc_dm_values.derivative_filter_N);
-if phase_lead.enabled
+fprintf('Phase-lead compensator loaded: %s\n', delay_comp_file);
+if ~isempty(phase_lead) && phase_lead.enabled
     fprintf(['Phase lead after numerical dd: k_T = %.6g, z1 = %.6g Hz, ' ...
         'p1 = %.6g Hz, DC gain = %.6g, max lead = %.6g deg at %.6g Hz\n'], ...
         phase_lead.gain, phase_lead.zero_hz, phase_lead.pole_hz, ...
         phase_lead.dc_gain, phase_lead.max_phase_lead_deg, ...
         phase_lead.center_frequency_hz);
+elseif phase_lead_enabled
+    fprintf('Phase lead after numerical dd: using loaded transfer function\n');
 else
     fprintf('Phase lead after numerical dd: disabled\n');
 end
@@ -333,7 +334,7 @@ ax = nexttile;
 plot(ax, hs_real_time, dd_pid_sample, 'k--', 'LineWidth', 2.2, ...
     'DisplayName', 'raw numerical dd');
 hold(ax, 'on');
-if phase_lead.enabled
+if phase_lead_enabled
     plot(ax, hs_real_time, dd_lead_pid_sample, '--', ...
         'Color', colors.green, 'LineWidth', 1.5, ...
         'DisplayName', 'phase-lead desired dd');
@@ -554,12 +555,11 @@ end
 
 function [u_num_floors_sample, dd_sample, dd_lead_sample, dm_sample, dc_sample, ...
         force_sample, stability] = hybridResponseWithPidHdcDm(hs, PID_H_dc_dm, ...
-        pid_values, k_experimental, hs_sample_dt, phase_lead)
+        pid_values, k_experimental, hs_sample_dt, delay_comp_tf_discrete)
 % Units: dd/dd_lead/dm/dc [mm], force [N], floor displacement [m].
 num_model = numericalSubstructureDiscrete(hs, hs_sample_dt);
 actuator = discreteSiso(PID_H_dc_dm, hs_sample_dt);
-lead_filter = discreteSiso(buildPhaseLeadFilter(phase_lead, hs_sample_dt), ...
-    hs_sample_dt);
+lead_filter = discreteSiso(delay_comp_tf_discrete, hs_sample_dt);
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, hs_sample_dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');

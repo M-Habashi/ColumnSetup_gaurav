@@ -48,7 +48,7 @@ disp('                        Simulation Tool                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'sp_1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015';
+test_type = 'RTHS_00';
 testname = test_type;
 
 %% Hybrid Simulation Parameters
@@ -56,7 +56,7 @@ hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
      'fem_sp_1_org.mat'), ... % Run build_fem.m first.
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
-    'intensity_factor', 1.0, ...   % Earthquake acceleration multiplier.
+    'intensity_factor', 0.2, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
     'force_sign', 1.0);            % Use -1 only if force calibration requires it.
 
@@ -69,15 +69,15 @@ dt = 1/fs;                      % Sampling period [s]
 zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
 t_ending = 5;                   % Smooth-stop transition time [s]
 
-% Delay compensator used on the Hybrid Simulation numerical dd command.
+% Phase-lead compensator used on the Hybrid Simulation numerical dd command.
 [delay_comp_data, delay_comp_file, delay_comp_name] = ...
-    load_saved_result_file(projectFolder, 'delay_comp');
+    load_saved_result_file(projectFolder, 'phase_lead');
 delay_comp_tf = delay_comp_data.delay_comp_tf;
 delay_comp_tf_discrete = c2d(delay_comp_tf, dt, 'tustin');
 [delay_comp_num, delay_comp_den] = tfdata(delay_comp_tf_discrete, 'v');
 delay_comp_num = delay_comp_num(:).';
 delay_comp_den = delay_comp_den(:).';
-fprintf('Delay compensator loaded: %s\n', delay_comp_file)
+fprintf('Phase-lead compensator loaded: %s\n', delay_comp_file)
 
 % Conversion Factors
 % Voltage to Engineering Units

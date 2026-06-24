@@ -10,6 +10,7 @@
 
 ## MATLAB Run
 6. check the file name in the main script
+7. check HS parametrs in the main script
 7. Run the MATLAB main script.
 8. Make sure all dashboard switches are down.
 9. Click Run on target.
