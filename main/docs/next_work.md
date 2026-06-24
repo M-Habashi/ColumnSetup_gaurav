@@ -1,4 +1,5 @@
 # NOW
+- fix signal selector and its if condition
 - Think about optimizing the phase lead or delay compensator 
     -- should it be autonomous?
     -- what plots to show in what colors

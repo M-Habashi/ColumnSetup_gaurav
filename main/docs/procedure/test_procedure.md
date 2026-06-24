@@ -16,6 +16,7 @@
 9. Click Run on target.
 10. Make sure the dd is zero.
    [If the dd is not zero, use the Constant block to send to zero.]
+11. switch to constant signal and change it to 2 and make sure you are reading the same in MTS. Then switch it back to 0
 11. Select the right signal and the right parameters.
 12. Set switch 1 up: zero measurement.
 13. Check displacement and force measurement are zero.

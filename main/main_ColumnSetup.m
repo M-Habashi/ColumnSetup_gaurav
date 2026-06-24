@@ -54,9 +54,9 @@ testname = test_type;
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-     'fem_sp_1_org.mat'), ... % Run build_fem.m first.
+     'fem_sp_1_or.mat'), ... % Run build_fem.m first.
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
-    'intensity_factor', 0.2, ...   % Earthquake acceleration multiplier.
+    'intensity_factor', 0.012, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
     'force_sign', 1.0);            % Use -1 only if force calibration requires it.
 
@@ -123,7 +123,7 @@ disp(file_name)
 
 % Select the active test signal manually in Simulink.
 tend = inf;
-signal_selector = 3; % 1 time history, 2 sine, 3 BLWN, 4 chirp, 5 zero, 6 square, 7 HS.
+signal_selector = 7; % 1 time history, 2 sine, 3 BLWN, 4 chirp, 5 zero, 6 square, 7 HS.
 
 data = load(hs.fem_file, 'fem');
 hs.fem = data.fem;
