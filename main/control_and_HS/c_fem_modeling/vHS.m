@@ -11,6 +11,8 @@ project_root = fileparts(fileparts(script_dir));
 addpath(fullfile(script_dir, 'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
+addpath(fullfile(project_root, 'control_and_HS', 'b_system_id', ...
+    'id_utils'));
 
 %% INPUTS
 % earthquake_type options: 'el_centro', 'imperial_valley', 'northridge',
@@ -19,7 +21,7 @@ addpath(fullfile(project_root, 'results_analysis'));
 hs = struct( ...
     'earthquake_type', 'el_centro', ...
     'intensity_factor', 1.0, ...
-    'time_scale_factor', 1.0, ...
+    'time_scale_factor', 0.1, ...
     'force_sign', 1.0);
 k_exp_r = 1.0;
 
@@ -137,6 +139,8 @@ interface_displacement = interp1(hs_real_time, ...
     interface_displacement_sample, real_time, 'linear');
 experimental_force = interp1(hs_real_time, experimental_force_sample, ...
     real_time, 'linear');
+unit_scale_u_num_floors_sample = hybridResponseAtTimeScale( ...
+    hs, fem_num, k_experimental, hs_sample_dt, 1);
 
 step_error = max(abs(u_num_floors-u_hybrid_reference), [], 'all');
 reference_error = max(abs(u_num_floors-u_reference), [], 'all');
@@ -206,6 +210,35 @@ subtitle(layout, sprintf('Maximum hybrid-reference floor difference = %.3e m', .
     reference_error));
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
+%% RESPONSE FREQUENCY CONTENT
+fft_fmax_hz = 100;
+fft_fs_hz = 1/hs_sample_dt;
+fft_test_duration_s = hs.time(end)*hs.time_scale_factor;
+figure('Color', 'w', 'Name', 'HS response frequency content');
+layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+for floor_id = 1:n_story
+    ax = nexttile;
+    [Y_unit, freq_unit] = fft_c(unit_scale_u_num_floors_sample(:, floor_id), ...
+        fft_fs_hz, fft_fmax_hz);
+    [Y_selected, freq_selected] = fft_c(u_num_floors_sample(:, floor_id), ...
+        fft_fs_hz, fft_fmax_hz);
+    plot(ax, freq_unit, abs(Y_unit), '-', 'Color', [0.55 0.55 0.55], ...
+        'LineWidth', 1.0, 'DisplayName', 'Time scale = 1');
+    hold(ax, 'on');
+    plot(ax, freq_selected, abs(Y_selected), '-', 'Color', [0 0.486 0.659], ...
+        'LineWidth', 1.2, 'DisplayName', sprintf('Selected = %.3g', ...
+        hs.time_scale_factor));
+    hold(ax, 'off'); grid(ax, 'on');
+    xlim(ax, [0 fft_fmax_hz]);
+    ylabel(ax, sprintf('|Floor %d| (m)', floor_id));
+    if floor_id == 1, legend(ax, 'Location', 'best'); end
+end
+xlabel(ax, 'Frequency (Hz)');
+title(layout, sprintf(['%s: response frequency content; test duration = ' ...
+    '%.2f s'], hs.earthquake_type, fft_test_duration_s));
+subtitle(layout, 'Hybrid Simulation floor response, one-sided FFT amplitude');
+linkaxes(findall(gcf, 'Type', 'axes'), 'x');
+
 %% PARTITION GEOMETRY
 frame_x = (0:frame.n_bay)*frame.bay_width;
 frame_y = (0:frame.n_story)*frame.story_height;
@@ -250,6 +283,69 @@ axis equal; axis off;
 xlim([-0.45*frame.bay_width, frame_x(end)+0.45*frame.bay_width]);
 ylim([-0.25*frame.story_height, frame_y(end)+0.35*frame.story_height]);
 hold off;
+
+%% IDEAL-SPECIMEN HYBRID STABILITY
+hybrid_margin_frequency_hz = [0.1, 80];
+A_num = [zeros(hs.n_floor), eye(hs.n_floor); -hs.M\hs.K, -hs.M\hs.C];
+B_num = [zeros(hs.n_floor, 1); ...
+    hs.M\(hs.force_to_floor*hs.force_sign)];
+C_num = [hs.interface_from_floor, zeros(1, hs.n_floor)];
+D_num = hs.interface_from_force*hs.force_sign;
+H_num = ss(A_num, B_num, C_num, D_num);
+H_exp = k_experimental;
+hybrid_open_loop = -minreal(H_num*H_exp);
+[~, ~, hybrid_ncf_margin] = custom_stability_margins( ...
+    hybrid_open_loop, hybrid_margin_frequency_hz);
+hybrid_margins = allmargin(hybrid_open_loop);
+hybrid_delay_margin = min([hybrid_margins.DelayMargin(:); Inf]);
+
+fprintf('Ideal-specimen hybrid stability margins\n');
+fprintf('Open loop: -H_num*H_exp, H_exp = %.6f N/m\n', H_exp);
+fprintf('Margin frequency range: %.6g to %.6g Hz\n', ...
+    hybrid_margin_frequency_hz);
+fprintf('Delay margin: %.6f s\n', hybrid_delay_margin);
+fprintf('NCF margin: %.6f\n\n', hybrid_ncf_margin);
+
+function u_num_floors_sample = hybridResponseAtTimeScale( ...
+    hs, fem_num, k_experimental, hs_sample_dt, time_scale_factor)
+% Units: time [s], displacement [m], stiffness [N/m].
+hs.time_scale_factor = time_scale_factor;
+model_time = hs.time;
+real_time = model_time*hs.time_scale_factor;
+ag = hs.ag;
+n_hs_sample = ceil(real_time(end)/hs_sample_dt) + 1;
+hs_real_time = (0:n_hs_sample-1)'*hs_sample_dt;
+hs_model_time = hs_real_time/hs.time_scale_factor;
+ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
+
+floor_dofs = fem_num.floor_dofs(:)';
+interface_dof = fem_num.interface_dof;
+K_coupled = fem_num.K;
+K_coupled(interface_dof, interface_dof) = ...
+    K_coupled(interface_dof, interface_dof) + k_experimental;
+K_floor_floor = K_coupled(floor_dofs, floor_dofs);
+K_floor_interface = K_coupled(floor_dofs, interface_dof);
+K_interface_floor = K_coupled(interface_dof, floor_dofs);
+K_interface_interface = K_coupled(interface_dof, interface_dof);
+K_hybrid_reference = K_floor_floor - K_floor_interface ...
+    *(K_interface_interface\K_interface_floor);
+interface_from_floors = -(K_interface_interface\K_interface_floor);
+
+numerical_load_sample = hs.ground_force_gain*ag_sample';
+u_hybrid_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
+    hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
+interface_displacement_reference_sample = ...
+    (interface_from_floors*u_hybrid_reference_sample')';
+measured_force_sample = k_experimental*interface_displacement_reference_sample;
+
+state = [];
+u_num_floors_sample = zeros(numel(hs_real_time), hs.n_floor);
+for step = 2:numel(hs_real_time)
+    [~, state] = step_HS(measured_force_sample(step), 0, hs_sample_dt, ...
+        hs, state);
+    u_num_floors_sample(step, :) = state(1:hs.n_floor)';
+end
+end
 
 function u = newmarkAverageAcceleration(time, M, C, K, force)
 % Units: time [s], M [kg], C [N*s/m], K [N/m], force [N], output u [m].

@@ -1,0 +1,81 @@
+
+
+ SAP2000 v26.1.0 Ultimate 64-bit (Analysis Build 9975/64)                       
+ File: C:\Users\Victus\Desktop...\control_and_HS\c_fem_modeling\sap\sp_1_org.OUT
+                                                                     
+                                                                       
+
+ floor1, CONSTR = RIGID, DOF = U1 U2 U3
+
+                     LOCAL COORDINATE SYSTEM FOR CONSTRAINT MASTER
+  GLOBAL          U1          U2          U3          R1          R2          R3
+     X      1.000000     .000000     .000000     .000000     .000000     .000000
+     Y       .000000    1.000000     .000000     .000000    6071.549     .000000
+     Z       .000000     .000000    1.000000     .000000     .000000    6071.549
+
+                     TRANSLATIONAL MASS AND MASS MOMENTS OF INERTIA
+                  U1          U2          U3          R1          R2          R3
+          659.672503  659.672503  659.672503    4.9E-324    7.0E-310    2.5E-312
+
+                     CENTER OF MASS
+  GLOBAL          U1          U2          U3
+     X      4.719089    4.719089    4.719089
+     Y       .000000     .000000     .000000
+     Z      1.879282    1.879282    1.879282
+
+ floor2, CONSTR = RIGID, DOF = U1 U2 U3
+
+                     LOCAL COORDINATE SYSTEM FOR CONSTRAINT MASTER
+  GLOBAL          U1          U2          U3          R1          R2          R3
+     X      1.000000     .000000     .000000     .000000     .000000     .000000
+     Y       .000000    1.000000     .000000     .000000    6529.445     .000000
+     Z       .000000     .000000    1.000000     .000000     .000000    6529.445
+
+                     TRANSLATIONAL MASS AND MASS MOMENTS OF INERTIA
+                  U1          U2          U3          R1          R2          R3
+          680.895272  680.895272  680.895272    4.9E-324    7.0E-310    2.5E-312
+
+                     CENTER OF MASS
+  GLOBAL          U1          U2          U3
+     X      4.572000    4.572000    4.572000
+     Y       .000000     .000000     .000000
+     Z      3.758564    3.758564    3.758564
+
+ floor3, CONSTR = RIGID, DOF = U1 U2 U3
+
+                     LOCAL COORDINATE SYSTEM FOR CONSTRAINT MASTER
+  GLOBAL          U1          U2          U3          R1          R2          R3
+     X      1.000000     .000000     .000000     .000000     .000000     .000000
+     Y       .000000    1.000000     .000000     .000000    4660.657     .000000
+     Z       .000000     .000000    1.000000     .000000     .000000    4660.657
+
+                     TRANSLATIONAL MASS AND MASS MOMENTS OF INERTIA
+                  U1          U2          U3          R1          R2          R3
+          504.364584  504.364584  504.364584    4.9E-324    7.0E-310    2.5E-312
+
+                     CENTER OF MASS
+  GLOBAL          U1          U2          U3
+     X      4.572000    4.572000    4.572000
+     Y       .000000     .000000     .000000
+     Z      5.637845    5.637845    5.637845
+
+ D I S P L A C E M E N T   D E G R E E S   O F   F R E E D O M
+
+         (A) = Active DOF, equilibrium equation
+         (-) = Restrained DOF, reaction computed
+         (+) = Constrained DOF
+         (>) = External substructure DOF
+         ( ) = Null DOF
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ J_L0_G0 TO J_L0_G3    -   -   -       A    
+ J_L1_G0 TO J_L3_G3    +       +       A    
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ _INTERF               A       A       A    
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+    NULL                                    
+
+  CONSTRAINTS         U1  U2  U3  R1  R2  R3
+ floor1  TO floor3     A       A            

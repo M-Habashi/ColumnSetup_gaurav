@@ -16,28 +16,28 @@ TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"
    Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1
  
 TABLE:  "CONNECTIVITY - FRAME"
-   Frame=B_L1_B1   JointI=J_L1_G0   JointJ=J_L1_G1   IsCurved=No   GUID=663cdfa2-8b15-43f5-bc55-d2cf355beeb3
-   Frame=B_L1_B2   JointI=J_L1_G1   JointJ=J_L1_G2   IsCurved=No   GUID=91477b65-00bf-4991-9c7c-7ef0c0c582b9
-   Frame=B_L1_B3   JointI=J_L1_G2   JointJ=J_L1_G3   IsCurved=No   GUID=d7bcfdc2-ec82-4e91-91e3-20b5993c52d0
-   Frame=B_L2_B1   JointI=J_L2_G0   JointJ=J_L2_G1   IsCurved=No   GUID=5f8631ac-3211-4cc8-82ad-97ceed83289a
-   Frame=B_L2_B2   JointI=J_L2_G1   JointJ=J_L2_G2   IsCurved=No   GUID=798aaf03-0746-40db-a10d-7e7fd624d4d7
-   Frame=B_L2_B3   JointI=J_L2_G2   JointJ=J_L2_G3   IsCurved=No   GUID=26e25d5e-35b2-4c60-8172-f973044e5ed7
-   Frame=B_L3_B1   JointI=J_L3_G0   JointJ=J_L3_G1   IsCurved=No   GUID=c3999675-dd54-4f4b-a0cb-05fbd07c32ad
-   Frame=B_L3_B2   JointI=J_L3_G1   JointJ=J_L3_G2   IsCurved=No   GUID=35e48219-8b4a-4630-971d-4eaec41aee1a
-   Frame=B_L3_B3   JointI=J_L3_G2   JointJ=J_L3_G3   IsCurved=No   GUID=0621f414-3b66-4168-a248-88bdf1dcda00
-   Frame=C_G0_S2   JointI=J_L1_G0   JointJ=J_L2_G0   IsCurved=No   GUID=2b6554f7-28fc-41da-b6b6-eb30a33619bd
-   Frame=C_G0_S3   JointI=J_L2_G0   JointJ=J_L3_G0   IsCurved=No   GUID=a5608ee3-8949-4468-9936-a5ccc3713064
-   Frame=C_G1_S1   JointI=J_L0_G1   JointJ=J_L1_G1   IsCurved=No   GUID=311de8ba-2ed3-4121-9a33-278535e78ad4
-   Frame=C_G1_S2   JointI=J_L1_G1   JointJ=J_L2_G1   IsCurved=No   GUID=10850d1d-6d7a-4114-964f-db1e41df0bc7
-   Frame=C_G1_S3   JointI=J_L2_G1   JointJ=J_L3_G1   IsCurved=No   GUID=6c20625c-1cd9-4cc5-b802-8e7a22c55251
-   Frame=C_G2_S1   JointI=J_L0_G2   JointJ=J_L1_G2   IsCurved=No   GUID=c2ae95fe-b411-4892-b3c5-829fb059b733
-   Frame=C_G2_S2   JointI=J_L1_G2   JointJ=J_L2_G2   IsCurved=No   GUID=19a72872-d84e-4535-a043-5e80a168501e
-   Frame=C_G2_S3   JointI=J_L2_G2   JointJ=J_L3_G2   IsCurved=No   GUID=1b83a537-a20d-48c4-b268-ddf868fc4a5f
-   Frame=C_G3_S1   JointI=J_L0_G3   JointJ=J_L1_G3   IsCurved=No   GUID=7e53a48d-6cbf-42b6-ad8d-6708349df0bf
-   Frame=C_G3_S2   JointI=J_L1_G3   JointJ=J_L2_G3   IsCurved=No   GUID=d5e36337-1404-4e16-9872-2e4c450d2d6a
-   Frame=C_G3_S3   JointI=J_L2_G3   JointJ=J_L3_G3   IsCurved=No   GUID=f60fb73b-d40d-41eb-ae93-2563a2c00041
-   Frame=C_G0_S1_UPPER   JointI=J_INTERFACE   JointJ=J_L1_G0   IsCurved=No   GUID=03b9a855-2a8c-46d7-b1da-98aa20f2bbe9
-   Frame=C_G0_S1_LOWER_EXP   JointI=J_L0_G0   JointJ=J_INTERFACE   IsCurved=No   GUID=093bee78-ca44-4ef9-9766-b3545533d767
+   Frame=B_L1_B1   JointI=J_L1_G0   JointJ=J_L1_G1   IsCurved=No   GUID=4712e4d7-f000-4e4d-a7a9-8d4bd1fee4df
+   Frame=B_L1_B2   JointI=J_L1_G1   JointJ=J_L1_G2   IsCurved=No   GUID=eda15feb-be9c-4e04-997f-7e5e2f9b3eed
+   Frame=B_L1_B3   JointI=J_L1_G2   JointJ=J_L1_G3   IsCurved=No   GUID=ff74e4b4-f657-453a-973e-d0011252622e
+   Frame=B_L2_B1   JointI=J_L2_G0   JointJ=J_L2_G1   IsCurved=No   GUID=aea050c1-c99d-4c5b-b6d1-ea0ca43bae3a
+   Frame=B_L2_B2   JointI=J_L2_G1   JointJ=J_L2_G2   IsCurved=No   GUID=b2e0b947-a9c8-4586-ad35-9548f0635a12
+   Frame=B_L2_B3   JointI=J_L2_G2   JointJ=J_L2_G3   IsCurved=No   GUID=466fda0d-4095-470f-b3da-d23b47fa0fc6
+   Frame=B_L3_B1   JointI=J_L3_G0   JointJ=J_L3_G1   IsCurved=No   GUID=44e561bc-ee39-49ad-a244-260421c49795
+   Frame=B_L3_B2   JointI=J_L3_G1   JointJ=J_L3_G2   IsCurved=No   GUID=246250c2-5993-4a4d-a288-260c6634922b
+   Frame=B_L3_B3   JointI=J_L3_G2   JointJ=J_L3_G3   IsCurved=No   GUID=a59d563c-faef-40ff-8071-6231add280cf
+   Frame=C_G0_S2   JointI=J_L1_G0   JointJ=J_L2_G0   IsCurved=No   GUID=f2c7b621-854f-452b-96a8-eb1a45c88efa
+   Frame=C_G0_S3   JointI=J_L2_G0   JointJ=J_L3_G0   IsCurved=No   GUID=bb0f3e65-8a33-434a-8510-0bdf0eaaa73b
+   Frame=C_G1_S1   JointI=J_L0_G1   JointJ=J_L1_G1   IsCurved=No   GUID=2a303157-8c04-445e-a70a-2c36182266c0
+   Frame=C_G1_S2   JointI=J_L1_G1   JointJ=J_L2_G1   IsCurved=No   GUID=0e9b9bee-acae-41d6-a8f9-f4c54737098c
+   Frame=C_G1_S3   JointI=J_L2_G1   JointJ=J_L3_G1   IsCurved=No   GUID=f23016ce-1e72-43f5-935e-799c69ea29ce
+   Frame=C_G2_S1   JointI=J_L0_G2   JointJ=J_L1_G2   IsCurved=No   GUID=ccf24b91-c92f-4983-b65a-eb35b3e749a5
+   Frame=C_G2_S2   JointI=J_L1_G2   JointJ=J_L2_G2   IsCurved=No   GUID=3fc119ee-c747-45e2-a2de-9c3d372c994f
+   Frame=C_G2_S3   JointI=J_L2_G2   JointJ=J_L3_G2   IsCurved=No   GUID=edb6bd33-7d56-4cbf-952b-a8f41e87e3f5
+   Frame=C_G3_S1   JointI=J_L0_G3   JointJ=J_L1_G3   IsCurved=No   GUID=b3852179-3bdb-4948-a01e-88bca82c956e
+   Frame=C_G3_S2   JointI=J_L1_G3   JointJ=J_L2_G3   IsCurved=No   GUID=1795c66f-be1e-4ab0-8233-4c374fec0b27
+   Frame=C_G3_S3   JointI=J_L2_G3   JointJ=J_L3_G3   IsCurved=No   GUID=636e325f-fed3-42bc-9233-ad2ed2e90f94
+   Frame=C_G0_S1_UPPER   JointI=J_INTERFACE   JointJ=J_L1_G0   IsCurved=No   GUID=db0b23b6-5c8b-42a8-b248-bc3511a28649
+   Frame=C_G0_S1_LOWER_EXP   JointI=J_L0_G0   JointJ=J_INTERFACE   IsCurved=No   GUID=eb25f46e-b740-4c9b-9b50-8d686dd44a08
  
 TABLE:  "CONSTRAINT DEFINITIONS - BODY"
    Name=floor1   CoordSys=GLOBAL   UX=Yes   UY=Yes   UZ=Yes   RX=No   RY=No   RZ=No
@@ -231,23 +231,23 @@ TABLE:  "JOINT CONSTRAINT ASSIGNMENTS"
    Joint=J_L3_G3   Constraint=floor3
  
 TABLE:  "JOINT COORDINATES"
-   Joint=J_L0_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=0   SpecialJt=Yes   GUID=dc3cca92-933e-4411-9ace-5b1befc2cdfc
-   Joint=J_L0_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=0   SpecialJt=Yes   GUID=1f8cfb29-cdf7-4ec6-97c7-6472e76a7d96
-   Joint=J_L0_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=0   SpecialJt=Yes   GUID=1e811ae6-a4ae-4fc1-8619-4f768bbfff8a
-   Joint=J_L0_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=0   SpecialJt=Yes   GUID=55772944-a288-46f2-b136-157d2cae24f8
-   Joint=J_L1_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=2.033016   SpecialJt=Yes   GUID=f86187f1-7c28-48a7-bb2c-f63eecaae3d4
-   Joint=J_L1_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=2.033016   SpecialJt=Yes   GUID=d2bdeddc-4199-4e10-8ae7-139121be540a
-   Joint=J_L1_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=2.033016   SpecialJt=Yes   GUID=181a9203-c18d-443f-9cca-47816bfc0ce3
-   Joint=J_L1_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=2.033016   SpecialJt=Yes   GUID=fd0bf260-1f38-4aaa-b984-9060eb532d2b
-   Joint=J_L2_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=4.066032   SpecialJt=Yes   GUID=08a87599-c58b-4d33-a67b-3fa701a2bd53
-   Joint=J_L2_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=4.066032   SpecialJt=Yes   GUID=17d691af-7a0a-4cc3-baf6-834c734a12d4
-   Joint=J_L2_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=4.066032   SpecialJt=Yes   GUID=365d76f4-5634-412a-8187-10230da48daf
-   Joint=J_L2_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=4.066032   SpecialJt=Yes   GUID=aeb41678-4dc7-495a-9f4a-40f7cadb3c29
-   Joint=J_L3_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=6.099048   SpecialJt=Yes   GUID=538e3645-bb4a-4919-8bc9-26cf6aa2da5e
-   Joint=J_L3_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=6.099048   SpecialJt=Yes   GUID=6162af8b-c70b-4f2d-b600-e30d2482ac1e
-   Joint=J_L3_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=6.099048   SpecialJt=Yes   GUID=3a894e96-3779-4613-801f-cbff27db0d8e
-   Joint=J_L3_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=6.099048   SpecialJt=Yes   GUID=2db6bb07-584c-4be9-b5f4-4e7cebde3a23
-   Joint=J_INTERFACE   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=1.016   SpecialJt=Yes   GUID=175392bf-0978-4739-8464-64c611a738f1
+   Joint=J_L0_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=0   SpecialJt=Yes   GUID=1c766b9f-5492-4f9c-b75a-1cc4df5727cc
+   Joint=J_L0_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=0   SpecialJt=Yes   GUID=f1f75342-c7f4-4a41-ba3d-fe85e797e841
+   Joint=J_L0_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=0   SpecialJt=Yes   GUID=8b7d2dba-686a-47fc-bd6f-79c949db8703
+   Joint=J_L0_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=0   SpecialJt=Yes   GUID=940d37a9-b542-4e86-91c7-28f64410525f
+   Joint=J_L1_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=2.033016   SpecialJt=Yes   GUID=cecf41d1-9898-4fd4-8afa-42d418c8fd3f
+   Joint=J_L1_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=2.033016   SpecialJt=Yes   GUID=c0b24a38-2012-474a-bae3-af0917308694
+   Joint=J_L1_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=2.033016   SpecialJt=Yes   GUID=1a4d4cf2-0516-4cf6-9c5a-74a3e4777baa
+   Joint=J_L1_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=2.033016   SpecialJt=Yes   GUID=53299014-c838-4e73-af2a-b52d40044e8b
+   Joint=J_L2_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=4.066032   SpecialJt=Yes   GUID=d9547500-a5f3-4c47-a9b3-0ce1253aff4f
+   Joint=J_L2_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=4.066032   SpecialJt=Yes   GUID=64d09027-4c85-4745-86b1-f86403aef7e3
+   Joint=J_L2_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=4.066032   SpecialJt=Yes   GUID=da3e9b3b-2cbc-4e77-a2c0-d800a35922fa
+   Joint=J_L2_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=4.066032   SpecialJt=Yes   GUID=a4fb98b5-3fac-48e1-9311-8caa4cf95e89
+   Joint=J_L3_G0   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=6.099048   SpecialJt=Yes   GUID=7c812b0c-e162-43a0-9d79-6efdc1553898
+   Joint=J_L3_G1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.048   Y=0   Z=6.099048   SpecialJt=Yes   GUID=4408fb94-ad03-4462-86e0-deee678daaa0
+   Joint=J_L3_G2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.096   Y=0   Z=6.099048   SpecialJt=Yes   GUID=aab2f109-bb56-4e75-916b-3693b4d43000
+   Joint=J_L3_G3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=9.144   Y=0   Z=6.099048   SpecialJt=Yes   GUID=8a2be00d-8972-41d3-8ecf-573afc6acaa9
+   Joint=J_INTERFACE   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=1.016   SpecialJt=Yes   GUID=e183c436-40ea-4ea0-92d3-dea73006fab8
  
 TABLE:  "JOINT PATTERN DEFINITIONS"
    Pattern=Default
@@ -265,18 +265,18 @@ TABLE:  "JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED"
    Joint=J_L0_G3   CoordSys=GLOBAL   U1=0   U2=0   U3=0   R1=0   R2=10400000   R3=0
  
 TABLE:  "LOAD CASE DEFINITIONS"
-   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes   GUID=835fbd46-309f-4821-8558-fb2bd119cf7a
-   Case=MODAL   Type=LinModal   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=Yes   GUID=9476f89f-9a2f-4cb3-b087-f10641075afa
+   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes   GUID=6a24dc03-9ac9-4bed-81f9-b5c9ec007d4e
+   Case=MODAL   Type=LinModal   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Other   DesActOpt="Prog Det"   DesignAct=Other   AutoType=None   RunCase=Yes   GUID=c8e33a16-47e3-4998-85df-a69821e10bb7
  
 TABLE:  "LOAD PATTERN DEFINITIONS"
-   LoadPat=DEAD   DesignType=Dead   SelfWtMult=1   GUID=b11098c8-87f9-419b-b815-40efd198eba5
+   LoadPat=DEAD   DesignType=Dead   SelfWtMult=1   GUID=4b2e595e-c25e-4cad-9ab3-f16029893fbb
  
 TABLE:  "MASS SOURCE"
    MassSource=MSSSRC1   Elements=Yes   Masses=Yes   Loads=No   IsDefault=Yes
  
 TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"
-   Material=4000Psi   Type=Concrete   Grade="f'c 4000 psi"   SymType=Isotropic   TempDepend=No   Color=Green   GUID=c3313351-f3b8-4ed9-b879-82c596ba11e3   Notes="Customary f'c 4000 psi 6/22/2026 2:11:28 AM"
-   Material=A992Fy50   Type=Steel   Grade="Grade 50"   SymType=Isotropic   TempDepend=No   Color=Blue   GUID=32bb2def-237d-4d81-8512-f32d084b645f   Notes="ASTM A992 Grade 50 6/22/2026 2:11:28 AM"
+   Material=4000Psi   Type=Concrete   Grade="f'c 4000 psi"   SymType=Isotropic   TempDepend=No   Color=Green   GUID=e21a1955-a844-4468-bd51-f42dec6a4e0e   Notes="Customary f'c 4000 psi 6/24/2026 12:25:41 AM"
+   Material=A992Fy50   Type=Steel   Grade="Grade 50"   SymType=Isotropic   TempDepend=No   Color=Blue   GUID=5e7bb8b4-52bf-45ea-a6da-4db760bcaaf5   Notes="ASTM A992 Grade 50 6/24/2026 12:25:41 AM"
    Material=STEEL_E200   Type=Steel   SymType=Isotropic   TempDepend=No   Color=Cyan
  
 TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"
