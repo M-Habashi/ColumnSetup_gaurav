@@ -72,13 +72,14 @@ colors = getPlotColors();
 ax(1) = subplot(3, 1, 1);
 hDesired = plot(t, dd, '--', 'Color', colors.black, 'LineWidth', 1.8, 'DisplayName', 'dd desired displacement'); hold on
 plot(t, dc, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
-plot(t, dm, '-', 'Color', colors.blue, 'LineWidth', 1.0, 'DisplayName', 'dm measured displacement');
+hMeasured = plot(t, dm, '-', 'Color', colors.blue, 'LineWidth', 1.2, 'DisplayName', 'dm measured displacement');
 uistack(hDesired, 'top')
+uistack(hMeasured, 'top')
 grid on
 xlabel('Time (s)')
 ylabel('Displacement (mm)')
 title('Displacement Tracking')
-set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
+setAxisLimitsFromSignals(gca, t, [dd dc dm])
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
@@ -88,7 +89,7 @@ grid on
 xlabel('Time (s)')
 ylabel('Force (N)')
 title('Force History')
-set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
+setAxisLimitsFromSignals(gca, t, fm)
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
@@ -98,7 +99,7 @@ grid on
 xlabel('Time (s)')
 ylabel('Acceleration (g)')
 title('Acceleration History')
-set(gca, 'XLimMode', 'manual', 'YLimMode', 'manual')
+setAxisLimitsFromSignals(gca, t, am)
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
@@ -164,6 +165,39 @@ function toggleSignalVisibility(~, event)
     xlim(ax, xLimits);
     ylim(ax, yLimits);
     set(ax, 'XLimMode', 'manual', 'YLimMode', 'manual')
+end
+
+function setAxisLimitsFromSignals(ax, time, signals)
+% Units: time [s]; signals use the plotted channel units.
+    finiteTime = time(isfinite(time));
+    finiteSignals = signals(isfinite(signals));
+
+    if isempty(finiteTime)
+        xlim(ax, [0 1])
+    else
+        xMin = min(finiteTime);
+        xMax = max(finiteTime);
+        if xMin == xMax
+            xPad = max(1, 0.05*abs(xMin));
+            xlim(ax, [xMin - xPad, xMax + xPad])
+        else
+            xlim(ax, [xMin xMax])
+        end
+    end
+
+    if isempty(finiteSignals)
+        ylim(ax, [0 1])
+    else
+        yMin = min(finiteSignals);
+        yMax = max(finiteSignals);
+        yRange = yMax - yMin;
+        if yRange == 0
+            yPad = max(1, 0.05*abs(yMin));
+        else
+            yPad = 0.05*yRange;
+        end
+        ylim(ax, [yMin - yPad, yMax + yPad])
+    end
 end
 
 function test_type = getTestType(data)

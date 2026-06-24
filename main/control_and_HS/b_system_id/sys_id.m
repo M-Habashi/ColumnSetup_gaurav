@@ -4,7 +4,7 @@
 
 %% Inputs
 P = 0.15;
-I = 20;3
+I = 20;
 D = 0.0015;
 derivative_filter_N = 512;
 max_freq_hz = 80;
