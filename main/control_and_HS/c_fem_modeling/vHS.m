@@ -4,7 +4,8 @@
 % Earthquake acceleration [m/s^2], force [N]; plotted displacement [m].
 % The Hybrid Simulation path uses the same step_HS function as Simulink.
 
-clearvars -except outputVerificationFile fem_file_override; clc; close all;
+clearvars -except outputVerificationFile fem_file_override ...
+    h_dd_dm_model_file_override; clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
 project_root = fileparts(fileparts(script_dir));
@@ -21,9 +22,14 @@ addpath(fullfile(project_root, 'control_and_HS', 'b_system_id', ...
 hs = struct( ...
     'earthquake_type', 'el_centro', ...
     'intensity_factor', 1.0, ...
-    'time_scale_factor', 0.1, ...
+    'time_scale_factor', 10, ...
     'force_sign', 1.0);
 k_exp_r = 1.0;
+h_dd_dm_model_file = '';  % Empty loads newest saved_results/models file.
+if exist('h_dd_dm_model_file_override', 'var') ...
+        && ~isempty(h_dd_dm_model_file_override)
+    h_dd_dm_model_file = h_dd_dm_model_file_override;
+end
 
 %% SAVED FEM AND HS SETUP
 if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
@@ -69,6 +75,7 @@ end
 [modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
 [omega, order] = sort(sqrt(real(omega2)));
 modes = real(modes(:, order));
+building_mode_frequency_hz = omega/(2*pi);
 for mode_id = 1:size(modes, 2)
     modes(:, mode_id) = modes(:, mode_id) ...
         /sqrt(modes(:, mode_id)'*fem_ref.M*modes(:, mode_id));
@@ -79,6 +86,8 @@ earthquakes = load(fullfile(project_root, 'input_signals', ...
 earthquake = earthquakes.(hs.earthquake_type);
 hs.time = earthquake(:, 1) - earthquake(1, 1);
 hs.ag = hs.intensity_factor*earthquake(:, 2);
+[H_dd_dm, h_dd_dm_pid_values, h_dd_dm_model_file] = ...
+    loadHddDmModel(project_root, h_dd_dm_model_file);
 
 %% SAMPLE GRID AND EARTHQUAKE INPUT
 model_time = hs.time;
@@ -92,7 +101,7 @@ ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
 
 %% REFERENCE RESPONSE
 reference_load_sample = -(fem_ref.M*fem_ref.influence)*ag_sample';
-u_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
+u_reference_sample = newmarkAverageAcceleration(hs_real_time, ...
     fem_ref.M, hs.C, fem_ref.K, reference_load_sample);
 
 %% VIRTUAL SPRING-FEEDBACK REFERENCE
@@ -109,7 +118,7 @@ interface_from_floors = -(K_interface_interface\K_interface_floor);
 
 %% HYBRID RESPONSE THROUGH THE SHARED STEP FUNCTION
 numerical_load_sample = hs.ground_force_gain*ag_sample';
-u_hybrid_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
+u_hybrid_reference_sample = newmarkAverageAcceleration(hs_real_time, ...
     hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
 interface_displacement_reference_sample = ...
     (interface_from_floors*u_hybrid_reference_sample')';
@@ -128,8 +137,14 @@ for step = 2:numel(hs_real_time)
     interface_displacement_sample(step) = dd_hs_sample(step)/1000;
     experimental_force_sample(step) = fm;
 end
+[u_hdddm_floors_sample, dd_hdddm_sample, dm_hdddm_sample, ...
+    dc_hdddm_sample, experimental_force_hdddm_sample] = ...
+    hybridResponseWithHddDm(hs, H_dd_dm, h_dd_dm_pid_values, ...
+    k_experimental, hs_sample_dt);
 
 u_num_floors = interp1(hs_real_time, u_num_floors_sample, real_time, ...
+    'linear');
+u_hdddm_floors = interp1(hs_real_time, u_hdddm_floors_sample, real_time, ...
     'linear');
 u_reference = interp1(hs_real_time, u_reference_sample, real_time, ...
     'linear');
@@ -139,19 +154,35 @@ interface_displacement = interp1(hs_real_time, ...
     interface_displacement_sample, real_time, 'linear');
 experimental_force = interp1(hs_real_time, experimental_force_sample, ...
     real_time, 'linear');
-unit_scale_u_num_floors_sample = hybridResponseAtTimeScale( ...
-    hs, fem_num, k_experimental, hs_sample_dt, 1);
+dd_hdddm = interp1(hs_real_time, dd_hdddm_sample, real_time, 'linear');
+dm_hdddm = interp1(hs_real_time, dm_hdddm_sample, real_time, 'linear');
+dc_hdddm = interp1(hs_real_time, dc_hdddm_sample, real_time, 'linear');
+experimental_force_hdddm = interp1(hs_real_time, ...
+    experimental_force_hdddm_sample, real_time, 'linear');
+if abs(hs.time_scale_factor-1) < eps
+    unit_scale_u_num_floors_sample = u_num_floors_sample;
+else
+    unit_scale_u_num_floors_sample = hybridResponseAtTimeScale( ...
+        hs, fem_num, k_experimental, hs_sample_dt, 1);
+end
 
 step_error = max(abs(u_num_floors-u_hybrid_reference), [], 'all');
 reference_error = max(abs(u_num_floors-u_reference), [], 'all');
+reference_error_hdddm = max(abs(u_hdddm_floors-u_reference), [], 'all');
 metric = validation_metrics();
 J4 = metric.J4(u_num_floors(:, 1), u_reference(:, 1));
 J5 = metric.J5(u_num_floors(:, 1), u_reference(:, 1));
 J6 = metric.J6(u_num_floors(:, 2), u_reference(:, 2));
 J7 = metric.J7(u_num_floors(:, 3), u_reference(:, 3));
+J4_hdddm = metric.J4(u_hdddm_floors(:, 1), u_reference(:, 1));
+J5_hdddm = metric.J5(u_hdddm_floors(:, 1), u_reference(:, 1));
+J6_hdddm = metric.J6(u_hdddm_floors(:, 2), u_reference(:, 2));
+J7_hdddm = metric.J7(u_hdddm_floors(:, 3), u_reference(:, 3));
+colors = getPlotColors();
 
 fprintf('\n%s Hybrid Simulation partition\n', hs.earthquake_type);
 fprintf('FEM file: %s\n', fem_file);
+fprintf('H_dd_dm model file: %s\n', h_dd_dm_model_file);
 fprintf('FEM schema version: %d\n', fem.schema_version);
 fprintf('Specimen name: %s\n', fem.specimen_name);
 fprintf('Specimen file: %s\n', fem.specimen_file);
@@ -166,6 +197,10 @@ fprintf('Section Ix [m^4]: W8x24 %.12g, W8x28 %.12g, W8x35 %.12g\n', ...
     frame.section.W8x35.Ix);
 fprintf('Floor masses [kg]: %.12g, %.12g, %.12g\n', fem.floor_mass_kg);
 fprintf('Damping ratio: %.6g\n', fem.damping_ratio);
+natural_frequency_table = table((1:numel(building_mode_frequency_hz))', ...
+    building_mode_frequency_hz(:), 'VariableNames', {'Mode', 'Frequency_Hz'});
+disp('Natural frequencies')
+disp(natural_frequency_table)
 fprintf('Experimental column: %s, height %.12g m, E %.12g Pa, Ix %.12g m^4\n', ...
     fem_ref.experimental_column.shape, fem_ref.experimental_column.height, ...
     fem_ref.experimental_column.E, fem_ref.experimental_column.section.Ix);
@@ -181,14 +216,29 @@ fprintf('Maximum step_HS vs spring-reference floor difference: %.6e m\n', ...
     step_error);
 fprintf('Maximum Hybrid Simulation vs full-reference floor difference: %.6e m\n', ...
     reference_error);
+fprintf(['Maximum num*H_dd_dm*exp vs full-reference floor ' ...
+    'difference: %.6e m\n'], reference_error_hdddm);
 fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
-fprintf('J4 = %.2f%%, J5 = %.2f%%, J6 = %.2f%%, J7 = %.2f%%\n\n', ...
+validation_metric_table = table({'J4'; 'J5'; 'J6'; 'J7'}, ...
+    [J4; J5; J6; J7], ...
+    [J4_hdddm; J5_hdddm; J6_hdddm; J7_hdddm], ...
+    {'First-floor normalized RMS error'; ...
+    'First-floor peak error'; ...
+    'Second-floor normalized RMS error'; ...
+    'Third-floor normalized RMS error'}, ...
+    'VariableNames', {'Metric', 'NumExpPercent', ...
+    'NumHddDmExpPercent', 'Description'});
+disp('Validation metrics')
+disp(validation_metric_table)
+fprintf('num*exp: J4 = %.2f%%, J5 = %.2f%%, J6 = %.2f%%, J7 = %.2f%%\n', ...
     J4, J5, J6, J7);
+fprintf(['num*H_dd_dm*exp: J4 = %.2f%%, J5 = %.2f%%, ' ...
+    'J6 = %.2f%%, J7 = %.2f%%\n\n'], ...
+    J4_hdddm, J5_hdddm, J6_hdddm, J7_hdddm);
 
 %% RESPONSE COMPARISON
-floor_colors = lines(n_story);
 figure('Color', 'w', 'Name', 'Reference and HS comparison');
 layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 for floor_id = 1:n_story
@@ -197,27 +247,67 @@ for floor_id = 1:n_story
         'DisplayName', 'Reference');
     hold(ax, 'on');
     plot(ax, real_time, u_num_floors(:, floor_id), '-', ...
-        'Color', floor_colors(floor_id, :), 'LineWidth', 1.1, ...
-        'DisplayName', 'Hybrid Simulation');
+        'Color', colors.blue, 'LineWidth', 1.1, ...
+        'DisplayName', 'num*exp');
+    plot(ax, real_time, u_hdddm_floors(:, floor_id), '-', ...
+        'Color', colors.copperwood, 'LineWidth', 1.1, ...
+        'DisplayName', 'num*H_{dd,dm}*exp');
     hold(ax, 'off'); grid(ax, 'on');
     ylabel(ax, sprintf('Floor %d (m)', floor_id));
-    if floor_id == 1, legend(ax, 'Location', 'best'); end
+    if floor_id == 1, makeLegendToggle(ax); end
 end
 xlabel(ax, 'Real time (s)');
 title(layout, sprintf('%s: reference and Hybrid Simulation response', ...
     hs.earthquake_type));
-subtitle(layout, sprintf('Maximum hybrid-reference floor difference = %.3e m', ...
-    reference_error));
+subtitle(layout, sprintf(['Max floor error: num*exp = %.3e m, ' ...
+    'num*H_{dd,dm}*exp = %.3e m'], reference_error, ...
+    reference_error_hdddm));
+linkaxes(findall(gcf, 'Type', 'axes'), 'x');
+
+%% CONTROL CHECK
+figure('Color', 'w', 'Name', 'H_dd_dm control check');
+layout = tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+ax = nexttile;
+plot(ax, real_time, dd_hdddm, 'k--', 'LineWidth', 2.2, ...
+    'DisplayName', 'dd desired displacement');
+hold(ax, 'on');
+plot(ax, real_time, dc_hdddm, '-', 'Color', colors.copperwood, ...
+    'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
+plot(ax, real_time, dm_hdddm, '-', 'Color', colors.blue, ...
+    'LineWidth', 1.0, 'DisplayName', 'dm measured displacement');
+addPeakLines(ax, dm_hdddm, 'dm', colors.blue, 'mm');
+addPeakLines(ax, dc_hdddm, 'dc', colors.copperwood, 'mm');
+hold(ax, 'off'); grid(ax, 'on');
+ylabel(ax, 'Displacement (mm)');
+makeLegendToggle(ax);
+
+ax = nexttile;
+plot(ax, real_time, experimental_force_hdddm, '-', ...
+    'Color', colors.purple, 'LineWidth', 1.0, ...
+    'DisplayName', 'fm measured force');
+hold(ax, 'on');
+addPeakLines(ax, experimental_force_hdddm, 'fm', colors.purple, 'N');
+hold(ax, 'off'); grid(ax, 'on');
+ylabel(ax, 'Force (N)');
+xlabel(ax, 'Real time (s)');
+makeLegendToggle(ax);
+title(layout, 'num*H_{dd,dm}*exp control check');
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 %% RESPONSE FREQUENCY CONTENT
 fft_fmax_hz = 100;
 fft_fs_hz = 1/hs_sample_dt;
 fft_test_duration_s = hs.time(end)*hs.time_scale_factor;
+fft_mode_frequency_hz = building_mode_frequency_hz;
+fft_mode_frequency_hz = fft_mode_frequency_hz( ...
+    fft_mode_frequency_hz <= fft_fmax_hz);
+[Y_ag_selected, freq_ag_selected] = fft_c(ag_sample, fft_fs_hz, ...
+    fft_fmax_hz);
 figure('Color', 'w', 'Name', 'HS response frequency content');
 layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 for floor_id = 1:n_story
     ax = nexttile;
+    yyaxis(ax, 'left');
     [Y_unit, freq_unit] = fft_c(unit_scale_u_num_floors_sample(:, floor_id), ...
         fft_fs_hz, fft_fmax_hz);
     [Y_selected, freq_selected] = fft_c(u_num_floors_sample(:, floor_id), ...
@@ -228,15 +318,28 @@ for floor_id = 1:n_story
     plot(ax, freq_selected, abs(Y_selected), '-', 'Color', [0 0.486 0.659], ...
         'LineWidth', 1.2, 'DisplayName', sprintf('Selected = %.3g', ...
         hs.time_scale_factor));
+    for mode_id = 1:numel(fft_mode_frequency_hz)
+        xline(ax, fft_mode_frequency_hz(mode_id), 'k--', ...
+            'HandleVisibility', 'off', 'LineWidth', 0.8);
+    end
+    ylabel(ax, sprintf('|Floor %d| (m)', floor_id));
+
+    yyaxis(ax, 'right');
+    area(ax, freq_ag_selected, abs(Y_ag_selected), ...
+        'FaceColor', [0.9 0.1 0.1], 'FaceAlpha', 0.18, ...
+        'EdgeColor', 'none', 'DisplayName', 'Selected earthquake');
+    ylabel(ax, '|ag(f)| (m/s^2)');
+    ax.YAxis(1).Color = [0 0 0];
+    ax.YAxis(2).Color = [0.7 0 0];
     hold(ax, 'off'); grid(ax, 'on');
     xlim(ax, [0 fft_fmax_hz]);
-    ylabel(ax, sprintf('|Floor %d| (m)', floor_id));
-    if floor_id == 1, legend(ax, 'Location', 'best'); end
+    if floor_id == 1, makeLegendToggle(ax); end
 end
 xlabel(ax, 'Frequency (Hz)');
 title(layout, sprintf(['%s: response frequency content; test duration = ' ...
     '%.2f s'], hs.earthquake_type, fft_test_duration_s));
-subtitle(layout, 'Hybrid Simulation floor response, one-sided FFT amplitude');
+subtitle(layout, ['Hybrid Simulation floor response, one-sided FFT ' ...
+    'amplitude; dashed lines = modal frequencies']);
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 %% PARTITION GEOMETRY
@@ -306,9 +409,95 @@ fprintf('Margin frequency range: %.6g to %.6g Hz\n', ...
 fprintf('Delay margin: %.6f s\n', hybrid_delay_margin);
 fprintf('NCF margin: %.6f\n\n', hybrid_ncf_margin);
 
+function [H_dd_dm, pid_values, model_file] = loadHddDmModel(project_root, ...
+    model_file)
+% Units: transfer functions map dd [mm] to dm [mm].
+if isempty(model_file)
+    model_dir = fullfile(project_root, 'saved_results', 'models');
+    files = dir(fullfile(model_dir, '*.mat'));
+    if isempty(files)
+        error('vHS:MissingHddDmModel', ['No saved H_dd_dm model was ' ...
+            'found in %s. Run control_and_HS\\b_system_id\\sys_id.m ' ...
+            'first, or set h_dd_dm_model_file in vHS.m.'], model_dir)
+    end
+    [~, order] = sort([files.datenum], 'descend');
+    files = files(order);
+    for file_id = 1:numel(files)
+        candidate = fullfile(files(file_id).folder, files(file_id).name);
+        names = {whos('-file', candidate).name};
+        if any(strcmp(names, 'H_dd_dm'))
+            model_file = candidate;
+            break
+        end
+    end
+end
+
+if isempty(model_file)
+    error('vHS:MissingHddDmModel', ['No saved model file containing ' ...
+        'H_dd_dm was found. Run control_and_HS\\b_system_id\\sys_id.m ' ...
+        'first, or set h_dd_dm_model_file in vHS.m.'])
+end
+
+model = load(model_file, 'H_dd_dm', 'pid_values');
+H_dd_dm = model.H_dd_dm;
+if isfield(model, 'pid_values')
+    pid_values = model.pid_values;
+else
+    pid_values = struct('P', 0.15, 'I', 20, 'D', 0.0015, ...
+        'derivative_filter_N', 512);
+end
+end
+
+function [u_num_floors_sample, dd_sample, dm_sample, dc_sample, ...
+        force_sample] = hybridResponseWithHddDm(hs, H_dd_dm, pid_values, ...
+        k_experimental, hs_sample_dt)
+% Units: dd/dm/dc [mm], force [N], floor displacement [m].
+hdddm = discreteSiso(H_dd_dm, hs_sample_dt);
+digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
+    1/pid_values.derivative_filter_N, hs_sample_dt, ...
+    'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+controller = discreteSiso(digital_controller, hs_sample_dt);
+
+n_step = ceil(hs.time(end)*hs.time_scale_factor/hs_sample_dt) + 1;
+u_num_floors_sample = zeros(n_step, hs.n_floor);
+dd_sample = zeros(n_step, 1);
+dm_sample = zeros(n_step, 1);
+dc_sample = zeros(n_step, 1);
+force_sample = zeros(n_step, 1);
+num_state = [];
+for step = 2:n_step
+    dm_sample(step) = outputDiscreteSiso(hdddm);
+    force_sample(step) = k_experimental*dm_sample(step)/1000;
+    [dd_sample(step), num_state] = step_HS(force_sample(step), 0, ...
+        hs_sample_dt, hs, num_state);
+    dc_sample(step) = outputDiscreteSiso(controller, ...
+        dd_sample(step)-dm_sample(step));
+    hdddm = updateDiscreteSiso(hdddm, dd_sample(step));
+    controller = updateDiscreteSiso(controller, dd_sample(step)-dm_sample(step));
+    u_num_floors_sample(step, :) = num_state(1:hs.n_floor)';
+end
+end
+
 function u_num_floors_sample = hybridResponseAtTimeScale( ...
     hs, fem_num, k_experimental, hs_sample_dt, time_scale_factor)
 % Units: time [s], displacement [m], stiffness [N/m].
+fem_file_info = dir(hs.fem_file);
+fem_file_stamp = 0;
+if ~isempty(fem_file_info)
+    fem_file_stamp = fem_file_info.datenum;
+end
+cache_key = sprintf('%s|%.17g|%.17g|%.17g|%.17g|%.17g|%s', ...
+    hs.earthquake_type, hs.intensity_factor, time_scale_factor, ...
+    k_experimental, hs_sample_dt, fem_file_stamp, hs.fem_file);
+persistent cache
+if ~isempty(cache)
+    hit = find(strcmp({cache.key}, cache_key), 1);
+    if ~isempty(hit)
+        u_num_floors_sample = cache(hit).u_num_floors_sample;
+        return
+    end
+end
+
 hs.time_scale_factor = time_scale_factor;
 model_time = hs.time;
 real_time = model_time*hs.time_scale_factor;
@@ -332,7 +521,7 @@ K_hybrid_reference = K_floor_floor - K_floor_interface ...
 interface_from_floors = -(K_interface_interface\K_interface_floor);
 
 numerical_load_sample = hs.ground_force_gain*ag_sample';
-u_hybrid_reference_sample = newmarkAverageAcceleration(hs_model_time, ...
+u_hybrid_reference_sample = newmarkAverageAcceleration(hs_real_time, ...
     hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
 interface_displacement_reference_sample = ...
     (interface_from_floors*u_hybrid_reference_sample')';
@@ -345,6 +534,79 @@ for step = 2:numel(hs_real_time)
         hs, state);
     u_num_floors_sample(step, :) = state(1:hs.n_floor)';
 end
+
+entry.key = cache_key;
+entry.u_num_floors_sample = u_num_floors_sample;
+cache = [cache, entry];
+end
+
+function system = discreteSiso(system_model, sample_time)
+% Units: sample_time [s].
+if get(system_model, 'Ts') == 0
+    system_model = c2d(system_model, sample_time, 'zoh');
+elseif abs(get(system_model, 'Ts')-sample_time) > 10*eps(sample_time)
+    system_model = d2d(system_model, sample_time, 'zoh');
+end
+system_model = ss(system_model);
+[system.A, system.B, system.C, system.D] = ssdata(system_model);
+system.x = zeros(size(system.A, 1), 1);
+system.u = 0;
+end
+
+function y = outputDiscreteSiso(system, u)
+% Units: scalar input/output use the system model units.
+if nargin < 2
+    u = system.u;
+end
+y = system.C*system.x + system.D*u;
+y = y(1);
+end
+
+function system = updateDiscreteSiso(system, u)
+% Units: scalar input uses the system model input units.
+system.x = system.A*system.x + system.B*u;
+system.u = u;
+end
+
+function addPeakLines(ax, signal, label, color, unit_name)
+% Units: signal units are shown by unit_name.
+max_value = max(signal);
+min_value = min(signal);
+yline(ax, max_value, '--', sprintf('%s max = %.6g %s', ...
+    label, max_value, unit_name), 'Color', color, ...
+    'HandleVisibility', 'off', 'LabelHorizontalAlignment', 'left');
+yline(ax, min_value, '--', sprintf('%s min = %.6g %s', ...
+    label, min_value, unit_name), 'Color', color, ...
+    'HandleVisibility', 'off', 'LabelHorizontalAlignment', 'left');
+end
+
+function makeLegendToggle(ax)
+legend_handle = legend(ax, 'Location', 'best');
+legend_handle.ItemHitFcn = @toggleLegendItem;
+end
+
+function toggleLegendItem(~, event)
+target = event.Peer;
+if strcmp(target.Visible, 'on')
+    target.Visible = 'off';
+else
+    target.Visible = 'on';
+end
+end
+
+function colors = getPlotColors()
+% Units: RGB outputs are dimensionless.
+colors.green = hexToRgb('39BF5E');
+colors.black = [0 0 0];
+colors.blue = hexToRgb('007CA8');
+colors.red = hexToRgb('901500');
+colors.purple = hexToRgb('74058A');
+colors.copperwood = hexToRgb('AC6420');
+end
+
+function rgb = hexToRgb(hex_color)
+% Units: hexadecimal input and RGB output are dimensionless.
+rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
 end
 
 function u = newmarkAverageAcceleration(time, M, C, K, force)

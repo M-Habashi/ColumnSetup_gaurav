@@ -7,9 +7,10 @@ function [dd, state] = step_HS(fm, pause_enable, dt, hs, state)
 % unless vHS.m is updated at the same time and offline checks are rerun.
 %
 % Units: fm [N], dt [s], state displacement [m], velocity [m/s],
-% acceleration [m/s^2], earthquake/model time [s], dd [mm].
-% Simulink sample time remains dt. The earthquake/model clock advances by
-% dt/hs.time_scale_factor, so factors greater than 1 stretch the earthquake.
+% acceleration [m/s^2], earthquake record time [s], dd [mm].
+% Simulink sample time and structural integration advance by dt. The
+% earthquake record clock advances by dt/hs.time_scale_factor, so factors
+% greater than 1 stretch the earthquake input in real time.
 
 n = hs.n_floor;
 if isempty(state)
@@ -28,8 +29,8 @@ a = state(2*n+1:3*n);
 tau = state(3*n+1);
 record_index = max(1, round(state(3*n+3)));
 
-h = dt/hs.time_scale_factor;
-tau_next = tau + h;
+h = dt;
+tau_next = tau + dt/hs.time_scale_factor;
 [ag, record_index] = groundAcceleration(hs.time, hs.ag, tau_next, ...
     record_index);
 
