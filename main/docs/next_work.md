@@ -1,5 +1,11 @@
-# NOW°
-- **VIP** scaling the aaga IS NOT scaling HS time !. Fix This.
+# NOW
+- Think about optimizing the phase lead or delay compensator 
+    -- should it be autonomous?
+    -- what plots to show in what colors
+    -- what is the new order of folders
+- Building FEM should be a separate folder from vHS and the compensator is probably another folder
+- The final plot should plot the reference response with the measures and the error indicators
+- compare the results based on a selectd window and show error indicators
 - the vHS should include also num_PID_H_exp and compare the results in a table and in the figure
 - vHS should show dc and maximum dm fm dc in a table
 - button in simulink to flag specific times (maybe just constant logged to b chaged)
