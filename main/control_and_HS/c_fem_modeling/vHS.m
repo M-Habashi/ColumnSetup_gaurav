@@ -138,7 +138,8 @@ for step = 2:numel(hs_real_time)
     experimental_force_sample(step) = fm;
 end
 [u_hdddm_floors_sample, dd_hdddm_sample, dm_hdddm_sample, ...
-    dc_hdddm_sample, experimental_force_hdddm_sample] = ...
+    dc_hdddm_sample, experimental_force_hdddm_sample, ...
+    hdddm_stability] = ...
     hybridResponseWithHddDm(hs, H_dd_dm, h_dd_dm_pid_values, ...
     k_experimental, hs_sample_dt);
 
@@ -201,6 +202,24 @@ natural_frequency_table = table((1:numel(building_mode_frequency_hz))', ...
     building_mode_frequency_hz(:), 'VariableNames', {'Mode', 'Frequency_Hz'});
 disp('Natural frequencies')
 disp(natural_frequency_table)
+hdddm_stability_table = table( ...
+    {'H_dd_dm'; 'num*H_dd_dm*exp'}, ...
+    [hdddm_stability.hdddm_max_abs_pole; ...
+    hdddm_stability.coupled_max_abs_pole], ...
+    [hdddm_stability.hdddm_stable; hdddm_stability.coupled_stable], ...
+    'VariableNames', {'System', 'MaxAbsPole', 'Stable'});
+disp('H_dd_dm stability check')
+disp(hdddm_stability_table)
+if ~hdddm_stability.coupled_stable
+    fprintf(['num*H_dd_dm*exp is analytically unstable: dominant pole ' ...
+        'z = %.12g%+.12gi, |z| = %.12g, f = %.6g Hz, ' ...
+        'growth time constant = %.6g s\n'], ...
+        real(hdddm_stability.dominant_pole), ...
+        imag(hdddm_stability.dominant_pole), ...
+        hdddm_stability.coupled_max_abs_pole, ...
+        hdddm_stability.dominant_frequency_hz, ...
+        hdddm_stability.growth_time_constant_s);
+end
 fprintf('Experimental column: %s, height %.12g m, E %.12g Pa, Ix %.12g m^4\n', ...
     fem_ref.experimental_column.shape, fem_ref.experimental_column.height, ...
     fem_ref.experimental_column.E, fem_ref.experimental_column.section.Ix);
@@ -449,33 +468,119 @@ end
 end
 
 function [u_num_floors_sample, dd_sample, dm_sample, dc_sample, ...
-        force_sample] = hybridResponseWithHddDm(hs, H_dd_dm, pid_values, ...
-        k_experimental, hs_sample_dt)
+        force_sample, stability] = hybridResponseWithHddDm(hs, H_dd_dm, ...
+        pid_values, k_experimental, hs_sample_dt)
 % Units: dd/dm/dc [mm], force [N], floor displacement [m].
+num_model = numericalSubstructureDiscrete(hs, hs_sample_dt);
 hdddm = discreteSiso(H_dd_dm, hs_sample_dt);
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, hs_sample_dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 controller = discreteSiso(digital_controller, hs_sample_dt);
+stability = analyzeHddDmLoop(num_model, hdddm, k_experimental, ...
+    hs_sample_dt);
 
 n_step = ceil(hs.time(end)*hs.time_scale_factor/hs_sample_dt) + 1;
+hs_real_time = (0:n_step-1)'*hs_sample_dt;
+hs_model_time = hs_real_time/hs.time_scale_factor;
+ag_sample = interp1(hs.time, hs.ag, hs_model_time, 'linear', 0);
 u_num_floors_sample = zeros(n_step, hs.n_floor);
 dd_sample = zeros(n_step, 1);
 dm_sample = zeros(n_step, 1);
 dc_sample = zeros(n_step, 1);
 force_sample = zeros(n_step, 1);
-num_state = [];
+x_num = zeros(size(num_model.A, 1), 1);
+k_mm = k_experimental/1000;
+denominator = 1 - num_model.D_fm*k_mm*hdddm.D;
 for step = 2:n_step
-    dm_sample(step) = outputDiscreteSiso(hdddm);
-    force_sample(step) = k_experimental*dm_sample(step)/1000;
-    [dd_sample(step), num_state] = step_HS(force_sample(step), 0, ...
-        hs_sample_dt, hs, num_state);
+    dd_sample(step) = (num_model.C*x_num ...
+        + num_model.D_fm*k_mm*hdddm.C*hdddm.x ...
+        + num_model.D_ag*ag_sample(step))/denominator;
+    dm_sample(step) = outputDiscreteSiso(hdddm, dd_sample(step));
+    force_sample(step) = k_mm*dm_sample(step);
     dc_sample(step) = outputDiscreteSiso(controller, ...
         dd_sample(step)-dm_sample(step));
+    x_num = num_model.A*x_num + num_model.B_fm*force_sample(step) ...
+        + num_model.B_ag*ag_sample(step);
     hdddm = updateDiscreteSiso(hdddm, dd_sample(step));
     controller = updateDiscreteSiso(controller, dd_sample(step)-dm_sample(step));
-    u_num_floors_sample(step, :) = num_state(1:hs.n_floor)';
+    u_num_floors_sample(step, :) = x_num(1:hs.n_floor)';
 end
+end
+
+function model = numericalSubstructureDiscrete(hs, sample_time)
+% Units: force input [N], acceleration input [m/s^2], output dd [mm].
+n = hs.n_floor;
+h = sample_time;
+beta = 1/4;
+gamma = 1/2;
+a0 = 1/(beta*h^2);
+a1 = gamma/(beta*h);
+a2 = 1/(beta*h);
+a3 = 1/(2*beta)-1;
+a4 = gamma/beta-1;
+a5 = h*(gamma/(2*beta)-1);
+
+effective_stiffness = hs.K + a0*hs.M + a1*hs.C;
+solver = effective_stiffness\eye(n);
+state_to_displacement = solver * [a0*hs.M + a1*hs.C, ...
+    a2*hs.M + a4*hs.C, a3*hs.M + a5*hs.C];
+force_to_displacement = solver*(hs.force_to_floor*hs.force_sign);
+ag_to_displacement = solver*hs.ground_force_gain;
+
+model.A = zeros(3*n);
+model.B_fm = zeros(3*n, 1);
+model.B_ag = zeros(3*n, 1);
+model.A(1:n, :) = state_to_displacement;
+model.B_fm(1:n) = force_to_displacement;
+model.B_ag(1:n) = ag_to_displacement;
+model.A(2*n+1:3*n, :) = a0*(state_to_displacement ...
+    - [eye(n), zeros(n), zeros(n)]) ...
+    - a2*[zeros(n), eye(n), zeros(n)] ...
+    - a3*[zeros(n), zeros(n), eye(n)];
+model.B_fm(2*n+1:3*n) = a0*force_to_displacement;
+model.B_ag(2*n+1:3*n) = a0*ag_to_displacement;
+model.A(n+1:2*n, :) = [zeros(n), eye(n), zeros(n)] ...
+    + h*((1-gamma)*[zeros(n), zeros(n), eye(n)] ...
+    + gamma*model.A(2*n+1:3*n, :));
+model.B_fm(n+1:2*n) = h*gamma*model.B_fm(2*n+1:3*n);
+model.B_ag(n+1:2*n) = h*gamma*model.B_ag(2*n+1:3*n);
+model.C = 1000*(hs.interface_from_floor*state_to_displacement);
+model.D_fm = 1000*(hs.interface_from_floor*force_to_displacement ...
+    + hs.interface_from_force*hs.force_sign);
+model.D_ag = 1000*(hs.interface_from_floor*ag_to_displacement);
+end
+
+function stability = analyzeHddDmLoop(num_model, hdddm, k_experimental, ...
+        sample_time)
+% Units: poles are discrete z-plane poles.
+k_mm = k_experimental/1000;
+denominator = 1 - num_model.D_fm*k_mm*hdddm.D;
+dd_from_num = num_model.C/denominator;
+dd_from_hdddm = num_model.D_fm*k_mm*hdddm.C/denominator;
+force_from_num = k_mm*hdddm.D*dd_from_num;
+force_from_hdddm = k_mm*(hdddm.C + hdddm.D*dd_from_hdddm);
+closed_loop_A = [ ...
+    num_model.A + num_model.B_fm*force_from_num, ...
+    num_model.B_fm*force_from_hdddm; ...
+    hdddm.B*dd_from_num, hdddm.A + hdddm.B*dd_from_hdddm];
+closed_loop_poles = eig(closed_loop_A);
+hdddm_poles = eig(hdddm.A);
+[coupled_max_abs_pole, dominant_index] = max(abs(closed_loop_poles));
+dominant_pole = closed_loop_poles(dominant_index);
+stability.hdddm_max_abs_pole = max(abs(hdddm_poles));
+stability.coupled_max_abs_pole = coupled_max_abs_pole;
+stability.hdddm_stable = stability.hdddm_max_abs_pole < 1;
+stability.coupled_stable = stability.coupled_max_abs_pole < 1;
+stability.dominant_pole = dominant_pole;
+stability.dominant_frequency_hz = abs(angle(dominant_pole)) ...
+    /(2*pi*sample_time);
+if coupled_max_abs_pole > 1
+    stability.growth_time_constant_s = sample_time/log(coupled_max_abs_pole);
+else
+    stability.growth_time_constant_s = Inf;
+end
+stability.closed_loop_poles = closed_loop_poles;
 end
 
 function u_num_floors_sample = hybridResponseAtTimeScale( ...
