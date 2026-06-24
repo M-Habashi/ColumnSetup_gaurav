@@ -35,8 +35,10 @@ end
 % Leave [] to use pid_values saved by sys_id.m.
 % Use struct('P', 0.6, 'I', 5, 'D', 0.0015, 'derivative_filter_N', 512)
 % or [0.6 5 0.0015 512] to test a different controller.
+% Command Window print after running vHS:
+% fprintf('P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, pid_h_dc_dm_values.derivative_filter_N)
 if ~exist('pid_gain_override', 'var')
-    pid_gain_override = [];
+    pid_gain_override = [0.6 5 0.0015 512];
 end
 
 %% SAVED FEM AND HS SETUP
