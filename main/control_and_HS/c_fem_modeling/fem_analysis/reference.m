@@ -27,7 +27,7 @@ earthquake_id = 4;
 earthquake_scale = 1.0;
 
 % Modal damping ratio applied to all three modes.
-damping_ratio = 0.02;
+damping_ratio = 0.03;
 
 [fem, fem_file, ~] = loadFemDefinition(project_root, false);
 fem_ref = fem.ref;

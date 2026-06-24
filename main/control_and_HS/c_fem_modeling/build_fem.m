@@ -88,7 +88,7 @@ fprintf('Required base rotational stiffness: %.12g N*m/rad\n\n', ...
 %% STEP 2: PLACE THE FIRST-MODE INFLECTION POINT AT THE INTERFACE
 frame = sapTemplateFrameDefinition();
 floor_mass_kg = [20121; 20121; 18426];
-damping_ratio = 0.02;
+damping_ratio = 0.03;
 height_result = findFirstModeInflectionHeight( ...
     frame, base_rotation_k, floor_mass_kg, column.height);
 story_height = height_result.story_height;              % [m]

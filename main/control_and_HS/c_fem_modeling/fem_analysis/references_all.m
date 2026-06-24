@@ -16,7 +16,7 @@ addpath(fullfile(project_root, 'helpers', 'utils'));
 
 %% INPUTS
 earthquake_scale = 1.0;
-damping_ratio = 0.02;
+damping_ratio = 0.03;
 
 validateattributes(earthquake_scale, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative'}, mfilename, 'earthquake_scale');

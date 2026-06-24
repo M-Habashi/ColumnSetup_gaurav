@@ -54,7 +54,7 @@ testname = test_type;
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-     'fem_sp_1_or.mat'), ... % Run build_fem.m first.
+     'fem_sp_1_org.mat'), ... % Run build_fem.m first.
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
     'intensity_factor', 1.0, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
@@ -139,7 +139,7 @@ hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
 if isfield(hs.fem, 'damping_ratio')
     hs.damping_ratio = hs.fem.damping_ratio;
 else
-    hs.damping_ratio = 0.02;
+    hs.damping_ratio = 0.03;
 end
 [modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
 [omega, order] = sort(sqrt(real(omega2)));

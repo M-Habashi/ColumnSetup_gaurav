@@ -5,7 +5,8 @@
 % The Hybrid Simulation path uses the same step_HS function as Simulink.
 
 clearvars -except outputVerificationFile fem_file_override ...
-    h_dc_dm_model_file_override pid_gain_override; clc; close all;
+    h_dc_dm_model_file_override pid_gain_override phase_lead_override; ...
+    clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
 project_root = fileparts(fileparts(script_dir));
@@ -38,8 +39,20 @@ end
 % Command Window print after running vHS:
 % fprintf('P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, pid_h_dc_dm_values.derivative_filter_N)
 if ~exist('pid_gain_override', 'var')
-    pid_gain_override = [0.6 5 0.0015 512];
+    pid_gain_override = [0.15 20 0.0015 512];
 end
+% Phase lead is inserted directly after the numerical dd command:
+% dd_raw -> G_T -> dd_lead -> tracking loop. Use [] to disable it.
+% Use [gain zero_hz pole_hz] or a struct with fields enabled, gain,
+% zero_hz, and pole_hz. For unity DC gain, set gain = pole_hz/zero_hz.
+if ~exist('phase_lead_override', 'var') || isempty(phase_lead_override)
+    % phase_lead_override = [];
+    phase_lead_override = struct('enabled', true, ...
+        'gain', 17.0822354308, ...
+        'zero_hz', 1.20050665816, ...
+        'pole_hz', 20.5073373709);
+end
+phase_lead = normalizePhaseLeadConfig(phase_lead_override);
 
 %% SAVED FEM AND HS SETUP
 if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
@@ -80,7 +93,7 @@ hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
 if isfield(fem, 'damping_ratio')
     hs.damping_ratio = fem.damping_ratio;
 else
-    hs.damping_ratio = 0.02;
+    hs.damping_ratio = 0.03;
 end
 [modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
 [omega, order] = sort(sqrt(real(omega2)));
@@ -147,11 +160,11 @@ for step = 2:numel(hs_real_time)
     interface_displacement_sample(step) = dd_hs_sample(step)/1000;
     experimental_force_sample(step) = fm;
 end
-[u_pid_floors_sample, dd_pid_sample, dm_pid_sample, ...
+[u_pid_floors_sample, dd_pid_sample, dd_lead_pid_sample, dm_pid_sample, ...
     dc_pid_sample, experimental_force_pid_sample, ...
     pid_cl_stability] = ...
     hybridResponseWithPidHdcDm(hs, PID_H_dc_dm, pid_h_dc_dm_values, ...
-    k_experimental, hs_sample_dt);
+    k_experimental, hs_sample_dt, phase_lead);
 
 u_num_floors = interp1(hs_real_time, u_num_floors_sample, real_time, ...
     'linear');
@@ -166,6 +179,8 @@ interface_displacement = interp1(hs_real_time, ...
 experimental_force = interp1(hs_real_time, experimental_force_sample, ...
     real_time, 'linear');
 dd_pid = interp1(hs_real_time, dd_pid_sample, real_time, 'linear');
+dd_lead_pid = interp1(hs_real_time, dd_lead_pid_sample, real_time, ...
+    'linear');
 dm_pid = interp1(hs_real_time, dm_pid_sample, real_time, 'linear');
 dc_pid = interp1(hs_real_time, dc_pid_sample, real_time, 'linear');
 experimental_force_pid = interp1(hs_real_time, ...
@@ -190,6 +205,11 @@ J5_pid = metric.J5(u_pid_floors(:, 1), u_reference(:, 1));
 J6_pid = metric.J6(u_pid_floors(:, 2), u_reference(:, 2));
 J7_pid = metric.J7(u_pid_floors(:, 3), u_reference(:, 3));
 colors = getPlotColors();
+if phase_lead.enabled
+    control_path_label = 'num*G_T*PID*H_{dc,dm}*exp';
+else
+    control_path_label = 'num*PID*H_{dc,dm}*exp';
+end
 
 fprintf('\n%s Hybrid Simulation partition\n', hs.earthquake_type);
 fprintf('FEM file: %s\n', fem_file);
@@ -197,6 +217,15 @@ fprintf('H_dc_dm model file: %s\n', h_dc_dm_model_file);
 fprintf('PID_H_dc_dm gains: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
     pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, ...
     pid_h_dc_dm_values.derivative_filter_N);
+if phase_lead.enabled
+    fprintf(['Phase lead after numerical dd: k_T = %.6g, z1 = %.6g Hz, ' ...
+        'p1 = %.6g Hz, DC gain = %.6g, max lead = %.6g deg at %.6g Hz\n'], ...
+        phase_lead.gain, phase_lead.zero_hz, phase_lead.pole_hz, ...
+        phase_lead.dc_gain, phase_lead.max_phase_lead_deg, ...
+        phase_lead.center_frequency_hz);
+else
+    fprintf('Phase lead after numerical dd: disabled\n');
+end
 fprintf('FEM schema version: %d\n', fem.schema_version);
 fprintf('Specimen name: %s\n', fem.specimen_name);
 fprintf('Specimen file: %s\n', fem.specimen_file);
@@ -216,7 +245,7 @@ natural_frequency_table = table((1:numel(building_mode_frequency_hz))', ...
 disp('Natural frequencies')
 disp(natural_frequency_table)
 pid_stability_table = table( ...
-    {'PID_H_dc_dm'; 'num*PID_H_dc_dm*exp'}, ...
+    {'PID_H_dc_dm'; control_path_label}, ...
     [pid_cl_stability.actuator_max_abs_pole; ...
     pid_cl_stability.coupled_max_abs_pole], ...
     [pid_cl_stability.actuator_stable; pid_cl_stability.coupled_stable], ...
@@ -250,8 +279,8 @@ fprintf('Maximum step_HS vs spring-reference floor difference: %.6e m\n', ...
     step_error);
 fprintf('Maximum Hybrid Simulation vs full-reference floor difference: %.6e m\n', ...
     reference_error);
-fprintf(['Maximum num*PID_H_dc_dm*exp vs full-reference floor ' ...
-    'difference: %.6e m\n'], reference_error_pid);
+fprintf('Maximum %s vs full-reference floor difference: %.6e m\n', ...
+    control_path_label, reference_error_pid);
 fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
@@ -263,14 +292,13 @@ validation_metric_table = table({'J4'; 'J5'; 'J6'; 'J7'}, ...
     'Second-floor normalized RMS error'; ...
     'Third-floor normalized RMS error'}, ...
     'VariableNames', {'Metric', 'NumExpPercent', ...
-    'NumPidHdcDmExpPercent', 'Description'});
+        'ControlPathPercent', 'Description'});
 disp('Validation metrics')
 disp(validation_metric_table)
 fprintf('num*exp: J4 = %.2f%%, J5 = %.2f%%, J6 = %.2f%%, J7 = %.2f%%\n', ...
     J4, J5, J6, J7);
-fprintf(['num*PID_H_dc_dm*exp: J4 = %.2f%%, J5 = %.2f%%, ' ...
-    'J6 = %.2f%%, J7 = %.2f%%\n\n'], ...
-    J4_pid, J5_pid, J6_pid, J7_pid);
+fprintf('%s: J4 = %.2f%%, J5 = %.2f%%, J6 = %.2f%%, J7 = %.2f%%\n\n', ...
+    control_path_label, J4_pid, J5_pid, J6_pid, J7_pid);
 
 %% RESPONSE COMPARISON
 figure('Color', 'w', 'Name', 'Reference and HS comparison');
@@ -285,7 +313,7 @@ for floor_id = 1:n_story
         'DisplayName', 'num*exp');
     plot(ax, real_time, u_pid_floors(:, floor_id), '-', ...
         'Color', colors.copperwood, 'LineWidth', 1.1, ...
-        'DisplayName', 'num*PID*H_{dc,dm}*exp');
+        'DisplayName', control_path_label);
     hold(ax, 'off'); grid(ax, 'on');
     ylabel(ax, sprintf('Floor %d (m)', floor_id));
     if floor_id == 1, makeLegendToggle(ax); end
@@ -303,8 +331,13 @@ figure('Color', 'w', 'Name', 'PID_H_dc_dm control check');
 layout = tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 ax = nexttile;
 plot(ax, hs_real_time, dd_pid_sample, 'k--', 'LineWidth', 2.2, ...
-    'DisplayName', 'dd desired displacement');
+    'DisplayName', 'raw numerical dd');
 hold(ax, 'on');
+if phase_lead.enabled
+    plot(ax, hs_real_time, dd_lead_pid_sample, '--', ...
+        'Color', colors.green, 'LineWidth', 1.5, ...
+        'DisplayName', 'phase-lead desired dd');
+end
 plot(ax, hs_real_time, dc_pid_sample, '-', 'Color', colors.copperwood, ...
     'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
 plot(ax, hs_real_time, dm_pid_sample, '-', 'Color', colors.blue, ...
@@ -519,18 +552,20 @@ else
 end
 end
 
-function [u_num_floors_sample, dd_sample, dm_sample, dc_sample, ...
+function [u_num_floors_sample, dd_sample, dd_lead_sample, dm_sample, dc_sample, ...
         force_sample, stability] = hybridResponseWithPidHdcDm(hs, PID_H_dc_dm, ...
-        pid_values, k_experimental, hs_sample_dt)
-% Units: dd/dm/dc [mm], force [N], floor displacement [m].
+        pid_values, k_experimental, hs_sample_dt, phase_lead)
+% Units: dd/dd_lead/dm/dc [mm], force [N], floor displacement [m].
 num_model = numericalSubstructureDiscrete(hs, hs_sample_dt);
 actuator = discreteSiso(PID_H_dc_dm, hs_sample_dt);
+lead_filter = discreteSiso(buildPhaseLeadFilter(phase_lead, hs_sample_dt), ...
+    hs_sample_dt);
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, hs_sample_dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 controller = discreteSiso(digital_controller, hs_sample_dt);
-stability = analyzeActuatorLoop(num_model, actuator, k_experimental, ...
-    hs_sample_dt);
+stability = analyzeActuatorLoop(num_model, actuator, lead_filter, ...
+    k_experimental, hs_sample_dt);
 
 n_step = ceil(hs.time(end)*hs.time_scale_factor/hs_sample_dt) + 1;
 hs_real_time = (0:n_step-1)'*hs_sample_dt;
@@ -538,24 +573,29 @@ hs_model_time = hs_real_time/hs.time_scale_factor;
 ag_sample = interp1(hs.time, hs.ag, hs_model_time, 'linear', 0);
 u_num_floors_sample = zeros(n_step, hs.n_floor);
 dd_sample = zeros(n_step, 1);
+dd_lead_sample = zeros(n_step, 1);
 dm_sample = zeros(n_step, 1);
 dc_sample = zeros(n_step, 1);
 force_sample = zeros(n_step, 1);
 x_num = zeros(size(num_model.A, 1), 1);
 k_mm = k_experimental/1000;
-denominator = 1 - num_model.D_fm*k_mm*actuator.D;
+denominator = 1 - num_model.D_fm*k_mm*actuator.D*lead_filter.D;
 for step = 2:n_step
     dd_sample(step) = (num_model.C*x_num ...
+        + num_model.D_fm*k_mm*actuator.D*lead_filter.C*lead_filter.x ...
         + num_model.D_fm*k_mm*actuator.C*actuator.x ...
         + num_model.D_ag*ag_sample(step))/denominator;
-    dm_sample(step) = outputDiscreteSiso(actuator, dd_sample(step));
+    dd_lead_sample(step) = outputDiscreteSiso(lead_filter, dd_sample(step));
+    dm_sample(step) = outputDiscreteSiso(actuator, dd_lead_sample(step));
     force_sample(step) = k_mm*dm_sample(step);
     dc_sample(step) = outputDiscreteSiso(controller, ...
-        dd_sample(step)-dm_sample(step));
+        dd_lead_sample(step)-dm_sample(step));
     x_num = num_model.A*x_num + num_model.B_fm*force_sample(step) ...
         + num_model.B_ag*ag_sample(step);
-    actuator = updateDiscreteSiso(actuator, dd_sample(step));
-    controller = updateDiscreteSiso(controller, dd_sample(step)-dm_sample(step));
+    lead_filter = updateDiscreteSiso(lead_filter, dd_sample(step));
+    actuator = updateDiscreteSiso(actuator, dd_lead_sample(step));
+    controller = updateDiscreteSiso(controller, ...
+        dd_lead_sample(step)-dm_sample(step));
     u_num_floors_sample(step, :) = x_num(1:hs.n_floor)';
 end
 end
@@ -603,26 +643,42 @@ model.D_fm = 1000*(hs.interface_from_floor*force_to_displacement ...
 model.D_ag = 1000*(hs.interface_from_floor*ag_to_displacement);
 end
 
-function stability = analyzeActuatorLoop(num_model, actuator, k_experimental, ...
-        sample_time)
+function stability = analyzeActuatorLoop(num_model, actuator, lead_filter, ...
+        k_experimental, sample_time)
 % Units: poles are discrete z-plane poles.
 k_mm = k_experimental/1000;
-denominator = 1 - num_model.D_fm*k_mm*actuator.D;
+denominator = 1 - num_model.D_fm*k_mm*actuator.D*lead_filter.D;
 dd_from_num = num_model.C/denominator;
+dd_from_lead = num_model.D_fm*k_mm*actuator.D*lead_filter.C ...
+    /denominator;
 dd_from_actuator = num_model.D_fm*k_mm*actuator.C/denominator;
-force_from_num = k_mm*actuator.D*dd_from_num;
-force_from_actuator = k_mm*(actuator.C + actuator.D*dd_from_actuator);
+dd_lead_from_num = lead_filter.D*dd_from_num;
+dd_lead_from_lead = lead_filter.C + lead_filter.D*dd_from_lead;
+dd_lead_from_actuator = lead_filter.D*dd_from_actuator;
+force_from_num = k_mm*actuator.D*dd_lead_from_num;
+force_from_lead = k_mm*actuator.D*dd_lead_from_lead;
+force_from_actuator = k_mm*(actuator.C ...
+    + actuator.D*dd_lead_from_actuator);
 closed_loop_A = [ ...
     num_model.A + num_model.B_fm*force_from_num, ...
+    num_model.B_fm*force_from_lead, ...
     num_model.B_fm*force_from_actuator; ...
-    actuator.B*dd_from_num, actuator.A + actuator.B*dd_from_actuator];
+    lead_filter.B*dd_from_num, ...
+    lead_filter.A + lead_filter.B*dd_from_lead, ...
+    lead_filter.B*dd_from_actuator; ...
+    actuator.B*dd_lead_from_num, ...
+    actuator.B*dd_lead_from_lead, ...
+    actuator.A + actuator.B*dd_lead_from_actuator];
 closed_loop_poles = eig(closed_loop_A);
 actuator_poles = eig(actuator.A);
+lead_poles = eig(lead_filter.A);
 [coupled_max_abs_pole, dominant_index] = max(abs(closed_loop_poles));
 dominant_pole = closed_loop_poles(dominant_index);
-stability.actuator_max_abs_pole = max(abs(actuator_poles));
+stability.actuator_max_abs_pole = max([abs(actuator_poles); 0]);
+stability.lead_max_abs_pole = max([abs(lead_poles); 0]);
 stability.coupled_max_abs_pole = coupled_max_abs_pole;
-stability.actuator_stable = stability.actuator_max_abs_pole < 1;
+stability.actuator_stable = stability.actuator_max_abs_pole < 1 ...
+    && stability.lead_max_abs_pole < 1;
 stability.coupled_stable = stability.coupled_max_abs_pole < 1;
 stability.dominant_pole = dominant_pole;
 stability.dominant_frequency_hz = abs(angle(dominant_pole)) ...

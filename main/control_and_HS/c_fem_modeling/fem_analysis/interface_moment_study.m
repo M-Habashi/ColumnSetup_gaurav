@@ -12,7 +12,7 @@ addpath(fullfile(fem_dir, 'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
 
-damping_ratio = 0.02;
+damping_ratio = 0.03;
 [fem, ~, ~] = loadFemDefinition(project_root, false);
 fem_num = fem.num;
 fem_ref = fem.ref;

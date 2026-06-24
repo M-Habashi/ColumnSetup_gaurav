@@ -14,7 +14,7 @@ addpath(fullfile(project_root, 'results_analysis'));
 
 %% INPUTS
 earthquake_scale = 1.0;
-damping_ratio = 0.02;
+damping_ratio = 0.03;
 floor_mass_kg = [20121; 20121; 18426];
 
 specimen_file = fullfile(project_root, 'saved_results', 'specimens', ...
