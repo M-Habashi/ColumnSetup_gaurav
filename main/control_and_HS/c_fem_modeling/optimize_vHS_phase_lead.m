@@ -37,57 +37,15 @@ log_entries = summarizeCandidate('baseline', baseline);
 fprintf('\nBaseline without phase lead\n')
 printCandidate(baseline)
 
-best = baseline;
-grid_centers = config.grid_center_hz(:);
-grid_ratios = config.grid_ratio(:);
-fprintf('\nGrid search for phase-lead candidates\n')
-for center_id = 1:numel(grid_centers)
-    for ratio_id = 1:numel(grid_ratios)
-        candidate = evaluateVhsPhaseLead(problem, ...
-            phaseLeadFromCenterRatio(grid_centers(center_id), ...
-            grid_ratios(ratio_id)));
-        log_entries(end+1, 1) = summarizeCandidate('grid', candidate); %#ok<SAGROW>
-        if candidate.metrics.score < best.metrics.score
-            best = candidate;
-        end
-    end
-end
-
-if exist('fmincon', 'file') == 2
-    fprintf('\nLocal refinement using fmincon\n')
-    lower_bounds = log([config.center_frequency_bounds_hz(1), ...
-        config.ratio_bounds(1)]);
-    upper_bounds = log([config.center_frequency_bounds_hz(2), ...
-        config.ratio_bounds(2)]);
-    if best.phase_lead.enabled
-        best_start_point = [best.phase_lead.center_frequency_hz, ...
-            max(best.phase_lead.high_frequency_gain, config.ratio_bounds(1))];
-    else
-        best_start_point = zeros(0, 2);
-    end
-    start_points = unique([best_start_point; config.start_points], ...
-        'rows', 'stable');
-    options = optimoptions('fmincon', 'Algorithm', 'sqp', ...
-        'Display', 'final', ...
-        'MaxIterations', config.max_iterations, ...
-        'MaxFunctionEvaluations', config.max_function_evaluations);
-    for start_id = 1:size(start_points, 1)
-        x0 = log(start_points(start_id, :));
-        x0 = min(max(x0, lower_bounds), upper_bounds);
-        x_opt = fmincon(@(x) phaseLeadObjective(x, problem), x0, ...
-            [], [], [], [], lower_bounds, upper_bounds, [], options);
-        candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x_opt));
-        log_entries(end+1, 1) = summarizeCandidate('fmincon', candidate); %#ok<SAGROW>
-        if candidate.metrics.score < best.metrics.score
-            best = candidate;
-        end
-    end
-else
-    fprintf('\nfmincon is unavailable; using best grid candidate only.\n')
-end
+[grid_candidates, log_entries] = evaluatePhaseLeadGrid(problem, log_entries);
+[best, log_entries] = optimizePhaseLeadForPerformance( ...
+    problem, baseline, log_entries, grid_candidates);
+[stability_designs, log_entries] = optimizePhaseLeadForStabilityTargets( ...
+    problem, baseline, log_entries, grid_candidates);
 
 phase_lead_result_table = struct2table(log_entries);
 phase_lead_result_table = sortrows(phase_lead_result_table, 'Score');
+phase_lead_stability_table = stabilityDesignsToTable(stability_designs);
 baseline_metrics = baseline.metrics;
 best_phase_lead = best.phase_lead;
 best_metrics = best.metrics;
@@ -96,9 +54,13 @@ fprintf('\nBest candidate\n')
 printCandidate(best)
 disp(phase_lead_result_table(:, {'Stage', 'Score', 'Zero_Hz', ...
     'Pole_Hz', 'Gain', 'MaxPhaseLead_deg', 'ResponseNRMSE_percent', ...
-    'TrackingNRMSE_percent', 'MaxAbsPole', 'PeakCommandRatio'}))
+    'TrackingNRMSE_percent', 'StabilityMargin', 'MaxAbsPole', ...
+    'PeakCommandRatio'}))
 
-if best.metrics.score >= baseline.metrics.score
+baseline_feasible = candidateMeetsMinimums(baseline, config, Inf);
+recommend_best = best.phase_lead.enabled ...
+    && (~baseline_feasible || best.metrics.score < baseline.metrics.score);
+if ~recommend_best
     recommended_phase_lead_override = [];
     fprintf(['\nRecommendation: leave phase lead disabled for this objective; ' ...
         'the best active candidate did not improve the baseline score.\n'])
@@ -114,17 +76,34 @@ else
         best_phase_lead.pole_hz)
 end
 
+recommended_stability_phase_lead_overrides = ...
+    stabilityOverridesFromDesigns(stability_designs);
+if ~isempty(stability_designs)
+    fprintf('\nNRMSE-capped high-stability compensators\n')
+    disp(phase_lead_stability_table)
+    for design_id = 1:numel(stability_designs)
+        variable_name = sprintf('phase_lead_override_nrms%d', ...
+            round(stability_designs(design_id).target_nrmse_percent));
+        printPhaseLeadOverride(variable_name, ...
+            stability_designs(design_id).candidate)
+    end
+end
+
 if config.save_results
     results_dir = fullfile(project_root, 'saved_results', 'models');
     if ~exist(results_dir, 'dir')
         mkdir(results_dir)
     end
     run_timestamp = char(datetime('now', 'Format', 'yyyyMMdd_HHmmss'));
+    delay_comp_paths = saveDelayCompensatorFiles(project_root, ...
+        run_timestamp, best, stability_designs);
     phase_lead_results_path = fullfile(results_dir, ...
         sprintf('vHS_phase_lead_%s.mat', run_timestamp));
     save(phase_lead_results_path, 'config', 'baseline_metrics', ...
         'best_phase_lead', 'best_metrics', 'recommended_phase_lead_override', ...
-        'phase_lead_result_table')
+        'recommended_stability_phase_lead_overrides', ...
+        'phase_lead_result_table', 'phase_lead_stability_table', ...
+        'delay_comp_paths')
     fprintf('\nSaved phase-lead optimization results = %s\n', ...
         phase_lead_results_path)
 else
@@ -148,9 +127,15 @@ config = struct( ...
     'pid_gain_override', [0.15 20 0.0015 512], ...
     'center_frequency_bounds_hz', [0.5 80], ...
     'ratio_bounds', [1.01 25], ...
-    'grid_center_hz', [1 2 4 8 12 18 27 40 60], ...
-    'grid_ratio', [1.05 1.2 1.5 2 3 5 8 12 18], ...
-    'start_points', [4 2; 8 3; 12 5; 20 8; 40 5], ...
+    'grid_center_hz', [1 2 3 4 8 12 18 27 40 60], ...
+    'grid_ratio', [1.05 1.2 1.5 2 3 5 8 12 14 15 18], ...
+    'start_points', [3 14; 4 15; 5 17; 4 2; 8 3; 12 5; 20 8; 40 5], ...
+    'minimum_stability_margin', 0, ...
+    'stability_nrmse_targets_percent', [20 40], ...
+    'stability_tie_break_weight', 1e-8, ...
+    'minimum_margin_penalty_weight', 1e8, ...
+    'use_fmincon', true, ...
+    'use_stability_fmincon', false, ...
     'max_abs_pole_target', 0.998, ...
     'tracking_error_weight', 0.20, ...
     'lead_change_weight', 0.02, ...
@@ -167,6 +152,227 @@ function config = mergeStruct(config, override)
 fields = fieldnames(override);
 for field_id = 1:numel(fields)
     config.(fields{field_id}) = override.(fields{field_id});
+end
+end
+
+function [grid_candidates, log_entries] = evaluatePhaseLeadGrid( ...
+        problem, log_entries)
+config = problem.config;
+grid_centers = config.grid_center_hz(:);
+grid_ratios = config.grid_ratio(:);
+grid_candidates = repmat(struct('phase_lead', [], 'metrics', []), ...
+    numel(grid_centers)*numel(grid_ratios), 1);
+grid_index = 0;
+
+fprintf('\nGrid search for phase-lead candidates\n')
+for center_id = 1:numel(grid_centers)
+    for ratio_id = 1:numel(grid_ratios)
+        candidate = evaluateVhsPhaseLead(problem, ...
+            phaseLeadFromCenterRatio(grid_centers(center_id), ...
+            grid_ratios(ratio_id)));
+        grid_index = grid_index + 1;
+        log_entries(end+1, 1) = summarizeCandidate('grid', candidate);
+        grid_candidates(grid_index, 1) = reduceCandidate(candidate);
+    end
+end
+end
+
+function [best, log_entries] = optimizePhaseLeadForPerformance( ...
+        problem, baseline, log_entries, grid_candidates)
+config = problem.config;
+best = baseline;
+best_feasible = candidateMeetsMinimums(best, config, Inf);
+
+for candidate_id = 1:numel(grid_candidates)
+    [best, best_feasible] = keepBetterPerformanceCandidate( ...
+        best, best_feasible, grid_candidates(candidate_id), config);
+end
+
+if ~config.use_fmincon
+    fprintf('\nfmincon refinement disabled; using best grid candidate only.\n')
+    best = ensureFullCandidate(problem, best);
+    return
+end
+if exist('fmincon', 'file') ~= 2
+    fprintf('\nfmincon is unavailable; using best grid candidate only.\n')
+    best = ensureFullCandidate(problem, best);
+    return
+end
+
+fprintf('\nLocal performance refinement using fmincon\n')
+[lower_bounds, upper_bounds, start_points] = optimizerSearchSetup( ...
+    config, best);
+options = phaseLeadFminconOptions(config);
+for start_id = 1:size(start_points, 1)
+    x0 = log(start_points(start_id, :));
+    x0 = min(max(x0, lower_bounds), upper_bounds);
+    x_opt = fmincon(@(x) phaseLeadObjective(x, problem), x0, ...
+        [], [], [], [], lower_bounds, upper_bounds, ...
+        @(x) phaseLeadConstraints(x, problem, Inf), options);
+    candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x_opt));
+    log_entries(end+1, 1) = summarizeCandidate('fmincon', candidate);
+    [best, best_feasible] = keepBetterPerformanceCandidate( ...
+        best, best_feasible, candidate, config);
+end
+best = ensureFullCandidate(problem, best);
+end
+
+function [stability_designs, log_entries] = ...
+        optimizePhaseLeadForStabilityTargets(problem, baseline, log_entries, ...
+        grid_candidates)
+targets = problem.config.stability_nrmse_targets_percent(:);
+stability_designs = struct('target_nrmse_percent', {}, ...
+    'candidate', {}, 'feasible', {});
+if isempty(targets)
+    return
+end
+
+for target_id = 1:numel(targets)
+    target_nrmse = targets(target_id);
+    fprintf('\nSearching high-stability compensator with response NRMSE <= %.6g %%\n', ...
+        target_nrmse)
+    [candidate, feasible, log_entries] = optimizeStabilityForNrmseCap( ...
+        problem, baseline, target_nrmse, log_entries, grid_candidates);
+    stability_designs(end+1, 1) = struct( ... %#ok<AGROW>
+        'target_nrmse_percent', target_nrmse, ...
+        'candidate', candidate, ...
+        'feasible', feasible);
+end
+end
+
+function [best, best_feasible, log_entries] = optimizeStabilityForNrmseCap( ...
+        problem, baseline, target_nrmse, log_entries, grid_candidates)
+config = problem.config;
+best = baseline;
+best_feasible = candidateMeetsMinimums(best, config, target_nrmse);
+stage_prefix = sprintf('nrms%g', target_nrmse);
+
+for candidate_id = 1:numel(grid_candidates)
+    [best, best_feasible] = keepBetterStabilityCandidate( ...
+        best, best_feasible, grid_candidates(candidate_id), config, ...
+        target_nrmse);
+end
+log_entries(end+1, 1) = summarizeCandidate( ...
+    sprintf('%s_selected', stage_prefix), best);
+
+if ~config.use_stability_fmincon
+    fprintf('Stability fmincon refinement disabled for %.6g %% NRMSE cap.\n', ...
+        target_nrmse)
+    return
+end
+if exist('fmincon', 'file') ~= 2
+    return
+end
+
+fprintf('Local stability refinement using fmincon for %.6g %% NRMSE cap\n', ...
+    target_nrmse)
+[lower_bounds, upper_bounds, start_points] = optimizerSearchSetup( ...
+    config, best);
+options = phaseLeadFminconOptions(config);
+for start_id = 1:size(start_points, 1)
+    x0 = log(start_points(start_id, :));
+    x0 = min(max(x0, lower_bounds), upper_bounds);
+    x_opt = fmincon(@(x) stabilityObjective(x, problem, target_nrmse), ...
+        x0, [], [], [], [], lower_bounds, upper_bounds, ...
+        @(x) phaseLeadConstraints(x, problem, target_nrmse), options);
+    candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x_opt));
+    log_entries(end+1, 1) = summarizeCandidate( ...
+        sprintf('%s_fmincon', stage_prefix), candidate);
+    [best, best_feasible] = keepBetterStabilityCandidate( ...
+        best, best_feasible, candidate, config, target_nrmse);
+end
+end
+
+function [lower_bounds, upper_bounds, start_points] = ...
+        optimizerSearchSetup(config, seed_candidate)
+lower_bounds = log([config.center_frequency_bounds_hz(1), ...
+    config.ratio_bounds(1)]);
+upper_bounds = log([config.center_frequency_bounds_hz(2), ...
+    config.ratio_bounds(2)]);
+if seed_candidate.phase_lead.enabled
+    seed_point = [seed_candidate.phase_lead.center_frequency_hz, ...
+        max(seed_candidate.phase_lead.high_frequency_gain, ...
+        config.ratio_bounds(1))];
+else
+    seed_point = zeros(0, 2);
+end
+start_points = unique([seed_point; config.start_points], ...
+    'rows', 'stable');
+end
+
+function options = phaseLeadFminconOptions(config)
+options = optimoptions('fmincon', 'Algorithm', 'sqp', ...
+    'Display', 'final', ...
+    'MaxIterations', config.max_iterations, ...
+    'MaxFunctionEvaluations', config.max_function_evaluations);
+end
+
+function candidate = reduceCandidate(candidate)
+candidate = struct('phase_lead', candidate.phase_lead, ...
+    'metrics', candidate.metrics);
+end
+
+function candidate = ensureFullCandidate(problem, candidate)
+if isfield(candidate, 'signals')
+    return
+end
+candidate = evaluateVhsPhaseLead(problem, candidate.phase_lead);
+end
+
+function [best, best_feasible] = keepBetterPerformanceCandidate( ...
+        best, best_feasible, candidate, config)
+candidate_feasible = candidateMeetsMinimums(candidate, config, Inf);
+if candidate_feasible
+    if ~best_feasible || candidate.metrics.score < best.metrics.score
+        best = candidate;
+        best_feasible = true;
+    end
+elseif ~best_feasible && candidate.metrics.score < best.metrics.score
+    best = candidate;
+end
+end
+
+function [best, best_feasible] = keepBetterStabilityCandidate( ...
+        best, best_feasible, candidate, config, target_nrmse)
+candidate_feasible = candidateMeetsMinimums(candidate, config, ...
+    target_nrmse);
+if candidate_feasible && ~best_feasible
+    best = candidate;
+    best_feasible = true;
+elseif candidate_feasible && best_feasible
+    if stabilitySortScore(candidate, config) < stabilitySortScore(best, config)
+        best = candidate;
+    end
+elseif ~candidate_feasible && ~best_feasible ...
+        && constraintViolation(candidate, config, target_nrmse) ...
+            < constraintViolation(best, config, target_nrmse)
+    best = candidate;
+end
+end
+
+function tf = candidateMeetsMinimums(candidate, config, max_response_nrmse)
+tolerance = 1e-9;
+tf = candidate.metrics.stable ...
+    && candidate.metrics.stability_margin + tolerance ...
+        >= config.minimum_stability_margin;
+if isfinite(max_response_nrmse)
+    tf = tf && candidate.metrics.response_nrmse_percent ...
+        <= max_response_nrmse + tolerance;
+end
+end
+
+function score = stabilitySortScore(candidate, config)
+score = -candidate.metrics.stability_margin ...
+    + config.stability_tie_break_weight*candidate.metrics.score;
+end
+
+function violation = constraintViolation(candidate, config, max_response_nrmse)
+violation = max(0, candidate.metrics.max_abs_pole - 1) ...
+    + max(0, config.minimum_stability_margin ...
+        - candidate.metrics.stability_margin);
+if isfinite(max_response_nrmse)
+    violation = violation + max(0, candidate.metrics.response_nrmse_percent ...
+        - max_response_nrmse)/max(max_response_nrmse, 1);
 end
 end
 
@@ -267,6 +473,27 @@ candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x));
 score = candidate.metrics.score;
 end
 
+function score = stabilityObjective(x, problem, max_response_nrmse)
+candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x));
+score = stabilitySortScore(candidate, problem.config) ...
+    + problem.config.minimum_margin_penalty_weight ...
+        * constraintViolation(candidate, problem.config, max_response_nrmse)^2;
+end
+
+function [c, ceq] = phaseLeadConstraints(x, problem, max_response_nrmse)
+candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x));
+c = candidate.metrics.max_abs_pole - 1;
+if problem.config.minimum_stability_margin > 0
+    c(end+1, 1) = problem.config.minimum_stability_margin ...
+        - candidate.metrics.stability_margin;
+end
+if isfinite(max_response_nrmse)
+    c(end+1, 1) = candidate.metrics.response_nrmse_percent ...
+        - max_response_nrmse;
+end
+ceq = [];
+end
+
 function candidate = evaluateVhsPhaseLead(problem, phase_lead_override)
 phase_lead = normalizePhaseLeadConfig(phase_lead_override);
 num_model = problem.num_model;
@@ -334,22 +561,30 @@ pole_excess = max(0, stability.coupled_max_abs_pole ...
 pole_scale = max(1e-6, 1 - config.max_abs_pole_target);
 command_ratio_excess = max(0, peak_command_ratio ...
     - config.max_peak_command_ratio);
+stability_margin = 1 - stability.coupled_max_abs_pole;
+minimum_margin_shortfall = max(0, config.minimum_stability_margin ...
+    - stability_margin);
 
-score = response_nrmse_percent ...
+performance_score = response_nrmse_percent ...
     + config.tracking_error_weight*tracking_nrmse_percent ...
-    + config.lead_change_weight*lead_change_percent ...
+    + config.lead_change_weight*lead_change_percent;
+score = performance_score ...
     + config.pole_penalty_weight*(pole_excess/pole_scale)^2 ...
-    + config.command_ratio_penalty_weight*command_ratio_excess^2;
+    + config.command_ratio_penalty_weight*command_ratio_excess^2 ...
+    + config.minimum_margin_penalty_weight*minimum_margin_shortfall^2;
 if stability.coupled_max_abs_pole >= 1
     score = score + 1e6*(1 + stability.coupled_max_abs_pole - 1);
 end
 
 metrics = struct( ...
     'score', score, ...
+    'performance_score', performance_score, ...
     'response_nrmse_percent', response_nrmse_percent, ...
     'tracking_nrmse_percent', tracking_nrmse_percent, ...
     'lead_change_percent', lead_change_percent, ...
     'peak_command_ratio', peak_command_ratio, ...
+    'stability_margin', stability_margin, ...
+    'minimum_margin_shortfall', minimum_margin_shortfall, ...
     'max_abs_pole', stability.coupled_max_abs_pole, ...
     'stable', stability.coupled_stable);
 end
@@ -371,6 +606,7 @@ function entry = summarizeCandidate(stage, candidate)
 entry = struct( ...
     'Stage', string(stage), ...
     'Score', candidate.metrics.score, ...
+    'PerformanceScore', candidate.metrics.performance_score, ...
     'Zero_Hz', candidate.phase_lead.zero_hz, ...
     'Pole_Hz', candidate.phase_lead.pole_hz, ...
     'Gain', candidate.phase_lead.gain, ...
@@ -380,15 +616,18 @@ entry = struct( ...
     'TrackingNRMSE_percent', candidate.metrics.tracking_nrmse_percent, ...
     'LeadChange_percent', candidate.metrics.lead_change_percent, ...
     'PeakCommandRatio', candidate.metrics.peak_command_ratio, ...
+    'StabilityMargin', candidate.metrics.stability_margin, ...
     'MaxAbsPole', candidate.metrics.max_abs_pole, ...
     'Stable', candidate.metrics.stable);
 end
 
 function printCandidate(candidate)
 fprintf(['Score = %.6g, response NRMSE = %.6g %%, ' ...
-    'tracking NRMSE = %.6g %%, max |pole| = %.12g\n'], ...
+    'tracking NRMSE = %.6g %%, stability margin = %.12g, ' ...
+    'max |pole| = %.12g\n'], ...
     candidate.metrics.score, candidate.metrics.response_nrmse_percent, ...
     candidate.metrics.tracking_nrmse_percent, ...
+    candidate.metrics.stability_margin, ...
     candidate.metrics.max_abs_pole)
 if candidate.phase_lead.enabled
     fprintf(['G_T: k_T = %.12g, z1 = %.12g Hz, p1 = %.12g Hz, ' ...
@@ -400,6 +639,149 @@ if candidate.phase_lead.enabled
 else
     fprintf('G_T: disabled\n')
 end
+end
+
+function printPhaseLeadOverride(variable_name, candidate)
+if ~candidate.phase_lead.enabled
+    fprintf('\n%s = [];\n', variable_name)
+    return
+end
+fprintf(['\n%s = struct(''enabled'', true, ''gain'', %.12g, ' ...
+    '''zero_hz'', %.12g, ''pole_hz'', %.12g); ' ...
+    '%% response NRMSE %.6g %%, stability margin %.12g\n'], ...
+    variable_name, candidate.phase_lead.gain, ...
+    candidate.phase_lead.zero_hz, candidate.phase_lead.pole_hz, ...
+    candidate.metrics.response_nrmse_percent, ...
+    candidate.metrics.stability_margin)
+end
+
+function overrides = stabilityOverridesFromDesigns(stability_designs)
+n_design = numel(stability_designs);
+overrides = struct('target_nrmse_percent', cell(n_design, 1), ...
+    'feasible', cell(n_design, 1), ...
+    'phase_lead_override', cell(n_design, 1), ...
+    'metrics', cell(n_design, 1));
+for design_id = 1:n_design
+    candidate = stability_designs(design_id).candidate;
+    overrides(design_id).target_nrmse_percent = ...
+        stability_designs(design_id).target_nrmse_percent;
+    overrides(design_id).feasible = stability_designs(design_id).feasible;
+    overrides(design_id).phase_lead_override = ...
+        phaseLeadOverrideFromCandidate(candidate);
+    overrides(design_id).metrics = candidate.metrics;
+end
+end
+
+function phase_lead_override = phaseLeadOverrideFromCandidate(candidate)
+if candidate.phase_lead.enabled
+    phase_lead_override = struct('enabled', true, ...
+        'gain', candidate.phase_lead.gain, ...
+        'zero_hz', candidate.phase_lead.zero_hz, ...
+        'pole_hz', candidate.phase_lead.pole_hz);
+else
+    phase_lead_override = [];
+end
+end
+
+function T = stabilityDesignsToTable(stability_designs)
+if isempty(stability_designs)
+    T = table();
+    return
+end
+
+n_design = numel(stability_designs);
+target_nrmse_percent = zeros(n_design, 1);
+feasible = false(n_design, 1);
+score = zeros(n_design, 1);
+response_nrmse_percent = zeros(n_design, 1);
+tracking_nrmse_percent = zeros(n_design, 1);
+stability_margin = zeros(n_design, 1);
+max_abs_pole = zeros(n_design, 1);
+zero_hz = zeros(n_design, 1);
+pole_hz = zeros(n_design, 1);
+gain = zeros(n_design, 1);
+
+for design_id = 1:n_design
+    candidate = stability_designs(design_id).candidate;
+    target_nrmse_percent(design_id) = ...
+        stability_designs(design_id).target_nrmse_percent;
+    feasible(design_id) = stability_designs(design_id).feasible;
+    score(design_id) = candidate.metrics.score;
+    response_nrmse_percent(design_id) = ...
+        candidate.metrics.response_nrmse_percent;
+    tracking_nrmse_percent(design_id) = ...
+        candidate.metrics.tracking_nrmse_percent;
+    stability_margin(design_id) = candidate.metrics.stability_margin;
+    max_abs_pole(design_id) = candidate.metrics.max_abs_pole;
+    zero_hz(design_id) = candidate.phase_lead.zero_hz;
+    pole_hz(design_id) = candidate.phase_lead.pole_hz;
+    gain(design_id) = candidate.phase_lead.gain;
+end
+
+T = table(target_nrmse_percent, feasible, score, ...
+    response_nrmse_percent, tracking_nrmse_percent, ...
+    stability_margin, max_abs_pole, zero_hz, pole_hz, gain, ...
+    'VariableNames', {'TargetNRMSE_percent', 'Feasible', 'Score', ...
+    'ResponseNRMSE_percent', 'TrackingNRMSE_percent', ...
+    'StabilityMargin', 'MaxAbsPole', 'Zero_Hz', 'Pole_Hz', 'Gain'});
+end
+
+function delay_comp_paths = saveDelayCompensatorFiles(project_root, ...
+        run_timestamp, best, stability_designs)
+delay_comp_dir = fullfile(project_root, 'saved_results', 'delay_comp');
+if ~exist(delay_comp_dir, 'dir')
+    mkdir(delay_comp_dir)
+end
+
+n_paths = 1 + numel(stability_designs);
+label = strings(n_paths, 1);
+path = strings(n_paths, 1);
+[label(1), path(1)] = saveCandidateDelayCompensator( ...
+    delay_comp_dir, sprintf('phase_lead_dd_performance_%s.mat', ...
+    run_timestamp), 'performance', best);
+
+for design_id = 1:numel(stability_designs)
+    target_nrmse = stability_designs(design_id).target_nrmse_percent;
+    tag = nrmseTargetTag(target_nrmse);
+    row = design_id + 1;
+    [label(row), path(row)] = saveCandidateDelayCompensator( ...
+        delay_comp_dir, sprintf('phase_lead_dd_%s_%s.mat', tag, ...
+        run_timestamp), sprintf('%g_percent_nrmse_stability', ...
+        target_nrmse), stability_designs(design_id).candidate);
+end
+
+delay_comp_paths = table(label, path, ...
+    'VariableNames', {'Label', 'Path'});
+end
+
+function [label, path] = saveCandidateDelayCompensator( ...
+        delay_comp_dir, file_name, label, candidate)
+path = string(fullfile(delay_comp_dir, file_name));
+delay_comp_tf = continuousPhaseLeadTransferFunction(candidate.phase_lead);
+phase_lead = candidate.phase_lead;
+metrics = candidate.metrics;
+delay_comp_label = label;
+delay_comp_name = file_name;
+created_at = char(datetime('now', 'Format', 'yyyyMMdd_HHmmss'));
+save(char(path), 'delay_comp_tf', 'phase_lead', 'metrics', ...
+    'delay_comp_label', 'delay_comp_name', 'created_at')
+label = string(label);
+end
+
+function tag = nrmseTargetTag(target_nrmse)
+tag = strrep(sprintf('nrms%g', target_nrmse), '.', 'p');
+tag = strrep(tag, '-', 'm');
+end
+
+function delay_comp_tf = continuousPhaseLeadTransferFunction(phase_lead)
+phase_lead = normalizePhaseLeadConfig(phase_lead);
+if ~phase_lead.enabled
+    delay_comp_tf = tf(1);
+    return
+end
+
+delay_comp_tf = phase_lead.gain ...
+    * tf([1 phase_lead.zero_rad_s], [1 phase_lead.pole_rad_s]);
 end
 
 function [PID_H_dc_dm, pid_values, model_file] = loadPidHdcDmModel( ...
