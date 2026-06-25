@@ -9,8 +9,11 @@ clearvars -except phase_lead_optimizer_config ncfmargin ncf_margin ...
     h_dc_dm_model_file_override pid_gain_override; clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
-project_root = fileparts(fileparts(script_dir));
-addpath(fullfile(script_dir, 'utils_fem'));
+hs_dir = fileparts(script_dir);
+project_root = fileparts(fileparts(hs_dir));
+addpath(script_dir);
+addpath(fullfile(project_root, 'control_and_HS', 'c_fem_modeling', ...
+    'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
 addpath(fullfile(project_root, 'control_and_HS', 'b_system_id', ...

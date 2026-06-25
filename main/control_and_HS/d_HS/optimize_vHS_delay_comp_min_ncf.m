@@ -8,7 +8,7 @@ clearvars -except phase_lead_optimizer_config ncfmargin ncf_margin ...
 
 script_dir = fileparts(mfilename('fullpath'));
 defaults = struct( ...
-    'minimum_num_delay_comp_exp_ncf_margin', 0.05, ...
+    'minimum_num_delay_comp_exp_ncf_margin', 0.3, ...
     'use_parallel_grid', true);
 
 if exist('phase_lead_optimizer_config', 'var') ...
@@ -26,7 +26,7 @@ elseif exist('ncf_margin', 'var') && ~isempty(ncf_margin)
         ncf_margin;
 end
 
-run(fullfile(script_dir, 'optimize_vHS_phase_lead.m'))
+run(fullfile(script_dir, 'utils_HS', 'optimize_vHS_phase_lead.m'))
 
 function config = mergeLocalStruct(config, override)
 fields = fieldnames(override);
