@@ -1,9 +1,4 @@
-main/saved_results/*
-!main/saved_results/tests/
-main/saved_results/tests/*
-!main/saved_results/tests/important/
-main/saved_results/tests/important/*
-!main/saved_results/tests/important/*.mat
+main/saved_results/tests/
 main/next_work.md
 main/notes.md
 main/plan.md
