@@ -1,7 +1,7 @@
 %% Optimize vHS Phase Lead After Numerical DD
 % The compensated path is:
 % raw numerical dd -> G_T -> actuator tracking loop -> measured dm -> force.
-% G_T(s) = k_T*(s + z1)/(s + p1), with p1 > z1.
+% G_T(s) = k_T*prod(s + zi)/prod(s + pi), with pi > zi.
 
 clearvars -except phase_lead_optimizer_config ncfmargin ncf_margin ...
     fem_file_override ...
@@ -46,6 +46,9 @@ elseif exist('specimen_file_override', 'var') ...
         && ~isempty(specimen_file_override)
     config.specimen_file = specimen_file_override;
 end
+validateattributes(config.phase_lead_section_count, {'numeric'}, ...
+    {'scalar', 'integer', 'positive'}, mfilename, ...
+    'config.phase_lead_section_count');
 
 problem = prepareVhsPhaseLeadProblem(project_root, config);
 baseline = evaluateVhsPhaseLead(problem, []);
@@ -84,11 +87,8 @@ else
         'gain', best_phase_lead.gain, ...
         'zero_hz', best_phase_lead.zero_hz, ...
         'pole_hz', best_phase_lead.pole_hz);
-    fprintf(['\nRecommended phase-lead configuration:\nphase_lead = ' ...
-        'struct(''enabled'', true, ''gain'', %.12g, ' ...
-        '''zero_hz'', %.12g, ''pole_hz'', %.12g);\n'], ...
-        best_phase_lead.gain, best_phase_lead.zero_hz, ...
-        best_phase_lead.pole_hz)
+    fprintf('\nRecommended phase-lead configuration:\nphase_lead = %s;\n', ...
+        phaseLeadStructLiteral(best_phase_lead))
 end
 
 if config.save_results
@@ -126,6 +126,7 @@ config = struct( ...
     'fem_file', '', ...
     'specimen_file', '', ...
     'pid_gain_override', [0.15 20 0.0015 512], ...
+    'phase_lead_section_count', 1, ...
     'center_frequency_bounds_hz', [0.5 80], ...
     'ratio_bounds', [1.01 25], ...
     'grid_center_hz', [1 2 3 4 8 12 18 27 40 60], ...
@@ -223,7 +224,8 @@ end
 
 function candidate = evaluateGridCandidate(problem, candidate_input)
 candidate = reduceCandidate(evaluateVhsPhaseLead(problem, ...
-    phaseLeadFromCenterRatio(candidate_input(1), candidate_input(2))));
+    phaseLeadFromCenterRatio(candidate_input(1), candidate_input(2), ...
+    problem.config.phase_lead_section_count)));
 end
 
 function [best, log_entries] = optimizePhaseLeadForPerformance( ...
@@ -271,7 +273,7 @@ for start_id = 1:size(start_points, 1)
     x_opt = fmincon(@(x) phaseLeadObjective(x, problem), x0, ...
         [], [], [], [], lower_bounds, upper_bounds, ...
         @(x) phaseLeadConstraints(x, problem, Inf), options_start);
-    candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x_opt));
+    candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x_opt, config));
     log_entries(end+1, 1) = summarizeCandidate( ...
         'fmincon', candidate); %#ok<AGROW>
     [best, best_feasible] = keepBetterPerformanceCandidate( ...
@@ -294,19 +296,56 @@ end
 
 function [lower_bounds, upper_bounds, start_points] = ...
         optimizerSearchSetup(config, seed_candidate)
-lower_bounds = log([config.center_frequency_bounds_hz(1), ...
-    config.ratio_bounds(1)]);
-upper_bounds = log([config.center_frequency_bounds_hz(2), ...
-    config.ratio_bounds(2)]);
+section_count = config.phase_lead_section_count;
+section_ratio_bounds = config.ratio_bounds.^(1/section_count);
+lower_bounds = log([ ...
+    repmat(config.center_frequency_bounds_hz(1), 1, section_count), ...
+    repmat(section_ratio_bounds(1), 1, section_count)]);
+upper_bounds = log([ ...
+    repmat(config.center_frequency_bounds_hz(2), 1, section_count), ...
+    repmat(section_ratio_bounds(2), 1, section_count)]);
 if seed_candidate.phase_lead.enabled
     seed_point = [seed_candidate.phase_lead.center_frequency_hz, ...
-        max(seed_candidate.phase_lead.high_frequency_gain, ...
-        config.ratio_bounds(1))];
+        max(seed_candidate.phase_lead.section_ratio, section_ratio_bounds(1))];
 else
-    seed_point = zeros(0, 2);
+    seed_point = zeros(0, 2*section_count);
 end
-start_points = unique([seed_point; config.start_points], ...
+start_points = expandPhaseLeadStartPoints(config.start_points, ...
+    section_count);
+start_points = unique([seed_point; start_points], ...
     'rows', 'stable');
+end
+
+function start_points = expandPhaseLeadStartPoints(start_points, section_count)
+if isempty(start_points)
+    start_points = zeros(0, 2*section_count);
+    return
+end
+if size(start_points, 2) == 2*section_count
+    return
+end
+if size(start_points, 2) ~= 2
+    error('optimize_vHS_phase_lead:InvalidStartPoints', ...
+        'start_points must have 2 or 2*phase_lead_section_count columns.')
+end
+
+center_factors = defaultSectionCenterFactors(section_count);
+expanded_points = zeros(size(start_points, 1), 2*section_count);
+for point_id = 1:size(start_points, 1)
+    center_hz = start_points(point_id, 1);
+    total_ratio = start_points(point_id, 2);
+    expanded_points(point_id, :) = [center_hz*center_factors, ...
+        repmat(total_ratio^(1/section_count), 1, section_count)];
+end
+start_points = expanded_points;
+end
+
+function center_factors = defaultSectionCenterFactors(section_count)
+if section_count == 1
+    center_factors = 1;
+else
+    center_factors = logspace(log10(0.75), log10(1.35), section_count);
+end
 end
 
 function options = phaseLeadFminconOptions(config)
@@ -518,9 +557,7 @@ fprintf(['\nBest checkpoint [%s, trial %d/%d, %.1f%%, ' ...
     candidate.metrics.num_delay_comp_exp_ncf_margin, ...
     candidate.metrics.max_abs_pole)
 if candidate.phase_lead.enabled
-    fprintf('  G_T: k_T %.12g, z1 %.12g Hz, p1 %.12g Hz\n', ...
-        candidate.phase_lead.gain, candidate.phase_lead.zero_hz, ...
-        candidate.phase_lead.pole_hz)
+    fprintf('  G_T: %s\n', phaseLeadSummary(candidate.phase_lead))
 else
     fprintf('  G_T: disabled\n')
 end
@@ -689,12 +726,12 @@ problem = struct( ...
 end
 
 function score = phaseLeadObjective(x, problem)
-candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x));
+candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x, problem.config));
 score = candidate.metrics.score;
 end
 
 function [c, ceq] = phaseLeadConstraints(x, problem, max_response_nrmse)
-candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x));
+candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x, problem.config));
 c = candidate.metrics.max_abs_pole - 1;
 if problem.config.minimum_stability_margin > 0
     c(end+1, 1) = problem.config.minimum_stability_margin ...
@@ -713,7 +750,8 @@ ceq = [];
 end
 
 function candidate = evaluateVhsPhaseLead(problem, phase_lead_override)
-phase_lead = normalizePhaseLeadConfig(phase_lead_override);
+phase_lead = normalizePhaseLeadConfig(phase_lead_override, ...
+    problem.config.phase_lead_section_count);
 num_model = problem.num_model;
 actuator = discreteSiso(problem.PID_H_dc_dm, problem.sample_dt);
 lead_filter = discreteSiso(buildPhaseLeadFilter(phase_lead, ...
@@ -830,16 +868,25 @@ open_loop = -minreal(problem.num_tf*(problem.k_experimental/1000) ...
     problem.config.num_delay_comp_exp_margin_frequency_hz);
 end
 
-function phase_lead = phaseLeadFromX(x)
-center_hz = exp(x(1));
-ratio = exp(x(2));
-phase_lead = phaseLeadFromCenterRatio(center_hz, ratio);
+function phase_lead = phaseLeadFromX(x, config)
+section_count = config.phase_lead_section_count;
+values = exp(x(:).');
+center_hz = values(1:section_count);
+ratio = values(section_count+1:2*section_count);
+phase_lead = phaseLeadFromCentersRatios(center_hz, ratio);
 end
 
-function phase_lead = phaseLeadFromCenterRatio(center_hz, ratio)
-zero_hz = center_hz/sqrt(ratio);
-pole_hz = center_hz*sqrt(ratio);
-gain = ratio;
+function phase_lead = phaseLeadFromCenterRatio(center_hz, ratio, ...
+        section_count)
+center_hz = center_hz*ones(1, section_count);
+ratio = repmat(ratio^(1/section_count), 1, section_count);
+phase_lead = phaseLeadFromCentersRatios(center_hz, ratio);
+end
+
+function phase_lead = phaseLeadFromCentersRatios(center_hz, ratio)
+zero_hz = center_hz./sqrt(ratio);
+pole_hz = center_hz.*sqrt(ratio);
+gain = prod(ratio);
 phase_lead = normalizePhaseLeadConfig([gain, zero_hz, pole_hz]);
 end
 
@@ -874,14 +921,36 @@ fprintf(['Score = %.6g, response NRMSE = %.6g %%, ' ...
     candidate.metrics.num_delay_comp_exp_ncf_margin, ...
     candidate.metrics.max_abs_pole)
 if candidate.phase_lead.enabled
-    fprintf(['G_T: k_T = %.12g, z1 = %.12g Hz, p1 = %.12g Hz, ' ...
-        'DC gain = %.12g, max lead = %.6g deg at %.6g Hz\n'], ...
-        candidate.phase_lead.gain, candidate.phase_lead.zero_hz, ...
-        candidate.phase_lead.pole_hz, candidate.phase_lead.dc_gain, ...
-        candidate.phase_lead.max_phase_lead_deg, ...
-        candidate.phase_lead.center_frequency_hz)
+    fprintf('G_T: %s\n', phaseLeadSummary(candidate.phase_lead))
 else
     fprintf('G_T: disabled\n')
+end
+end
+
+function text = phaseLeadSummary(phase_lead)
+text = sprintf(['k_T = %.12g, z_hz = %s, p_hz = %s, DC gain = %.12g, ' ...
+    'max lead = %.6g deg at %.6g Hz'], ...
+    phase_lead.gain, matlabVectorLiteral(phase_lead.zero_hz), ...
+    matlabVectorLiteral(phase_lead.pole_hz), phase_lead.dc_gain, ...
+    phase_lead.max_phase_lead_deg, ...
+    phase_lead.max_phase_lead_frequency_hz);
+end
+
+function text = phaseLeadStructLiteral(phase_lead)
+text = sprintf(['struct(''enabled'', true, ''gain'', %.12g, ' ...
+    '''zero_hz'', %s, ''pole_hz'', %s)'], ...
+    phase_lead.gain, matlabVectorLiteral(phase_lead.zero_hz), ...
+    matlabVectorLiteral(phase_lead.pole_hz));
+end
+
+function text = matlabVectorLiteral(values)
+values = values(:).';
+parts = arrayfun(@(value) sprintf('%.12g', value), values, ...
+    'UniformOutput', false);
+if isscalar(values)
+    text = parts{1};
+else
+    text = ['[' strjoin(parts, ' ') ']'];
 end
 end
 
@@ -924,7 +993,7 @@ if ~phase_lead.enabled
 end
 
 delay_comp_tf = phase_lead.gain ...
-    * tf([1 phase_lead.zero_rad_s], [1 phase_lead.pole_rad_s]);
+    * tf(poly(-phase_lead.zero_rad_s), poly(-phase_lead.pole_rad_s));
 end
 
 function [PID_H_dc_dm, pid_values, model_file] = loadPidHdcDmModel( ...

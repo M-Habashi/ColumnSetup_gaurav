@@ -9,6 +9,6 @@ if ~phase_lead.enabled
 end
 
 continuous_filter = phase_lead.gain ...
-    * tf([1 phase_lead.zero_rad_s], [1 phase_lead.pole_rad_s]);
+    * tf(poly(-phase_lead.zero_rad_s), poly(-phase_lead.pole_rad_s));
 filter = c2d(continuous_filter, sample_time, 'tustin');
 end

@@ -231,11 +231,8 @@ fprintf('PID_H_dc_dm gains: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
     pid_h_dc_dm_values.derivative_filter_N);
 fprintf('Phase-lead compensator loaded: %s\n', delay_comp_file);
 if ~isempty(phase_lead) && phase_lead.enabled
-    fprintf(['Phase lead after numerical dd: k_T = %.6g, z1 = %.6g Hz, ' ...
-        'p1 = %.6g Hz, DC gain = %.6g, max lead = %.6g deg at %.6g Hz\n'], ...
-        phase_lead.gain, phase_lead.zero_hz, phase_lead.pole_hz, ...
-        phase_lead.dc_gain, phase_lead.max_phase_lead_deg, ...
-        phase_lead.center_frequency_hz);
+    fprintf('Phase lead after numerical dd: %s\n', ...
+        phaseLeadSummary(phase_lead));
 elseif phase_lead_enabled
     fprintf('Phase lead after numerical dd: using loaded transfer function\n');
 else
@@ -861,6 +858,26 @@ if strcmp(target.Visible, 'on')
     target.Visible = 'off';
 else
     target.Visible = 'on';
+end
+end
+
+function text = phaseLeadSummary(phase_lead)
+text = sprintf(['k_T = %.6g, z_hz = %s, p_hz = %s, DC gain = %.6g, ' ...
+    'max lead = %.6g deg at %.6g Hz'], ...
+    phase_lead.gain, matlabVectorLiteral(phase_lead.zero_hz), ...
+    matlabVectorLiteral(phase_lead.pole_hz), phase_lead.dc_gain, ...
+    phase_lead.max_phase_lead_deg, ...
+    phase_lead.max_phase_lead_frequency_hz);
+end
+
+function text = matlabVectorLiteral(values)
+values = values(:).';
+parts = arrayfun(@(value) sprintf('%.6g', value), values, ...
+    'UniformOutput', false);
+if isscalar(values)
+    text = parts{1};
+else
+    text = ['[' strjoin(parts, ' ') ']'];
 end
 end
 

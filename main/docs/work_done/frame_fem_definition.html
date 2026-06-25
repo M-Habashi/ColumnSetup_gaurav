@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Three-Story Steel Frame — FEM Definition</title>
+  <title>Three-Story Steel Frame — FEM 3 Definition</title>
   <style>
     :root {
       color-scheme: dark;
@@ -51,7 +51,7 @@
     }
 
     h1, h2, h3, p { margin-top: 0; }
-    h1 { margin-bottom: 3px; font-size: 25px; font-weight: 620; letter-spacing: -0.02em; }
+    h1 { margin-bottom: 3px; font-size: 25px; font-weight: 620; letter-spacing: 0; }
     h2 { margin-bottom: 16px; font-size: 18px; font-weight: 620; }
     h3 { margin-bottom: 8px; font-size: 14px; font-weight: 620; }
     .subtitle { margin: 0; color: var(--muted); }
@@ -194,8 +194,8 @@
   <header>
     <div class="header-inner">
       <div>
-        <h1>Three-Story Steel Frame — FEM Definition</h1>
-        <p class="subtitle">Geometry, member assignments, loading, mass idealization, and dynamic assumptions</p>
+        <h1>Three-Story Steel Frame — FEM 3 Definition</h1>
+        <p class="subtitle">Specimen sp_1_org FEM 3 geometry, member assignments, loading, mass idealization, and hybrid assumptions</p>
       </div>
       <nav aria-label="Page sections">
         <a href="#geometry">Geometry</a>
@@ -213,7 +213,7 @@
         <div class="drawing">
           <svg viewBox="0 0 820 475" role="img" aria-labelledby="frame-title frame-description">
             <title id="frame-title">Three-story, three-bay steel moment frame</title>
-            <desc id="frame-description">Each bay is 3.048 metres wide and the common story height h is calibrated for the selected specimen. Exterior columns are W8 by 28, interior columns are W8 by 35, and all beams are W8 by 24.</desc>
+            <desc id="frame-description">Each bay is 3.048 metres wide and the FEM 3 common story height is 1.851208 metres. Exterior columns are W8 by 28, interior columns are W12 by 40, and all beams are W8 by 24.</desc>
 
             <g class="member">
               <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
@@ -239,9 +239,9 @@
             </g>
 
             <g class="label" text-anchor="middle">
-              <text transform="translate(45 106) rotate(-90)">W8×28</text><text transform="translate(275 106) rotate(-90)">W8×35</text><text transform="translate(505 106) rotate(-90)">W8×35</text><text transform="translate(735 106) rotate(-90)">W8×28</text>
-              <text transform="translate(45 220) rotate(-90)">W8×28</text><text transform="translate(275 220) rotate(-90)">W8×35</text><text transform="translate(505 220) rotate(-90)">W8×35</text><text transform="translate(735 220) rotate(-90)">W8×28</text>
-              <text transform="translate(45 333) rotate(-90)">W8×28</text><text transform="translate(275 333) rotate(-90)">W8×35</text><text transform="translate(505 333) rotate(-90)">W8×35</text><text transform="translate(735 333) rotate(-90)">W8×28</text>
+              <text transform="translate(45 106) rotate(-90)">W8×28</text><text transform="translate(275 106) rotate(-90)">W12×40</text><text transform="translate(505 106) rotate(-90)">W12×40</text><text transform="translate(735 106) rotate(-90)">W8×28</text>
+              <text transform="translate(45 220) rotate(-90)">W8×28</text><text transform="translate(275 220) rotate(-90)">W12×40</text><text transform="translate(505 220) rotate(-90)">W12×40</text><text transform="translate(735 220) rotate(-90)">W8×28</text>
+              <text transform="translate(45 333) rotate(-90)">W8×28</text><text transform="translate(275 333) rotate(-90)">W12×40</text><text transform="translate(505 333) rotate(-90)">W12×40</text><text transform="translate(735 333) rotate(-90)">W8×28</text>
             </g>
 
             <g class="dimension" fill="none">
@@ -253,7 +253,7 @@
 
             <g class="dim-label" text-anchor="middle">
               <text x="170" y="462">3.048 m</text><text x="400" y="462">3.048 m</text><text x="630" y="462">3.048 m</text>
-              <text x="785" y="336" transform="rotate(-90 785 336)">h (m)</text><text x="785" y="220" transform="rotate(-90 785 220)">h (m)</text><text x="785" y="106" transform="rotate(-90 785 106)">h (m)</text>
+              <text x="785" y="336" transform="rotate(-90 785 336)">1.851208 m</text><text x="785" y="220" transform="rotate(-90 785 220)">1.851208 m</text><text x="785" y="106" transform="rotate(-90 785 106)">1.851208 m</text>
             </g>
 
             <g class="dof">
@@ -266,18 +266,22 @@
           <dl class="definition-list">
             <dt>Structural system</dt><dd>2D moment frame</dd>
             <dt>Bays</dt><dd>3 × 3.048 m</dd>
-            <dt>Stories</dt><dd>3 × calibrated h (m)</dd>
+            <dt>Specimen</dt><dd>sp_1_org</dd>
+            <dt>FEM variant</dt><dd>FEM 3</dd>
+            <dt>Stories</dt><dd>3 × 1.851208 m</dd>
             <dt>Level 3</dt><dd>Roof</dd>
             <dt>Total width</dt><dd>9.144 m</dd>
-            <dt>Total height</dt><dd>3h (m)</dd>
+            <dt>Total height</dt><dd>5.553624 m</dd>
             <dt>Beam sections</dt><dd>W8×24</dd>
             <dt>Exterior columns</dt><dd>W8×28</dd>
-            <dt>Interior columns</dt><dd>W8×35</dd>
-            <dt>Base restraints</dt><dd>Fixed translation; calibrated rotation spring</dd>
+            <dt>Interior columns</dt><dd>W12×40</dd>
+            <dt>Exterior base k<sub>θ</sub></dt><dd>1.19410864e7 N·m/rad</dd>
+            <dt>Interior base k<sub>θ</sub></dt><dd>2.38821729e7 N·m/rad</dd>
+            <dt>Base restraints</dt><dd>Fixed translation; column-specific rotation springs</dd>
             <dt>Floor diaphragm</dt><dd>Rigid</dd>
             <dt>Retained DOFs</dt><dd>u₁, u₂, u₃</dd>
             <dt>Joint rotations</dt><dd>One rotational DOF at every joint</dd>
-            <dt>Calibrated FEM output</dt><dd>saved_results/fem/fem_&lt;specimen&gt;.mat</dd>
+            <dt>Calibrated FEM output</dt><dd>saved_results/fem/fem_sp_1_org_3.mat</dd>
             <dt>Damping ratio ζ</dt><dd>3%</dd>
           </dl>
         </aside>
@@ -342,6 +346,10 @@
       <h2 id="idealization-heading">FEM idealization</h2>
       <div class="grid-2">
         <div class="assumption">
+          <h3>FEM 3 calibration</h3>
+          <p>The saved model is <span class="mono">fem_sp_1_org_3.mat</span> with variant <span class="mono">inner_column_base_rotation_double_w12x40</span>. The calibrated exterior base rotational stiffness is 1.19410864e7 N·m/rad; the two interior column bases use twice that stiffness.</p>
+        </div>
+        <div class="assumption">
           <h3>Rigid floor diaphragms</h3>
           <p>All nodes at a given floor share one horizontal displacement. Every beam-column and base joint has a rotational degree of freedom. Rotations at different joints remain independent during assembly and are then statically condensed, leaving three lateral generalized coordinates: u₁, u₂, and u₃.</p>
         </div>
@@ -363,7 +371,7 @@
           <div class="drawing">
             <svg viewBox="0 0 820 475" role="img" aria-labelledby="hybrid-frame-title hybrid-frame-description">
               <title id="hybrid-frame-title">Hybrid simulation frame partition</title>
-              <desc id="hybrid-frame-description">The lower 1.016-metre portion of the first-story left exterior W8 by 28 column is red and represents the experimental scalar lateral stiffness. A roller at its upper interface carries the vertical reaction in the numerical model, while only horizontal force is exchanged with the experiment.</desc>
+              <desc id="hybrid-frame-description">The lower 1.016-metre portion of the first-story left exterior W8 by 28 column is red and represents the experimental scalar lateral stiffness. FEM 3 uses W12 by 40 interior columns and double interior base rotational springs. A roller at its upper interface carries the vertical reaction in the numerical model, while only horizontal force is exchanged with the experiment.</desc>
 
               <g class="member">
                 <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
@@ -387,9 +395,9 @@
                 <text x="170" y="42">W8×24</text><text x="400" y="42">W8×24</text><text x="630" y="42">W8×24</text>
                 <text x="170" y="155">W8×24</text><text x="400" y="155">W8×24</text><text x="630" y="155">W8×24</text>
                 <text x="170" y="268">W8×24</text><text x="400" y="268">W8×24</text><text x="630" y="268">W8×24</text>
-                <text transform="translate(45 106) rotate(-90)">W8×28</text><text transform="translate(275 106) rotate(-90)">W8×35</text><text transform="translate(505 106) rotate(-90)">W8×35</text><text transform="translate(735 106) rotate(-90)">W8×28</text>
-                <text transform="translate(45 220) rotate(-90)">W8×28</text><text transform="translate(275 220) rotate(-90)">W8×35</text><text transform="translate(505 220) rotate(-90)">W8×35</text><text transform="translate(735 220) rotate(-90)">W8×28</text>
-                <text transform="translate(45 305) rotate(-90)">W8×28</text><text transform="translate(275 333) rotate(-90)">W8×35</text><text transform="translate(505 333) rotate(-90)">W8×35</text><text transform="translate(735 333) rotate(-90)">W8×28</text>
+                <text transform="translate(45 106) rotate(-90)">W8×28</text><text transform="translate(275 106) rotate(-90)">W12×40</text><text transform="translate(505 106) rotate(-90)">W12×40</text><text transform="translate(735 106) rotate(-90)">W8×28</text>
+                <text transform="translate(45 220) rotate(-90)">W8×28</text><text transform="translate(275 220) rotate(-90)">W12×40</text><text transform="translate(505 220) rotate(-90)">W12×40</text><text transform="translate(735 220) rotate(-90)">W8×28</text>
+                <text transform="translate(45 305) rotate(-90)">W8×28</text><text transform="translate(275 333) rotate(-90)">W12×40</text><text transform="translate(505 333) rotate(-90)">W12×40</text><text transform="translate(735 333) rotate(-90)">W8×28</text>
               </g>
 
               <g class="dimension" fill="none">
@@ -401,7 +409,7 @@
 
               <g class="dim-label" text-anchor="middle">
                 <text x="170" y="462">3.048 m</text><text x="400" y="462">3.048 m</text><text x="630" y="462">3.048 m</text>
-                <text x="785" y="336" transform="rotate(-90 785 336)">h (m)</text><text x="785" y="220" transform="rotate(-90 785 220)">h (m)</text><text x="785" y="106" transform="rotate(-90 785 106)">h (m)</text>
+                <text x="785" y="336" transform="rotate(-90 785 336)">1.851208 m</text><text x="785" y="220" transform="rotate(-90 785 220)">1.851208 m</text><text x="785" y="106" transform="rotate(-90 785 106)">1.851208 m</text>
               </g>
 
               <path class="callout-line" d="M61 362H92L110 347"/>
@@ -422,6 +430,8 @@
             <dt>Experimental length</dt><dd>1.016 m</dd>
             <dt>Physical location</dt><dd>First story, left side</dd>
             <dt>Remaining structure</dt><dd>Numerical model</dd>
+            <dt>Numerical interior columns</dt><dd>W12×40</dd>
+            <dt>Interior base springs</dt><dd>2 × exterior k<sub>θ</sub></dd>
             <dt>Partition boundary</dt><dd>Specimen tip</dd>
             <dt>Experimental model</dt><dd>Scalar lateral stiffness k</dd>
             <dt>Interface command</dt><dd>d<sub>exp</sub> = u<sub>I</sub></dd>
@@ -432,7 +442,7 @@
           </dl>
           <div class="assumption" style="margin-top: 18px;">
             <h3>Coupling concept</h3>
-            <p>The numerical FEM retains the interface horizontal translation u<sub>I</sub> explicitly and removes the lower 1.016 m left exterior column segment. The experiment is represented only by its measured lateral stiffness k in N/m and returns F<sub>exp</sub> = ku<sub>I</sub> in N at that interface coordinate. A numerical roller supplies the vertical reaction, so the experiment receives no axial load; the released interface also transfers no experimental moment. No half-drift or factor-of-two stiffness assumption is used.</p>
+            <p>The numerical FEM retains the interface horizontal translation u<sub>I</sub> explicitly and removes the lower 1.016 m left exterior column segment. The experiment is represented only by its measured lateral stiffness k in N/m and returns F<sub>exp</sub> = ku<sub>I</sub> in N at that interface coordinate. A numerical roller supplies the vertical reaction, so the experiment receives no axial load; the released interface also transfers no experimental moment. The factor of two in FEM 3 applies only to the two interior-column base rotational springs.</p>
           </div>
         </aside>
       </div>
