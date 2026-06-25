@@ -18,7 +18,7 @@ damping_ratio = 0.03;
 floor_mass_kg = [20121; 20121; 18426];
 
 specimen_file = fullfile(project_root, 'saved_results', 'specimens', ...
-    'sp_1_or.mat');
+    'sp_1_org.mat');
 specimen = load(specimen_file);
 specimen_si = specimen_params_si(specimen);
 k_experimental = specimen_si.stiffness;

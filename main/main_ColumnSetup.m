@@ -54,7 +54,9 @@ testname = test_type;
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-     'fem_sp_1_or.mat'), ... % Run build_fem.m first.
+     'fem_sp_1_org_3.mat'), ... % Run build_fem.m first.
+    'delay_comp_file', fullfile(projectFolder, 'saved_results', ...
+     'delay_comp', 'fem3_ncf4_2p2z.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
     'intensity_factor', 0.012, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
@@ -71,7 +73,8 @@ t_ending = 5;                   % Smooth-stop transition time [s]
 
 % Phase-lead compensator used on the Hybrid Simulation numerical dd command.
 [delay_comp_data, delay_comp_file, delay_comp_name] = ...
-    load_saved_result_file(projectFolder, 'phase_lead');
+    load_saved_result_file(projectFolder, 'delay_comp', false, ...
+    hs.delay_comp_file);
 delay_comp_tf = delay_comp_data.delay_comp_tf;
 delay_comp_tf_discrete = c2d(delay_comp_tf, dt, 'tustin');
 [delay_comp_num, delay_comp_den] = tfdata(delay_comp_tf_discrete, 'v');
@@ -123,7 +126,6 @@ disp(file_name)
 
 % Select the active test signal manually in Simulink.
 tend = inf;
-signal_selector = 7; % 1 time history, 2 sine, 3 BLWN, 4 chirp, 5 zero, 6 square, 7 HS.
 
 data = load(hs.fem_file, 'fem');
 hs.fem = data.fem;
@@ -165,13 +167,11 @@ earthquake = earthquakes.(hs.earthquake_type);
 hs.time = earthquake(:, 1) - earthquake(1, 1);
 hs.ag = hs.intensity_factor*earthquake(:, 2);
 
-if signal_selector == 7
-    testname = sprintf('%s_HS_%s_I%g_TS%g', testname, ...
-        hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor);
-    file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
-    disp('Hybrid Simulation Test File Name Updated:')
-    disp(file_name)
-end
+testname = sprintf('%s_HS_%s_I%g_TS%g', testname, ...
+    hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor);
+file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
+disp('Hybrid Simulation Test File Name Updated:')
+disp(file_name)
 hs_M = hs.M;
 hs_C = hs.C;
 hs_K = hs.K;
@@ -214,6 +214,19 @@ disp('===============================================================')
 model = 'model_ColumnSetup_00';
 % Clearing output variable
 clear logsout
+
+disp('Hybrid Simulation Setup:')
+fprintf('  Earthquake type: %s\n', hs.earthquake_type)
+fprintf('  Intensity factor: %.6g\n', hs.intensity_factor)
+fprintf('  Earthquake duration: %.6g s\n', hs.time(end))
+fprintf('  Time scale factor: %.6g\n', hs.time_scale_factor)
+fprintf('  FEM file: %s\n', hs.fem_file)
+fprintf('  Delay compensator file: %s\n', delay_comp_file)
+continue_response = lower(strtrim(input('Continue and open Simulink? (y/n): ', 's')));
+if ~strcmp(continue_response, 'y')
+    disp('Script stopped before opening Simulink.')
+    return
+end
 
 tg = connect_speedgoat_target;
 fileLogRunCountBefore = height(list(tg.FileLog));
@@ -268,7 +281,7 @@ units = struct('t', 's', 'dt', 's', 'fs', 'Hz', ...
 save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
     'm_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
     'units', ...
-    'signal_selector', 'hs', 'delay_comp_file', 'delay_comp_name', ...
+    'hs', 'delay_comp_file', 'delay_comp_name', ...
     'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', ...
     'runStartTime', '-v7.3')
 

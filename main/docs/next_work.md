@@ -5,6 +5,7 @@
     -- what plots to show in what colors
     -- what is the new order of folders
 - Building FEM should be a separate folder from vHS and the compensator is probably another folder
+- you need to know pausing times and resuming times to compare with the refernce later
 - The final plot should plot the reference response with the measures and the error indicators
 - compare the results based on a selectd window and show error indicators
 - the vHS should include also num_PID_H_exp and compare the results in a table and in the figure

@@ -83,11 +83,14 @@
 
     svg { display: block; width: 100%; height: auto; }
     .member { stroke: #e8e8e2; stroke-width: 2; }
-    .base { stroke: var(--warm); stroke-width: 2; }
+    .base-restraint { stroke: var(--warm); stroke-width: 1.7; fill: none; }
+    .rot-spring { stroke: var(--warm); stroke-width: 1.8; fill: none; }
     .dimension { stroke: var(--accent); stroke-width: 1.3; }
     .label { fill: #ededE8; font: 15px Georgia, serif; }
+    .base-label { fill: var(--warm); font: 13px "IBM Plex Sans", sans-serif; }
     .dim-label { fill: var(--accent); font: 14px "IBM Plex Sans", sans-serif; }
     .dof { fill: var(--green); font: 13px "IBM Plex Sans", sans-serif; }
+    .rot-dof { stroke: var(--green); stroke-width: 1.45; fill: none; }
 
     .model-notes {
       border-top: 2px solid var(--text);
@@ -211,25 +214,55 @@
       <h2 id="geometry-heading">Frame geometry and member schedule</h2>
       <div class="frame-layout">
         <div class="drawing">
-          <svg viewBox="0 0 820 475" role="img" aria-labelledby="frame-title frame-description">
+          <svg viewBox="0 0 820 490" role="img" aria-labelledby="frame-title frame-description">
             <title id="frame-title">Three-story, three-bay steel moment frame</title>
             <desc id="frame-description">Each bay is 3.048 metres wide and the FEM 3 common story height is 1.851208 metres. Exterior columns are W8 by 28, interior columns are W12 by 40, and all beams are W8 by 24.</desc>
+            <defs>
+              <g id="rot-dof-symbol">
+                <path d="M-6 -4A8 8 0 1 1 -7 5"/>
+                <path d="M-7 5l-4-1.5l1.2 4.1"/>
+              </g>
+              <g id="base-spring-exterior">
+                <circle cx="0" cy="0" r="7.5"/>
+                <path d="M0 -7.5A7.5 7.5 0 0 1 7.5 0"/>
+                <path d="M7.5 0l-3.8-1.7l1.6 3.9"/>
+              </g>
+              <g id="base-spring-interior">
+                <circle cx="0" cy="0" r="9.5"/>
+                <circle cx="0" cy="0" r="5.8"/>
+                <path d="M0 -9.5A9.5 9.5 0 0 1 9.5 0"/>
+                <path d="M9.5 0l-4.3-1.9l1.7 4.4"/>
+              </g>
+            </defs>
 
             <g class="member">
               <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
               <path d="M55 50H745 M55 163H745 M55 276H745"/>
             </g>
 
-            <g class="joint-rotation" aria-label="Independent rotational degree of freedom at every frame joint">
-              <circle cx="55" cy="50" r="3.5"/><circle cx="285" cy="50" r="3.5"/><circle cx="515" cy="50" r="3.5"/><circle cx="745" cy="50" r="3.5"/>
-              <circle cx="55" cy="163" r="3.5"/><circle cx="285" cy="163" r="3.5"/><circle cx="515" cy="163" r="3.5"/><circle cx="745" cy="163" r="3.5"/>
-              <circle cx="55" cy="276" r="3.5"/><circle cx="285" cy="276" r="3.5"/><circle cx="515" cy="276" r="3.5"/><circle cx="745" cy="276" r="3.5"/>
-              <circle cx="55" cy="390" r="3.5"/><circle cx="285" cy="390" r="3.5"/><circle cx="515" cy="390" r="3.5"/><circle cx="745" cy="390" r="3.5"/>
+            <g class="rot-dof" aria-label="Independent rotational degree of freedom at every frame joint">
+              <use href="#rot-dof-symbol" x="55" y="50"/><use href="#rot-dof-symbol" x="285" y="50"/><use href="#rot-dof-symbol" x="515" y="50"/><use href="#rot-dof-symbol" x="745" y="50"/>
+              <use href="#rot-dof-symbol" x="55" y="163"/><use href="#rot-dof-symbol" x="285" y="163"/><use href="#rot-dof-symbol" x="515" y="163"/><use href="#rot-dof-symbol" x="745" y="163"/>
+              <use href="#rot-dof-symbol" x="55" y="276"/><use href="#rot-dof-symbol" x="285" y="276"/><use href="#rot-dof-symbol" x="515" y="276"/><use href="#rot-dof-symbol" x="745" y="276"/>
+              <use href="#rot-dof-symbol" x="55" y="390"/><use href="#rot-dof-symbol" x="285" y="390"/><use href="#rot-dof-symbol" x="515" y="390"/><use href="#rot-dof-symbol" x="745" y="390"/>
             </g>
 
-            <g class="base">
-              <path d="M37 390H73 M267 390H303 M497 390H533 M727 390H763"/>
-              <path d="M40 397l7-7m3 7 7-7m3 7 7-7 M270 397l7-7m3 7 7-7m3 7 7-7 M500 397l7-7m3 7 7-7m3 7 7-7 M730 397l7-7m3 7 7-7m3 7 7-7"/>
+            <g class="base-restraint" aria-label="Translationally restrained bases with rotational springs">
+              <path d="M37 412H73 M267 412H303 M497 412H533 M727 412H763"/>
+              <path d="M43 418l6-6m4 6l6-6m4 6l6-6 M273 418l6-6m4 6l6-6m4 6l6-6 M503 418l6-6m4 6l6-6m4 6l6-6 M733 418l6-6m4 6l6-6m4 6l6-6"/>
+              <path d="M55 390V405 M285 390V405 M515 390V405 M745 390V405"/>
+              <path d="M45 405H65 M275 405H295 M505 405H525 M735 405H755"/>
+            </g>
+
+            <g class="rot-spring" aria-label="Column base rotational springs">
+              <use href="#base-spring-exterior" x="55" y="390"/>
+              <use href="#base-spring-interior" x="285" y="390"/>
+              <use href="#base-spring-interior" x="515" y="390"/>
+              <use href="#base-spring-exterior" x="745" y="390"/>
+            </g>
+
+            <g class="base-label" text-anchor="middle">
+              <text x="55" y="433">kθ,e</text><text x="285" y="433">2kθ,e</text><text x="515" y="433">2kθ,e</text><text x="745" y="433">kθ,e</text>
             </g>
 
             <g class="label" text-anchor="middle">
@@ -245,19 +278,20 @@
             </g>
 
             <g class="dimension" fill="none">
-              <path d="M55 410V448 M285 410V448 M515 410V448 M745 410V448 M55 438H745"/>
-              <path d="M55 438l12-4v8z M285 438l-12-4v8z M285 438l12-4v8z M515 438l-12-4v8z M515 438l12-4v8z M745 438l-12-4v8z" fill="var(--accent)"/>
+              <path d="M55 438V466 M285 438V466 M515 438V466 M745 438V466 M55 456H745"/>
+              <path d="M55 456l12-4v8z M285 456l-12-4v8z M285 456l12-4v8z M515 456l-12-4v8z M515 456l12-4v8z M745 456l-12-4v8z" fill="var(--accent)"/>
               <path d="M770 390H805 M770 276H805 M770 163H805 M770 50H805 M795 390V50"/>
               <path d="M795 390l-4-12h8z M795 276l-4 12h8z M795 276l-4-12h8z M795 163l-4 12h8z M795 163l-4-12h8z M795 50l-4 12h8z" fill="var(--accent)"/>
             </g>
 
             <g class="dim-label" text-anchor="middle">
-              <text x="170" y="462">3.048 m</text><text x="400" y="462">3.048 m</text><text x="630" y="462">3.048 m</text>
+              <text x="170" y="472">3.048 m</text><text x="400" y="472">3.048 m</text><text x="630" y="472">3.048 m</text>
               <text x="785" y="336" transform="rotate(-90 785 336)">1.851208 m</text><text x="785" y="220" transform="rotate(-90 785 220)">1.851208 m</text><text x="785" y="106" transform="rotate(-90 785 106)">1.851208 m</text>
             </g>
 
             <g class="dof">
               <text x="665" y="83">u₃ →</text><text x="665" y="196">u₂ →</text><text x="665" y="309">u₁ →</text>
+              <text x="94" y="384">θb</text><text x="314" y="384">θb</text><text x="544" y="384">θb</text><text x="704" y="384">θb</text>
             </g>
           </svg>
         </div>
@@ -369,13 +403,37 @@
       <div class="hybrid-layout">
         <div>
           <div class="drawing">
-            <svg viewBox="0 0 820 475" role="img" aria-labelledby="hybrid-frame-title hybrid-frame-description">
+            <svg viewBox="0 0 820 490" role="img" aria-labelledby="hybrid-frame-title hybrid-frame-description">
               <title id="hybrid-frame-title">Hybrid simulation frame partition</title>
               <desc id="hybrid-frame-description">The lower 1.016-metre portion of the first-story left exterior W8 by 28 column is red and represents the experimental scalar lateral stiffness. FEM 3 uses W12 by 40 interior columns and double interior base rotational springs. A roller at its upper interface carries the vertical reaction in the numerical model, while only horizontal force is exchanged with the experiment.</desc>
+              <defs>
+                <g id="hybrid-rot-dof-symbol">
+                  <path d="M-6 -4A8 8 0 1 1 -7 5"/>
+                  <path d="M-7 5l-4-1.5l1.2 4.1"/>
+                </g>
+                <g id="hybrid-base-spring-exterior">
+                  <circle cx="0" cy="0" r="7.5"/>
+                  <path d="M0 -7.5A7.5 7.5 0 0 1 7.5 0"/>
+                  <path d="M7.5 0l-3.8-1.7l1.6 3.9"/>
+                </g>
+                <g id="hybrid-base-spring-interior">
+                  <circle cx="0" cy="0" r="9.5"/>
+                  <circle cx="0" cy="0" r="5.8"/>
+                  <path d="M0 -9.5A9.5 9.5 0 0 1 9.5 0"/>
+                  <path d="M9.5 0l-4.3-1.9l1.7 4.4"/>
+                </g>
+              </defs>
 
               <g class="member">
                 <path d="M55 390V50 M285 390V50 M515 390V50 M745 390V50"/>
                 <path d="M55 50H745 M55 163H745 M55 276H745"/>
+              </g>
+
+              <g class="rot-dof" aria-label="Independent rotational degree of freedom at every frame joint">
+                <use href="#hybrid-rot-dof-symbol" x="55" y="50"/><use href="#hybrid-rot-dof-symbol" x="285" y="50"/><use href="#hybrid-rot-dof-symbol" x="515" y="50"/><use href="#hybrid-rot-dof-symbol" x="745" y="50"/>
+                <use href="#hybrid-rot-dof-symbol" x="55" y="163"/><use href="#hybrid-rot-dof-symbol" x="285" y="163"/><use href="#hybrid-rot-dof-symbol" x="515" y="163"/><use href="#hybrid-rot-dof-symbol" x="745" y="163"/>
+                <use href="#hybrid-rot-dof-symbol" x="55" y="276"/><use href="#hybrid-rot-dof-symbol" x="285" y="276"/><use href="#hybrid-rot-dof-symbol" x="515" y="276"/><use href="#hybrid-rot-dof-symbol" x="745" y="276"/>
+                <use href="#hybrid-rot-dof-symbol" x="55" y="390"/><use href="#hybrid-rot-dof-symbol" x="285" y="390"/><use href="#hybrid-rot-dof-symbol" x="515" y="390"/><use href="#hybrid-rot-dof-symbol" x="745" y="390"/>
               </g>
 
               <path class="experimental-member" d="M55 390V333"/>
@@ -386,9 +444,22 @@
                 <path d="M42 356H68"/>
               </g>
 
-              <g class="base">
-                <path d="M37 390H73 M267 390H303 M497 390H533 M727 390H763"/>
-                <path d="M40 397l7-7m3 7 7-7m3 7 7-7 M270 397l7-7m3 7 7-7m3 7 7-7 M500 397l7-7m3 7 7-7m3 7 7-7 M730 397l7-7m3 7 7-7m3 7 7-7"/>
+              <g class="base-restraint" aria-label="Translationally restrained bases with rotational springs">
+                <path d="M37 412H73 M267 412H303 M497 412H533 M727 412H763"/>
+                <path d="M43 418l6-6m4 6l6-6m4 6l6-6 M273 418l6-6m4 6l6-6m4 6l6-6 M503 418l6-6m4 6l6-6m4 6l6-6 M733 418l6-6m4 6l6-6m4 6l6-6"/>
+                <path d="M55 390V405 M285 390V405 M515 390V405 M745 390V405"/>
+                <path d="M45 405H65 M275 405H295 M505 405H525 M735 405H755"/>
+              </g>
+
+              <g class="rot-spring" aria-label="Column base rotational springs">
+                <use href="#hybrid-base-spring-exterior" x="55" y="390"/>
+                <use href="#hybrid-base-spring-interior" x="285" y="390"/>
+                <use href="#hybrid-base-spring-interior" x="515" y="390"/>
+                <use href="#hybrid-base-spring-exterior" x="745" y="390"/>
+              </g>
+
+              <g class="base-label" text-anchor="middle">
+                <text x="55" y="433">kθ,e</text><text x="285" y="433">2kθ,e</text><text x="515" y="433">2kθ,e</text><text x="745" y="433">kθ,e</text>
               </g>
 
               <g class="label" text-anchor="middle">
@@ -401,21 +472,24 @@
               </g>
 
               <g class="dimension" fill="none">
-                <path d="M55 410V448 M285 410V448 M515 410V448 M745 410V448 M55 438H745"/>
-                <path d="M55 438l12-4v8z M285 438l-12-4v8z M285 438l12-4v8z M515 438l-12-4v8z M515 438l12-4v8z M745 438l-12-4v8z" fill="var(--accent)"/>
+                <path d="M55 438V466 M285 438V466 M515 438V466 M745 438V466 M55 456H745"/>
+                <path d="M55 456l12-4v8z M285 456l-12-4v8z M285 456l12-4v8z M515 456l-12-4v8z M515 456l12-4v8z M745 456l-12-4v8z" fill="var(--accent)"/>
                 <path d="M770 390H805 M770 276H805 M770 163H805 M770 50H805 M795 390V50"/>
                 <path d="M795 390l-4-12h8z M795 276l-4 12h8z M795 276l-4-12h8z M795 163l-4 12h8z M795 163l-4-12h8z M795 50l-4 12h8z" fill="var(--accent)"/>
               </g>
 
               <g class="dim-label" text-anchor="middle">
-                <text x="170" y="462">3.048 m</text><text x="400" y="462">3.048 m</text><text x="630" y="462">3.048 m</text>
+                <text x="170" y="472">3.048 m</text><text x="400" y="472">3.048 m</text><text x="630" y="472">3.048 m</text>
                 <text x="785" y="336" transform="rotate(-90 785 336)">1.851208 m</text><text x="785" y="220" transform="rotate(-90 785 220)">1.851208 m</text><text x="785" y="106" transform="rotate(-90 785 106)">1.851208 m</text>
               </g>
 
               <path class="callout-line" d="M61 362H92L110 347"/>
-              <text class="callout-text" x="118" y="337">1.016 m experimental k</text>
-              <text class="callout-text" x="118" y="354">horizontal force only</text>
-              <text class="callout-text" x="118" y="371">roller carries vertical reaction</text>
+              <text class="callout-text" x="118" y="337">Lexp = 1.016 m</text>
+              <text class="callout-text" x="118" y="354">Fexp = k uI</text>
+              <text class="callout-text" x="118" y="371">roller carries V</text>
+              <g class="dof">
+                <text x="94" y="384">θb</text><text x="314" y="384">θb</text><text x="544" y="384">θb</text><text x="704" y="384">θb</text>
+              </g>
             </svg>
           </div>
           <div class="legend" aria-label="Hybrid model legend">

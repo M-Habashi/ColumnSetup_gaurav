@@ -11,36 +11,36 @@
 ## MATLAB Run
 6. check the file name in the main script
 7. check HS parametrs in the main script
-7. Run the MATLAB main script.
-8. Make sure all dashboard switches are down.
-9. Click Run on target.
-10. Make sure the dd is zero.
+8. Run the MATLAB main script.
+9. Make sure all dashboard switches are down.
+10. Click Run on target.
+11. Make sure the dd is zero.
    [If the dd is not zero, use the Constant block to send to zero.]
-11. switch to constant signal and change it to 2 and make sure you are reading the same in MTS. Then switch it back to 0
-11. Select the right signal and the right parameters.
-12. Set switch 1 up: zero measurement.
-13. Check displacement and force measurement are zero.
-14. Set switch 1 down.
+12. switch to constant signal and change it to 2 and make sure you are reading the same in MTS. Then switch it back to 0
+13. Select the right signal and the right parameters.
+14. Set switch 1 up: zero measurement.
+15. Check displacement and force measurement are zero.
+16. Set switch 1 down.
 
 ## External Command Run
-15. In the external command tab check target setpoint = measurement.
-16. Check the external signal is zero
-17. Run external command in MTS.
+17. In the external command tab check target setpoint = measurement.
+18. Check the external signal is zero
+19. Run external command in MTS.
 
 ## Starting the test
-18. Check the outer controller command is following dd (zero)
-19. Switch 2 up → to run the outer controller
-20. Set switch 3 up → simulation start.
+20. Check the outer controller command is following dd (zero)
+21. Switch 2 up → to run the outer controller
+22. Set switch 3 up → simulation start.
 
 ## Finishing the test
-21. Set switch 3 down to pause.
-22. Set switch 4 up to ramp to initial position.
+23. Set switch 3 down to pause.
+24. Set switch 4 up to ramp to initial position.
 
-23. Stop external command from MTS
-24. Set switch 2 down
-25. Stop Simulink.
-26. Set switch 4 down
-27. In MATLAB command line, press space to save.
+25. Stop external command from MTS
+26. Set switch 2 down
+27. Stop Simulink.
+28. Set switch 4 down
+29. In MATLAB command line, press space to save.
 
 ## Optional
    Optional pause:
