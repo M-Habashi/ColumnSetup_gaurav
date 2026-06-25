@@ -14,10 +14,14 @@ validateattributes(n_bay, {'numeric'}, {'scalar','integer','positive'});
 validateattributes(bay_width, {'numeric'}, {'scalar','real','finite','positive'});
 validateattributes(story_height, {'numeric'}, {'scalar','real','finite','positive'});
 validateattributes(E, {'numeric'}, {'scalar','real','finite','positive'});
-validateRotationalStiffness(beam_connection_k, 'beam_connection_k');
-validateRotationalStiffness(base_rotation_k, 'base_rotation_k');
+validateScalarRotationalStiffness(beam_connection_k, 'beam_connection_k');
+base_rotation_by_column = expandBaseRotationStiffness( ...
+    base_rotation_k, n_bay+1, 'base_rotation_k');
 
-required_sections = {'W8x24','W8x28','W8x35'};
+exterior_column_section = getSectionName(section, ...
+    'exterior_column', 'W8x28');
+inner_column_section = getSectionName(section, 'inner_column', 'W8x35');
+required_sections = {'W8x24', exterior_column_section, inner_column_section};
 for section_id = 1:numel(required_sections)
     name = required_sections{section_id};
     assert(isfield(section, name) && isfield(section.(name), 'Ix'), ...
@@ -28,7 +32,7 @@ end
 next_dof = n_story;
 joint_rotation = zeros(n_bay+1, n_story+1);
 for column_id = 1:(n_bay+1)
-    if ~isinf(base_rotation_k)
+    if ~isinf(base_rotation_by_column(column_id))
         next_dof = next_dof+1;
         joint_rotation(column_id, 1) = next_dof;
     end
@@ -62,9 +66,9 @@ K_full = zeros(next_dof);
 % Euler-Bernoulli columns. All nodes on a floor share one translation,
 % while each beam-column joint retains its own rotation.
 for column_id = 1:(n_bay+1)
-    column_section = section.W8x35;
+    column_section = section.(inner_column_section);
     if column_id == 1 || column_id == n_bay+1
-        column_section = section.W8x28;
+        column_section = section.(exterior_column_section);
     end
     k_column = eulerBernoulliBendingStiffness( ...
         E, column_section.Ix, story_height);
@@ -103,12 +107,15 @@ for level_id = 1:n_story
     end
 end
 
-if ~isinf(base_rotation_k)
+if any(~isinf(base_rotation_by_column))
     base_dofs = joint_rotation(:, 1);
     for column_id = 1:(n_bay+1)
+        if isinf(base_rotation_by_column(column_id))
+            continue
+        end
         K_full(base_dofs(column_id), base_dofs(column_id)) = ...
             K_full(base_dofs(column_id), base_dofs(column_id)) ...
-            + base_rotation_k;
+            + base_rotation_by_column(column_id);
     end
 end
 
@@ -133,6 +140,7 @@ model.retained_dofs = retained;
 model.internal_dofs = internal;
 model.beam_connection_k = beam_connection_k;
 model.base_rotation_k = base_rotation_k;
+model.base_rotation_k_by_column = base_rotation_by_column;
 end
 
 function k = eulerBernoulliBendingStiffness(E, I, L)
@@ -152,9 +160,35 @@ K(active_dofs, active_dofs) = K(active_dofs, active_dofs) ...
     + k_element(active, active);
 end
 
-function validateRotationalStiffness(value, name)
+function validateScalarRotationalStiffness(value, name)
 % Units: value [N*m/rad]; name is unitless text.
 assert(isnumeric(value) && isscalar(value) && isreal(value) ...
     && value > 0 && (isfinite(value) || isinf(value)), ...
     '%s must be a positive finite scalar or Inf.', name);
+end
+
+function value_by_column = expandBaseRotationStiffness(value, n_column, name)
+% Units: value/value_by_column [N*m/rad]; n_column is a count.
+assert(isnumeric(value) && isreal(value) && ~isempty(value) ...
+    && all(value(:) > 0) ...
+    && all(isfinite(value(:)) | isinf(value(:))), ...
+    '%s must contain positive finite values or Inf.', name);
+
+if isscalar(value)
+    value_by_column = repmat(value, n_column, 1);
+else
+    value_by_column = value(:);
+    assert(numel(value_by_column) == n_column, ...
+        '%s must be scalar or contain one value per column.', name);
+end
+end
+
+function section_name = getSectionName(section, field_name, default_name)
+% section/default_name/section_name are metadata strings.
+if isfield(section, field_name)
+    section_name = section.(field_name);
+else
+    section_name = default_name;
+end
+section_name = char(section_name);
 end

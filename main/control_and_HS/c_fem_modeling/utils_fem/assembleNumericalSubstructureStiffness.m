@@ -9,6 +9,12 @@ function [K_retained, model] = assembleNumericalSubstructureStiffness( ...
 
 n_story = frame.n_story;
 n_bay = frame.n_bay;
+exterior_column_section = getSectionName(frame.section, ...
+    'exterior_column', 'W8x28');
+inner_column_section = getSectionName(frame.section, ...
+    'inner_column', 'W8x35');
+base_rotation_by_column = expandBaseRotationStiffness( ...
+    frame.base_rotation_k, n_bay+1, 'frame.base_rotation_k');
 validateattributes(interface_height, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'positive', '<', frame.story_height});
 
@@ -18,7 +24,7 @@ joint_rotation = zeros(n_bay+1, n_story+1);
 
 % The left base is experimental. Other column bases retain their springs.
 for column_id = 2:(n_bay+1)
-    if ~isinf(frame.base_rotation_k)
+    if ~isinf(base_rotation_by_column(column_id))
         next_dof = next_dof+1;
         joint_rotation(column_id, 1) = next_dof;
     end
@@ -53,9 +59,9 @@ end
 
 K_full = zeros(next_dof);
 for column_id = 1:(n_bay+1)
-    column_section = frame.section.W8x35;
+    column_section = frame.section.(inner_column_section);
     if column_id == 1 || column_id == n_bay+1
-        column_section = frame.section.W8x28;
+        column_section = frame.section.(exterior_column_section);
     end
 
     for story_id = 1:n_story
@@ -98,11 +104,14 @@ for level_id = 1:n_story
     end
 end
 
-if ~isinf(frame.base_rotation_k)
+if any(~isinf(base_rotation_by_column(2:end)))
     for column_id = 2:(n_bay+1)
+        if isinf(base_rotation_by_column(column_id))
+            continue
+        end
         base_dof = joint_rotation(column_id, 1);
         K_full(base_dof, base_dof) = K_full(base_dof, base_dof) ...
-            + frame.base_rotation_k;
+            + base_rotation_by_column(column_id);
     end
 end
 
@@ -124,6 +133,7 @@ model.interface_dof = interface_dof;
 model.interface_rotation_dof = interface_rotation_dof;
 model.joint_rotation_dofs = joint_rotation;
 model.beam_rotation_dofs = beam_rotation;
+model.base_rotation_k_by_column = base_rotation_by_column;
 model.interface_height = interface_height;
 model.interface_restraint = 'vertical roller; horizontal translation free';
 model.interface_transfers = 'horizontal force only';
@@ -143,4 +153,32 @@ function K = assembleElement(K, k_element, dofs)
 active = dofs > 0;
 dofs = dofs(active);
 K(dofs, dofs) = K(dofs, dofs)+k_element(active, active);
+end
+
+function value_by_column = expandBaseRotationStiffness(value, n_column, name)
+% Units: value/value_by_column [N*m/rad]; n_column is a count.
+assert(isnumeric(value) && isreal(value) && ~isempty(value) ...
+    && all(value(:) > 0) ...
+    && all(isfinite(value(:)) | isinf(value(:))), ...
+    '%s must contain positive finite values or Inf.', name);
+
+if isscalar(value)
+    value_by_column = repmat(value, n_column, 1);
+else
+    value_by_column = value(:);
+    assert(numel(value_by_column) == n_column, ...
+        '%s must be scalar or contain one value per column.', name);
+end
+end
+
+function section_name = getSectionName(section, field_name, default_name)
+% section/default_name/section_name are metadata strings.
+if isfield(section, field_name)
+    section_name = section.(field_name);
+else
+    section_name = default_name;
+end
+section_name = char(section_name);
+assert(isfield(section, section_name) && isfield(section.(section_name), 'Ix'), ...
+    'Section %s must define Ix.', section_name);
 end
