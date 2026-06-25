@@ -285,48 +285,57 @@
     </section>
 
     <section id="loads" aria-labelledby="loads-heading">
-      <h2 id="loads-heading">Mass and earthquake input definition</h2>
+      <h2 id="loads-heading">Gravity load calculation</h2>
       <div class="grid-2">
         <div>
-          <h3>SI inputs used by the FEM</h3>
+          <h3>Imperial input assumptions</h3>
           <table>
             <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
             <tbody>
-              <tr><td>Level 1 mass</td><td class="mono">20,121 kg</td></tr>
-              <tr><td>Level 2 mass</td><td class="mono">20,121 kg</td></tr>
-              <tr><td>Roof mass</td><td class="mono">18,426 kg</td></tr>
-              <tr><td>Gravity constant</td><td class="mono">9.80665 m/s²</td></tr>
-              <tr><td>Earthquake records</td><td class="mono">m/s²</td></tr>
-              <tr><td>SAP present units</td><td class="mono">N–m–°C</td></tr>
+              <tr><td>Structural calculation units</td><td class="mono">kip-ft, ksi</td></tr>
+              <tr><td>Bay width</td><td class="mono">10 ft</td></tr>
+              <tr><td>Tributary width</td><td class="mono">10 ft</td></tr>
+              <tr><td>Dead load area, DL</td><td class="mono">100 psf</td></tr>
+              <tr><td>Floor live load area, LL</td><td class="mono">50 psf</td></tr>
+              <tr><td>Roof live load area</td><td class="mono">0.5LL = 25 psf</td></tr>
+              <tr><td>Beam self-weight</td><td class="mono">W8x24 = 24 lb/ft</td></tr>
+              <tr><td>Earthquake combination</td><td class="mono">1.2D + 0.5L +/- E</td></tr>
             </tbody>
           </table>
         </div>
 
         <div>
-          <h3>Derived level weights</h3>
+          <h3>Line-load derivation</h3>
           <div class="equations mono">
-            <p>W<sub>1</sub> = 20,121 × 9.80665 = 197,320 N</p>
-            <p>W<sub>2</sub> = 20,121 × 9.80665 = 197,320 N</p>
-            <p>W<sub>3</sub> = 18,426 × 9.80665 = 180,697 N</p>
-            <p>K is assembled in N/m.</p>
-            <p>M is assembled in kg and C in N·s/m.</p>
+            <p>w<sub>DL,area</sub> = 100 psf x 10 ft = 1.000 kip/ft</p>
+            <p>w<sub>DL</sub> = 1.000 + 0.024 = 1.024 kip/ft</p>
+            <p>w<sub>LL,floor</sub> = 50 psf x 10 ft = 0.500 kip/ft</p>
+            <p>w<sub>LL,roof</sub> = 25 psf x 10 ft = 0.250 kip/ft</p>
+            <p>w<sub>floor</sub> = 1.2(1.024) + 0.5(0.500) = 1.479 kip/ft</p>
+            <p>w<sub>roof</sub> = 1.2(1.024) + 0.5(0.250) = 1.354 kip/ft</p>
           </div>
         </div>
       </div>
     </section>
 
     <section aria-labelledby="mass-heading">
-      <h2 id="mass-heading">FEM mass and weight values</h2>
+      <h2 id="mass-heading">Story weight and final mass conversion</h2>
       <table>
         <thead>
-          <tr><th>Quantity</th><th>Expression</th><th>Result</th></tr>
+          <tr><th>Quantity</th><th>Imperial expression</th><th>Final FEM mass</th></tr>
         </thead>
         <tbody>
-          <tr><td>Level 1</td><td class="mono">20,121 kg × 9.80665 m/s²</td><td class="mono">197,320 N</td></tr>
-          <tr><td>Level 2</td><td class="mono">20,121 kg × 9.80665 m/s²</td><td class="mono">197,320 N</td></tr>
-          <tr class="strong-row"><td>Roof</td><td class="mono">18,426 kg × 9.80665 m/s²</td><td class="mono">180,697 N</td></tr>
+          <tr><td>One 10-ft bay, Levels 1-2</td><td class="mono">1.479 kip/ft x 10 ft = 14.79 kip</td><td class="mono">6,707 kg</td></tr>
+          <tr><td>Complete floor, Levels 1-2</td><td class="mono">14.79 kip x 3 bays = 44.37 kip</td><td class="mono">20,121 kg</td></tr>
+          <tr><td>One 10-ft bay, roof</td><td class="mono">1.354 kip/ft x 10 ft = 13.54 kip</td><td class="mono">6,142 kg</td></tr>
+          <tr class="strong-row"><td>Complete roof, 3 bays</td><td class="mono">13.54 kip x 3 bays = 40.62 kip</td><td class="mono">18,426 kg</td></tr>
         </tbody>
       </table>
+      <div class="equations mono" style="margin-top: 16px;">
+        <p>Final conversion only: mass [kg] = weight [kip] x 453.59237 kg/kip.</p>
+        <p>FEM input: M = diag([20121, 20121, 18426]) kg.</p>
+        <p>Weight reporting: W = M x 9.80665 m/s^2 after the final mass conversion.</p>
+      </div>
     </section>
 
     <section id="idealization" aria-labelledby="idealization-heading">
