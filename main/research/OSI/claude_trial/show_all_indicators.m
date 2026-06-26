@@ -6,17 +6,19 @@
 this_dir = fileparts(mfilename('fullpath'));
 addpath(fullfile(this_dir, 'common'));
 files = getfield(osi_config(), 'test_files');   %#ok<GFLD>
-tags  = {'trial_1','trial_2','trial_3','trial_4','trial_5','trial_6'};
+tags  = {'trial_1','trial_2','trial_3','trial_4','trial_5','trial_6','trial_7'};
 short = {'M1: nonparametric H1 (direct)', 'M2: parametric per-window', ...
          'M3: dd-instrument', 'M4: nu-gap drift', ...
-         'M5: recursive RLS tracker', 'M6: recursive freq-point Kalman'};
+         'M5: recursive RLS tracker', 'M6: recursive freq-point Kalman', ...
+         'M7: output resonance (sensitivity peak)'};
+nM = numel(tags);
 
 for fi = 1:numel(files)
     setappdata(0, 'osi_data_file', files{fi});
     cfg = osi_config();  ctx = osi_load_context(cfg);
 
-    S = cell(6,1);
-    for i = 1:6
+    S = cell(nM,1);
+    for i = 1:nM
         f = fullfile(cfg.results_dir, [tags{i} '_' cfg.data_id '_result.mat']);
         if ~isfile(f), evalc(['run(''' fullfile(this_dir,tags{i},['run_' tags{i} '.m']) ''')']); end
         Ld = load(f); S{i} = Ld.result;
@@ -37,10 +39,11 @@ for fi = 1:numel(files)
     xlabel(ax1,'time (s)'); ylabel(ax1,'displacement (mm)');
     title(ax1,'Reference dd and response dm'); legend(ax1,'Location','best');
 
-    for i = 1:6
+    for i = 1:nM
         ax = subplot(4,2,i+1); r = S{i};
         if numel(r.tc) <= 30, sty = {'-o','MarkerFaceColor','w'}; else, sty = {'-'}; end
-        plot(ax, r.tc, r.ncf, sty{:}, 'Color',[0.20 0.30 0.55], 'LineWidth',1.6, ...
+        col = [0.20 0.30 0.55]; if i==7, col = [0.55 0 0.35]; end   % highlight M7
+        plot(ax, r.tc, r.ncf, sty{:}, 'Color',col, 'LineWidth',1.6, ...
             'DisplayName','indicator'); hold(ax,'on');
         if isfield(r,'extra')
             for e = 1:numel(r.extra)
@@ -51,19 +54,12 @@ for fi = 1:numel(files)
         thr = cfg.ncf_threshold; if isfield(r,'threshold'), thr = r.threshold; end
         yline(ax, r.nominal, '--', 'nominal', 'Color',[0 0.45 0.74], 'HandleVisibility','off');
         yline(ax, thr, ':', 'threshold', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
+        if isfield(r,'detect_time') && ~isnan(r.detect_time)
+            xline(ax, r.detect_time, '-.', 'Color',[0.6 0 0], 'HandleVisibility','off');
+        end
         grid(ax,'on'); xlim(ax,[cfg.t_start cfg.t_end]);
         xlabel(ax,'time (s)'); ylabel(ax,'NCF margin'); title(ax, short{i});
     end
-
-    axz = subplot(4,2,8); hold(axz,'on'); grid(axz,'on');
-    plot(axz, S{1}.tc, S{1}.ncf, '-o', 'Color',[0.30 0.6 0.30], 'MarkerSize',3, 'DisplayName','M1');
-    plot(axz, S{6}.tc, S{6}.ncf, '-o', 'Color',[0.10 0.20 0.55], 'LineWidth',1.6, 'MarkerSize',3, 'DisplayName','M6');
-    plot(axz, S{3}.tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10], 'MarkerSize',3, 'DisplayName','M3');
-    yline(axz, cfg.ncf_threshold, ':', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
-    zw = [max(cfg.t_start, cfg.t_end-12) cfg.t_end];
-    xlim(axz, zw); ylim(axz,[0 0.7]);
-    xlabel(axz,'time (s)'); ylabel(axz,'NCF margin');
-    title(axz, sprintf('End-of-window zoom (%.0f-%.0f s)', zw(1), zw(2))); legend(axz,'Location','southwest');
 
     if cfg.low_freq_input
         tag = sprintf('data %s -- LOW-FREQUENCY input (dd median ~3 Hz): band [%g %g] Hz', ...

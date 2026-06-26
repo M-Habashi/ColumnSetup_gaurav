@@ -175,37 +175,39 @@ and band. The 1749 record (`...1749...mat`) is the *same* test type but with a
 - `dd` is band-limited: **median frequency ≈ 2.8 Hz** (vs 41.5 Hz for 1731);
   ~all of its energy is below ~6 Hz.
 - Active window **100–286 s** (the `dm = −14.6` excursion is a *start-up*
-  transient at 0–50 s with **no input**, not an in-test divergence). In the
-  active window the system stays **stable** — the controller catches a brief
-  35.5 Hz blip at ~278 s; there is no sustained instability to detect.
+  transient at 0–50 s with **no input**). **Both files have the same evolving
+  instability**: the **35 Hz closed-loop resonance grows** as the margin shrinks.
+  In 1749 it erupts at **~256–280 s** (resonance amplification jumps from ~1.5 to
+  **~16**), then the controller catches it (transient, recovers) — the same
+  mechanism as 1731's collapse, just faster.
 
-**Why the methods first failed, and the fix.** The binding NCF feature is still
-the **35 Hz** resonance — but the low-frequency input never excites it, so the
-FRF there is **leakage-corrupted** (estimated `|H|` runs 15–20 dB high, driving
-`|L|→1∠180° = −1`). Run naively, every FRF method returns a **spurious 0.000**.
-Two changes fix this and are now the default:
-1. a **global input-power gate** (`cfg.input_power_range_db = 30`, as in the
-   repo's `sys_id.m`) keeps only FRF bins within 30 dB of the in-band peak,
-   rejecting the unexcited/leakage bins (coherence does *not* help here — it
-   reads ~1 even on the corrupted bins);
-2. a **per-file band**: 1749 is evaluated over the **excited** `[1, 8] Hz` band
-   (the binding 35 Hz mode is simply not observable from this input).
+**Why the FRF methods (M1–M6) cannot see it on 1749 — and why that is *not* a
+sensing failure but a known identifiability fact.** With no *external* 35 Hz
+excitation, `e = dd − dm ≈ −dm` at 35 Hz, so `dm/dc ≈ −1/C` and the open-loop
+estimate `L = C·H ≈ −1` **regardless of the true margin** — a closed-loop
+**identifiability tautology**, not real information. (Run without a gate this
+shows up as a spurious `0.000`; the input-power gate + `[1, 8] Hz` band, now
+default, instead make M1–M6 report the **healthy low-frequency loop** — true,
+but blind to the 35 Hz event. M2 is noisy and M4 is N/A on so few bins.)
 
-**Result (1749, `all_indicators_overview_1749.png`).** The nonparametric and
-recursive methods now report a **clean, healthy margin ≈ 0.66–0.70** throughout
-(M6 stable std 0.020) with **no false alarm** — correctly indicating the loop is
-robust in the *observable* low band and the system does not go unstable in its
-active window. The parametric M2 is noisy and M4 is **not applicable** (a 5p/3z
-model cannot be fit to the ~4 low-band FRF points).
+**The fix — Method 7 (output-only resonance), which catches it on *both*
+files.** The 35 Hz mode is excited *from inside the loop* (its growth *is* the
+instability), so it is plainly visible in `dm` **alone**. Method 7 estimates the
+closed-loop resonance amplification `Spk = √(peak/floor PSD of dm)` ≈ the peak
+sensitivity `‖S‖∞ ≈ 1/min|1+L|`, and maps it to the loop-only NCF, **calibrated
+to the model's nominal margin at the start** (`b(t)=b_nom·Spk_ref/Spk(t)`). It is
+**input-agnostic**:
+- **1749:** detects at **219 s** and dives to `b ≈ 0.07` at 256–270 s, then
+  recovers — the **only** method that catches the event (M1–M6 detect = none).
+- **1731:** detects at **717 s**, in agreement with the FRF methods (728–734 s) —
+  a cross-validation that the resonance proxy is reading the same collapse.
 
-**The lesson (important for the experiment).** An FRF-based online NCF indicator
-can only see the loop **where the input excites it**. A broadband input (1731)
-probes the binding 35 Hz mode, so the indicator tracks and detects the margin
-collapse. A low-frequency input (1749) does **not** probe 35 Hz, so that mode is
-**unobservable** — the indicator can confirm low-frequency loop health but could
-**not** predict a 35 Hz instability. **Takeaway: to monitor stability online,
-the excitation (reference `dd`, or added probing noise) must contain energy at
-the margin-binding frequency (~35 Hz here).**
+So the two records have the **same stability trend**; the difference is purely
+*observability* — broadband input lets the FRF methods read the loop directly,
+while a low-frequency input requires the **closed-loop / output-resonance** view
+of Method 7. Practical guidance: run **Method 7 alongside the FRF methods** as
+the input-agnostic safety net; if you also need the FRF loop margin under
+low-frequency input, **add broadband probing noise** at ~35 Hz to the reference.
 
 ---
 
@@ -287,8 +289,8 @@ claude_trial/
   proposed_solutions.md      five base methods (theory)
   method_6_explained.md      Method 6 in detail (fast recursive-Kalman indicator)
   report.md                  this report
-  common/                    shared helpers (config, data, NCF, Welch FRF, KF, M6 core, plot)
-  trial_1 .. trial_6/        one runnable implementation per method
+  common/                    shared helpers (config, data, NCF, Welch FRF, KF, M6/M7 cores, plot)
+  trial_1 .. trial_7/        one runnable implementation per method (M7 = output resonance)
   show_all_indicators.m      8-panel overview figure
   run_all_and_compare.m      runs all six + builds comparison
   results/                   per-trial .mat/.png + comparison outputs

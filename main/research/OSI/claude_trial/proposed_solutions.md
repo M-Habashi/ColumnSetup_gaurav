@@ -147,6 +147,21 @@ loop distance `L_i = C(f_i)H_i`.
   optimistic on slow erosion; best as a **fast trip** beside M3's accurate slow
   estimate. Full derivation in `method_6_explained.md`.
 
+### Method 7 — Output-only closed-loop resonance / sensitivity-peak margin  →  `trial_7`
+*(added to catch a 35 Hz instability under a **low-frequency input** — the 1749
+file — where the open-loop FRF at 35 Hz is a tautology and M1–M6 are blind.)*
+The binding 35 Hz mode is excited *from inside the loop* (its growth **is** the
+instability), so it is visible in the response `dm` **alone**. Estimate the
+closed-loop resonance amplification `Spk = √(peak/floor PSD of dm)` ≈ peak
+sensitivity `‖S‖∞ ≈ 1/min|1+L|`, then map to the loop-only NCF, **calibrated to
+the model's nominal margin at the start**: `b(t) = b_nom · Spk_ref / Spk(t)`.
+* **Pros:** **input-agnostic** — works for broadband (1731) and low-frequency
+  (1749) inputs; catches the instability from the output only; cross-validates
+  the FRF methods on 1731 and is the *only* method that catches 1749.
+* **Cons:** a *relative* (start-calibrated) margin, not an absolute one; needs a
+  longer (4 s) buffer for a stable resonance estimate; assumes the binding mode
+  shows as a resonance in `dm`. Detailed in `common/osi_method7_resonance.m`.
+
 ### Cross-cutting — Kalman post-smoothing
 Because the windows are non-overlapping, the indicator series is a clean
 measurement sequence `z_k`. A scalar random-walk Kalman filter (state = true

@@ -1,4 +1,6 @@
 # NOW
+- can you see the 19 hz in the vHS?
+- is it better to use releigh damping?
 - make M6 faster
 - try the lower frequency file
 - fix signal selector and its if condition

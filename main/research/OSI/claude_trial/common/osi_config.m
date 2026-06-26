@@ -106,4 +106,20 @@ function cfg = osi_config()
     cfg.m6_prctile = 5;           % robust margin = p-th percentile of point distances
     cfg.m6_medfilt = 3;           % median pre-filter on the reported indicator
     cfg.m6_detect_consec = 5;     % snapshots below threshold to declare detection
+
+    % --- Method 7: output-only closed-loop resonance / sensitivity-peak margin ---
+    % The binding 35 Hz mode is excited from inside the loop (its growth is the
+    % instability), so it is observable in dm ALONE even when the input does not
+    % probe 35 Hz (the 1749 case, where the open-loop FRF there is a tautology).
+    % Estimate the closed-loop resonance amplification Spk = sqrt(peak/floor PSD)
+    % ~ ||S||_inf, then map to the loop-only NCF, calibrated to nominal at start.
+    cfg.m7_buf = 4;               % s, analysis buffer (resonance PSD needs averaging)
+    cfg.m7_hop = 0.5;             % s, update period
+    cfg.m7_peak_band  = [25 40];  % Hz, closed-loop resonance search band
+    cfg.m7_floor_band = [42 58];  % Hz, off-resonance noise floor (avoid 60 Hz line)
+    cfg.m7_binding_band = [10 58];% Hz, band whose nominal NCF calibrates the map
+    cfg.m7_calib_s  = 20;         % s, "model correct at start" calibration window
+    cfg.m7_medfilt  = 9;          % median taps on the amplification estimate
+    cfg.m7_cap = 0.70;            % cap on the reported margin
+    cfg.m7_detect_consec = 7;     % 7 x 0.5 s = 3.5 s sustained -> detection
 end

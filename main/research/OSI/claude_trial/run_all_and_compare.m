@@ -9,33 +9,35 @@ cfg = osi_config();
 ctx = osi_load_context(cfg);
 if ~exist(cfg.results_dir, 'dir'), mkdir(cfg.results_dir); end
 
-tags    = {'trial_1','trial_2','trial_3','trial_4','trial_5','trial_6'};
+tags    = {'trial_1','trial_2','trial_3','trial_4','trial_5','trial_6','trial_7'};
 labels  = {'M1 H1-direct','M2 parametric','M3 dd-instrument', ...
-           'M4 nu-gap drift','M5 RLS','M6 freq-KF'};
-S = cell(6,1);
-for i = 1:6
+           'M4 nu-gap drift','M5 RLS','M6 freq-KF','M7 resonance(out)'};
+nM = numel(tags); S = cell(nM,1);
+for i = 1:nM
     f = fullfile(cfg.results_dir, [tags{i} '_' cfg.data_id '_result.mat']);
     if ~isfile(f), evalc(['run(''' fullfile(this_dir,tags{i},['run_' tags{i} '.m']) ''')']); end
     Ld = load(f); S{i} = Ld.result;
 end
 tc = S{1}.tc; thr = cfg.ncf_threshold; cons = cfg.detect_consec;
+mid = cfg.t_start + 0.6*(cfg.t_end-cfg.t_start);   % "stable phase" boundary (per file)
 
 % loop-only margin methods that work at small windows: M1,M3,M5,M6 (M2 separate)
 work_idx = [1 3 5 6];
 m4_bpred = S{4}.ncf; m4_drift = S{4}.extra(1).data; m4_base = S{4}.nominal;
 [~, m1_smooth] = osi_apply_kf(S{1}.ncf, cfg.kf_q, cfg.kf_r);
 
-% --- metrics (all six) ---
-stable = tc <= 700;
-Method=labels(:); StartNCF=nan(6,1); StableMean=nan(6,1); StableStd=nan(6,1);
-Jitter=nan(6,1); EndNCF=nan(6,1); Detect_s=nan(6,1); Runtime_s=nan(6,1);
-for i = 1:6
-    s = S{i}.ncf; i1 = find(~isnan(s),1); il = find(~isnan(s),1,'last');
-    if ~isempty(i1), StartNCF(i)=s(i1); EndNCF(i)=s(il); end   % NaN if all-NaN (e.g. M4 not applicable)
-    StableMean(i)=mean(s(stable),'omitnan'); StableStd(i)=std(s(stable),'omitnan');
-    Jitter(i)=mean(abs(diff(s(stable))),'omitnan');
-    if i==4, Detect_s(i)=sustained_cross(m4_drift, m4_base, tc, cons, true);
-    else,     Detect_s(i)=sustained_cross(s, thr, tc, cons, false); end
+% --- metrics (all seven; each on its own grid) ---
+Method=labels(:); StartNCF=nan(nM,1); StableMean=nan(nM,1); StableStd=nan(nM,1);
+Jitter=nan(nM,1); EndNCF=nan(nM,1); Detect_s=nan(nM,1); Runtime_s=nan(nM,1);
+for i = 1:nM
+    s = S{i}.ncf; ti = S{i}.tc; sti = ti <= mid;
+    i1 = find(~isnan(s),1); il = find(~isnan(s),1,'last');
+    if ~isempty(i1), StartNCF(i)=s(i1); EndNCF(i)=s(il); end   % NaN if all-NaN (e.g. M4 N/A)
+    StableMean(i)=mean(s(sti),'omitnan'); StableStd(i)=std(s(sti),'omitnan');
+    Jitter(i)=mean(abs(diff(s(sti))),'omitnan');
+    if isfield(S{i},'detect_time'), Detect_s(i)=S{i}.detect_time;       % M6, M7 store it
+    elseif i==4, Detect_s(i)=sustained_cross(m4_drift, m4_base, ti, cons, true);
+    else,        Detect_s(i)=sustained_cross(s, thr, ti, cons, false); end
     if isfield(S{i},'runtime'), Runtime_s(i)=S{i}.runtime; end
 end
 metrics = table(Method, StartNCF, StableMean, StableStd, Jitter, EndNCF, Detect_s, Runtime_s);
@@ -64,11 +66,13 @@ for j = 1:4
         'DisplayName', labels{work_idx(j)});
 end
 plot(ax1, tc, m1_smooth, 'k-', 'LineWidth', 2.0, 'DisplayName', 'M1 + Kalman smoother');
-yline(ax1, ctx.nom_ncf, '--', 'nominal', 'Color', [0 0.45 0.74], 'HandleVisibility','off');
+plot(ax1, S{7}.tc, S{7}.ncf, '-', 'Color',[0.55 0 0.35], 'LineWidth', 1.8, ...
+    'DisplayName','M7 output resonance');
+yline(ax1, S{7}.nominal, '--', 'nominal', 'Color', [0 0.45 0.74], 'HandleVisibility','off');
 yline(ax1, thr, ':', 'threshold 0.40', 'Color', [0.85 0.33 0.10], 'HandleVisibility','off');
 xlim(ax1,[cfg.t_start cfg.t_end]); ylim(ax1,[0 0.8]);
-xlabel(ax1,'time (s)'); ylabel(ax1,'loop-only NCF margin');
-title(ax1, sprintf('Fast (%s) indicators that work: M1, M3, M5, M6', osi_window_label(cfg)));
+xlabel(ax1,'time (s)'); ylabel(ax1,'NCF margin');
+title(ax1, sprintf('Indicators that work (%s): FRF M1/M3/M5/M6 + output-resonance M7', osi_window_label(cfg)));
 legend(ax1,'Location','southwest','NumColumns',2);
 
 ax2 = subplot(2,1,2); hold(ax2,'on'); grid(ax2,'on');
@@ -88,10 +92,12 @@ hold on; grid on;
 plot(tc, S{1}.ncf, '-o', 'Color',[0.30 0.6 0.30], 'MarkerSize',3, 'DisplayName','M1 H1-direct');
 plot(tc, S{5}.ncf, '-o', 'Color',[0.5 0.2 0.6],  'MarkerSize',3, 'DisplayName','M5 RLS');
 plot(tc, S{6}.ncf, '-o', 'Color',[0.10 0.20 0.55],'LineWidth',1.6,'MarkerSize',3,'DisplayName','M6 freq-KF');
-plot(tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10],'MarkerSize',3, 'DisplayName','M3 dd-instrument (loses collapse)');
+plot(tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10],'MarkerSize',3, 'DisplayName','M3 dd-instrument');
+plot(S{7}.tc, S{7}.ncf, '-', 'Color',[0.55 0 0.35],'LineWidth',1.8,'DisplayName','M7 output resonance');
 yline(thr, ':', 'threshold 0.40', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
-xlim([758 770.1]); ylim([0 0.7]); xlabel('time (s)'); ylabel('loop-only NCF margin');
-title('Final-collapse zoom (0.5 s): dc->dm methods (M1,M5,M6) capture it; dd-instrument (M3) does not');
+xlim([max(cfg.t_start, cfg.t_end-12) cfg.t_end]); ylim([0 0.7]);
+xlabel('time (s)'); ylabel('NCF margin');
+title('End-of-window zoom (0.5 s)');
 legend('Location','southwest');
 saveas(fig2, fullfile(cfg.results_dir, ['method6_vs_others_' cfg.data_id '.png'])); close(fig2);
 
