@@ -1,7 +1,8 @@
 %% BUILD THE REFERENCE AND NUMERICAL FEM MODELS
 %% Units
 % Input specimen: m [kg], c [N*s/m], k [N/m]. FEM/SAP geometry [m],
-% force [N], mass [kg], K [N/m], C [N*s/m], rotational stiffness [N*m/rad].
+% force [N], mass [kg], K [N/m], rotational stiffness [N*m/rad].
+% The saved FEM stores damping metadata; downstream scripts assemble C.
 % Goal: build specimen-specific reference and numerical FEMs that satisfy:
 % 1. The experimental specimen lateral stiffness matches the
 %    corresponding numerical part. This is achieved by adjusting the base
@@ -84,7 +85,6 @@ fprintf('Required base rotational stiffness: %.12g N*m/rad\n\n', ...
 
 %% STEP 2: PLACE THE FIRST-MODE INFLECTION POINT AT THE INTERFACE
 frame = sapTemplateFrameDefinition();
-frame.section.W12x40.Ix = 307*0.0254^4; % [m^4]
 frame.section.inner_column = 'W12x40';
 base_rotation_k_by_column = base_rotation_k*ones(frame.n_bay+1, 1);
 inner_column_ids = 2:frame.n_bay;
@@ -97,6 +97,8 @@ fprintf('\n\n');
 
 floor_mass_kg = [20121; 20121; 18426];
 damping_ratio = 0.03;
+damping = struct('type', 'rayleigh', ...
+    'target_ratio', damping_ratio, 'fit_modes', [1 2]);
 height_result = findFirstModeInflectionHeight( ...
     frame, base_rotation_k_by_column, floor_mass_kg, column.height);
 story_height = height_result.story_height;              % [m]
@@ -123,7 +125,16 @@ frame.base_rotation_k = base_rotation_k_by_column;
     assembleNumericalSubstructureStiffness(frame, column.height);
 
 M_reference = diag(floor_mass_kg);              % [kg] = [N*s^2/m]
-M_numerical = diag([floor_mass_kg; 0]);         % massless interface DOF
+% The zero interface mass is intentional. Do not use fem_num.M directly in
+% eig(K_num, M_num); condense to the floor DOFs before modal analysis.
+M_numerical = diag([floor_mass_kg; 0]);
+[~, damping_info] = femDampingMatrix( ...
+    struct('K', K_reference, 'M', M_reference), damping);
+damping.alpha = damping_info.alpha;
+damping.beta = damping_info.beta;
+damping.frequency_hz = damping_info.frequency_hz;
+damping.modal_damping_ratio = damping_info.modal_damping_ratio;
+
 [~, specimen_stem] = fileparts(specimen_name);
 fem_name = ['fem_' specimen_stem '_3.mat'];
 fem_directory = fullfile(project_root, 'saved_results', 'fem');
@@ -140,6 +151,7 @@ fem_ref.K = K_reference;
 fem_ref.M = M_reference;
 fem_ref.units = femUnits();
 fem_ref.damping_ratio = damping_ratio;
+fem_ref.damping = damping;
 fem_ref.influence = ones(frame.n_story, 1);
 fem_ref.assembly = reference_assembly;
 fem_ref.assumptions = struct( ...
@@ -157,6 +169,7 @@ fem_num.K = K_numerical;
 fem_num.M = M_numerical;
 fem_num.units = femUnits();
 fem_num.damping_ratio = damping_ratio;
+fem_num.damping = damping;
 fem_num.influence = [ones(frame.n_story, 1); 0];
 fem_num.floor_dofs = numerical_assembly.floor_dofs;
 fem_num.interface_dof = numerical_assembly.interface_dof;
@@ -169,7 +182,7 @@ fem_num.interface = struct( ...
     'moment_from_experiment', false);
 
 fem.kind = 'reference_and_numerical';
-fem.schema_version = 1;
+fem.schema_version = 2;
 fem.specimen_name = specimen_stem;
 fem.specimen_file = specimen_file;
 fem.story_height_m = story_height;
@@ -179,6 +192,7 @@ fem.base_rotation_k_by_column = base_rotation_k_by_column;
 fem.variant = 'inner_column_base_rotation_double_w12x40';
 fem.units = femUnits();
 fem.damping_ratio = damping_ratio;
+fem.damping = damping;
 fem.ref = fem_ref;
 fem.num = fem_num;
 
@@ -192,6 +206,13 @@ fprintf('Inner-column base rotational stiffness: %.12g N*m/rad\n', ...
     2*base_rotation_k);
 fprintf('Inner-column section: %s\n', frame.section.inner_column);
 fprintf('Common floor height: %.12g m\n', story_height);
+fprintf(['Rayleigh damping fit: modes %d and %d at %.6g%%; ' ...
+    'alpha = %.12g 1/s, beta = %.12g s\n'], ...
+    damping.fit_modes(1), damping.fit_modes(2), 100*damping_ratio, ...
+    damping.alpha, damping.beta);
+fprintf('Modal damping ratios [%%]:');
+fprintf(' %.6g', 100*damping.modal_damping_ratio);
+fprintf('\n');
 fprintf('SAP update skipped.\n\n');
 
 function units = femUnits()

@@ -316,7 +316,7 @@
             <dt>Retained DOFs</dt><dd>u₁, u₂, u₃</dd>
             <dt>Joint rotations</dt><dd>One rotational DOF at every joint</dd>
             <dt>Calibrated FEM output</dt><dd>saved_results/fem/fem_sp_1_org_3.mat</dd>
-            <dt>Damping ratio ζ</dt><dd>3%</dd>
+            <dt>Damping</dt><dd>Rayleigh fit: modes 1–2 at 3%; mode 3 ≈ 5.19%</dd>
           </dl>
         </aside>
       </div>
@@ -393,7 +393,7 @@
         </div>
         <div class="assumption">
           <h3>Dynamic model</h3>
-          <p>Use a three-DOF lateral system with the corresponding level mass lumped at each diaphragm. Levels 1–2 use the full floor live load in the stated earthquake combination; the roof uses 0.5 of the floor live load. Weight values are derived only for gravity-load reporting. Apply 3% damping (ζ = 0.03) to the selected modes and evaluate both signs of the earthquake action, ±E.</p>
+          <p>Use a three-DOF lateral system with the corresponding level mass lumped at each diaphragm. Levels 1–2 use the full floor live load in the stated earthquake combination; the roof uses 0.5 of the floor live load. Weight values are derived only for gravity-load reporting. Use Rayleigh damping fit to modes 1 and 2 at 3%, which gives about 5.19% damping in mode 3, and evaluate both signs of the earthquake action, ±E.</p>
         </div>
       </div>
     </section>

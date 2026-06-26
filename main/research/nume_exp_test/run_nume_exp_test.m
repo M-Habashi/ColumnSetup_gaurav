@@ -184,7 +184,9 @@ function response = simulateCase(case_item, floor_mass_kg, k_experimental, ...
 n_story = numel(floor_mass_kg);
 M = diag(floor_mass_kg);
 K_reference = case_item.K_reference;
-C_reference = modalDamping(M, K_reference, damping_ratio);
+C_reference = femDampingMatrix(struct('K', K_reference, 'M', M), ...
+    struct('type', 'rayleigh', 'target_ratio', damping_ratio, ...
+    'fit_modes', [1 2]));
 
 load_history = -(M*ones(n_story, 1))*ag';
 reference = simulateFloorSystem(M, C_reference, K_reference, ...
@@ -201,17 +203,6 @@ hybrid = simulateFloorSystem(M, C_reference, K_hybrid, ...
 
 response.reference = reference;
 response.hybrid = hybrid;
-end
-
-function C = modalDamping(M, K, damping_ratio)
-[modes, omega2] = eig(K, M, 'vector');
-[omega, order] = sort(sqrt(real(omega2)));
-modes = real(modes(:, order));
-for mode_id = 1:size(modes, 2)
-    modes(:, mode_id) = modes(:, mode_id) ...
-        /sqrt(modes(:, mode_id)'*M*modes(:, mode_id));
-end
-C = M*modes*diag(2*damping_ratio*omega)*modes'*M;
 end
 
 function displacement = simulateFloorSystem(M, C, K, load_history, time)

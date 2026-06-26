@@ -54,7 +54,7 @@ testname = test_type;
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-     'fem_sp_1_org_3.mat'), ... % Run build_fem.m first.
+     'fem_sp_1_org_3.mat'), ... % Run build_fem_3.m first.
     'delay_comp_file', fullfile(projectFolder, 'saved_results', ...
      'delay_comp', 'fem3_ncf3.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
@@ -148,19 +148,8 @@ hs.force_to_floor = K_fi/K_ii;
 hs.interface_from_floor = -K_ii\K_if;
 hs.interface_from_force = -1/K_ii;
 hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
-if isfield(hs.fem, 'damping_ratio')
-    hs.damping_ratio = hs.fem.damping_ratio;
-else
-    hs.damping_ratio = 0.03;
-end
-[modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
-[omega, order] = sort(sqrt(real(omega2)));
-modes = real(modes(:, order));
-for mode_id = 1:size(modes, 2)
-    modes(:, mode_id) = modes(:, mode_id) ...
-        /sqrt(modes(:, mode_id)'*fem_ref.M*modes(:, mode_id));
-end
-hs.C = fem_ref.M*modes*diag(2*hs.damping_ratio*omega)*modes'*fem_ref.M;
+[hs.C, hs.damping] = femDampingMatrix(fem_ref, hs.fem);
+hs.damping_ratio = hs.damping.target_ratio;
 earthquakes = load(fullfile(projectFolder, 'input_signals', ...
     'earthquakes.mat'), hs.earthquake_type);
 earthquake = earthquakes.(hs.earthquake_type);

@@ -16,12 +16,9 @@ addpath(fullfile(project_root, 'helpers', 'utils'));
 
 %% INPUTS
 earthquake_scale = 1.0;
-damping_ratio = 0.03;
 
 validateattributes(earthquake_scale, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative'}, mfilename, 'earthquake_scale');
-validateattributes(damping_ratio, {'numeric'}, ...
-    {'scalar', 'real', 'finite', 'positive', '<', 1}, mfilename, 'damping_ratio');
 
 %% MODEL DEFINITION
 g0 = 9.80665;                       % gravitational acceleration [m/s^2]
@@ -34,15 +31,8 @@ M = fem_ref.M;                      % [kg]
 influence = fem_ref.influence;
 fprintf('Reference FEM: %s\n', fem_file);
 
-[modes, omega2] = eig(K, M, 'vector');
-[omega, mode_order] = sort(sqrt(omega2));
-modes = modes(:, mode_order);
-for mode_id = 1:n_story
-    modes(:, mode_id) = modes(:, mode_id)/ ...
-        sqrt(modes(:, mode_id)'*M*modes(:, mode_id));
-end
-frequency_hz = omega/(2*pi);
-C = M*modes*diag(2*damping_ratio*omega)*modes'*M;
+[C, damping] = femDampingMatrix(fem_ref, fem);
+frequency_hz = damping.frequency_hz;
 
 %% LOAD AND RUN ALL EARTHQUAKES
 record_fields = {'el_centro', 'northridge', 'kobe', 'loma_prieta', ...
@@ -116,9 +106,10 @@ for floor_id = 1:n_story
 end
 xlabel(response_axes(end), 'Time (s)');
 title(response_layout, 'All ground accelerations and relative floor displacements');
-subtitle(response_layout, sprintf(['Scale = %.3g; damping = %.1f%%; ' ...
+subtitle(response_layout, sprintf(['Scale = %.3g; Rayleigh modes 1-2 = %.1f%%; ' ...
     'natural frequencies = %.3f, %.3f, %.3f Hz'], earthquake_scale, ...
-    100*damping_ratio, frequency_hz(1), frequency_hz(2), frequency_hz(3)));
+    100*damping.target_ratio, frequency_hz(1), frequency_hz(2), ...
+    frequency_hz(3)));
 linkaxes([ground_axes; response_axes], 'x');
 
 %% LOCAL FUNCTIONS

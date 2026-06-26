@@ -100,20 +100,9 @@ hs.force_to_floor = K_fi/K_ii;
 hs.interface_from_floor = -K_ii\K_if;
 hs.interface_from_force = -1/K_ii;
 hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
-if isfield(fem, 'damping_ratio')
-    hs.damping_ratio = fem.damping_ratio;
-else
-    hs.damping_ratio = 0.03;
-end
-[modes, omega2] = eig(fem_ref.K, fem_ref.M, 'vector');
-[omega, order] = sort(sqrt(real(omega2)));
-modes = real(modes(:, order));
-building_mode_frequency_hz = omega/(2*pi);
-for mode_id = 1:size(modes, 2)
-    modes(:, mode_id) = modes(:, mode_id) ...
-        /sqrt(modes(:, mode_id)'*fem_ref.M*modes(:, mode_id));
-end
-hs.C = fem_ref.M*modes*diag(2*hs.damping_ratio*omega)*modes'*fem_ref.M;
+[hs.C, hs.damping] = femDampingMatrix(fem_ref, fem);
+hs.damping_ratio = hs.damping.target_ratio;
+building_mode_frequency_hz = hs.damping.frequency_hz;
 earthquakes = load(fullfile(project_root, 'input_signals', ...
     'earthquakes.mat'), hs.earthquake_type);
 earthquake = earthquakes.(hs.earthquake_type);
@@ -254,9 +243,13 @@ fprintf('Section Ix [m^4]: W8x24 %.12g, W8x28 %.12g, W8x35 %.12g\n', ...
     frame.section.W8x24.Ix, frame.section.W8x28.Ix, ...
     frame.section.W8x35.Ix);
 fprintf('Floor masses [kg]: %.12g, %.12g, %.12g\n', fem.floor_mass_kg);
-fprintf('Damping ratio: %.6g\n', fem.damping_ratio);
+fprintf(['Damping: %s, fit modes [%s], target %.6g%%; ' ...
+    'alpha = %.12g 1/s, beta = %.12g s\n'], ...
+    hs.damping.type, num2str(hs.damping.fit_modes), ...
+    100*hs.damping.target_ratio, hs.damping.alpha, hs.damping.beta);
 natural_frequency_table = table((1:numel(building_mode_frequency_hz))', ...
-    building_mode_frequency_hz(:), 'VariableNames', {'Mode', 'Frequency_Hz'});
+    building_mode_frequency_hz(:), 100*hs.damping.modal_damping_ratio(:), ...
+    'VariableNames', {'Mode', 'Frequency_Hz', 'DampingPercent'});
 disp('Natural frequencies')
 disp(natural_frequency_table)
 pid_stability_table = table( ...

@@ -12,7 +12,6 @@ addpath(fullfile(fem_dir, 'utils_fem'));
 addpath(fullfile(project_root, 'helpers', 'utils'));
 addpath(fullfile(project_root, 'results_analysis'));
 
-damping_ratio = 0.03;
 [fem, ~, ~] = loadFemDefinition(project_root, false);
 fem_num = fem.num;
 fem_ref = fem.ref;
@@ -104,8 +103,7 @@ J_rotation = zeros(numel(record_fields), 3);
 moment_rms = zeros(numel(record_fields), 1);
 moment_peak = zeros(numel(record_fields), 1);
 
-C = M*phi_reference*diag(2*damping_ratio*2*pi*frequency_reference) ...
-    *phi_reference'*M;
+[C, ~] = femDampingMatrix(fem_ref, fem);
 systems = cell(3, 1);
 stiffness = {K_reference, K_released, K_rotation};
 for system_id = 1:3

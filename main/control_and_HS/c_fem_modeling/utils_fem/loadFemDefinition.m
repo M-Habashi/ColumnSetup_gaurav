@@ -20,8 +20,8 @@ else
     files = files(order);
 
     assert(~isempty(files), ...
-        ['No combined FEM files found under %s. Run build_fem.m to ' ...
-         'create saved_results/fem/fem_<specimen>.mat.'], femFolder);
+        ['No combined FEM files found under %s. Run build_fem_3.m to ' ...
+         'create saved_results/fem/fem_<specimen>_3.mat.'], femFolder);
 
     fprintf('\nAvailable FEM files:\n\n');
     fprintf('saved_results\n  |-- fem\n');

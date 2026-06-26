@@ -26,9 +26,6 @@ earthquake_id = 4;
 % Dimensionless multiplier applied to the selected acceleration record.
 earthquake_scale = 1.0;
 
-% Modal damping ratio applied to all three modes.
-damping_ratio = 0.03;
-
 [fem, fem_file, ~] = loadFemDefinition(project_root, false);
 fem_ref = fem.ref;
 frame = fem_ref.frame;
@@ -44,9 +41,6 @@ validateattributes(earthquake_id, {'numeric'}, ...
     {'scalar', 'integer', '>=', 1, '<=', 10}, mfilename, 'earthquake_id');
 validateattributes(earthquake_scale, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative'}, mfilename, 'earthquake_scale');
-validateattributes(damping_ratio, {'numeric'}, ...
-    {'scalar', 'real', 'finite', 'positive', '<', 1}, mfilename, 'damping_ratio');
-
 %% FRAME GEOMETRY AND MATERIAL
 n_story = frame.n_story;
 n_bay = frame.n_bay;
@@ -72,18 +66,8 @@ M = fem_ref.M;                                            % [kg]
 influence = fem_ref.influence;
 
 %% MODAL PROPERTIES AND DAMPING MATRIX
-[modes, omega2] = eig(K, M, 'vector');
-[omega, mode_order] = sort(sqrt(omega2));                 % [rad/s]
-modes = modes(:, mode_order);
-
-% Mass-normalize each mode using the consistent dynamic mass matrix.
-for mode_id = 1:n_story
-    modes(:, mode_id) = modes(:, mode_id) / ...
-        sqrt(modes(:, mode_id)' * M * modes(:, mode_id));
-end
-
-frequency_hz = omega / (2*pi);                            % [Hz]
-C = M * modes * diag(2*damping_ratio*omega) * modes' * M; % [N*s/m]
+[C, damping] = femDampingMatrix(fem_ref, fem);
+frequency_hz = damping.frequency_hz;                      % [Hz]
 
 assert(all(eig(M) > 0), 'The mass matrix must be positive definite.');
 assert(norm(K-K', 'fro') < 1e-10*norm(K, 'fro'), ...
