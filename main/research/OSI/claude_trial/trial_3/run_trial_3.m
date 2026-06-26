@@ -20,7 +20,7 @@ for k = 1:ctx.nW
     [~, ~, ~, Pddc] = osi_window_frf(dd, dc, ctx.fs, cfg);   % Pddc(:,3) = S_dd,dc
     coh_dc = abs(Pddc(:,3)).^2 ./ max(Pddc(:,1).*Pddc(:,2), eps);
     Hind = Pddm(:,3) ./ Pddc(:,3);                           % instrument-variable plant
-    sel = f >= cfg.band(1) & f <= cfg.band(2) & coh_dc >= cfg.coh_min;
+    sel = osi_select_bins(f, coh_dc, Pddc, cfg);            % gate on dd excitation (Pddc(:,1)=S_dd,dd)
     L = squeeze(freqresp(ctx.C, 2*pi*f(sel))) .* Hind(sel);
     ncf(k) = osi_ncf_looponly(L);   % NaN when no instrument-coherent bins (short windows)
 end

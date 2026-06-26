@@ -81,7 +81,9 @@ function out = osi_method6_kf(ctx, cfg)
         if k > cfg.m6_nwarm                                % freeze during weak warm-up
             eps2 = (1 - gam2) ./ (2*n_d*max(gam2, 1e-2));
             R = eps2 .* abs(z).^2 + cfg.m6_R_floor_rel * abs(H).^2;
-            upd = gam2 >= cfg.m6_gamma_min;                % gate low-confidence points
+            pdc = 10*log10(Sxx + eps);                     % input power per point
+            excited = pdc >= max(pdc) - cfg.input_power_range_db;
+            upd = (gam2 >= cfg.m6_gamma_min) & excited;    % gate low-confidence / unexcited points
             K = zeros(nf,1);  K(upd) = P(upd) ./ (P(upd) + R(upd));
             H = H + K.*(z - H);                            % measurement update
             P = (1 - K).*P;

@@ -23,7 +23,8 @@ result = struct('tag', 'trial_6', ...
     'runtime', runtime);
 result.extra = struct('name', {'raw (per-snapshot)'}, 'data', {m6.ncf_raw});
 result.detect_time = m6.detect_time;
-save(fullfile(cfg.results_dir, 'trial_6_result.mat'), 'result');
+stem = ['trial_6_' cfg.data_id];
+save(fullfile(cfg.results_dir, [stem '_result.mat']), 'result');
 
 % --- concise summary ---
 stable = m6.tc <= 700;
@@ -51,6 +52,7 @@ if ~isnan(m6.detect_time)
 end
 grid on; xlim([cfg.t_start cfg.t_end]); ylim([0 0.75]);
 xlabel('time (s)'); ylabel('NCF stability margin');
-title(result.method, 'Interpreter', 'none'); legend('Location', 'southwest');
-saveas(fig, fullfile(cfg.results_dir, 'trial_6.png')); close(fig);
-fprintf('saved trial_6_result.mat and trial_6.png\n');
+title(sprintf('%s  (data %s)', result.method, cfg.data_id), 'Interpreter', 'none');
+legend('Location', 'southwest');
+saveas(fig, fullfile(cfg.results_dir, [stem '.png'])); close(fig);
+fprintf('saved %s_result.mat and %s.png\n', stem, stem);

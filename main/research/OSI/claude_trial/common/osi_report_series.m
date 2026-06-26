@@ -8,7 +8,8 @@ function osi_report_series(result, cfg)
     if ~isfield(result, 'extra'), result.extra = struct('name', {}, 'data', {}); end
     if ~isfield(result, 'threshold'), result.threshold = cfg.ncf_threshold; end
 
-    save(fullfile(cfg.results_dir, [result.tag '_result.mat']), 'result');
+    stem = [result.tag '_' cfg.data_id];   % per-data-file result/plot name
+    save(fullfile(cfg.results_dir, [stem '_result.mat']), 'result');
 
     tc = result.tc(:); s = result.ncf(:); n = numel(tc);
     stable = tc <= 700;
@@ -41,9 +42,10 @@ function osi_report_series(result, cfg)
     if ~isnan(det), xline(det, '-.', sprintf('detect %.1f s', det), ...
             'Color', [0.6 0 0], 'HandleVisibility', 'off'); end
     grid on; xlim([cfg.t_start cfg.t_end]); xlabel('time (s)'); ylabel('NCF stability margin');
-    title(result.method, 'Interpreter', 'none'); legend('Location', 'southwest');
+    title(sprintf('%s  (data %s)', result.method, cfg.data_id), 'Interpreter', 'none');
+    legend('Location', 'southwest');
     lo = min(0, min(s, [], 'omitnan') - 0.05); if isempty(lo) || isnan(lo), lo = 0; end
     ylim([lo 0.8]);
-    saveas(fig, fullfile(cfg.results_dir, [result.tag '.png'])); close(fig);
-    fprintf('saved %s_result.mat and %s.png\n', result.tag, result.tag);
+    saveas(fig, fullfile(cfg.results_dir, [stem '.png'])); close(fig);
+    fprintf('saved %s_result.mat and %s.png\n', stem, stem);
 end

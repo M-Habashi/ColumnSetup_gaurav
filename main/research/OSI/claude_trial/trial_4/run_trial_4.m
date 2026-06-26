@@ -19,8 +19,8 @@ t0 = tic;
 fits = cell(ctx.nW, 1);
 for k = 1:ctx.nW
     idx = ctx.grid.idx{k};
-    [H, f, coh] = osi_window_frf(ctx.dc(idx), ctx.dm(idx), ctx.fs, cfg);
-    sel = f >= cfg.band(1) & f <= cfg.band(2) & coh >= cfg.coh_min;
+    [H, f, coh, P] = osi_window_frf(ctx.dc(idx), ctx.dm(idx), ctx.fs, cfg);
+    sel = osi_select_bins(f, coh, P, cfg);
     if nnz(sel) < cfg.tf_np + cfg.tf_nz, continue, end   % too few FRF points to fit
     g = idfrd(reshape(H(sel), 1, 1, []), 2*pi*f(sel), 0, 'FrequencyUnit', 'rad/s');
     try
@@ -37,9 +37,13 @@ bcand = nan(numel(early),1);
 for j = 1:numel(early)
     try, bcand(j) = ncfmargin(fits{early(j)}, ctx.C); catch, end
 end
-[bbase, jb] = max(bcand);  b0idx = early(jb);  base = fits{b0idx};
-
 drift = nan(ctx.nW, 1);
+if isempty(early) || all(isnan(bcand))
+    b0idx = []; bbase = NaN;          % no viable parametric fit at all
+else
+    [bbase, jb] = max(bcand);  b0idx = early(jb);  base = fits{b0idx};
+end
+
 if isempty(b0idx) || ~(bbase > 0.05)
     % Parametric model unusable at this window size -> method not applicable.
     bbase = ctx.nom_bexact;  bpred = nan(ctx.nW,1);  drift_s = nan(ctx.nW,1);

@@ -162,6 +162,53 @@ level but misses the collapse; M2/M4 should stay at the larger window.
 
 ---
 
+## 2c. Second data file — low-frequency input (1749)
+
+`show_all_indicators.m` now runs the whole pipeline on **two** records and emits
+one overview figure each (`results/all_indicators_overview_1731.png` and
+`..._1749.png`). The active file is selected with
+`setappdata(0,'osi_data_file', path)`; `osi_config.m` carries a per-file window
+and band. The 1749 record (`...1749...mat`) is the *same* test type but with a
+**low-frequency input**.
+
+**What is different about 1749.**
+- `dd` is band-limited: **median frequency ≈ 2.8 Hz** (vs 41.5 Hz for 1731);
+  ~all of its energy is below ~6 Hz.
+- Active window **100–286 s** (the `dm = −14.6` excursion is a *start-up*
+  transient at 0–50 s with **no input**, not an in-test divergence). In the
+  active window the system stays **stable** — the controller catches a brief
+  35.5 Hz blip at ~278 s; there is no sustained instability to detect.
+
+**Why the methods first failed, and the fix.** The binding NCF feature is still
+the **35 Hz** resonance — but the low-frequency input never excites it, so the
+FRF there is **leakage-corrupted** (estimated `|H|` runs 15–20 dB high, driving
+`|L|→1∠180° = −1`). Run naively, every FRF method returns a **spurious 0.000**.
+Two changes fix this and are now the default:
+1. a **global input-power gate** (`cfg.input_power_range_db = 30`, as in the
+   repo's `sys_id.m`) keeps only FRF bins within 30 dB of the in-band peak,
+   rejecting the unexcited/leakage bins (coherence does *not* help here — it
+   reads ~1 even on the corrupted bins);
+2. a **per-file band**: 1749 is evaluated over the **excited** `[1, 8] Hz` band
+   (the binding 35 Hz mode is simply not observable from this input).
+
+**Result (1749, `all_indicators_overview_1749.png`).** The nonparametric and
+recursive methods now report a **clean, healthy margin ≈ 0.66–0.70** throughout
+(M6 stable std 0.020) with **no false alarm** — correctly indicating the loop is
+robust in the *observable* low band and the system does not go unstable in its
+active window. The parametric M2 is noisy and M4 is **not applicable** (a 5p/3z
+model cannot be fit to the ~4 low-band FRF points).
+
+**The lesson (important for the experiment).** An FRF-based online NCF indicator
+can only see the loop **where the input excites it**. A broadband input (1731)
+probes the binding 35 Hz mode, so the indicator tracks and detects the margin
+collapse. A low-frequency input (1749) does **not** probe 35 Hz, so that mode is
+**unobservable** — the indicator can confirm low-frequency loop health but could
+**not** predict a 35 Hz instability. **Takeaway: to monitor stability online,
+the excitation (reference `dd`, or added probing noise) must contain energy at
+the margin-binding frequency (~35 Hz here).**
+
+---
+
 ## 3. Recommendation
 
 > **Use Method 3 (`dd`-instrument loop-only NCF, 10 s) as the accurate primary
@@ -208,9 +255,17 @@ cd main/research/OSI/claude_trial
 run trial_1/run_trial_1.m      % each trial prints its series and saves results/
 run trial_2/run_trial_2.m      % ... trial_3, trial_4, trial_5 ...
 run trial_6/run_trial_6.m      % Method 6: fast 0.5 s recursive-Kalman indicator
-run run_all_and_compare.m      % runs all six, compares, Kalman-smooths, plots
-run show_all_indicators.m      % 8-panel overview (signals + M1..M6 + collapse zoom)
+run run_all_and_compare.m      % compares all six for the active data file
+run show_all_indicators.m      % 8-panel overview PER data file -> two figures
 ```
+
+`show_all_indicators.m` loops over both records in `cfg.test_files` and writes
+`results/all_indicators_overview_<id>.png` for `<id>` = 1731 (broadband) and
+1749 (low-frequency). To point the trials/comparison at a specific file, set
+`setappdata(0,'osi_data_file', path)` before running them (cleared with
+`rmappdata(0,'osi_data_file')`); `osi_config.m` then applies that file's window
+and band. Per-file outputs are suffixed with the data id (`trial_k_<id>_*`,
+`comparison_<id>.png`, ...).
 
 `run_all_and_compare.m` LOADS each trial's saved result (re-running only if
 missing — so the slow parametric trials are not repeated) and writes

@@ -17,8 +17,8 @@ ncf    = nan(ctx.nW, 1);   % loop-only NCF (comparable across methods)
 bexact = nan(ctx.nW, 1);   % rigorous 4-block b_{P,C}
 for k = 1:ctx.nW
     idx = ctx.grid.idx{k};
-    [H, f, coh] = osi_window_frf(ctx.dc(idx), ctx.dm(idx), ctx.fs, cfg);
-    sel = f >= cfg.band(1) & f <= cfg.band(2) & coh >= cfg.coh_min;
+    [H, f, coh, P] = osi_window_frf(ctx.dc(idx), ctx.dm(idx), ctx.fs, cfg);
+    sel = osi_select_bins(f, coh, P, cfg);
     g = idfrd(reshape(H(sel), 1, 1, []), 2*pi*f(sel), 0, 'FrequencyUnit', 'rad/s');
     try
         Hc  = tfest(g, cfg.tf_np, cfg.tf_nz, opt);

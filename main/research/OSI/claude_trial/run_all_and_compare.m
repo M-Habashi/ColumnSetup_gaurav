@@ -14,7 +14,7 @@ labels  = {'M1 H1-direct','M2 parametric','M3 dd-instrument', ...
            'M4 nu-gap drift','M5 RLS','M6 freq-KF'};
 S = cell(6,1);
 for i = 1:6
-    f = fullfile(cfg.results_dir, [tags{i} '_result.mat']);
+    f = fullfile(cfg.results_dir, [tags{i} '_' cfg.data_id '_result.mat']);
     if ~isfile(f), evalc(['run(''' fullfile(this_dir,tags{i},['run_' tags{i} '.m']) ''')']); end
     Ld = load(f); S{i} = Ld.result;
 end
@@ -30,8 +30,8 @@ stable = tc <= 700;
 Method=labels(:); StartNCF=nan(6,1); StableMean=nan(6,1); StableStd=nan(6,1);
 Jitter=nan(6,1); EndNCF=nan(6,1); Detect_s=nan(6,1); Runtime_s=nan(6,1);
 for i = 1:6
-    s = S{i}.ncf; g = ~isnan(s);
-    StartNCF(i)=s(find(g,1)); EndNCF(i)=s(find(g,1,'last'));
+    s = S{i}.ncf; i1 = find(~isnan(s),1); il = find(~isnan(s),1,'last');
+    if ~isempty(i1), StartNCF(i)=s(i1); EndNCF(i)=s(il); end   % NaN if all-NaN (e.g. M4 not applicable)
     StableMean(i)=mean(s(stable),'omitnan'); StableStd(i)=std(s(stable),'omitnan');
     Jitter(i)=mean(abs(diff(s(stable))),'omitnan');
     if i==4, Detect_s(i)=sustained_cross(m4_drift, m4_base, tc, cons, true);
@@ -53,8 +53,8 @@ disp(array2table(Rwork, 'VariableNames', labels(work_idx), 'RowNames', labels(wo
 
 writetable(table(tc, S{1}.ncf, S{2}.ncf, S{3}.ncf, S{5}.ncf, S{6}.ncf, m4_bpred, ...
     'VariableNames', {'time_s','M1','M2','M3','M5','M6','M4_bpred'}), ...
-    fullfile(cfg.results_dir, 'comparison_table.csv'));
-writetable(metrics, fullfile(cfg.results_dir, 'comparison_metrics.csv'));
+    fullfile(cfg.results_dir, ['comparison_table_' cfg.data_id '.csv']));
+writetable(metrics, fullfile(cfg.results_dir, ['comparison_metrics_' cfg.data_id '.csv']));
 
 % --- figure 1: working fast methods (top) + parametric failures (bottom) ---
 fig = figure('Visible','off','Color','w','Position',[80 80 980 760]);
@@ -80,7 +80,7 @@ xlim(ax2,[cfg.t_start cfg.t_end]);
 xlabel(ax2,'time (s)'); ylabel(ax2,'margin');
 title(ax2,'Parametric methods are NOT reliable at the 0.5 s window (cautionary)');
 legend(ax2,'Location','southwest');
-saveas(fig, fullfile(cfg.results_dir, 'comparison.png')); close(fig);
+saveas(fig, fullfile(cfg.results_dir, ['comparison_' cfg.data_id '.png'])); close(fig);
 
 % --- figure 2: collapse zoom -- which fast methods capture the divergence ---
 fig2 = figure('Visible','off','Color','w','Position',[80 80 980 420]);
@@ -93,10 +93,10 @@ yline(thr, ':', 'threshold 0.40', 'Color',[0.85 0.33 0.10], 'HandleVisibility','
 xlim([758 770.1]); ylim([0 0.7]); xlabel('time (s)'); ylabel('loop-only NCF margin');
 title('Final-collapse zoom (0.5 s): dc->dm methods (M1,M5,M6) capture it; dd-instrument (M3) does not');
 legend('Location','southwest');
-saveas(fig2, fullfile(cfg.results_dir, 'method6_vs_others.png')); close(fig2);
+saveas(fig2, fullfile(cfg.results_dir, ['method6_vs_others_' cfg.data_id '.png'])); close(fig2);
 
-save(fullfile(cfg.results_dir, 'comparison_results.mat'), 'tc','S','metrics','Rwork','labels','ctx');
-fprintf('\nSaved comparison.png, method6_vs_others.png, comparison_table.csv, comparison_metrics.csv, comparison_results.mat\n');
+save(fullfile(cfg.results_dir, ['comparison_results_' cfg.data_id '.mat']), 'tc','S','metrics','Rwork','labels','ctx');
+fprintf('\nSaved comparison/metrics/results for data %s\n', cfg.data_id);
 
 %% ---- local function ----
 function tcross = sustained_cross(series, level, tc, consec, rising)
