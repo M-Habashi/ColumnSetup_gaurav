@@ -1,4 +1,6 @@
 # NOW
+- make M6 faster
+- try the lower frequency file
 - fix signal selector and its if condition
 - Think about optimizing the phase lead or delay compensator 
     -- should it be autonomous?
