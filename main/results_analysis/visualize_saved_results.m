@@ -7,8 +7,6 @@
 % Input/stored: t [s], dd/dc/dm [mm], fm [N], am [g], m_hat [kg],
 % c_hat [N*s/m], k_hat [N/m]. Plotted outputs preserve those stored units.
 
-clc; close all
-
 scriptFolder = fileparts(mfilename('fullpath'));
 projectFolder = fileparts(scriptFolder);
 addpath(fullfile(projectFolder, 'helpers', 'utils'))

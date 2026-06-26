@@ -38,17 +38,17 @@
 % 3. Saturation limits
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Preparing the Workspace
-clear; clc; close all
+clear; close all
 addpaths();
 projectFolder = fileparts(mfilename('fullpath'));
 
 disp('===============================================================')
 disp('                         Column Setup                          ')
-disp('                        Simulation Tool                        ')
+disp('                        Simulation To.ol                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'RTHS_00';
+test_type = 'RTHS_02';
 testname = test_type;
 
 %% Hybrid Simulation Parameters
@@ -56,9 +56,9 @@ hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
      'fem_sp_1_org_3.mat'), ... % Run build_fem.m first.
     'delay_comp_file', fullfile(projectFolder, 'saved_results', ...
-     'delay_comp', 'fem3_ncf4_2p2z.mat'), ...
+     'delay_comp', 'fem3_ncf3.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
-    'intensity_factor', 0.012, ...   % Earthquake acceleration multiplier.
+    'intensity_factor', 0.06, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
     'force_sign', 1.0);            % Use -1 only if force calibration requires it.
 
@@ -167,11 +167,6 @@ earthquake = earthquakes.(hs.earthquake_type);
 hs.time = earthquake(:, 1) - earthquake(1, 1);
 hs.ag = hs.intensity_factor*earthquake(:, 2);
 
-testname = sprintf('%s_HS_%s_I%g_TS%g', testname, ...
-    hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor);
-file_name = fullfile(saveFolder, [timestamp '_' testname '.mat']);
-disp('Hybrid Simulation Test File Name Updated:')
-disp(file_name)
 hs_M = hs.M;
 hs_C = hs.C;
 hs_K = hs.K;
@@ -287,6 +282,17 @@ save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
 
 disp('*** Data file saved! ***')
 disp(file_name)
+
+%% Hybrid Simulation Reference Comparison
+
+% Compare the recorded HS response against the full FEM reference.
+try
+    compare_hs_test_to_reference(hs.fem, file_name, ...
+        hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor, ...
+        hs.force_sign);
+catch
+    fprintf('Comparison failed.\n')
+end
 
 %% Finalizing the Simulation
 
