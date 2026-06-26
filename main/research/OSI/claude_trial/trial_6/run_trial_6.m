@@ -12,12 +12,15 @@ cfg = osi_config();
 ctx = osi_load_context(cfg);
 if ~exist(cfg.results_dir, 'dir'), mkdir(cfg.results_dir); end
 
+t0 = tic;
 m6 = osi_method6_kf(ctx, cfg);
+runtime = toc(t0);
 
 % --- save in the common result format (plus M6 diagnostics) ---
 result = struct('tag', 'trial_6', ...
     'method', sprintf('Method 6 - Recursive freq-point Kalman (%.1fs update)', cfg.m6_hop), ...
-    'tc', m6.tc, 'ncf', m6.ncf, 'nominal', m6.nominal, 'threshold', m6.threshold);
+    'tc', m6.tc, 'ncf', m6.ncf, 'nominal', m6.nominal, 'threshold', m6.threshold, ...
+    'runtime', runtime);
 result.extra = struct('name', {'raw (per-snapshot)'}, 'data', {m6.ncf_raw});
 result.detect_time = m6.detect_time;
 save(fullfile(cfg.results_dir, 'trial_6_result.mat'), 'result');

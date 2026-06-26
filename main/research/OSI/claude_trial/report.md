@@ -109,13 +109,6 @@ numbers: `results/comparison_table.csv` (+ `_method6.csv`); metrics:
   *slow* erosion and flags it a bit later (734 s) — a fast guardian, not a
   precise slow monitor.
 
-**Small-window note.** Methods 1–5 cannot simply shrink to 0.5 s windows — they
-rely on Welch averaging *inside* each window, which 1024 samples cannot provide.
-Method 6 is the principled way to get 0.5 s resolution: it moves the averaging
-*across time* (the Kalman recursion) and uses coherence to weight each noisy
-short-window sample. So the answer to "smaller window" is not a parameter change
-to M1–M5 but the M6 estimator.
-
 ### Kalman post-smoothing
 A scalar random-walk KF + RTS smoother (`osi_apply_kf.m`) was applied to the
 non-overlapping series. It removes M2's 685 s false alarm and denoises M5, at
@@ -123,6 +116,49 @@ the cost of ~one window of lag (M1/M3 detection moves 715 → 725 s). For a
 safety monitor the **raw** non-overlapping series of M3 already detects at
 715 s; the KF is most valuable for the noisy methods and for one-step-ahead
 prediction. This realises the objective's intended downstream KF stage.
+
+---
+
+## 2b. Same-window fast mode — all methods at 0.5 s (`win_mode = 'sliding'`)
+
+To detect faster, every method can adopt Method 6's trick: **decouple the
+update rate (0.5 s) from the analysis buffer (1.5 s sliding)**. Setting
+`cfg.win_mode='sliding'` (the **default** now) runs M1–M5 on the same 1.5 s/0.5 s
+window as M6 over the band `[10, 58] Hz` (a 1.5 s buffer cannot resolve below
+~10 Hz), giving **298 samples** instead of 15. A 3 s warm-up holds the indicator
+at nominal over the weakly-excited start (620–622 s), and detection requires the
+margin to stay below 0.40 for **5 consecutive** samples (2.5 s). Results:
+
+| Method | Start | Stable mean | Stable std | Jitter | End | Detect | Runtime (298 upd) | Verdict |
+|---|--:|--:|--:|--:|--:|--:|--:|---|
+| **M1** H1-direct | 0.588 | 0.593 | 0.031 | 0.020 | **0.040** | **728 s** | **0.5 s** | **works; captures collapse** |
+| **M3** dd-instrument | 0.588 | 0.602 | 0.028 | 0.017 | 0.146 | 733 s | 1.1 s | works but **loses the collapse** |
+| **M5** RLS | 0.588 | 0.648 | 0.021 | 0.010 | **0.048** | 729 s | 0.6 s | works; biased high; captures collapse |
+| **M6** freq-KF | 0.589 | 0.613 | **0.018** | **0.003** | 0.052 | 734 s | 1.0 s | **smoothest; captures collapse** |
+| M2 parametric | 0.588 | 0.47 | **0.175** | 0.18 | 0.013 | 695 (false) | 52 s | **not usable** — wild |
+| M4 ν-gap | 0.577 | 0.02 | **0.41** | 0.04 | −0.33 | 647 (false) | 65 s | **fails** — fits diverge |
+
+**Findings.**
+- The **nonparametric (M1, M3)** and **recursive (M5, M6)** methods take the
+  0.5 s window cleanly. They agree strongly (correlation **0.93–0.99**) and all
+  trip at **728–734 s** — i.e., 0.5 s update latency instead of 10 s.
+- The **parametric methods (M2, M4) break** at 0.5 s: a 1.5 s buffer yields only
+  ~25 noisy FRF points, far too few for a stable 5p/3z fit, so M2 is wild
+  (std 0.18, false alarm at 695 s) and M4's fits diverge (gap → 1, predicted
+  margin goes negative — a false alarm at 647 s). **Conclusion: do not shrink the
+  parametric methods; run them at the 10 s window (§2) or not at all.**
+- For the *fast collapse*, the `dc→dm` methods (**M1, M5, M6**) plunge below 0.1
+  within ~0.5 s of onset, while **M3 flattens at ~0.18** — once the loop
+  self-oscillates the reference `dd` stops driving it, so the instrument estimate
+  freezes (`results/method6_vs_others.png`). So the fast trip should use a
+  `dc→dm` method.
+- Trade-off vs §2: 0.5 s sliding windows **overlap**, so consecutive samples are
+  correlated (not independent) — the original non-overlapping mode
+  (`win_mode='nonoverlap'`, §2) remains for the KF-on-independent-samples design.
+
+**Net:** at the same small window, the best fast indicators are **M1 (simplest)**,
+**M6 (smoothest, purpose-built)** and **M5 (recursive)**; M3 is fine for the slow
+level but misses the collapse; M2/M4 should stay at the larger window.
 
 ---
 
@@ -141,10 +177,13 @@ Concretely:
 1. **Accurate slow indicator — M3.** Per non-overlapping 10 s window compute
    `Ĥ = S_{dd,dm}/S_{dd,dc}`, `L̂ = C·Ĥ`, loop-only NCF. Warn when it crosses
    **0.40**; it does so at 715 s, ~55 s before divergence.
-2. **Fast trip — M6.** Run the recursive freq-point Kalman filter at **0.5 s**
-   updates in parallel. It is the only method that resolves a *rapid* collapse
-   within ~0.5–1.5 s (the 10 s methods cannot), so it is the safety trip for
-   sudden onset; M3 confirms the precise level.
+2. **Fast trip — M6 (or M1) at 0.5 s.** Run the recursive freq-point Kalman
+   filter at **0.5 s** updates in parallel (M1 is a cheaper alternative, §2b). It
+   resolves a *rapid* collapse within ~0.5–1.5 s, so it is the safety trip for
+   sudden onset; M3 confirms the precise level. **Note:** the fast trip must be a
+   `dc→dm` method (M6/M1/M5) — M3 run fast *loses the collapse* because the
+   reference stops driving the loop once it self-oscillates (§2b). Do **not** run
+   the parametric M2/M4 at 0.5 s (their fits diverge — §2b).
 3. **Early-warning — M4.** Model-reference ν-gap drift; trigger when drift →
    baseline margin (685 s here). Earliest but coarse — use it to *arm*.
 4. **Smoothing — KF.** Feed M3's series through `osi_apply_kf` for a denoised
@@ -173,11 +212,19 @@ run run_all_and_compare.m      % runs all six, compares, Kalman-smooths, plots
 run show_all_indicators.m      % 8-panel overview (signals + M1..M6 + collapse zoom)
 ```
 
-`run_all_and_compare.m` writes `results/comparison.png`,
-`method6_vs_others.png`, `comparison_table*.csv`, `comparison_metrics.csv`,
-`comparison_results.mat`. Shared settings live in `common/osi_config.m` (window
-length, band, FFT, RLS/KF parameters, the `m6_*` Method-6 parameters, the 0.40
-threshold).
+`run_all_and_compare.m` LOADS each trial's saved result (re-running only if
+missing — so the slow parametric trials are not repeated) and writes
+`results/comparison.png`, `method6_vs_others.png`, `comparison_table.csv`,
+`comparison_metrics.csv`, `comparison_results.mat`.
+
+**Window mode** is set in `common/osi_config.m`:
+- `cfg.win_mode = 'sliding'` (default) — **fast 0.5 s** updates on a 1.5 s
+  sliding buffer for M1–M5 (same window as M6); the results in §2b.
+- `cfg.win_mode = 'nonoverlap'` — original **10 s non-overlapping** windows
+  (15 independent samples for the KF); the results in §2.
+Re-run the trials after changing the mode (their cached results are overwritten).
+Other shared settings (band, FFT, RLS/KF, `m6_*`, the 0.40 threshold) also live
+in `osi_config.m`.
 
 ### File map
 ```

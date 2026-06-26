@@ -1,6 +1,7 @@
-%% run_all_and_compare -- run all six OSI trials, compare, and Kalman-smooth.
-% Produces: comparison.png, method6_vs_others.png, comparison_table.csv,
-% comparison_metrics.csv, comparison_results.mat in claude_trial/results.
+%% run_all_and_compare -- compare all six OSI methods (loads cached trial results).
+% Each trial saves results/trial_k_result.mat; this script LOADS them (re-running
+% a trial only if its result is missing), compares, Kalman-smooths, and plots.
+% In the default sliding (0.5 s) mode all six share one 298-sample grid.
 
 this_dir = fileparts(mfilename('fullpath'));
 addpath(fullfile(this_dir, 'common'));
@@ -10,162 +11,99 @@ if ~exist(cfg.results_dir, 'dir'), mkdir(cfg.results_dir); end
 
 tags    = {'trial_1','trial_2','trial_3','trial_4','trial_5','trial_6'};
 labels  = {'M1 H1-direct','M2 parametric','M3 dd-instrument', ...
-           'M4 nu-gap drift','M5 RLS','M6 freq-KF (0.5s)'};
-nM = numel(tags);
-runtime = zeros(nM,1);
-S = cell(nM,1);
-for i = 1:nM
-    script = fullfile(this_dir, tags{i}, ['run_' tags{i} '.m']);
-    runtime(i) = time_run(script);                       % isolated workspace + timed
-    Ld = load(fullfile(cfg.results_dir, [tags{i} '_result.mat']));
-    S{i} = Ld.result;
+           'M4 nu-gap drift','M5 RLS','M6 freq-KF'};
+S = cell(6,1);
+for i = 1:6
+    f = fullfile(cfg.results_dir, [tags{i} '_result.mat']);
+    if ~isfile(f), evalc(['run(''' fullfile(this_dir,tags{i},['run_' tags{i} '.m']) ''')']); end
+    Ld = load(f); S{i} = Ld.result;
 end
-tc = ctx.tc; nW = ctx.nW;                                % 10 s grid (M1..M5)
+tc = S{1}.tc; thr = cfg.ncf_threshold; cons = cfg.detect_consec;
 
-% --- comparable loop-only NCF matrix (M1,M2,M3,M5); M4 & M6 kept separate ---
-loop_idx = [1 2 3 5];
-NCF = nan(nW, numel(loop_idx));
-for j = 1:numel(loop_idx), NCF(:,j) = S{loop_idx(j)}.ncf; end
-m4_bpred = S{4}.ncf;  m4_drift = S{4}.extra(1).data;  m4_base = S{4}.nominal;
-tc6 = S{6}.tc;  ncf6 = S{6}.ncf;                          % Method 6 fine grid (0.5 s)
+% loop-only margin methods that work at small windows: M1,M3,M5,M6 (M2 separate)
+work_idx = [1 3 5 6];
+m4_bpred = S{4}.ncf; m4_drift = S{4}.extra(1).data; m4_base = S{4}.nominal;
+[~, m1_smooth] = osi_apply_kf(S{1}.ncf, cfg.kf_q, cfg.kf_r);
 
-% --- Kalman post-smoothing (random-walk KF + RTS) on the loop-only series ---
-NCF_kf = nan(size(NCF));
-for j = 1:numel(loop_idx)
-    [~, NCF_kf(:,j)] = osi_apply_kf(NCF(:,j), cfg.kf_q, cfg.kf_r);
+% --- metrics (all six) ---
+stable = tc <= 700;
+Method=labels(:); StartNCF=nan(6,1); StableMean=nan(6,1); StableStd=nan(6,1);
+Jitter=nan(6,1); EndNCF=nan(6,1); Detect_s=nan(6,1); Runtime_s=nan(6,1);
+for i = 1:6
+    s = S{i}.ncf; g = ~isnan(s);
+    StartNCF(i)=s(find(g,1)); EndNCF(i)=s(find(g,1,'last'));
+    StableMean(i)=mean(s(stable),'omitnan'); StableStd(i)=std(s(stable),'omitnan');
+    Jitter(i)=mean(abs(diff(s(stable))),'omitnan');
+    if i==4, Detect_s(i)=sustained_cross(m4_drift, m4_base, tc, cons, true);
+    else,     Detect_s(i)=sustained_cross(s, thr, tc, cons, false); end
+    if isfield(S{i},'runtime'), Runtime_s(i)=S{i}.runtime; end
 end
-[~, m3_smooth] = osi_apply_kf(S{3}.ncf, cfg.kf_q, cfg.kf_r);   % recommended = M3
-
-% --- summary metrics (M1..M5 on common 10 s grid) ---
-stable = tc <= 700; thr = cfg.ncf_threshold;
-Method = labels(1:5).';
-StartNCF = nan(5,1); EndNCF = nan(5,1); StableMean = nan(5,1);
-StableStd = nan(5,1); Jitter = nan(5,1); DetectRaw = nan(5,1); DetectKF = nan(5,1);
-for i = 1:5
-    s = S{i}.ncf;
-    StartNCF(i) = s(1); EndNCF(i) = s(end);
-    StableMean(i) = mean(s(stable), 'omitnan');
-    StableStd(i)  = std(s(stable), 'omitnan');
-    Jitter(i)     = mean(abs(diff(s(stable))), 'omitnan');
-    if i == 4
-        DetectRaw(i) = first_cross(m4_drift, m4_base, tc, true);
-        DetectKF(i)  = DetectRaw(i);
-    else
-        [~, sm] = osi_apply_kf(s, cfg.kf_q, cfg.kf_r);
-        DetectRaw(i) = first_cross(s, thr, tc, false);
-        DetectKF(i)  = first_cross(sm, thr, tc, false);
-    end
-end
-Runtime_s = runtime(1:5);
-metrics = table(Method, StartNCF, StableMean, StableStd, Jitter, EndNCF, ...
-    DetectRaw, DetectKF, Runtime_s);
-metrics.Properties.VariableNames{7} = 'DetectRaw_s';
-metrics.Properties.VariableNames{8} = 'DetectKF_s';
-
-% --- append Method 6 (its own 0.5 s grid) ---
-st6 = tc6 <= 700;
-m6row = table(labels(6), ncf6(1), mean(ncf6(st6)), std(ncf6(st6)), ...
-    mean(abs(diff(ncf6(st6)))), ncf6(end), S{6}.detect_time, S{6}.detect_time, runtime(6), ...
-    'VariableNames', metrics.Properties.VariableNames);
-metrics = [metrics; m6row];
-
-fprintf('\n================ OSI METHOD COMPARISON ================\n');
-fprintf('nominal loop-only NCF = %.4f ; true b0 = %.4f ; threshold = %.2f\n', ...
-    ctx.nom_ncf, ctx.nom_bexact, thr);
-fprintf('(M1-M5: 10 s windows, 15 samples ; M6: 0.5 s updates, %d samples)\n', numel(tc6));
+metrics = table(Method, StartNCF, StableMean, StableStd, Jitter, EndNCF, Detect_s, Runtime_s);
+fprintf('\n=========== OSI METHOD COMPARISON (%s) ===========\n', osi_window_label(cfg));
+fprintf('nominal loop-only NCF=%.3f | threshold=%.2f | samples=%d | detect rule=%d consecutive\n', ...
+    ctx.nom_ncf, thr, numel(tc), cons);
 disp(metrics);
+fprintf(['Note: at the 0.5 s window the parametric methods M2 and M4 have too few FRF\n' ...
+    'points per window to fit reliably -> noisy / not usable. The nonparametric (M1,M3)\n' ...
+    'and recursive (M5,M6) methods are the ones suited to fast small-window detection.\n']);
 
-R = corrcoef(NCF, 'Rows', 'pairwise');
-fprintf('Pairwise correlation of loop-only series (M1,M2,M3,M5):\n');
-disp(array2table(R, 'VariableNames', labels(loop_idx), 'RowNames', labels(loop_idx)));
+Rwork = corrcoef([S{1}.ncf S{3}.ncf S{5}.ncf S{6}.ncf], 'Rows','pairwise');
+fprintf('\nCorrelation of the working fast methods (M1,M3,M5,M6):\n');
+disp(array2table(Rwork, 'VariableNames', labels(work_idx), 'RowNames', labels(work_idx)));
 
-% --- saved tables ---
-T = table(tc, NCF(:,1), NCF(:,2), NCF(:,3), NCF(:,4), m4_bpred, m3_smooth, ...
-    'VariableNames', {'time_s','M1','M2','M3','M5','M4_bpred','M3_KFsmooth'});
-writetable(T, fullfile(cfg.results_dir, 'comparison_table.csv'));
-writetable(table(tc6, ncf6, S{6}.extra(1).data, ...
-    'VariableNames', {'time_s','M6','M6_raw'}), ...
-    fullfile(cfg.results_dir, 'comparison_table_method6.csv'));
+writetable(table(tc, S{1}.ncf, S{2}.ncf, S{3}.ncf, S{5}.ncf, S{6}.ncf, m4_bpred, ...
+    'VariableNames', {'time_s','M1','M2','M3','M5','M6','M4_bpred'}), ...
+    fullfile(cfg.results_dir, 'comparison_table.csv'));
 writetable(metrics, fullfile(cfg.results_dir, 'comparison_metrics.csv'));
 
-% --- figure 1: 5-method comparison (loop methods + M4 drift) ---
+% --- figure 1: working fast methods (top) + parametric failures (bottom) ---
 fig = figure('Visible','off','Color','w','Position',[80 80 980 760]);
-ax1 = subplot(2,1,1); hold(ax1,'on'); grid(ax1,'on');
-co = lines(4);
-for j = 1:numel(loop_idx)
-    plot(ax1, tc, NCF(:,j), '-o', 'Color', co(j,:), 'LineWidth', 1.3, ...
-        'MarkerSize', 4, 'DisplayName', labels{loop_idx(j)});
+ax1 = subplot(2,1,1); hold(ax1,'on'); grid(ax1,'on'); co = lines(4);
+for j = 1:4
+    plot(ax1, tc, S{work_idx(j)}.ncf, '-', 'Color', co(j,:), 'LineWidth', 1.2, ...
+        'DisplayName', labels{work_idx(j)});
 end
-plot(ax1, tc6, ncf6, '-', 'Color', [0.45 0 0.55], 'LineWidth', 1.1, ...
-    'DisplayName', 'M6 freq-KF (0.5 s)');
-plot(ax1, tc, m3_smooth, 'k-', 'LineWidth', 2.2, 'DisplayName', 'M3 + Kalman smoother');
-yline(ax1, ctx.nom_ncf, '--', 'nominal', 'Color', [0 0.45 0.74], 'HandleVisibility', 'off');
-yline(ax1, thr, ':', 'threshold 0.40', 'Color', [0.85 0.33 0.10], 'HandleVisibility', 'off');
+plot(ax1, tc, m1_smooth, 'k-', 'LineWidth', 2.0, 'DisplayName', 'M1 + Kalman smoother');
+yline(ax1, ctx.nom_ncf, '--', 'nominal', 'Color', [0 0.45 0.74], 'HandleVisibility','off');
+yline(ax1, thr, ':', 'threshold 0.40', 'Color', [0.85 0.33 0.10], 'HandleVisibility','off');
+xlim(ax1,[cfg.t_start cfg.t_end]); ylim(ax1,[0 0.8]);
 xlabel(ax1,'time (s)'); ylabel(ax1,'loop-only NCF margin');
-title(ax1,'Online NCF stability indicator -- all loop-only methods'); ylim(ax1,[0 0.8]);
+title(ax1, sprintf('Fast (%s) indicators that work: M1, M3, M5, M6', osi_window_label(cfg)));
 legend(ax1,'Location','southwest','NumColumns',2);
 
 ax2 = subplot(2,1,2); hold(ax2,'on'); grid(ax2,'on');
-yyaxis(ax2,'left');
-plot(ax2, tc, m4_drift, '-s', 'LineWidth', 1.6, 'DisplayName', 'nu-gap drift vs start');
-yline(ax2, m4_base, '--', 'baseline margin', 'Color', [0 0.45 0.74], ...
-    'LabelHorizontalAlignment', 'left', 'HandleVisibility', 'off');
-ylabel(ax2,'nu-gap drift'); ylim(ax2,[0 1]);
-yyaxis(ax2,'right');
-plot(ax2, tc, m4_bpred, '-^', 'LineWidth', 1.6, 'DisplayName', 'predicted margin b0-drift');
-yline(ax2, 0, ':', 'instability bound', 'Color', [0.85 0.33 0.10], ...
-    'LabelHorizontalAlignment', 'right', 'HandleVisibility', 'off');
-ylabel(ax2,'predicted margin'); xlabel(ax2,'time (s)');
-title(ax2,'Method 4 -- model-reference drift early-warning'); legend(ax2,'Location','west');
+plot(ax2, tc, S{2}.ncf, '-', 'Color', [0.6 0.2 0.2], 'LineWidth', 1.0, 'DisplayName','M2 parametric (loop-only)');
+plot(ax2, tc, m4_bpred, '-', 'Color', [0.2 0.2 0.6], 'LineWidth', 1.0, 'DisplayName','M4 nu-gap predicted margin');
+yline(ax2, thr, ':', 'threshold 0.40', 'Color', [0.85 0.33 0.10], 'HandleVisibility','off');
+yline(ax2, 0, '-', 'Color', [0.5 0.5 0.5], 'HandleVisibility','off');
+xlim(ax2,[cfg.t_start cfg.t_end]);
+xlabel(ax2,'time (s)'); ylabel(ax2,'margin');
+title(ax2,'Parametric methods are NOT reliable at the 0.5 s window (cautionary)');
+legend(ax2,'Location','southwest');
 saveas(fig, fullfile(cfg.results_dir, 'comparison.png')); close(fig);
 
-% --- figure 2: Method 6 (fast) vs the 10 s methods + collapse zoom ---
-fig2 = figure('Visible','off','Color','w','Position',[80 80 980 760]);
-bx1 = subplot(2,1,1); hold(bx1,'on'); grid(bx1,'on');
-plot(bx1, tc6, S{6}.extra(1).data, '-', 'Color',[0.75 0.8 0.92], 'LineWidth',0.7, ...
-    'DisplayName','M6 raw (0.5 s)');
-plot(bx1, tc6, ncf6, '-', 'Color',[0.10 0.20 0.55], 'LineWidth',1.8, ...
-    'DisplayName','M6 indicator (0.5 s)');
-plot(bx1, tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10], 'LineWidth',1.4, ...
-    'MarkerFaceColor','w', 'DisplayName','M3 dd-instrument (10 s)');
-plot(bx1, tc, S{1}.ncf, '-s', 'Color',[0.30 0.6 0.30], 'LineWidth',1.0, ...
-    'DisplayName','M1 H1-direct (10 s)');
-yline(bx1, ctx.nom_ncf, '--', 'Color',[0 0.45 0.74], 'HandleVisibility','off');
-yline(bx1, thr, ':', 'threshold 0.40', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
-xlim(bx1,[cfg.t_start cfg.t_end]); ylim(bx1,[0 0.8]);
-xlabel(bx1,'time (s)'); ylabel(bx1,'loop-only NCF margin');
-title(bx1,'Method 6 (0.5 s updates) vs the 10 s methods'); legend(bx1,'Location','southwest');
-
-bx2 = subplot(2,1,2); hold(bx2,'on'); grid(bx2,'on');
-zoomwin = [758 770.1];
-plot(bx2, tc6, ncf6, '-o', 'Color',[0.10 0.20 0.55], 'LineWidth',1.8, 'MarkerSize',3, ...
-    'DisplayName','M6 (0.5 s) resolves the collapse');
-plot(bx2, tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10], 'LineWidth',1.4, ...
-    'MarkerFaceColor','w', 'MarkerSize',8, 'DisplayName','M3 (10 s): one point');
-yline(bx2, thr, ':', 'threshold 0.40', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
-xlim(bx2, zoomwin); ylim(bx2,[0 0.7]);
-xlabel(bx2,'time (s)'); ylabel(bx2,'loop-only NCF margin');
-title(bx2,'Zoom on the final collapse -- 0.5 s resolution vs 10 s'); legend(bx2,'Location','southwest');
+% --- figure 2: collapse zoom -- which fast methods capture the divergence ---
+fig2 = figure('Visible','off','Color','w','Position',[80 80 980 420]);
+hold on; grid on;
+plot(tc, S{1}.ncf, '-o', 'Color',[0.30 0.6 0.30], 'MarkerSize',3, 'DisplayName','M1 H1-direct');
+plot(tc, S{5}.ncf, '-o', 'Color',[0.5 0.2 0.6],  'MarkerSize',3, 'DisplayName','M5 RLS');
+plot(tc, S{6}.ncf, '-o', 'Color',[0.10 0.20 0.55],'LineWidth',1.6,'MarkerSize',3,'DisplayName','M6 freq-KF');
+plot(tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10],'MarkerSize',3, 'DisplayName','M3 dd-instrument (loses collapse)');
+yline(thr, ':', 'threshold 0.40', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
+xlim([758 770.1]); ylim([0 0.7]); xlabel('time (s)'); ylabel('loop-only NCF margin');
+title('Final-collapse zoom (0.5 s): dc->dm methods (M1,M5,M6) capture it; dd-instrument (M3) does not');
+legend('Location','southwest');
 saveas(fig2, fullfile(cfg.results_dir, 'method6_vs_others.png')); close(fig2);
 
-save(fullfile(cfg.results_dir, 'comparison_results.mat'), ...
-    'tc','NCF','NCF_kf','m4_bpred','m4_drift','m4_base','m3_smooth', ...
-    'tc6','ncf6','metrics','R','labels','loop_idx','runtime','ctx');
-fprintf('\nSaved comparison.png, method6_vs_others.png, comparison_table*.csv, comparison_metrics.csv, comparison_results.mat\n');
+save(fullfile(cfg.results_dir, 'comparison_results.mat'), 'tc','S','metrics','Rwork','labels','ctx');
+fprintf('\nSaved comparison.png, method6_vs_others.png, comparison_table.csv, comparison_metrics.csv, comparison_results.mat\n');
 
-%% ---- local functions ----
-function rt = time_run(script)
-% Run a trial script in this function's (isolated) workspace and time it.
-    t0 = tic;
-    evalc(['run(''' script ''')']);
-    rt = toc(t0);
-end
-
-function tcross = first_cross(series, level, tc, rising)
-% First window-center time where series crosses 'level'.
+%% ---- local function ----
+function tcross = sustained_cross(series, level, tc, consec, rising)
+% First time 'series' stays past 'level' for 'consec' consecutive samples.
     series = series(:);
-    if rising, hit = find(series >= level, 1);
-    else,      hit = find(series <= level, 1);
-    end
+    if rising, below = series >= level; else, below = series <= level; end
+    below(isnan(series)) = false;
+    hit = find(movsum(below, [consec-1, 0]) >= consec, 1);
     if isempty(hit), tcross = NaN; else, tcross = tc(hit); end
 end

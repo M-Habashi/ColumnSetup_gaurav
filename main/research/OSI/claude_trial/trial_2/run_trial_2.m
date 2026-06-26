@@ -11,10 +11,12 @@ cfg = osi_config();
 ctx = osi_load_context(cfg);
 
 opt = tfestOptions('Display', 'off', 'EnforceStability', true);
+opt.SearchOptions.MaxIterations = 20;   % bounded cost for many short windows
+t0 = tic;
 ncf    = nan(ctx.nW, 1);   % loop-only NCF (comparable across methods)
 bexact = nan(ctx.nW, 1);   % rigorous 4-block b_{P,C}
 for k = 1:ctx.nW
-    idx = ctx.t >= ctx.edges(k) & ctx.t < ctx.edges(k+1);
+    idx = ctx.grid.idx{k};
     [H, f, coh] = osi_window_frf(ctx.dc(idx), ctx.dm(idx), ctx.fs, cfg);
     sel = f >= cfg.band(1) & f <= cfg.band(2) & coh >= cfg.coh_min;
     g = idfrd(reshape(H(sel), 1, 1, []), 2*pi*f(sel), 0, 'FrequencyUnit', 'rad/s');
@@ -28,9 +30,11 @@ for k = 1:ctx.nW
         fprintf('window %d (%.1f s) fit failed: %s\n', k, ctx.tc(k), err.message);
     end
 end
+ncf    = osi_warmup_hold(ncf, ctx.tc, cfg, ctx.nom_ncf);       % held over weak start
+bexact = osi_warmup_hold(bexact, ctx.tc, cfg, ctx.nom_bexact);
 
 result = struct('tag', 'trial_2', ...
-    'method', 'Method 2 - Parametric per-window ID (5p/3z tfest)', ...
-    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf);
+    'method', sprintf('Method 2 - Parametric per-window ID (5p/3z tfest) [%s]', osi_window_label(cfg)), ...
+    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf, 'runtime', toc(t0));
 result.extra = struct('name', {'b_exact(P,C)'}, 'data', {bexact});
 osi_report_series(result, cfg);

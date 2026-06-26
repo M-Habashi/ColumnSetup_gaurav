@@ -35,10 +35,25 @@ function ctx = osi_load_context(cfg)
     ctx.dc = T.dc(keep);
     ctx.dm = T.dm(keep);
 
-    % --- non-overlapping window edges & centers ---
-    ctx.edges = cfg.t_start : cfg.W : cfg.t_end;
-    ctx.tc    = (ctx.edges(1:end-1) + ctx.edges(2:end)).' / 2;
-    ctx.nW    = numel(ctx.tc);
+    % --- window grid (sliding fast mode or non-overlapping mode) ---
+    % grid.idx{k} = sample indices into ctx.* for window k.
+    % grid.tc(k)  = window-centre time;  grid.tend(k) = window-end time.
+    if strcmp(cfg.win_mode, 'sliding')
+        tend = (cfg.t_start + cfg.win_buf) : cfg.win_hop : cfg.t_end;
+        tsta = tend - cfg.win_buf;
+    else
+        edges = cfg.t_start : cfg.W : cfg.t_end;
+        tsta  = edges(1:end-1);  tend = edges(2:end);
+    end
+    nW = numel(tend);
+    grid = struct('tc', ((tsta+tend)/2).', 'tstart', tsta.', 'tend', tend.', ...
+        'idx', {cell(nW,1)});
+    for k = 1:nW
+        grid.idx{k} = find(ctx.t >= tsta(k) & ctx.t < tend(k));
+    end
+    ctx.grid = grid;
+    ctx.tc   = grid.tc;          % convenience aliases used by the trials
+    ctx.nW   = nW;
 
     ctx.cfg = cfg;
 end

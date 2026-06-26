@@ -56,16 +56,17 @@ for i = 1:6
     xlabel(ax,'time (s)'); ylabel(ax,'NCF margin'); title(ax, short{i});
 end
 
-% Panel 8: collapse zoom (M6 0.5 s vs M3 10 s)
+% Panel 8: collapse zoom -- which methods capture the divergence
 axz = subplot(4,2,8); hold(axz,'on'); grid(axz,'on');
+plot(axz, S{1}.tc, S{1}.ncf, '-o', 'Color',[0.30 0.6 0.30], 'MarkerSize',3, 'DisplayName','M1');
 plot(axz, S{6}.tc, S{6}.ncf, '-o', 'Color',[0.10 0.20 0.55], 'LineWidth',1.6, ...
-    'MarkerSize',3, 'DisplayName','M6 (0.5 s)');
-plot(axz, S{3}.tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10], 'LineWidth',1.4, ...
-    'MarkerFaceColor','w', 'MarkerSize',7, 'DisplayName','M3 (10 s)');
+    'MarkerSize',3, 'DisplayName','M6');
+plot(axz, S{3}.tc, S{3}.ncf, '-o', 'Color',[0.85 0.33 0.10], 'MarkerSize',3, ...
+    'DisplayName','M3 (loses collapse)');
 yline(axz, cfg.ncf_threshold, ':', 'Color',[0.85 0.33 0.10], 'HandleVisibility','off');
 xlim(axz,[758 770.1]); ylim(axz,[0 0.7]);
 xlabel(axz,'time (s)'); ylabel(axz,'NCF margin');
-title(axz,'Final-collapse zoom: M6 0.5 s vs M3 10 s'); legend(axz,'Location','southwest');
+title(axz,'Final-collapse zoom (0.5 s): M1/M6 capture it, M3 does not'); legend(axz,'Location','southwest');
 
 sgtitle(sprintf('OSI methods over %.0f-%.1f s   (blue dash = nominal, orange dot = threshold)', ...
     cfg.t_start, cfg.t_end), 'FontWeight','bold');

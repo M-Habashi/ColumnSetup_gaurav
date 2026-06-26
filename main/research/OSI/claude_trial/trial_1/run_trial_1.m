@@ -9,16 +9,18 @@ addpath(fullfile(this_dir, '..', 'common'));
 cfg = osi_config();
 ctx = osi_load_context(cfg);
 
+t0 = tic;
 ncf = nan(ctx.nW, 1);
 for k = 1:ctx.nW
-    idx = ctx.t >= ctx.edges(k) & ctx.t < ctx.edges(k+1);
+    idx = ctx.grid.idx{k};
     [H, f, coh] = osi_window_frf(ctx.dc(idx), ctx.dm(idx), ctx.fs, cfg);
     sel = f >= cfg.band(1) & f <= cfg.band(2) & coh >= cfg.coh_min;
     L = squeeze(freqresp(ctx.C, 2*pi*f(sel))) .* H(sel);   % Lhat = C(jw) * Hhat(jw)
     ncf(k) = osi_ncf_looponly(L);
 end
+ncf = osi_warmup_hold(ncf, ctx.tc, cfg, ctx.nom_ncf);      % held over weak start
 
 result = struct('tag', 'trial_1', ...
-    'method', 'Method 1 - Nonparametric H1 (direct dc->dm)', ...
-    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf);
+    'method', sprintf('Method 1 - Nonparametric H1 (direct dc->dm) [%s]', osi_window_label(cfg)), ...
+    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf, 'runtime', toc(t0));
 osi_report_series(result, cfg);

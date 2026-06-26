@@ -20,17 +20,36 @@ function cfg = osi_config()
     % --- analysis window (useful-data window from the objective) ---
     cfg.t_start = 620;        % s
     cfg.t_end   = 770.1;      % s
-    cfg.W       = 10;         % s, non-overlapping window length
 
-    % --- margin evaluation band & grid ---
-    % The binding NCF feature sits at ~35 Hz; [1 60] Hz is reliably excited and
-    % brackets it while excluding the unresolved sub-1 Hz region of short windows.
-    cfg.band  = [1 60];                                   % Hz
-    cfg.fgrid = logspace(log10(cfg.band(1)), log10(cfg.band(2)), 3000).';
+    % --- WINDOWING MODE (shared by Methods 1-5) -------------------------------
+    % 'sliding'   : fast mode -- update every win_hop s on a win_buf s sliding
+    %               buffer (same window as Method 6). Gives 0.5 s detection but
+    %               consecutive samples overlap (not independent).
+    % 'nonoverlap': original objective-compliant mode -- non-overlapping W s
+    %               windows (15 independent samples for the downstream KF).
+    cfg.win_mode = 'sliding';
+    cfg.win_hop  = 0.5;       % s, indicator update period (sliding mode)
+    cfg.win_buf  = 1.5;       % s, sliding analysis buffer (== Method 6 buffer)
+    cfg.W        = 10;        % s, non-overlapping window length (nonoverlap mode)
 
-    % --- in-window Welch FRF settings (internal averaging may overlap) ---
-    cfg.fft_len = 2^13;       % ~4 s segment -> 0.25 Hz resolution
-    cfg.fft_ov  = 2^12;       % 50% overlap
+    if strcmp(cfg.win_mode, 'sliding')
+        % Short buffers resolve ~2 Hz; restrict to the band that brackets the
+        % binding 35 Hz resonance and is reliable in 1.5 s (matches Method 6).
+        cfg.band    = [10 58];
+        cfg.fft_len = 1024;   % 0.5 s sub-segment -> ~2 Hz, ~5 averages in 1.5 s
+        cfg.fft_ov  = 512;
+        cfg.kf_q    = 1.0e-4; % indicator-KF retuned for the 0.5 s cadence
+        cfg.kf_r    = 5.0e-3;
+        cfg.detect_consec = 5;  % 5 x 0.5 s = 2.5 s sustained -> declare detection
+    else
+        cfg.band    = [1 60];
+        cfg.fft_len = 2^13;   % ~4 s sub-segment -> 0.25 Hz resolution
+        cfg.fft_ov  = 2^12;
+        cfg.kf_q    = 4.0e-4;
+        cfg.kf_r    = 2.5e-3;
+        cfg.detect_consec = 1;  % single 10 s window crossing
+    end
+    cfg.fgrid   = logspace(log10(cfg.band(1)), log10(cfg.band(2)), 3000).';
     cfg.coh_min = 0.3;        % coherence gate for kept FRF bins
 
     % --- parametric ID (Methods 2 & 4) ---
@@ -45,10 +64,8 @@ function cfg = osi_config()
     cfg.rls_lambda = 0.99;    % forgetting factor
     cfg.rls_P0 = 1e3;         % covariance init
 
-    % --- decision threshold & Kalman post-smoothing ---
+    % --- decision threshold (KF q/r and detect_consec set per mode above) ---
     cfg.ncf_threshold = 0.40; % project-standard "acceptable" NCF (cf. ncf04 designs)
-    cfg.kf_q = 4e-4;          % process (random-walk) variance for indicator KF
-    cfg.kf_r = 2.5e-3;        % measurement variance for indicator KF
 
     % --- Method 6: recursive frequency-point Kalman filter (fast, small window) ---
     % One complex Kalman state per discrete TF point; coherence sets adaptive R.

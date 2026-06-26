@@ -11,9 +11,10 @@ addpath(fullfile(this_dir, '..', 'common'));
 cfg = osi_config();
 ctx = osi_load_context(cfg);
 
+t0 = tic;
 ncf = nan(ctx.nW, 1);
 for k = 1:ctx.nW
-    idx = ctx.t >= ctx.edges(k) & ctx.t < ctx.edges(k+1);
+    idx = ctx.grid.idx{k};
     dd = ctx.dd(idx); dc = ctx.dc(idx); dm = ctx.dm(idx);
     [~, f, ~, Pddm] = osi_window_frf(dd, dm, ctx.fs, cfg);   % Pddm(:,3) = S_dd,dm
     [~, ~, ~, Pddc] = osi_window_frf(dd, dc, ctx.fs, cfg);   % Pddc(:,3) = S_dd,dc
@@ -21,10 +22,11 @@ for k = 1:ctx.nW
     Hind = Pddm(:,3) ./ Pddc(:,3);                           % instrument-variable plant
     sel = f >= cfg.band(1) & f <= cfg.band(2) & coh_dc >= cfg.coh_min;
     L = squeeze(freqresp(ctx.C, 2*pi*f(sel))) .* Hind(sel);
-    ncf(k) = osi_ncf_looponly(L);
+    ncf(k) = osi_ncf_looponly(L);   % NaN when no instrument-coherent bins (short windows)
 end
+ncf = osi_warmup_hold(ncf, ctx.tc, cfg, ctx.nom_ncf);      % held over weak start
 
 result = struct('tag', 'trial_3', ...
-    'method', 'Method 3 - Closed-loop indirect / dd-instrument', ...
-    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf);
+    'method', sprintf('Method 3 - Closed-loop indirect / dd-instrument [%s]', osi_window_label(cfg)), ...
+    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf, 'runtime', toc(t0));
 osi_report_series(result, cfg);

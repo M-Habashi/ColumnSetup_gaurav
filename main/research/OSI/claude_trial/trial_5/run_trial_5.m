@@ -11,6 +11,7 @@ this_dir = fileparts(mfilename('fullpath'));
 addpath(fullfile(this_dir, '..', 'common'));
 cfg = osi_config();
 ctx = osi_load_context(cfg);
+t0 = tic;
 
 % --- decimate the command/response over the (padded) analysis span ---
 r   = cfg.dec_factor;  fsd = ctx.fs / r;
@@ -33,18 +34,19 @@ for kk = 1:numel(td)
     thHist(kk, :) = th.';
 end
 
-% --- snapshot at each window boundary, compute loop-only NCF ---
+% --- snapshot at each window-end time, compute loop-only NCF ---
 ncf = nan(ctx.nW, 1);
 for k = 1:ctx.nW
-    ke  = find(td <= ctx.edges(k+1), 1, 'last');
+    ke  = find(td <= ctx.grid.tend(k), 1, 'last');
     thk = thHist(ke, :).';
     A = [1, thk(1:na).'];
     B = [zeros(1, nk), thk(na+1:end).'];
     H5 = freqz(B, A, cfg.fgrid, fsd);                 % Hhat on physical Hz grid
     ncf(k) = osi_ncf_looponly(ctx.Cf .* H5(:));       % Lhat = C(jw) * Hhat(jw)
 end
+ncf = osi_warmup_hold(ncf, ctx.tc, cfg, ctx.nom_ncf);      % held over weak start
 
 result = struct('tag', 'trial_5', ...
-    'method', sprintf('Method 5 - Recursive RLS tracker (256 Hz, lambda=%.3f)', lam), ...
-    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf);
+    'method', sprintf('Method 5 - Recursive RLS tracker (256 Hz, lambda=%.3f) [%s]', lam, osi_window_label(cfg)), ...
+    'tc', ctx.tc, 'ncf', ncf, 'nominal', ctx.nom_ncf, 'runtime', toc(t0));
 osi_report_series(result, cfg);
