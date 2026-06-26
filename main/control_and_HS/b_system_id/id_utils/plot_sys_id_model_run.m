@@ -1,5 +1,5 @@
 function run_data = plot_sys_id_model_run(model_results_file)
-%PLOT_SYS_ID_MODEL_RUN Recreate sys_id plots from a saved model run file.
+%PLOT_SYS_ID_MODEL_RUN Recreate sys_id plots from a saved model run.
 % Units: saved data keeps the units recorded by sys_id.m; frequency axes are
 % Hz, time is seconds, and displacement is plotted in the saved signal units.
 
@@ -9,7 +9,10 @@ function run_data = plot_sys_id_model_run(model_results_file)
 
     if nargin < 1 || isempty(model_results_file)
         [run_data, model_results_file] = load_saved_result_file( ...
-            step_root, 'models');
+            step_root, 'exp_tf');
+    elseif isstruct(model_results_file)
+        run_data = model_results_file;
+        model_results_file = 'loaded workspace';
     else
         run_data = load(model_results_file);
     end

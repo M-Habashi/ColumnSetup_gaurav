@@ -30,10 +30,12 @@ hs = struct( ...
     'force_sign', 1.0);
 k_exp_r = 1.0;
 hs_sample_dt = 1/2048;
-h_dc_dm_model_file = '';  % Empty loads newest saved_results/models file.
 if exist('h_dc_dm_model_file_override', 'var') ...
         && ~isempty(h_dc_dm_model_file_override)
     h_dc_dm_model_file = h_dc_dm_model_file_override;
+else
+    [~, h_dc_dm_model_file, ~] = load_saved_result_file( ...
+        project_root, 'exp_tf');
 end
 % Override the saved PID used to form PID_H_dc_dm = feedback(PID*H_dc_dm, 1).
 % Leave [] to use pid_values saved by sys_id.m.
@@ -135,6 +137,8 @@ ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
 reference_load_sample = -(fem_ref.M*fem_ref.influence)*ag_sample';
 u_reference_sample = newmarkAverageAcceleration(hs_real_time, ...
     fem_ref.M, hs.C, fem_ref.K, reference_load_sample);
+u_control_reference_sample = referenceControlDisplacement( ...
+    fem_ref, u_reference_sample);
 
 %% VIRTUAL SPRING-FEEDBACK REFERENCE
 K_coupled = fem_num.K;
@@ -206,16 +210,15 @@ reference_error = max(abs(u_num_floors-u_reference), [], 'all');
 reference_error_pid = max(abs(u_pid_floors-u_reference), [], 'all');
 metric = validation_metrics();
 J4 = metric.J4(u_num_floors(:, 1), u_reference(:, 1));
-J5 = metric.J5(u_num_floors(:, 1), u_reference(:, 1));
-J6 = metric.J6(u_num_floors(:, 2), u_reference(:, 2));
-J7 = metric.J7(u_num_floors(:, 3), u_reference(:, 3));
+J5 = metric.J5(u_num_floors(:, 2), u_reference(:, 2));
+J6 = metric.J6(u_num_floors(:, 3), u_reference(:, 3));
 J4_pid = metric.J4(u_pid_floors(:, 1), u_reference(:, 1));
-J5_pid = metric.J5(u_pid_floors(:, 1), u_reference(:, 1));
-J6_pid = metric.J6(u_pid_floors(:, 2), u_reference(:, 2));
-J7_pid = metric.J7(u_pid_floors(:, 3), u_reference(:, 3));
-J1_pid = metric.J1(dm_pid_sample, dd_lead_pid_sample, hs_sample_dt);
-J2_pid = metric.J2(dm_pid_sample, dd_lead_pid_sample);
-J3_pid = metric.J3(dm_pid_sample, dd_lead_pid_sample);
+J5_pid = metric.J5(u_pid_floors(:, 2), u_reference(:, 2));
+J6_pid = metric.J6(u_pid_floors(:, 3), u_reference(:, 3));
+J1_pid = metric.J1(dm_pid_sample, dd_pid_sample, hs_sample_dt);
+J2_pid = metric.J2(dm_pid_sample, dd_pid_sample);
+J3_pid = metric.J3(dm_pid_sample, dd_pid_sample);
+J7_pid = metric.J7(dm_pid_sample, 1000*u_control_reference_sample);
 colors = getPlotColors();
 if phase_lead_enabled
     control_path_label = 'num*G_T*PID*H_{dc,dm}*exp';
@@ -297,15 +300,15 @@ fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
 validation_metric_table = table({'J1'; 'J2'; 'J3'; 'J4'; 'J5'; 'J6'; 'J7'}, ...
-    {'Tracking delay'; ...
-    'Tracking normalized RMS error'; ...
-    'Tracking peak error'; ...
+    {'dm vs replayed numerical control-point delay'; ...
+    'dm vs replayed numerical control-point normalized RMS error'; ...
+    'dm vs replayed numerical control-point peak error'; ...
     'First-floor normalized RMS error'; ...
-    'First-floor peak error'; ...
     'Second-floor normalized RMS error'; ...
-    'Third-floor normalized RMS error'}, ...
+    'Third-floor normalized RMS error'; ...
+    'dm vs full FEM control-point NMSE'}, ...
     {'ms'; '%'; '%'; '%'; '%'; '%'; '%'}, ...
-    [NaN; NaN; NaN; J4; J5; J6; J7], ...
+    [NaN; NaN; NaN; J4; J5; J6; NaN], ...
     [J1_pid; J2_pid; J3_pid; J4_pid; J5_pid; J6_pid; J7_pid], ...
     'VariableNames', {'Metric', 'Description', 'Unit', ...
         'NumExp', 'ControlPath'});
@@ -481,29 +484,13 @@ function [PID_H_dc_dm, pid_values, model_file, actuator_open_loop] = ...
         project_root, model_file, pid_gain_override, sample_time)
 % Units: H_dc_dm maps dc [mm] to dm [mm]; PID_H_dc_dm maps dd [mm] to dm [mm].
 if isempty(model_file)
-    model_dir = fullfile(project_root, 'saved_results', 'models');
-    files = dir(fullfile(model_dir, '*.mat'));
-    if isempty(files)
-        error('vHS:MissingHdcDmModel', ['No saved H_dc_dm model was ' ...
-            'found in %s. Run control_and_HS\\b_system_id\\sys_id.m ' ...
-            'first, or set h_dc_dm_model_file in vHS.m.'], model_dir)
-    end
-    [~, order] = sort([files.datenum], 'descend');
-    files = files(order);
-    for file_id = 1:numel(files)
-        candidate = fullfile(files(file_id).folder, files(file_id).name);
-        names = {whos('-file', candidate).name};
-        if any(strcmp(names, 'H_dc_dm'))
-            model_file = candidate;
-            break
-        end
-    end
+    [~, model_file, ~] = load_saved_result_file(project_root, 'exp_tf');
 end
 
-if isempty(model_file)
+if ~any(strcmp({whos('-file', model_file).name}, 'H_dc_dm'))
     error('vHS:MissingHdcDmModel', ['No saved model file containing ' ...
         'H_dc_dm was found. Run control_and_HS\\b_system_id\\sys_id.m ' ...
-        'first, or set h_dc_dm_model_file in vHS.m.'])
+        'first, or choose a different saved_results\\exp_tf file.'])
 end
 
 model = load(model_file, 'H_dc_dm', 'pid_values');
@@ -525,6 +512,45 @@ digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 actuator_open_loop = digital_controller*H_dc_dm;
 PID_H_dc_dm = feedback(actuator_open_loop, 1);
+end
+
+% Keep this duplicated helper synced with helpers\utils\compare_hs_test_to_reference.m.
+% If the full FEM control-point reconstruction changes here, update both files.
+function u_control = referenceControlDisplacement(fem_ref, floor_response)
+% Units: floor_response/u_control [m].
+assembly = fem_ref.assembly;
+retained = assembly.retained_dofs(:);
+internal = assembly.internal_dofs(:);
+K_full = assembly.K_full;
+q_internal = -(K_full(internal, internal) ...
+    \(K_full(internal, retained)*floor_response'))';
+
+n = size(floor_response, 1);
+q = zeros(n, size(K_full, 1));
+q(:, retained) = floor_response;
+q(:, internal) = q_internal;
+
+height = fem_ref.experimental_column.height;
+story_height = fem_ref.frame.story_height;
+xi = height/story_height;
+N1 = 1 - 3*xi^2 + 2*xi^3;
+N2 = story_height*(xi - 2*xi^2 + xi^3);
+N3 = 3*xi^2 - 2*xi^3;
+N4 = story_height*(-xi^2 + xi^3);
+
+joint_rotation = assembly.joint_rotation_dofs;
+theta_base = getDofSignal(q, joint_rotation(1, 1));
+theta_floor = getDofSignal(q, joint_rotation(1, 2));
+u_control = N1*zeros(n, 1) - N2*theta_base ...
+    + N3*floor_response(:, 1) - N4*theta_floor;
+end
+
+function value = getDofSignal(q, dof)
+if dof > 0
+    value = q(:, dof);
+else
+    value = zeros(size(q, 1), 1);
+end
 end
 
 function stability_table = buildVhsStabilityTable(PID_H_dc_dm, ...

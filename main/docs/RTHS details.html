@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RTHS Details</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-2: #202124;
+      --line: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #ac6420;
+      --blue: #007ca8;
+      --green: #39bf5e;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    a { color: #7dd3fc; text-underline-offset: 3px; }
+
+    code {
+      padding: 0.08rem 0.28rem;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--surface-2);
+      color: #e4e4e7;
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #111113;
+    }
+
+    .wrap {
+      width: min(100% - 40px, 1080px);
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: end;
+      padding: 26px 0 22px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 5px;
+      font-size: 28px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: 19px;
+      font-weight: 620;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 620;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 68ch;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    nav {
+      display: flex;
+      gap: 18px;
+      white-space: nowrap;
+    }
+
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    nav a:hover,
+    nav a:focus { color: var(--text); }
+
+    main { padding: 30px 0 52px; }
+
+    section {
+      padding: 26px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    section:last-child { border-bottom: 0; }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 30px;
+      align-items: start;
+    }
+
+    .note {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--muted);
+    }
+
+    .note strong { color: var(--text); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 560;
+    }
+
+    tbody tr:hover { background: #121214; }
+
+    .metric {
+      width: 4.5rem;
+      color: var(--green);
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .unit {
+      width: 5rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .signal-list {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+
+    .signal-list li { margin: 0.55rem 0; }
+
+    .sources {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .source {
+      padding: 13px 14px;
+      border-top: 2px solid var(--accent);
+      background: var(--surface);
+    }
+
+    .source span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .formula {
+      margin: 0.45rem 0 0;
+      color: var(--muted);
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.91rem;
+    }
+
+    @media (max-width: 760px) {
+      .header-inner,
+      .split,
+      .sources {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      th,
+      td {
+        padding: 10px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap header-inner">
+      <div>
+        <h1>RTHS Details</h1>
+        <p class="subtitle">Reference definitions for the real-time hybrid simulation error indicators currently implemented in the MATLAB code.</p>
+      </div>
+      <nav aria-label="Page sections">
+        <a href="#signals">Signals</a>
+        <a href="#indicators">Indicators</a>
+        <a href="#sources">Code sources</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="signals" class="split" aria-labelledby="signals-heading">
+      <div>
+        <h2 id="signals-heading">Signal Pairing</h2>
+        <p>The indicators use two different references. Tracking indicators compare measured displacement to the replayed numerical control point. Reference indicators compare replayed floors or measured displacement to the full FEM reference.</p>
+      </div>
+      <aside class="note" aria-label="Units note">
+        <strong>Units in the code</strong>
+        <ul class="signal-list">
+          <li><code>dm</code>, replayed numerical control point, and full FEM control point are compared in millimeters.</li>
+          <li>Floor responses are compared in meters.</li>
+          <li><code>J1</code> is reported in milliseconds. <code>J2</code> through <code>J7</code> are reported in percent.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section id="indicators" aria-labelledby="indicators-heading">
+      <h2 id="indicators-heading">Error Indicators</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Indicator</th>
+            <th>Code definition</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric">J1</td>
+            <td>Delay between measured <code>dm</code> and the replayed numerical control point from cross-correlation.</td>
+            <td class="unit">ms</td>
+          </tr>
+          <tr>
+            <td class="metric">J2</td>
+            <td>Normalized RMS/std error between measured <code>dm</code> and the replayed numerical control point.<p class="formula">100 * std(dm - dd_replay) / std(dd_replay)</p></td>
+            <td class="unit">%</td>
+          </tr>
+          <tr>
+            <td class="metric">J3</td>
+            <td>Peak absolute error between measured <code>dm</code> and the replayed numerical control point.<p class="formula">100 * max(abs(dm - dd_replay)) / max(abs(dd_replay))</p></td>
+            <td class="unit">%</td>
+          </tr>
+          <tr>
+            <td class="metric">J4</td>
+            <td>First-floor replayed numerical response versus the first-floor full FEM reference.<p class="formula">100 * std(u_num_1 - u_ref_1) / std(u_ref_1)</p></td>
+            <td class="unit">%</td>
+          </tr>
+          <tr>
+            <td class="metric">J5</td>
+            <td>Second-floor replayed numerical response versus the second-floor full FEM reference.<p class="formula">100 * std(u_num_2 - u_ref_2) / std(u_ref_2)</p></td>
+            <td class="unit">%</td>
+          </tr>
+          <tr>
+            <td class="metric">J6</td>
+            <td>Third-floor replayed numerical response versus the third-floor full FEM reference.<p class="formula">100 * std(u_num_3 - u_ref_3) / std(u_ref_3)</p></td>
+            <td class="unit">%</td>
+          </tr>
+          <tr>
+            <td class="metric">J7</td>
+            <td>Normalized mean square error of measured <code>dm</code> against the full FEM control-point reference.<p class="formula">100 * mean((dm - u_control_ref)^2) / mean(u_control_ref^2)</p></td>
+            <td class="unit">%</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="sources" aria-labelledby="sources-heading">
+      <h2 id="sources-heading">Code Sources</h2>
+      <div class="sources">
+        <div class="source">
+          <h3><code>validation_metrics.m</code></h3>
+          <span>Defines the J1-J7 metric handles and formulas.</span>
+        </div>
+        <div class="source">
+          <h3><code>compare_hs_test_to_reference.m</code></h3>
+          <span>Applies the indicators to saved RTHS test data and the replayed numerical response.</span>
+        </div>
+        <div class="source">
+          <h3><code>vHS.m</code></h3>
+          <span>Uses the same indicator definitions in the virtual hybrid simulation workflow.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

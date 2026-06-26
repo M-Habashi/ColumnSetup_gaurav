@@ -287,11 +287,16 @@ disp(file_name)
 
 % Compare the recorded HS response against the full FEM reference.
 try
-    compare_hs_test_to_reference(hs.fem, file_name, ...
-        hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor, ...
-        hs.force_sign);
-catch
-    fprintf('Comparison failed.\n')
+    if exist('hs', 'var') && isfield(hs, 'fem') ...
+            && exist('file_name', 'var') && isfile(file_name)
+        compare_hs_test_to_reference(hs.fem, file_name, ...
+            hs.earthquake_type, hs.intensity_factor, ...
+            hs.time_scale_factor, hs.force_sign);
+    else
+        compare_hs_test_to_reference();
+    end
+catch ME
+    fprintf('Comparison failed: %s\n', ME.message)
 end
 
 %% Finalizing the Simulation

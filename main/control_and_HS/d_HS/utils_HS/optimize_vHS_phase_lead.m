@@ -92,7 +92,7 @@ else
 end
 
 if config.save_results
-    results_dir = fullfile(project_root, 'saved_results', 'models');
+    results_dir = fullfile(project_root, 'saved_results', 'exp_tf');
     if ~exist(results_dir, 'dir')
         mkdir(results_dir)
     end
@@ -999,22 +999,13 @@ end
 function [PID_H_dc_dm, pid_values, model_file] = loadPidHdcDmModel( ...
         project_root, model_file, pid_gain_override, sample_time)
 if isempty(model_file)
-    model_dir = fullfile(project_root, 'saved_results', 'models');
-    files = dir(fullfile(model_dir, '*.mat'));
-    [~, order] = sort([files.datenum], 'descend');
-    files = files(order);
-    for file_id = 1:numel(files)
-        candidate = fullfile(files(file_id).folder, files(file_id).name);
-        names = {whos('-file', candidate).name};
-        if any(strcmp(names, 'H_dc_dm'))
-            model_file = candidate;
-            break
-        end
-    end
+    [~, model_file, ~] = load_saved_result_file(project_root, 'exp_tf');
 end
-if isempty(model_file)
+if ~any(strcmp({whos('-file', model_file).name}, 'H_dc_dm'))
     error('optimize_vHS_phase_lead:MissingHdcDmModel', ...
-        'No saved model file containing H_dc_dm was found.')
+        ['No saved model file containing H_dc_dm was found. Run ' ...
+        'control_and_HS\\b_system_id\\sys_id.m first, or choose a ' ...
+        'different saved_results\\exp_tf file.'])
 end
 
 model = load(model_file, 'H_dc_dm', 'pid_values');

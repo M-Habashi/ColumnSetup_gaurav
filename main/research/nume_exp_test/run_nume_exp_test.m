@@ -46,7 +46,7 @@ case_data(3) = buildCase3(frame, floor_mass_kg, experimental_height, ...
     base_rotation_k);
 
 metric = validation_metrics();
-metric_names = {'J4'; 'J5'; 'J6'; 'J7'};
+metric_names = {'J4'; 'J5'; 'J6'};
 metric_values = zeros(numel(metric_names), numel(case_data));
 maximum_error = zeros(1, numel(case_data));
 
@@ -58,9 +58,8 @@ for case_id = 1:numel(case_data)
 
     metric_values(:, case_id) = [ ...
         metric.J4(hybrid(:, 1), reference(:, 1)); ...
-        metric.J5(hybrid(:, 1), reference(:, 1)); ...
-        metric.J6(hybrid(:, 2), reference(:, 2)); ...
-        metric.J7(hybrid(:, 3), reference(:, 3))];
+        metric.J5(hybrid(:, 2), reference(:, 2)); ...
+        metric.J6(hybrid(:, 3), reference(:, 3))];
     maximum_error(case_id) = max(abs(hybrid-reference), [], 'all');
 end
 
@@ -77,10 +76,10 @@ fprintf('SAP workflow: not used in this research script.\n\n');
 
 fprintf('Applicable error indicators:\n');
 fprintf('J4: first-floor displacement error std normalized by reference std [%%].\n');
-fprintf('J5: first-floor peak displacement error normalized by reference peak [%%].\n');
-fprintf('J6: second-floor displacement error std normalized by reference std [%%].\n');
-fprintf('J7: third-floor displacement error std normalized by reference std [%%].\n');
-fprintf(['J1-J3 require measured vs commanded actuator tracking signals; ' ...
+fprintf('J5: second-floor displacement error std normalized by reference std [%%].\n');
+fprintf('J6: third-floor displacement error std normalized by reference std [%%].\n');
+fprintf(['J1-J3 require measured dm vs replayed numerical control point; ' ...
+    'J7 requires measured dm vs full FEM control-point reference; ' ...
     'J8-J9 are not defined in this repo.\n\n']);
 
 fprintf('Case descriptions:\n');

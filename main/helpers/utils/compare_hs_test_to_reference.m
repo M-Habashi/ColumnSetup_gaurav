@@ -7,14 +7,33 @@ function [metric_table, comparison] = compare_hs_test_to_reference( ...
 %   FEM/reference displacements are compared in [m].
 %   J1 [ms]; J2-J7 [%].
 
-if nargin < 6
-    force_sign = 1.0;
-end
-
-data = loadRecordedData(recorded_data);
 project_folder = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(fullfile(project_folder, 'control_and_HS', 'd_HS', 'utils_HS'));
 addpath(fullfile(project_folder, 'results_analysis'));
+
+if nargin < 2
+    recorded_data = [];
+end
+data = loadRecordedData(recorded_data, project_folder);
+if nargin < 1
+    fem = [];
+end
+if nargin < 3
+    earthquake_type = [];
+end
+if nargin < 4
+    intensity_factor = [];
+end
+if nargin < 5
+    time_scale_factor = [];
+end
+if nargin < 6
+    force_sign = [];
+end
+fem = loadFemData(fem, data, project_folder);
+[earthquake_type, intensity_factor, time_scale_factor, force_sign] = ...
+    getComparisonInputs(data, nargin, earthquake_type, intensity_factor, ...
+    time_scale_factor, force_sign);
 
 t = data.t(:);
 dm = data.dm(:);
@@ -33,32 +52,37 @@ pause_enable = pause_enable(1:n);
 
 hs = buildHsModel(fem, earthquake_type, intensity_factor, ...
     time_scale_factor, force_sign, project_folder);
-[u_test, effective_time] = replayRecordedHs(fm, pause_enable, dt, hs);
+[u_test, u_control_test_mm, effective_time] = replayRecordedHs( ...
+    fm, pause_enable, dt, hs);
 [u_reference, u_control_reference] = fullReferenceAtEffectiveTime( ...
     fem.ref, hs, effective_time, dt);
 plotReferenceControlDisplacement(effective_time, dm, ...
     u_control_reference, pause_enable, fem.ref);
+plotFloorReferenceComparison(effective_time, u_test, u_reference, pause_enable);
 
 running = pause_enable == 0;
 metric = validation_metrics();
 u_control_reference_mm = 1000*u_control_reference;
+% J1-J3 compare measured dm to the replayed numerical control point.
+% J4-J6 compare replayed numerical floor responses to the full FEM floors.
+% J7 compares measured dm to the full FEM control point as NMSE.
 values = [ ...
-    metric.J1(dm(running), u_control_reference_mm(running), dt); ...
-    metric.J2(dm(running), u_control_reference_mm(running)); ...
-    metric.J3(dm(running), u_control_reference_mm(running)); ...
+    metric.J1(dm(running), u_control_test_mm(running), dt); ...
+    metric.J2(dm(running), u_control_test_mm(running)); ...
+    metric.J3(dm(running), u_control_test_mm(running)); ...
     metric.J4(u_test(running, 1), u_reference(running, 1)); ...
-    metric.J5(u_test(running, 1), u_reference(running, 1)); ...
-    metric.J6(u_test(running, 2), u_reference(running, 2)); ...
-    metric.J7(u_test(running, 3), u_reference(running, 3))];
+    metric.J5(u_test(running, 2), u_reference(running, 2)); ...
+    metric.J6(u_test(running, 3), u_reference(running, 3)); ...
+    metric.J7(dm(running), u_control_reference_mm(running))];
 
 metric_table = table( ...
-    ["Control-point delay"; ...
-     "Control-point normalized RMS error"; ...
-     "Control-point peak error"; ...
+    ["dm vs replayed numerical control-point delay"; ...
+     "dm vs replayed numerical control-point normalized RMS error"; ...
+     "dm vs replayed numerical control-point peak error"; ...
      "First-floor normalized RMS error"; ...
-     "First-floor peak error"; ...
      "Second-floor normalized RMS error"; ...
-     "Third-floor normalized RMS error"], ...
+     "Third-floor normalized RMS error"; ...
+     "dm vs full FEM control-point NMSE"], ...
     ["ms"; "%"; "%"; "%"; "%"; "%"; "%"], ...
     values, ...
     'RowNames', {'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7'}, ...
@@ -73,15 +97,76 @@ if nargout > 1
     comparison = struct('t', t, 'effective_time', effective_time, ...
         'pause_enable', pause_enable, 'u_test', u_test, ...
         'u_reference', u_reference, ...
+        'u_control_test_mm', u_control_test_mm, ...
         'u_control_reference', u_control_reference);
 end
 end
 
-function data = loadRecordedData(recorded_data)
-if ischar(recorded_data) || isstring(recorded_data)
+function data = loadRecordedData(recorded_data, project_folder)
+if nargin < 1 || isempty(recorded_data) ...
+        || ((ischar(recorded_data) || isstring(recorded_data)) ...
+        && ~isfile(recorded_data))
+    if nargin >= 1 && ~isempty(recorded_data)
+        fprintf('Recorded data file not found: %s\n', recorded_data)
+    end
+    [data, recorded_data] = load_saved_result_file(project_folder, ...
+        'tests', true);
+    fprintf('Loaded recorded data: %s\n', recorded_data)
+elseif ischar(recorded_data) || isstring(recorded_data)
     data = load(recorded_data);
 else
     data = recorded_data;
+end
+end
+
+function fem = loadFemData(fem, data, project_folder)
+if isstruct(fem) && isfield(fem, 'num') && isfield(fem, 'ref')
+    return
+end
+
+if ischar(fem) || isstring(fem)
+    if isfile(fem)
+        fem_data = load(fem, 'fem');
+        fem = fem_data.fem;
+        return
+    end
+    fprintf('FEM file not found: %s\n', fem)
+end
+
+if isfield(data, 'hs') && isfield(data.hs, 'fem')
+    fem = data.hs.fem;
+    return
+end
+
+fem_data = load_saved_result_file(project_folder, 'fem', true);
+assert(isfield(fem_data, 'fem'), 'Selected FEM file does not contain fem.')
+fem = fem_data.fem;
+end
+
+function [earthquake_type, intensity_factor, time_scale_factor, force_sign] = ...
+        getComparisonInputs(data, n_input, earthquake_type, intensity_factor, ...
+        time_scale_factor, force_sign)
+if n_input < 3 || isempty(earthquake_type)
+    assert(isfield(data, 'hs') && isfield(data.hs, 'earthquake_type'), ...
+        'earthquake_type must be passed or stored in recorded data hs.')
+    earthquake_type = data.hs.earthquake_type;
+end
+if n_input < 4 || isempty(intensity_factor)
+    assert(isfield(data, 'hs') && isfield(data.hs, 'intensity_factor'), ...
+        'intensity_factor must be passed or stored in recorded data hs.')
+    intensity_factor = data.hs.intensity_factor;
+end
+if n_input < 5 || isempty(time_scale_factor)
+    assert(isfield(data, 'hs') && isfield(data.hs, 'time_scale_factor'), ...
+        'time_scale_factor must be passed or stored in recorded data hs.')
+    time_scale_factor = data.hs.time_scale_factor;
+end
+if n_input < 6 || isempty(force_sign)
+    if isfield(data, 'hs') && isfield(data.hs, 'force_sign')
+        force_sign = data.hs.force_sign;
+    else
+        force_sign = 1.0;
+    end
 end
 end
 
@@ -144,13 +229,16 @@ hs.time_scale_factor = time_scale_factor;
 hs.force_sign = force_sign;
 end
 
-function [u_test, effective_time] = replayRecordedHs(fm, pause_enable, dt, hs)
+function [u_test, u_control_test_mm, effective_time] = replayRecordedHs( ...
+        fm, pause_enable, dt, hs)
 n = numel(fm);
 state = [];
 u_test = zeros(n, hs.n_floor);
+u_control_test_mm = zeros(n, 1);
 effective_time = zeros(n, 1);
 for step = 2:n
-    [~, state] = step_HS(fm(step), pause_enable(step), dt, hs, state);
+    [u_control_test_mm(step), state] = step_HS( ...
+        fm(step), pause_enable(step), dt, hs, state);
     u_test(step, :) = state(1:hs.n_floor)';
     effective_time(step) = effective_time(step - 1);
     if pause_enable(step) == 0
@@ -173,6 +261,8 @@ u_reference = u_reference_grid(reference_index, :);
 u_control_reference = u_control_grid(reference_index);
 end
 
+% Keep this duplicated helper synced with control_and_HS\d_HS\vHS.m.
+% If the full FEM control-point reconstruction changes here, update both files.
 function u_control = referenceControlDisplacement(fem_ref, floor_response)
 assembly = fem_ref.assembly;
 retained = assembly.retained_dofs(:);
@@ -237,6 +327,41 @@ legend_handle = legend('Location', 'best');
 legend_handle.ItemHitFcn = @toggleSignalVisibility;
 end
 
+function plotFloorReferenceComparison(effective_time, u_test, ...
+        u_reference, pause_enable)
+active = pause_enable == 0;
+if ~any(active)
+    active = true(size(pause_enable));
+end
+
+x = effective_time(active);
+u_test = u_test(active, :);
+u_reference = u_reference(active, :);
+
+colors = getPlotColors();
+figure('Color', 'w', 'Name', 'HS replayed numerical floor comparison');
+layout = tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+for floor_id = 1:3
+    ax = nexttile;
+    plot(ax, x, u_reference(:, floor_id), 'k--', 'LineWidth', 2.2, ...
+        'DisplayName', 'full FEM reference');
+    hold(ax, 'on')
+    plot(ax, x, u_test(:, floor_id), '-', 'Color', colors.copperwood, ...
+        'LineWidth', 1.2, 'DisplayName', 'replayed numerical');
+    hold(ax, 'off')
+    grid(ax, 'on')
+    ylabel(ax, sprintf('Floor %d (m)', floor_id))
+    if floor_id == 1
+        legend_handle = legend(ax, 'Location', 'best');
+        legend_handle.ItemHitFcn = @toggleSignalVisibility;
+    end
+    if floor_id == 3
+        xlabel(ax, 'Effective HS time (s)')
+    end
+end
+title(layout, 'Full FEM reference vs replayed numerical floor response')
+end
+
 function toggleSignalVisibility(~, event)
 ax = ancestor(event.Peer, 'axes');
 x_limits = xlim(ax);
@@ -253,6 +378,7 @@ end
 
 function colors = getPlotColors()
 colors.blue = hexToRgb('007CA8');
+colors.copperwood = hexToRgb('AC6420');
 end
 
 function rgb = hexToRgb(hex_color)

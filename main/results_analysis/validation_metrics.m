@@ -2,14 +2,18 @@ function metric = validation_metrics()
 %VALIDATION_METRICS Return handles to the J1-J7 validation metrics.
 % Each metric reproduces the definition used in modified BM of V23.
 % Units: J1 [ms]; J2-J7 [%]. Compared signal pairs must share one unit.
+% Indicator meanings:
+%   J1-J3: measured dm against the replayed numerical control point.
+%   J4-J6: floor 1-3 replayed numerical response against full FEM response.
+%   J7: measured dm against the full FEM control point, reported as NMSE.
 
 metric.J1 = @J1_tracking_delay;
 metric.J2 = @J2_normalized_tracking_rms;
 metric.J3 = @J3_tracking_peak_error;
 metric.J4 = @J4_first_floor_normalized_rms;
-metric.J5 = @J5_first_floor_peak_error;
-metric.J6 = @J6_second_floor_normalized_rms;
-metric.J7 = @J7_third_floor_normalized_rms;
+metric.J5 = @J5_second_floor_normalized_rms;
+metric.J6 = @J6_third_floor_normalized_rms;
+metric.J7 = @J7_control_point_nmse;
 end
 
 function value = J1_tracking_delay(measured, commanded, dt)
@@ -43,20 +47,20 @@ function value = J4_first_floor_normalized_rms(response, reference)
 value = round(10000*std(response-reference)/std(reference))/100;
 end
 
-function value = J5_first_floor_peak_error(response, reference)
-%J5 First-floor peak displacement error, normalized by reference peak [%].
-% Units: inputs share any displacement unit; output [%].
-value = round(10000*max(abs(response-reference))/max(abs(reference)))/100;
-end
-
-function value = J6_second_floor_normalized_rms(response, reference)
-%J6 Second-floor displacement error standard deviation, normalized [%].
+function value = J5_second_floor_normalized_rms(response, reference)
+%J5 Second-floor displacement error standard deviation, normalized [%].
 % Units: inputs share any displacement unit; output [%].
 value = round(10000*std(response-reference)/std(reference))/100;
 end
 
-function value = J7_third_floor_normalized_rms(response, reference)
-%J7 Third-floor displacement error standard deviation, normalized [%].
+function value = J6_third_floor_normalized_rms(response, reference)
+%J6 Third-floor displacement error standard deviation, normalized [%].
 % Units: inputs share any displacement unit; output [%].
 value = round(10000*std(response-reference)/std(reference))/100;
+end
+
+function value = J7_control_point_nmse(measured, reference)
+%J7 Control-point normalized mean square error [%].
+% Units: inputs share any displacement unit; output [%].
+value = round(10000*mean((measured-reference).^2)/mean(reference.^2))/100;
 end
