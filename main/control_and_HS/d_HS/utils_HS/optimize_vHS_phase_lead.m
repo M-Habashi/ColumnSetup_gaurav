@@ -716,6 +716,9 @@ end
 function score = phaseLeadObjective(x, problem)
 candidate = evaluateVhsPhaseLead(problem, phaseLeadFromX(x, problem.config));
 score = candidate.metrics.score;
+if ~isfiniteRealScalar(score)
+    score = 1e20;
+end
 end
 
 function [c, ceq] = phaseLeadConstraints(x, problem, max_response_nrmse)
@@ -734,7 +737,12 @@ if isfinite(max_response_nrmse)
     c(end+1, 1) = candidate.metrics.response_nrmse_percent ...
         - max_response_nrmse;
 end
+c(~isfinite(c)) = 1e6;
 ceq = [];
+end
+
+function tf = isfiniteRealScalar(value)
+tf = isscalar(value) && isreal(value) && isfinite(value);
 end
 
 function candidate = evaluateVhsPhaseLead(problem, phase_lead_override)

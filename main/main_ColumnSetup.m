@@ -48,13 +48,13 @@ disp('                        Simulation To.ol                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'RTHS_02';
+test_type = 'sys_id_dp1_dm_1_same_gains';
 testname = test_type;
 
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-     'fem_sp_1_org_3.mat'), ... % Run build_fem_3.m first.
+     'fem_sp_1_dm1_3.mat'), ... % Run build_fem_3.m first.
     'delay_comp_file', fullfile(projectFolder, 'saved_results', ...
      'delay_comp', 'fem3_ncf3.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
