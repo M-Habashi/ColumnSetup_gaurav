@@ -1,35 +1,35 @@
+function summary = visualize_saved_results(result)
 %% Visualize Saved Column Setup Results
-% Lists saved result MAT files, prompts for one file, prints a compact
-% report, displacement tracking, measured force, and force-displacement
-% hysteresis.
+% Plots displacement tracking, measured force, measured acceleration, and
+% force-displacement hysteresis from a saved result struct.
 
 %% Units
 % Input/stored: t [s], dd/dc/dm [mm], fm [N], am [g], m_hat [kg],
 % c_hat [N*s/m], k_hat [N/m]. Plotted outputs preserve those stored units.
 
-scriptFolder = fileparts(mfilename('fullpath'));
-projectFolder = fileparts(scriptFolder);
-addpath(fullfile(projectFolder, 'helpers', 'utils'))
-
-preferredFile = '';
-if exist('outputVerificationFile', 'var')
-    preferredFile = outputVerificationFile;
+if nargin < 1 || isempty(result)
+    scriptFolder = fileparts(mfilename('fullpath'));
+    projectFolder = fileparts(scriptFolder);
+    addpath(fullfile(projectFolder, 'helpers', 'utils'))
+    result = load_saved_result_file(projectFolder, 'tests', false);
 end
-[data, filePath, selectedFileName] = load_saved_result_file( ...
-    projectFolder, 'tests', false, preferredFile);
+if isfield(result, 'result') && isstruct(result.result)
+    result = result.result;
+end
 
-t = data.t(:);
-dd = data.dd(:);
-dc = data.dc(:);
-dm = data.dm(:);
-fm = data.fm(:);
-am = data.am(:);
-hasTseEstimate = isfield(data, 'm_hat') && isfield(data, 'c_hat') ...
-    && isfield(data, 'k_hat') && ~isempty(data.m_hat);
+t = result.t(:);
+dd = result.dd(:);
+dc = result.dc(:);
+dm = result.dm(:);
+fm = result.fm(:);
+am = result.am(:);
+hasTseEstimate = isfield(result, 'm_hat') && isfield(result, 'c_hat') ...
+    && isfield(result, 'k_hat') && ~isempty(result.m_hat);
 
 n = min([numel(t), numel(dd), numel(dc), numel(dm), numel(fm), numel(am)]);
 if hasTseEstimate
-    n = min([n, numel(data.m_hat), numel(data.c_hat), numel(data.k_hat)]);
+    n = min([n, numel(result.m_hat), numel(result.c_hat), ...
+        numel(result.k_hat)]);
 end
 t = t(1:n);
 dd = dd(1:n);
@@ -38,25 +38,35 @@ dm = dm(1:n);
 fm = fm(1:n);
 am = am(1:n);
 if hasTseEstimate
-    m_hat = data.m_hat(1:n);
-    c_hat = data.c_hat(1:n);
-    k_hat = data.k_hat(1:n);
+    m_hat = result.m_hat(1:n);
+    c_hat = result.c_hat(1:n);
+    k_hat = result.k_hat(1:n);
+end
+
+maxPlotPoints = 50000;
+plotStep = max(1, ceil(n/maxPlotPoints));
+plotIndex = 1:plotStep:n;
+if plotIndex(end) ~= n
+    plotIndex = [plotIndex n];
 end
 
 trackingError = dd - dm;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
-
 duration = t(end) - t(1);
-fs = data.fs;
-dt = data.dt;
-test_type = getTestType(data);
+fs = result.fs;
+dt = result.dt;
+test_type = getTestType(result);
+resultName = getResultName(result);
+
+summary = struct('name', resultName, 'test_type', test_type, ...
+    'duration', duration, 'sample_count', n, 'fs', fs, 'dt', dt, ...
+    'rms_dd_dm', rmsError);
 
 fprintf('\n===============================================================\n');
 fprintf('                    Saved Result Summary\n');
 fprintf('===============================================================\n');
-fprintf('File name:       %s\n', selectedFileName);
+fprintf('Result:          %s\n', resultName);
 fprintf('Test type:       %s\n', test_type);
-fprintf('Full path:       %s\n', filePath);
 fprintf('Duration:        %.3f s\n', duration);
 fprintf('Sample count:    %d\n', n);
 fprintf('fs:              %.6g Hz\n', fs);
@@ -64,13 +74,22 @@ fprintf('dt:              %.6g s\n', dt);
 fprintf('RMS(dd - dm):    %.6g mm\n', rmsError);
 fprintf('===============================================================\n\n');
 
-figure('Name', selectedFileName, 'WindowState', 'maximized');
+figure('Name', resultName, 'WindowState', 'maximized');
 colors = getPlotColors();
+tPlot = t(plotIndex);
+ddPlot = dd(plotIndex);
+dcPlot = dc(plotIndex);
+dmPlot = dm(plotIndex);
+fmPlot = fm(plotIndex);
+amPlot = am(plotIndex);
 
 ax(1) = subplot(3, 1, 1);
-hDesired = plot(t, dd, '--', 'Color', colors.black, 'LineWidth', 1.8, 'DisplayName', 'dd desired displacement'); hold on
-plot(t, dc, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
-hMeasured = plot(t, dm, '-', 'Color', colors.blue, 'LineWidth', 1.2, 'DisplayName', 'dm measured displacement');
+hDesired = plot(tPlot, ddPlot, '--', 'Color', colors.black, ...
+    'LineWidth', 1.8, 'DisplayName', 'dd desired displacement'); hold on
+plot(tPlot, dcPlot, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, ...
+    'DisplayName', 'dc command displacement');
+hMeasured = plot(tPlot, dmPlot, '-', 'Color', colors.blue, ...
+    'LineWidth', 1.2, 'DisplayName', 'dm measured displacement');
 uistack(hDesired, 'top')
 uistack(hMeasured, 'top')
 grid on
@@ -82,7 +101,8 @@ lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 ax(2) = subplot(3, 1, 2);
-plot(t, fm, '-', 'Color', colors.purple, 'LineWidth', 1.0, 'DisplayName', 'fm measured force');
+plot(tPlot, fmPlot, '-', 'Color', colors.purple, 'LineWidth', 1.0, ...
+    'DisplayName', 'fm measured force');
 grid on
 xlabel('Time (s)')
 ylabel('Force (N)')
@@ -92,7 +112,8 @@ lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 ax(3) = subplot(3, 1, 3);
-plot(t, am, '-', 'Color', colors.green, 'LineWidth', 1.0, 'DisplayName', 'am measured acceleration');
+plot(tPlot, amPlot, '-', 'Color', colors.green, 'LineWidth', 1.0, ...
+    'DisplayName', 'am measured acceleration');
 grid on
 xlabel('Time (s)')
 ylabel('Acceleration (g)')
@@ -103,9 +124,8 @@ lgd.ItemHitFcn = @toggleSignalVisibility;
 
 linkaxes(ax, 'x')
 
-% Hysteresis shows the measured restoring force versus measured displacement.
-figure('Name', [selectedFileName ' - Hysteresis']);
-patch(dm, fm, zeros(size(dm)), 'FaceColor', 'none', ...
+figure('Name', [resultName ' - Hysteresis']);
+patch(dmPlot, fmPlot, zeros(size(dmPlot)), 'FaceColor', 'none', ...
     'EdgeColor', colors.purple, 'EdgeAlpha', 0.3, 'LineWidth', 1.0);
 grid on
 xlabel('Measured displacement (mm)')
@@ -113,26 +133,34 @@ ylabel('Measured force (N)')
 title('Force-Displacement Hysteresis')
 
 if hasTseEstimate
-    figure('Name', [selectedFileName ' - Online TSE'], 'WindowState', 'maximized');
+    figure('Name', [resultName ' - Online TSE'], 'WindowState', 'maximized');
+    mHatPlot = m_hat(plotIndex);
+    cHatPlot = c_hat(plotIndex);
+    kHatPlot = k_hat(plotIndex);
+
     ax_tse(1) = subplot(3, 1, 1);
-    plot(t, k_hat, 'Color', colors.blue, 'LineWidth', 1.0, 'DisplayName', 'k hat');
+    plot(tPlot, kHatPlot, 'Color', colors.blue, 'LineWidth', 1.0, ...
+        'DisplayName', 'k hat');
     grid on
     ylabel('k (N/m)')
     title('Online TSE Stiffness')
 
     ax_tse(2) = subplot(3, 1, 2);
-    plot(t, m_hat, 'Color', colors.purple, 'LineWidth', 1.0, 'DisplayName', 'm hat');
+    plot(tPlot, mHatPlot, 'Color', colors.purple, 'LineWidth', 1.0, ...
+        'DisplayName', 'm hat');
     grid on
     ylabel('m (kg)')
     title('Online TSE Mass')
 
     ax_tse(3) = subplot(3, 1, 3);
-    plot(t, c_hat, 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'c hat');
+    plot(tPlot, cHatPlot, 'Color', colors.copperwood, 'LineWidth', 1.0, ...
+        'DisplayName', 'c hat');
     grid on
     xlabel('Time (s)')
     ylabel('c (N s/m)')
     title('Online TSE Damping')
     linkaxes(ax_tse, 'x')
+end
 end
 
 function colors = getPlotColors()
@@ -198,13 +226,37 @@ function setAxisLimitsFromSignals(ax, time, signals)
     end
 end
 
-function test_type = getTestType(data)
+function test_type = getTestType(result)
 % Units: metadata input and text output are unitless.
-    if isfield(data, 'test_type')
-        test_type = char(string(data.test_type));
-    elseif isfield(data, 'testname')
-        test_type = char(string(data.testname));
+    if isfield(result, 'test_type')
+        test_type = char(string(result.test_type));
+    elseif isfield(result, 'testname')
+        test_type = char(string(result.testname));
     else
         test_type = 'unknown';
+    end
+end
+
+function resultName = getResultName(result)
+% Units: metadata input and text output are unitless.
+    if isfield(result, 'file')
+        resultName = pathLeaf(result.file);
+    elseif isfield(result, 'file_name')
+        resultName = pathLeaf(result.file_name);
+    elseif isfield(result, 'testname')
+        resultName = char(string(result.testname));
+    else
+        resultName = getTestType(result);
+    end
+end
+
+function name = pathLeaf(value)
+% Units: path or label input and label output are unitless.
+    value = char(string(value));
+    [~, baseName, ext] = fileparts(value);
+    if isempty(baseName)
+        name = value;
+    else
+        name = [baseName ext];
     end
 end

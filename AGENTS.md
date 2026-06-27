@@ -22,6 +22,7 @@
 - Do not add unnecessary verification, error handling, or edge-case studies. Assume the user is an engineer who can handle default MATLAB errors.
 - Use built-in functions when available unless a custom implementation is clearly faster, cleaner, or easier to understand.
 - Simpler solutions are better solutions.
+- Saved test MAT files should store one top-level `result` struct. To convert an old top-level-variable result file, run `convert_saved_result_to_struct(inputFile)` from `main`; it writes `<oldname>_struct.mat` unless an output path is passed.
 
 ## Deferred Detailed Instructions
 

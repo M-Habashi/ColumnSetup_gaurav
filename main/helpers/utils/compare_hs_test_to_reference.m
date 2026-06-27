@@ -114,6 +114,9 @@ if nargin < 1 || isempty(recorded_data) ...
     fprintf('Loaded recorded data: %s\n', recorded_data)
 elseif ischar(recorded_data) || isstring(recorded_data)
     data = load(recorded_data);
+    if isfield(data, 'result') && isstruct(data.result)
+        data = data.result;
+    end
 else
     data = recorded_data;
 end

@@ -44,6 +44,9 @@ end
 [~, selectedName, selectedExt] = fileparts(filePath);
 selectedFileName = [selectedName selectedExt];
 data = load(filePath);
+if isfield(data, 'result') && isstruct(data.result)
+    data = data.result;
+end
 
 end
 

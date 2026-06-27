@@ -262,12 +262,24 @@ units = struct('t', 's', 'dt', 's', 'fs', 'Hz', ...
     'fm', 'N', 'am', 'g', 'm_hat', 'kg', 'c_hat', 'N*s/m', ...
     'k_hat', 'N/m', 'tse_fallback', 'dimensionless');
 
-save(file_name, 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt', ...
-    'm_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
-    'units', ...
-    'hs', 'delay_comp_file', 'delay_comp_name', ...
-    'Results', 'logsout', 'testname', 'test_type', 'model', 'file_name', ...
-    'runStartTime', '-v7.3')
+result = struct('t', t, 'dd', dd, 'dc', dc, 'dm', dm, ...
+    'fm', fm, 'am', am, 'fs', fs, 'dt', dt, ...
+    'm_hat', m_hat, 'c_hat', c_hat, 'k_hat', k_hat, ...
+    'tse_fallback', tse_fallback, 'units', units, ...
+    'Results', Results, 'logsout', logsout, 'testname', testname, ...
+    'test_type', test_type, 'model', model, 'runStartTime', runStartTime, ...
+    'file', [timestamp '_' testname '.mat']);
+if exist('hs', 'var')
+    result.hs = hs;
+end
+if exist('delay_comp_file', 'var')
+    result.delay_comp_file = delay_comp_file;
+end
+if exist('delay_comp_name', 'var')
+    result.delay_comp_name = delay_comp_name;
+end
+
+save(file_name, 'result', '-v7.3')
 
 disp('*** Data file saved! ***')
 disp(file_name)
@@ -296,8 +308,26 @@ disp('===============================================================')
 
 %% Plotting Simulation Data
 
-outputVerificationFile = file_name;
-run(fullfile(projectFolder, 'results_analysis', 'visualize_saved_results.m'))
+if ~exist('result', 'var')
+    result = struct('t', t, 'dd', dd, 'dc', dc, 'dm', dm, ...
+        'fm', fm, 'am', am, 'fs', fs, 'dt', dt);
+    optionalVars = {'m_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
+        'units', 'hs', 'delay_comp_file', 'delay_comp_name', ...
+        'Results', 'logsout', 'testname', 'test_type', 'model', ...
+        'runStartTime', 'file_name'};
+    for iVar = 1:numel(optionalVars)
+        if exist(optionalVars{iVar}, 'var')
+            result.(optionalVars{iVar}) = eval(optionalVars{iVar});
+        end
+    end
+end
+if exist('projectFolder', 'var') ...
+        && isfolder(fullfile(projectFolder, 'results_analysis'))
+    addpath(fullfile(projectFolder, 'results_analysis'))
+elseif isfolder(fullfile(pwd, 'results_analysis'))
+    addpath(fullfile(pwd, 'results_analysis'))
+end
+visualize_saved_results(result)
 
 
 %slrtExplorer
