@@ -284,6 +284,28 @@ save(file_name, 'result', '-v7.3')
 disp('*** Data file saved! ***')
 disp(file_name)
 
+%% Finalizing the Simulation
+
+disp('===============================================================')
+disp('                        Test Completed!                        ')
+disp('===============================================================')
+
+%% Plotting Simulation Data
+
+if ~exist('result', 'var')
+    fprintf('\nLoaded data uses the old saved-result format.\n')
+    fprintf('Convert saved test MAT files from the main folder with:\n')
+    fprintf('  convert_saved_result_to_struct\n\n')
+    return
+end
+if exist('projectFolder', 'var') ...
+        && isfolder(fullfile(projectFolder, 'results_analysis'))
+    addpath(fullfile(projectFolder, 'results_analysis'))
+elseif isfolder(fullfile(pwd, 'results_analysis'))
+    addpath(fullfile(pwd, 'results_analysis'))
+end
+visualize_saved_results(result)
+
 %% Hybrid Simulation Reference Comparison
 
 % Compare the recorded HS response against the full FEM reference.
@@ -299,38 +321,10 @@ try
 catch ME
     fprintf('Comparison failed: %s\n', ME.message)
 end
-
-%% Finalizing the Simulation
-
-disp('===============================================================')
-disp('                        Test Completed!                        ')
-disp('===============================================================')
-
-%% Plotting Simulation Data
-
-if ~exist('result', 'var')
-    result = struct('t', t, 'dd', dd, 'dc', dc, 'dm', dm, ...
-        'fm', fm, 'am', am, 'fs', fs, 'dt', dt);
-    optionalVars = {'m_hat', 'c_hat', 'k_hat', 'tse_fallback', ...
-        'units', 'hs', 'delay_comp_file', 'delay_comp_name', ...
-        'Results', 'logsout', 'testname', 'test_type', 'model', ...
-        'runStartTime', 'file_name'};
-    for iVar = 1:numel(optionalVars)
-        if exist(optionalVars{iVar}, 'var')
-            result.(optionalVars{iVar}) = eval(optionalVars{iVar});
-        end
-    end
-end
-if exist('projectFolder', 'var') ...
-        && isfolder(fullfile(projectFolder, 'results_analysis'))
-    addpath(fullfile(projectFolder, 'results_analysis'))
-elseif isfolder(fullfile(pwd, 'results_analysis'))
-    addpath(fullfile(pwd, 'results_analysis'))
-end
-visualize_saved_results(result)
-
+%%
 
 %slrtExplorer
+
   
     
     

@@ -1,5 +1,5 @@
 function [data, filePath, selectedFileName] = load_saved_result_file( ...
-        projectFolder, resultSubfolder, forcePrompt, preferredFile)
+        projectFolder, resultSubfolder, forcePrompt, preferredFile, unwrapResult)
 % Units:
 %   Input paths and options are unitless. Output data preserves every unit
 %   exactly as stored in the selected MAT file; no conversion is performed.
@@ -12,6 +12,9 @@ if nargin < 3 || isempty(forcePrompt)
 end
 if nargin < 4
     preferredFile = '';
+end
+if nargin < 5 || isempty(unwrapResult)
+    unwrapResult = true;
 end
 validateattributes(forcePrompt, {'logical'}, {'scalar'}, mfilename, ...
     'forcePrompt');
@@ -44,7 +47,7 @@ end
 [~, selectedName, selectedExt] = fileparts(filePath);
 selectedFileName = [selectedName selectedExt];
 data = load(filePath);
-if isfield(data, 'result') && isstruct(data.result)
+if unwrapResult && isfield(data, 'result') && isstruct(data.result)
     data = data.result;
 end
 

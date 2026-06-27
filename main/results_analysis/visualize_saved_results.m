@@ -7,14 +7,25 @@ function summary = visualize_saved_results(result)
 % Input/stored: t [s], dd/dc/dm [mm], fm [N], am [g], m_hat [kg],
 % c_hat [N*s/m], k_hat [N/m]. Plotted outputs preserve those stored units.
 
+summary = [];
 if nargin < 1 || isempty(result)
     scriptFolder = fileparts(mfilename('fullpath'));
     projectFolder = fileparts(scriptFolder);
     addpath(fullfile(projectFolder, 'helpers', 'utils'))
-    result = load_saved_result_file(projectFolder, 'tests', false);
+    [data, ~, selectedFileName] = load_saved_result_file( ...
+        projectFolder, 'tests', false, '', false);
+    if ~isfield(data, 'result') || ~isstruct(data.result)
+        printConversionMessage(selectedFileName)
+        return
+    end
+    result = data.result;
 end
 if isfield(result, 'result') && isstruct(result.result)
     result = result.result;
+end
+if ~isNewResultStruct(result)
+    printConversionMessage(getResultName(result))
+    return
 end
 
 t = result.t(:);
@@ -235,6 +246,22 @@ function test_type = getTestType(result)
     else
         test_type = 'unknown';
     end
+end
+
+function tf = isNewResultStruct(result)
+% Units: metadata check is unitless.
+    requiredFields = {'file', 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt'};
+    tf = isstruct(result) && all(isfield(result, requiredFields));
+end
+
+function printConversionMessage(resultName)
+% Units: text output is unitless.
+    if nargin < 1 || isempty(resultName)
+        resultName = 'selected MAT file';
+    end
+    fprintf('\n%s uses the old saved-result format.\n', resultName)
+    fprintf('Convert saved test MAT files from the main folder with:\n')
+    fprintf('  convert_saved_result_to_struct\n\n')
 end
 
 function resultName = getResultName(result)
