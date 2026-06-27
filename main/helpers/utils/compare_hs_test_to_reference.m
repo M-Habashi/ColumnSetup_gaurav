@@ -56,16 +56,16 @@ hs = buildHsModel(fem, earthquake_type, intensity_factor, ...
     fm, pause_enable, dt, hs);
 [u_reference, u_control_reference] = fullReferenceAtEffectiveTime( ...
     fem.ref, hs, effective_time, dt);
-plotReferenceControlDisplacement(effective_time, dm, ...
-    u_control_reference, pause_enable, fem.ref);
+plotReferenceControlDisplacement(effective_time, dm, fm, ...
+    u_control_test_mm, u_control_reference, pause_enable, fem.ref);
 plotFloorReferenceComparison(effective_time, u_test, u_reference, pause_enable);
 
 running = pause_enable == 0;
 metric = validation_metrics();
 u_control_reference_mm = 1000*u_control_reference;
-% J1-J3 compare measured dm to the replayed numerical control point.
-% J4-J6 compare replayed numerical floor responses to the full FEM floors.
-% J7 compares measured dm to the full FEM control point as NMSE.
+% J1-J3 compare measured dm to d_n from the numerical sub.
+% J4-J6 compare x1_n/x2_n/x3_n numerical sub floors to x1_r/x2_r/x3_r.
+% J7 compares measured dm to d_r as NMSE.
 values = [ ...
     metric.J1(dm(running), u_control_test_mm(running), dt); ...
     metric.J2(dm(running), u_control_test_mm(running)); ...
@@ -76,13 +76,13 @@ values = [ ...
     metric.J7(dm(running), u_control_reference_mm(running))];
 
 metric_table = table( ...
-    ["dm vs replayed numerical control-point delay"; ...
-     "dm vs replayed numerical control-point normalized RMS error"; ...
-     "dm vs replayed numerical control-point peak error"; ...
-     "First-floor normalized RMS error"; ...
-     "Second-floor normalized RMS error"; ...
-     "Third-floor normalized RMS error"; ...
-     "dm vs full FEM control-point NMSE"], ...
+    ["finddelay(d_n, dm)*dt"; ...
+     "100*std(dm - d_n)/std(d_n)"; ...
+     "100*max(abs(dm - d_n))/max(abs(d_n))"; ...
+     "100*std(x1_n - x1_r)/std(x1_r)"; ...
+     "100*std(x2_n - x2_r)/std(x2_r)"; ...
+     "100*std(x3_n - x3_r)/std(x3_r)"; ...
+     "100*mean((dm - d_r)^2)/mean(d_r^2)"], ...
     ["ms"; "%"; "%"; "%"; "%"; "%"; "%"], ...
     values, ...
     'RowNames', {'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7'}, ...
@@ -290,8 +290,8 @@ else
 end
 end
 
-function plotReferenceControlDisplacement(effective_time, dm, ...
-        u_control_reference, pause_enable, fem_ref)
+function plotReferenceControlDisplacement(effective_time, dm, fm, ...
+        u_control_test_mm, u_control_reference, pause_enable, fem_ref)
 active = pause_enable == 0;
 if ~any(active)
     active = true(size(pause_enable));
@@ -299,23 +299,60 @@ end
 
 x = effective_time(active);
 dm = dm(active);
+fm = fm(active);
+u_control_test_mm = u_control_test_mm(active);
 u_control_reference = u_control_reference(active);
 
 colors = getPlotColors();
-figure('Color', 'w', 'Name', 'HS analytical FEM reference comparison');
-plot(x, dm, '-', 'Color', colors.blue, 'LineWidth', 1.1, ...
-    'DisplayName', 'dm measured displacement');
-hold on
-plot(x, 1000*u_control_reference, 'k-', 'LineWidth', 2.0, ...
-    'DisplayName', 'analytical FEM reference at control point');
-hold off
-grid on
-xlabel('Effective HS time (s)')
-ylabel('Displacement (mm)')
-title(sprintf('Analytical FEM reference vs measured displacement at %.4g m', ...
-    fem_ref.experimental_column.height))
-legend_handle = legend('Location', 'best');
+figure('Color', 'w', 'Name', 'HS control-point displacement and force comparison');
+layout = tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+ax(1) = nexttile;
+plot(ax(1), x, u_control_test_mm, 'k--', 'LineWidth', 2.0, ...
+    'DisplayName', 'd\_n (numerical sub)');
+hold(ax(1), 'on')
+plot(ax(1), x, dm, '-', 'Color', colors.blue, 'LineWidth', 1.1, ...
+    'DisplayName', 'dm (measured)');
+plot(ax(1), x, 1000*u_control_reference, '-', ...
+    'Color', colors.green, 'LineWidth', 1.2, ...
+    'DisplayName', 'd\_r (full FEM)');
+hold(ax(1), 'off')
+grid(ax(1), 'on')
+ylabel(ax(1), 'Displacement (mm)')
+legend_handle = legend(ax(1), 'Location', 'best');
 legend_handle.ItemHitFcn = @toggleSignalVisibility;
+
+ax(2) = nexttile;
+plot(ax(2), x, fm, '-', 'Color', colors.purple, 'LineWidth', 1.0, ...
+    'DisplayName', 'fm (measured force)');
+grid(ax(2), 'on')
+setForceYTicks(ax(2), fm)
+xlabel(ax(2), 'Effective HS time (s)')
+ylabel(ax(2), 'Force (N)')
+legend_handle = legend(ax(2), 'Location', 'best');
+legend_handle.ItemHitFcn = @toggleSignalVisibility;
+
+title(layout, sprintf('Control-point displacement and force at %.4g m', ...
+    fem_ref.experimental_column.height))
+linkaxes(ax, 'x')
+end
+
+function setForceYTicks(ax, fm)
+force_limit = max(abs(fm(isfinite(fm))));
+if isempty(force_limit) || force_limit == 0
+    return
+end
+tick_step = niceTickStep(force_limit/5);
+force_limit = tick_step*ceil(force_limit/tick_step);
+ylim(ax, [-force_limit force_limit])
+yticks(ax, -force_limit:tick_step:force_limit)
+end
+
+function step = niceTickStep(raw_step)
+base = 10^floor(log10(raw_step));
+candidates = base*[1 2 5 10];
+[~, idx] = min(abs(candidates-raw_step));
+step = candidates(idx);
 end
 
 function plotFloorReferenceComparison(effective_time, u_test, ...
@@ -330,27 +367,26 @@ u_test = u_test(active, :);
 u_reference = u_reference(active, :);
 
 colors = getPlotColors();
-figure('Color', 'w', 'Name', 'HS replayed numerical floor comparison');
+figure('Color', 'w', 'Name', 'HS numerical sub floor comparison');
 layout = tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 for floor_id = 1:3
     ax = nexttile;
     plot(ax, x, u_reference(:, floor_id), 'k--', 'LineWidth', 2.2, ...
-        'DisplayName', 'full FEM reference');
+        'DisplayName', sprintf('x%d\\_r (full FEM)', floor_id));
     hold(ax, 'on')
-    plot(ax, x, u_test(:, floor_id), '-', 'Color', colors.copperwood, ...
-        'LineWidth', 1.2, 'DisplayName', 'replayed numerical');
+    plot(ax, x, u_test(:, floor_id), '-', 'Color', colors.blue, ...
+        'LineWidth', 1.2, ...
+        'DisplayName', sprintf('x%d\\_n (numerical sub)', floor_id));
     hold(ax, 'off')
     grid(ax, 'on')
     ylabel(ax, sprintf('Floor %d (m)', floor_id))
-    if floor_id == 1
-        legend_handle = legend(ax, 'Location', 'best');
-        legend_handle.ItemHitFcn = @toggleSignalVisibility;
-    end
+    legend_handle = legend(ax, 'Location', 'best');
+    legend_handle.ItemHitFcn = @toggleSignalVisibility;
     if floor_id == 3
         xlabel(ax, 'Effective HS time (s)')
     end
 end
-title(layout, 'Full FEM reference vs replayed numerical floor response')
+title(layout, 'Full FEM reference vs numerical sub floor response')
 end
 
 function toggleSignalVisibility(~, event)
@@ -368,7 +404,9 @@ set(ax, 'XLimMode', 'manual', 'YLimMode', 'manual')
 end
 
 function colors = getPlotColors()
+colors.green = hexToRgb('39BF5E');
 colors.blue = hexToRgb('007CA8');
+colors.purple = hexToRgb('74058A');
 colors.copperwood = hexToRgb('AC6420');
 end
 

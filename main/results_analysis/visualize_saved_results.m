@@ -5,13 +5,14 @@ function summary = visualize_saved_results(result)
 
 %% Units
 % Input/stored: t [s], dd/dc/dm [mm], fm [N], am [g], m_hat [kg],
-% c_hat [N*s/m], k_hat [N/m]. Plotted outputs preserve those stored units.
+% c_hat [N*s/m], k_hat [N/m]. RTHS tracking evaluation uses d_n
+% recomputed by stepping the numerical sub from logged fm.
 
 summary = [];
+scriptFolder = fileparts(mfilename('fullpath'));
+projectFolder = fileparts(scriptFolder);
+addpath(fullfile(projectFolder, 'helpers', 'utils'))
 if nargin < 1 || isempty(result)
-    scriptFolder = fileparts(mfilename('fullpath'));
-    projectFolder = fileparts(scriptFolder);
-    addpath(fullfile(projectFolder, 'helpers', 'utils'))
     [data, ~, selectedFileName] = load_saved_result_file( ...
         projectFolder, 'tests', false, '', false);
     if ~isfield(data, 'result') || ~isstruct(data.result)
@@ -29,21 +30,31 @@ if ~isNewResultStruct(result)
 end
 
 t = result.t(:);
-dd = result.dd(:);
+logged_dd = result.dd(:);
 dc = result.dc(:);
 dm = result.dm(:);
 fm = result.fm(:);
 am = result.am(:);
 hasTseEstimate = isfield(result, 'm_hat') && isfield(result, 'c_hat') ...
     && isfield(result, 'k_hat') && ~isempty(result.m_hat);
+useNumericalSub = hasNumericalSubEvaluation(result);
+if useNumericalSub
+    numerical_sub = recompute_numerical_sub_response(result);
+else
+    numerical_sub = [];
+end
 
-n = min([numel(t), numel(dd), numel(dc), numel(dm), numel(fm), numel(am)]);
+n = min([numel(t), numel(logged_dd), numel(dc), numel(dm), ...
+    numel(fm), numel(am)]);
+if useNumericalSub
+    n = min([n, numel(numerical_sub.d_n_mm)]);
+end
 if hasTseEstimate
     n = min([n, numel(result.m_hat), numel(result.c_hat), ...
         numel(result.k_hat)]);
 end
 t = t(1:n);
-dd = dd(1:n);
+logged_dd = logged_dd(1:n);
 dc = dc(1:n);
 dm = dm(1:n);
 fm = fm(1:n);
@@ -54,6 +65,16 @@ if hasTseEstimate
     k_hat = result.k_hat(1:n);
 end
 
+if useNumericalSub
+    trackingSignal = numerical_sub.d_n_mm(1:n);
+    trackingSignalName = 'd_n';
+    trackingLegendName = 'd\_n (numerical sub)';
+else
+    trackingSignal = logged_dd;
+    trackingSignalName = 'dd';
+    trackingLegendName = 'dd (logged command)';
+end
+
 maxPlotPoints = 50000;
 plotStep = max(1, ceil(n/maxPlotPoints));
 plotIndex = 1:plotStep:n;
@@ -61,7 +82,7 @@ if plotIndex(end) ~= n
     plotIndex = [plotIndex n];
 end
 
-trackingError = dd - dm;
+trackingError = trackingSignal - dm;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
 duration = t(end) - t(1);
 fs = result.fs;
@@ -71,7 +92,13 @@ resultName = getResultName(result);
 
 summary = struct('name', resultName, 'test_type', test_type, ...
     'duration', duration, 'sample_count', n, 'fs', fs, 'dt', dt, ...
-    'rms_dd_dm', rmsError);
+    'tracking_signal', trackingSignalName, ...
+    'rms_tracking_error', rmsError);
+if useNumericalSub
+    summary.rms_d_n_dm = rmsError;
+else
+    summary.rms_dd_dm = rmsError;
+end
 
 fprintf('\n===============================================================\n');
 fprintf('                    Saved Result Summary\n');
@@ -82,38 +109,38 @@ fprintf('Duration:        %.3f s\n', duration);
 fprintf('Sample count:    %d\n', n);
 fprintf('fs:              %.6g Hz\n', fs);
 fprintf('dt:              %.6g s\n', dt);
-fprintf('RMS(dd - dm):    %.6g mm\n', rmsError);
+fprintf('RMS(%s - dm):   %.6g mm\n', trackingSignalName, rmsError);
 fprintf('===============================================================\n\n');
 
 figure('Name', resultName, 'WindowState', 'maximized');
 colors = getPlotColors();
 tPlot = t(plotIndex);
-ddPlot = dd(plotIndex);
+trackingPlot = trackingSignal(plotIndex);
 dcPlot = dc(plotIndex);
 dmPlot = dm(plotIndex);
 fmPlot = fm(plotIndex);
 amPlot = am(plotIndex);
 
 ax(1) = subplot(3, 1, 1);
-hDesired = plot(tPlot, ddPlot, '--', 'Color', colors.black, ...
-    'LineWidth', 1.8, 'DisplayName', 'dd desired displacement'); hold on
+hDesired = plot(tPlot, trackingPlot, '--', 'Color', colors.black, ...
+    'LineWidth', 1.8, 'DisplayName', trackingLegendName); hold on
 plot(tPlot, dcPlot, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, ...
-    'DisplayName', 'dc command displacement');
+    'DisplayName', 'dc');
 hMeasured = plot(tPlot, dmPlot, '-', 'Color', colors.blue, ...
-    'LineWidth', 1.2, 'DisplayName', 'dm measured displacement');
+    'LineWidth', 1.2, 'DisplayName', 'dm');
 uistack(hDesired, 'top')
 uistack(hMeasured, 'top')
 grid on
 xlabel('Time (s)')
 ylabel('Displacement (mm)')
 title('Displacement Tracking')
-setAxisLimitsFromSignals(gca, t, [dd dc dm])
+setAxisLimitsFromSignals(gca, t, [trackingSignal dc dm])
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 ax(2) = subplot(3, 1, 2);
 plot(tPlot, fmPlot, '-', 'Color', colors.purple, 'LineWidth', 1.0, ...
-    'DisplayName', 'fm measured force');
+    'DisplayName', 'fm');
 grid on
 xlabel('Time (s)')
 ylabel('Force (N)')
@@ -124,7 +151,7 @@ lgd.ItemHitFcn = @toggleSignalVisibility;
 
 ax(3) = subplot(3, 1, 3);
 plot(tPlot, amPlot, '-', 'Color', colors.green, 'LineWidth', 1.0, ...
-    'DisplayName', 'am measured acceleration');
+    'DisplayName', 'am');
 grid on
 xlabel('Time (s)')
 ylabel('Acceleration (g)')
@@ -252,6 +279,12 @@ function tf = isNewResultStruct(result)
 % Units: metadata check is unitless.
     requiredFields = {'file', 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt'};
     tf = isstruct(result) && all(isfield(result, requiredFields));
+end
+
+function tf = hasNumericalSubEvaluation(result)
+% Units: metadata check is unitless.
+    tf = isfield(result, 'hs') && isstruct(result.hs) ...
+        && isfield(result.hs, 'fem') && isfield(result, 'fm');
 end
 
 function printConversionMessage(resultName)

@@ -1,5 +1,5 @@
 %% NUMERICAL-EXPERIMENTAL SUBSTRUCTURE CASE COMPARISON
-% Compare three numerical-substructure choices with a constant experimental
+% Compare three numerical sub choices with a constant experimental
 % scalar spring, F_exp = k*x. This research script uses MATLAB assembly only;
 % no SAP model is created, updated, or checked.
 
@@ -75,10 +75,10 @@ fprintf('Rigid-base 40 in cantilever stiffness: %.6g N/m\n', rigid_base_k);
 fprintf('SAP workflow: not used in this research script.\n\n');
 
 fprintf('Applicable error indicators:\n');
-fprintf('J4: first-floor displacement error std normalized by reference std [%%].\n');
-fprintf('J5: second-floor displacement error std normalized by reference std [%%].\n');
-fprintf('J6: third-floor displacement error std normalized by reference std [%%].\n');
-fprintf(['J1-J3 require measured dm vs replayed numerical control point; ' ...
+fprintf('J4: 100*std(x1_n - x1_r)/std(x1_r) [%%].\n');
+fprintf('J5: 100*std(x2_n - x2_r)/std(x2_r) [%%].\n');
+fprintf('J6: 100*std(x3_n - x3_r)/std(x3_r) [%%].\n');
+fprintf(['J1-J3 require measured dm vs numerical sub control point; ' ...
     'J7 requires measured dm vs full FEM control-point reference; ' ...
     'J8-J9 are not defined in this repo.\n\n']);
 

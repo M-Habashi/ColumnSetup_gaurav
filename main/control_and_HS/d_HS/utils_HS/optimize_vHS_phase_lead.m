@@ -1181,12 +1181,12 @@ figure('Color', 'w', 'Name', 'vHS phase-lead optimization');
 layout = tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 ax = nexttile;
 plot(ax, problem.time, problem.u_reference_sample(:, 1), 'k--', ...
-    'LineWidth', 2.0, 'DisplayName', 'reference');
+    'LineWidth', 2.0, 'DisplayName', 'x1\_r');
 hold(ax, 'on')
-plot(ax, problem.time, baseline.signals.u_num_floors_sample(:, 1), '-', ...
-    'Color', colors.blue, 'LineWidth', 1.1, 'DisplayName', 'no lead');
+plot(ax, problem.time, baseline.signals.u_num_floors_sample(:, 1), ':', ...
+    'Color', colors.blue, 'LineWidth', 1.1, 'DisplayName', 'x1\_n no lead');
 plot(ax, problem.time, best.signals.u_num_floors_sample(:, 1), '-', ...
-    'Color', colors.copperwood, 'LineWidth', 1.1, 'DisplayName', 'best lead');
+    'Color', colors.blue, 'LineWidth', 1.1, 'DisplayName', 'x1\_n best lead');
 hold(ax, 'off')
 grid(ax, 'on')
 ylabel(ax, 'Floor 1 (m)')
@@ -1194,14 +1194,14 @@ legend(ax, 'Location', 'best')
 
 ax = nexttile;
 plot(ax, problem.time, best.signals.dd_sample, 'k--', 'LineWidth', 2.0, ...
-    'DisplayName', 'raw numerical dd');
+    'DisplayName', 'd\_n (numerical sub)');
 hold(ax, 'on')
 plot(ax, problem.time, best.signals.dd_lead_sample, '--', ...
     'Color', colors.green, 'LineWidth', 1.5, ...
-    'DisplayName', 'phase-lead desired dd');
+    'DisplayName', 'phase-lead d\_n');
 plot(ax, problem.time, best.signals.dm_sample, '-', ...
     'Color', colors.blue, 'LineWidth', 1.1, ...
-    'DisplayName', 'measured dm');
+    'DisplayName', 'dm');
 hold(ax, 'off')
 grid(ax, 'on')
 ylabel(ax, 'Displacement (mm)')
