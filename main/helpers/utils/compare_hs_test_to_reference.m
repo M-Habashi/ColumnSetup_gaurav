@@ -9,6 +9,8 @@ function [metric_table, comparison] = compare_hs_test_to_reference( ...
 
 project_folder = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(fullfile(project_folder, 'control_and_HS', 'd_HS', 'utils_HS'));
+addpath(fullfile(project_folder, 'control_and_HS', ...
+    'c_fem_modeling', 'utils_fem'));
 addpath(fullfile(project_folder, 'results_analysis'));
 
 if nargin < 2
@@ -57,7 +59,7 @@ hs = buildHsModel(fem, earthquake_type, intensity_factor, ...
 [u_reference, u_control_reference] = fullReferenceAtEffectiveTime( ...
     fem.ref, hs, effective_time, dt);
 plotReferenceControlDisplacement(effective_time, dm, ...
-    u_control_reference, pause_enable, fem.ref);
+    u_control_test_mm, u_control_reference, pause_enable, fem.ref);
 plotFloorReferenceComparison(effective_time, u_test, u_reference, pause_enable);
 
 running = pause_enable == 0;
@@ -288,7 +290,7 @@ end
 end
 
 function plotReferenceControlDisplacement(effective_time, dm, ...
-        u_control_reference, pause_enable, fem_ref)
+        u_control_test_mm, u_control_reference, pause_enable, fem_ref)
 active = pause_enable == 0;
 if ~any(active)
     active = true(size(pause_enable));
@@ -296,20 +298,24 @@ end
 
 x = effective_time(active);
 dm = dm(active);
+u_control_test_mm = u_control_test_mm(active);
 u_control_reference = u_control_reference(active);
 
 colors = getPlotColors();
-figure('Color', 'w', 'Name', 'HS analytical FEM reference comparison');
+figure('Color', 'w', 'Name', 'HS control-point comparison');
+plot(x, 1000*u_control_reference, 'k--', 'LineWidth', 2.2, ...
+    'DisplayName', 'full FEM reference at control point');
+hold on
+plot(x, u_control_test_mm, '-', 'Color', colors.copperwood, ...
+    'LineWidth', 1.2, ...
+    'DisplayName', 'replayed numerical from measured fm');
 plot(x, dm, '-', 'Color', colors.blue, 'LineWidth', 1.1, ...
     'DisplayName', 'dm measured displacement');
-hold on
-plot(x, 1000*u_control_reference, 'k-', 'LineWidth', 2.0, ...
-    'DisplayName', 'analytical FEM reference at control point');
 hold off
 grid on
 xlabel('Effective HS time (s)')
 ylabel('Displacement (mm)')
-title(sprintf('Analytical FEM reference vs measured displacement at %.4g m', ...
+title(sprintf('Control-point comparison at %.4g m', ...
     fem_ref.experimental_column.height))
 legend_handle = legend('Location', 'best');
 legend_handle.ItemHitFcn = @toggleSignalVisibility;

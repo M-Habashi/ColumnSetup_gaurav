@@ -31,9 +31,9 @@ if exist('h_dc_dm_model_file_override', 'var') ...
         && ~isempty(h_dc_dm_model_file_override)
     config.h_dc_dm_model_file = h_dc_dm_model_file_override;
 end
-if exist('ncfmargin', 'var') && ~isempty(ncfmargin)
+if exist('ncfmargin', 'var') && isscalar(ncfmargin) && ~isempty(ncfmargin)
     config.minimum_num_delay_comp_exp_ncf_margin = ncfmargin;
-elseif exist('ncf_margin', 'var') && ~isempty(ncf_margin)
+elseif exist('ncf_margin', 'var') && isscalar(ncf_margin) && ~isempty(ncf_margin)
     config.minimum_num_delay_comp_exp_ncf_margin = ncf_margin;
 end
 if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
@@ -46,6 +46,10 @@ elseif exist('specimen_file_override', 'var') ...
         && ~isempty(specimen_file_override)
     config.specimen_file = specimen_file_override;
 end
+config.minimum_stability_margin = scalarFiniteConfigValue( ...
+    config.minimum_stability_margin, 0);
+config.minimum_num_delay_comp_exp_ncf_margin = scalarFiniteConfigValue( ...
+    config.minimum_num_delay_comp_exp_ncf_margin, 0);
 validateattributes(config.phase_lead_section_count, {'numeric'}, ...
     {'scalar', 'integer', 'positive'}, mfilename, ...
     'config.phase_lead_section_count');
@@ -160,6 +164,16 @@ function config = mergeStruct(config, override)
 fields = fieldnames(override);
 for field_id = 1:numel(fields)
     config.(fields{field_id}) = override.(fields{field_id});
+end
+end
+
+function value = scalarFiniteConfigValue(value, default_value)
+value = value(:);
+value = value(isfinite(value));
+if isempty(value)
+    value = default_value;
+else
+    value = max(value);
 end
 end
 
@@ -820,7 +834,7 @@ command_ratio_excess = max(0, peak_command_ratio ...
 stability_margin = 1 - stability.coupled_max_abs_pole;
 minimum_margin_shortfall = max(0, config.minimum_stability_margin ...
     - stability_margin);
-num_delay_comp_exp_ncf_margin = num_delay_comp_exp_metrics.ncf_margin;
+num_delay_comp_exp_ncf_margin = min(num_delay_comp_exp_metrics.ncf_margin(:));
 minimum_ncf_shortfall = max(0, ...
     config.minimum_num_delay_comp_exp_ncf_margin ...
     - num_delay_comp_exp_ncf_margin);
