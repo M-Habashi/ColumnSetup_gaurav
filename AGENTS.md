@@ -25,6 +25,22 @@
 - Saved test MAT files should store one top-level `result` struct. To convert old top-level-variable test result files, run `convert_saved_result_to_struct` from `main`; it scans `saved_results/tests/**/*.mat` and rewrites old files in the new struct format.
 - MATLAB utilities under `main\helpers\utils` need three `fileparts` calls from `mfilename('fullpath')` to resolve the `main` project folder.
 
+## RTHS Plot Notation
+
+- `dm`: measured actuator displacement response from the experiment at the interface/control point, approximately the zero-moment point around mid-column.
+- `dc`: controller command displacement saved from `logsout`.
+- `fm`: measured force.
+- `num FEM`: numerical substructure FEM without the experimental column; measured feedback force `fm` is used to step this model forward.
+- `full FEM` or `reference FEM`: complete FEM model driven by the same ground excitation `a_g`.
+- `x1_r`: full/reference FEM floor 1 response.
+- `x1_n`: numerical-substructure FEM floor 1 response.
+- `x2_r`: full/reference FEM floor 2 response.
+- `x2_n`: numerical-substructure FEM floor 2 response.
+- `x3_r`: full/reference FEM floor 3 response.
+- `x3_n`: numerical-substructure FEM floor 3 response.
+- `d_r`: full/reference FEM response at the interface/control point.
+- `d_n` or `dd`: numerical-substructure interface/control-point displacement command.
+
 ## Deferred Detailed Instructions
 
 - Load `MATLAB_MCP_TOOLING.md` only immediately before doing work that involves MATLAB, Simulink, Speedgoat/SLRT, SAP/FEM workflows, MCP tool execution, browser/uncodixify recovery, GitHub CLI work, or recovery from a recurring command/tool failure.

@@ -226,6 +226,7 @@
       </div>
       <nav aria-label="Page sections">
         <a href="#signals">Signals</a>
+        <a href="#notation">Notation</a>
         <a href="#indicators">Indicators</a>
         <a href="#sources">Code sources</a>
       </nav>
@@ -246,6 +247,72 @@
           <li><code>J1</code> is reported in milliseconds. <code>J2</code> through <code>J7</code> are reported in percent.</li>
         </ul>
       </aside>
+    </section>
+
+    <section id="notation" aria-labelledby="notation-heading">
+      <h2 id="notation-heading">Notation</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric"><code>dm</code></td>
+            <td>Measured actuator displacement response from the experiment at the interface/control point, approximately the zero-moment point around mid-column.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>dc</code></td>
+            <td>Controller command displacement saved from <code>logsout</code>.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>fm</code></td>
+            <td>Measured force.</td>
+          </tr>
+          <tr>
+            <td class="metric">num FEM</td>
+            <td>Numerical substructure FEM without the experimental column; measured feedback force <code>fm</code> is used to step this model forward.</td>
+          </tr>
+          <tr>
+            <td class="metric">full FEM</td>
+            <td>Complete FEM model driven by the same ground excitation <code>a_g</code>. This is also called the reference FEM.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x1_r</code></td>
+            <td>Full/reference FEM floor 1 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x1_n</code></td>
+            <td>Numerical-substructure FEM floor 1 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x2_r</code></td>
+            <td>Full/reference FEM floor 2 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x2_n</code></td>
+            <td>Numerical-substructure FEM floor 2 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x3_r</code></td>
+            <td>Full/reference FEM floor 3 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x3_n</code></td>
+            <td>Numerical-substructure FEM floor 3 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>d_r</code></td>
+            <td>Full/reference FEM response at the interface/control point.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>d_n</code>, <code>dd</code></td>
+            <td>Numerical-substructure interface/control-point displacement command.</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="indicators" aria-labelledby="indicators-heading">
