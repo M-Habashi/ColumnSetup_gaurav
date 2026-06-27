@@ -1,20 +1,22 @@
-function [metric_table, comparison] = compare_hs_test_to_reference( ...
+function [metric_table, comparison] = compare_hs_response_to_reference( ...
         fem, recorded_data, earthquake_type, intensity_factor, ...
-        time_scale_factor, force_sign)
-%COMPARE_HS_TEST_TO_REFERENCE Compare recorded HS data with full FEM reference.
+        time_scale_factor, force_sign, options)
+%COMPARE_HS_RESPONSE_TO_REFERENCE Compare HS data with full FEM reference.
 % Units:
 %   recorded data: t [s], dm [mm], fm [N].
 %   FEM/reference displacements are compared in [m].
 %   J1 [ms]; J2-J7 [%].
 
-project_folder = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+project_folder = fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))));
+addpath(fullfile(project_folder, 'helpers', 'utils'));
 addpath(fullfile(project_folder, 'control_and_HS', 'd_HS', 'utils_HS'));
+addpath(fullfile(project_folder, 'control_and_HS', 'c_fem_modeling', ...
+    'utils_fem'));
 addpath(fullfile(project_folder, 'results_analysis'));
 
 if nargin < 2
     recorded_data = [];
 end
-data = loadRecordedData(recorded_data, project_folder);
 if nargin < 1
     fem = [];
 end
@@ -30,10 +32,16 @@ end
 if nargin < 6
     force_sign = [];
 end
+if nargin < 7 || isempty(options)
+    options = struct();
+end
+plot_enabled = getOption(options, 'plot', true);
+
+data = loadRecordedData(recorded_data, project_folder);
 fem = loadFemData(fem, data, project_folder);
 [earthquake_type, intensity_factor, time_scale_factor, force_sign] = ...
-    getComparisonInputs(data, nargin, earthquake_type, intensity_factor, ...
-    time_scale_factor, force_sign);
+    getComparisonInputs(data, min(nargin, 6), earthquake_type, ...
+    intensity_factor, time_scale_factor, force_sign);
 
 t = data.t(:);
 dm = data.dm(:);
@@ -56,9 +64,13 @@ hs = buildHsModel(fem, earthquake_type, intensity_factor, ...
     fm, pause_enable, dt, hs);
 [u_reference, u_control_reference] = fullReferenceAtEffectiveTime( ...
     fem.ref, hs, effective_time, dt);
-plotReferenceControlDisplacement(effective_time, dm, fm, ...
-    u_control_test_mm, u_control_reference, pause_enable, fem.ref);
-plotFloorReferenceComparison(effective_time, u_test, u_reference, pause_enable);
+if plot_enabled
+    plotReferenceControlDisplacement(effective_time, dm, fm, ...
+        u_control_test_mm, u_control_reference, ...
+        pause_enable, fem.ref);
+    plotFloorReferenceComparison(effective_time, u_test, u_reference, ...
+        pause_enable);
+end
 
 running = pause_enable == 0;
 metric = validation_metrics();
@@ -99,6 +111,14 @@ if nargout > 1
         'u_reference', u_reference, ...
         'u_control_test_mm', u_control_test_mm, ...
         'u_control_reference', u_control_reference);
+end
+end
+
+function value = getOption(options, name, default_value)
+if isfield(options, name)
+    value = options.(name);
+else
+    value = default_value;
 end
 end
 
@@ -252,44 +272,6 @@ u_reference = u_reference_grid(reference_index, :);
 u_control_reference = u_control_grid(reference_index);
 end
 
-% Keep this duplicated helper synced with control_and_HS\d_HS\vHS.m.
-% If the full FEM control-point reconstruction changes here, update both files.
-function u_control = referenceControlDisplacement(fem_ref, floor_response)
-assembly = fem_ref.assembly;
-retained = assembly.retained_dofs(:);
-internal = assembly.internal_dofs(:);
-K_full = assembly.K_full;
-q_internal = -(K_full(internal, internal) ...
-    \(K_full(internal, retained)*floor_response'))';
-
-n = size(floor_response, 1);
-q = zeros(n, size(K_full, 1));
-q(:, retained) = floor_response;
-q(:, internal) = q_internal;
-
-height = fem_ref.experimental_column.height;
-story_height = fem_ref.frame.story_height;
-xi = height/story_height;
-N1 = 1 - 3*xi^2 + 2*xi^3;
-N2 = story_height*(xi - 2*xi^2 + xi^3);
-N3 = 3*xi^2 - 2*xi^3;
-N4 = story_height*(-xi^2 + xi^3);
-
-joint_rotation = assembly.joint_rotation_dofs;
-theta_base = getDofSignal(q, joint_rotation(1, 1));
-theta_floor = getDofSignal(q, joint_rotation(1, 2));
-u_control = N1*zeros(n, 1) - N2*theta_base ...
-    + N3*floor_response(:, 1) - N4*theta_floor;
-end
-
-function value = getDofSignal(q, dof)
-if dof > 0
-    value = q(:, dof);
-else
-    value = zeros(size(q, 1), 1);
-end
-end
-
 function plotReferenceControlDisplacement(effective_time, dm, fm, ...
         u_control_test_mm, u_control_reference, pause_enable, fem_ref)
 active = pause_enable == 0;
@@ -412,36 +394,4 @@ end
 
 function rgb = hexToRgb(hex_color)
 rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
-end
-
-function u = newmarkAverageAcceleration(time, M, C, K, force)
-n_step = numel(time);
-n_dof = size(M, 1);
-u = zeros(n_step, n_dof);
-v = zeros(n_step, n_dof);
-a = zeros(n_step, n_dof);
-a(1, :) = (M\(force(:, 1)-C*v(1, :)'-K*u(1, :)'))';
-
-beta = 1/4;
-gamma = 1/2;
-for step = 2:n_step
-    h = time(step)-time(step-1);
-    a0 = 1/(beta*h^2);
-    a1 = gamma/(beta*h);
-    a2 = 1/(beta*h);
-    a3 = 1/(2*beta)-1;
-    a4 = gamma/beta-1;
-    a5 = h*(gamma/(2*beta)-1);
-
-    effective_stiffness = K+a0*M+a1*C;
-    effective_rhs = force(:, step) ...
-        + M*(a0*u(step-1, :)'+a2*v(step-1, :)'+a3*a(step-1, :)') ...
-        + C*(a1*u(step-1, :)'+a4*v(step-1, :)'+a5*a(step-1, :)');
-
-    u(step, :) = (effective_stiffness\effective_rhs)';
-    a(step, :) = (a0*(u(step, :)'-u(step-1, :)') ...
-        - a2*v(step-1, :)'-a3*a(step-1, :)')';
-    v(step, :) = (v(step-1, :)'+h*((1-gamma)*a(step-1, :)' ...
-        + gamma*a(step, :)'))';
-end
 end

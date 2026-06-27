@@ -201,13 +201,20 @@ metric = validation_metrics();
 J4 = metric.J4(u_num_floors(:, 1), u_reference(:, 1));
 J5 = metric.J5(u_num_floors(:, 2), u_reference(:, 2));
 J6 = metric.J6(u_num_floors(:, 3), u_reference(:, 3));
-J4_pid = metric.J4(u_pid_floors(:, 1), u_reference(:, 1));
-J5_pid = metric.J5(u_pid_floors(:, 2), u_reference(:, 2));
-J6_pid = metric.J6(u_pid_floors(:, 3), u_reference(:, 3));
-J1_pid = metric.J1(dm_pid_sample, dd_pid_sample, hs_sample_dt);
-J2_pid = metric.J2(dm_pid_sample, dd_pid_sample);
-J3_pid = metric.J3(dm_pid_sample, dd_pid_sample);
-J7_pid = metric.J7(dm_pid_sample, 1000*u_control_reference_sample);
+vhs_result = struct('t', hs_real_time, ...
+    'dc', dc_pid_sample, 'dm', dm_pid_sample, ...
+    'fm', experimental_force_pid_sample, ...
+    'am', ag_sample/9.80665, 'fs', 1/hs_sample_dt, ...
+    'dt', hs_sample_dt, ...
+    'dd_pause_enable_log', zeros(size(hs_real_time)), ...
+    'hs', hs, 'testname', 'vHS', 'test_type', 'vHS');
+vhs_metric_table = compare_hs_response_to_reference(hs.fem, vhs_result, ...
+    hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor, ...
+    hs.force_sign, struct('plot', false));
+control_metric_values = vhs_metric_table.Value;
+metric_names = vhs_metric_table.Properties.RowNames(:);
+metric_descriptions = cellstr(vhs_metric_table.Description);
+metric_units = cellstr(vhs_metric_table.Unit);
 colors = getPlotColors();
 if phase_lead_enabled
     control_path_label = 'num*G_T*PID*H_{dc,dm}*exp';
@@ -292,17 +299,10 @@ fprintf('Maximum %s vs full-reference floor difference: %.6e m\n', ...
 fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
-validation_metric_table = table({'J1'; 'J2'; 'J3'; 'J4'; 'J5'; 'J6'; 'J7'}, ...
-    {'finddelay(d_n, dm)*dt'; ...
-    '100*std(dm - d_n)/std(d_n)'; ...
-    '100*max(abs(dm - d_n))/max(abs(d_n))'; ...
-    '100*std(x1_n - x1_r)/std(x1_r)'; ...
-    '100*std(x2_n - x2_r)/std(x2_r)'; ...
-    '100*std(x3_n - x3_r)/std(x3_r)'; ...
-    '100*mean((dm - d_r)^2)/mean(d_r^2)'}, ...
-    {'ms'; '%'; '%'; '%'; '%'; '%'; '%'}, ...
+validation_metric_table = table(metric_names, ...
+    metric_descriptions, metric_units, ...
     [NaN; NaN; NaN; J4; J5; J6; NaN], ...
-    [J1_pid; J2_pid; J3_pid; J4_pid; J5_pid; J6_pid; J7_pid], ...
+    control_metric_values, ...
     'VariableNames', {'Metric', 'Description', 'Unit', ...
         'NumExp', 'ControlPath'});
 disp('Validation metrics')
@@ -509,45 +509,6 @@ digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 actuator_open_loop = digital_controller*H_dc_dm;
 PID_H_dc_dm = feedback(actuator_open_loop, 1);
-end
-
-% Keep this duplicated helper synced with helpers\utils\compare_hs_test_to_reference.m.
-% If the full FEM control-point reconstruction changes here, update both files.
-function u_control = referenceControlDisplacement(fem_ref, floor_response)
-% Units: floor_response/u_control [m].
-assembly = fem_ref.assembly;
-retained = assembly.retained_dofs(:);
-internal = assembly.internal_dofs(:);
-K_full = assembly.K_full;
-q_internal = -(K_full(internal, internal) ...
-    \(K_full(internal, retained)*floor_response'))';
-
-n = size(floor_response, 1);
-q = zeros(n, size(K_full, 1));
-q(:, retained) = floor_response;
-q(:, internal) = q_internal;
-
-height = fem_ref.experimental_column.height;
-story_height = fem_ref.frame.story_height;
-xi = height/story_height;
-N1 = 1 - 3*xi^2 + 2*xi^3;
-N2 = story_height*(xi - 2*xi^2 + xi^3);
-N3 = 3*xi^2 - 2*xi^3;
-N4 = story_height*(-xi^2 + xi^3);
-
-joint_rotation = assembly.joint_rotation_dofs;
-theta_base = getDofSignal(q, joint_rotation(1, 1));
-theta_floor = getDofSignal(q, joint_rotation(1, 2));
-u_control = N1*zeros(n, 1) - N2*theta_base ...
-    + N3*floor_response(:, 1) - N4*theta_floor;
-end
-
-function value = getDofSignal(q, dof)
-if dof > 0
-    value = q(:, dof);
-else
-    value = zeros(size(q, 1), 1);
-end
 end
 
 function stability_table = buildVhsStabilityTable(PID_H_dc_dm, ...
@@ -917,37 +878,4 @@ end
 function rgb = hexToRgb(hex_color)
 % Units: hexadecimal input and RGB output are dimensionless.
 rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
-end
-
-function u = newmarkAverageAcceleration(time, M, C, K, force)
-% Units: time [s], M [kg], C [N*s/m], K [N/m], force [N], output u [m].
-n_step = numel(time);
-n_dof = size(M, 1);
-u = zeros(n_step, n_dof);
-v = zeros(n_step, n_dof);
-a = zeros(n_step, n_dof);
-a(1, :) = (M\(force(:, 1)-C*v(1, :)'-K*u(1, :)'))';
-
-beta = 1/4;
-gamma = 1/2;
-for step = 2:n_step
-    dt = time(step)-time(step-1);
-    a0 = 1/(beta*dt^2);
-    a1 = gamma/(beta*dt);
-    a2 = 1/(beta*dt);
-    a3 = 1/(2*beta)-1;
-    a4 = gamma/beta-1;
-    a5 = dt*(gamma/(2*beta)-1);
-
-    effective_stiffness = K+a0*M+a1*C;
-    effective_rhs = force(:, step) ...
-        + M*(a0*u(step-1, :)'+a2*v(step-1, :)'+a3*a(step-1, :)') ...
-        + C*(a1*u(step-1, :)'+a4*v(step-1, :)'+a5*a(step-1, :)');
-
-    u(step, :) = (effective_stiffness\effective_rhs)';
-    a(step, :) = (a0*(u(step, :)'-u(step-1, :)') ...
-        - a2*v(step-1, :)'-a3*a(step-1, :)')';
-    v(step, :) = (v(step-1, :)'+dt*((1-gamma)*a(step-1, :)' ...
-        + gamma*a(step, :)'))';
-end
 end

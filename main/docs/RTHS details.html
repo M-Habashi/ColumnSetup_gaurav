@@ -242,7 +242,7 @@
       <aside class="note" aria-label="Units note">
         <strong>Units in the code</strong>
         <ul class="signal-list">
-          <li><code>dm</code>, recomputed numerical sub control point <code>d_n</code>, and full FEM control point are compared in millimeters.</li>
+          <li><code>dm</code>, numerical sub control point <code>d_n</code>, and full FEM control point are compared in millimeters.</li>
           <li>Floor responses are compared in meters.</li>
           <li><code>J1</code> is reported in milliseconds. <code>J2</code> through <code>J7</code> are reported in percent.</li>
         </ul>
@@ -269,7 +269,7 @@
           </tr>
           <tr>
             <td class="metric"><code>dd</code></td>
-            <td>Logged actuator command channel. It is not used for RTHS error evaluation when <code>d_n</code> can be recomputed.</td>
+            <td>Logged actuator command channel. It is retained in saved results but is not used for RTHS error evaluation or comparison plotting.</td>
           </tr>
           <tr>
             <td class="metric"><code>fm</code></td>
@@ -373,12 +373,16 @@
       <h2 id="sources-heading">Code Sources</h2>
       <div class="sources">
         <div class="source">
+          <h3><code>compare_hs_response_to_reference.m</code></h3>
+          <span>Shared HS utility for saved RTHS and vHS comparisons. It uses numerical sub displacement <code>d_n</code> for <code>J1</code>-<code>J3</code> and for comparison plotting.</span>
+        </div>
+        <div class="source">
           <h3><code>validation_metrics.m</code></h3>
           <span>Defines the J1-J7 metric handles and formulas.</span>
         </div>
         <div class="source">
           <h3><code>compare_hs_test_to_reference.m</code></h3>
-          <span>Applies the indicators to saved RTHS test data and the numerical sub response.</span>
+          <span>Compatibility wrapper for older calls into the shared HS response comparison utility.</span>
         </div>
         <div class="source">
           <h3><code>vHS.m</code></h3>
