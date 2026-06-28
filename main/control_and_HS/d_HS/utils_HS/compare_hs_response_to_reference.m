@@ -242,6 +242,8 @@ hs.interface_from_force = -1/K_ii;
 hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
 [hs.C, hs.damping] = femDampingMatrix(fem_ref, fem);
 hs.damping_ratio = hs.damping.target_ratio;
+hs.earthquake_type = earthquake_type;
+hs.intensity_factor = intensity_factor;
 
 earthquakes = load(fullfile(project_folder, 'input_signals', ...
     'earthquakes.mat'), earthquake_type);
