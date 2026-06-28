@@ -190,7 +190,7 @@ experimental_force_pid = interp1(hs_real_time, ...
 if abs(hs.time_scale_factor-1) < eps
     unit_scale_u_num_floors_sample = u_num_floors_sample;
 else
-    unit_scale_u_num_floors_sample = hybridResponseAtTimeScale( ...
+    unit_scale_u_num_floors_sample = hybrid_response_at_time_scale( ...
         hs, fem_num, k_experimental, hs_sample_dt, 1);
 end
 
@@ -314,7 +314,8 @@ figure('Color', 'w', 'Name', 'Reference and HS comparison');
 layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 for floor_id = 1:n_story
     ax = nexttile;
-    plot(ax, real_time, u_reference(:, floor_id), 'k--', 'LineWidth', 2.2, ...
+    plot(ax, real_time, u_reference(:, floor_id), '--', ...
+        'Color', colors.dark_green, 'LineWidth', 2.2, ...
         'DisplayName', sprintf('x%d\\_r (full FEM)', floor_id));
     hold(ax, 'on');
     plot(ax, real_time, u_num_floors(:, floor_id), '-', ...
@@ -378,49 +379,9 @@ linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 fft_fmax_hz = 100;
 fft_fs_hz = 1/hs_sample_dt;
 fft_test_duration_s = hs.time(end)*hs.time_scale_factor;
-fft_mode_frequency_hz = building_mode_frequency_hz;
-fft_mode_frequency_hz = fft_mode_frequency_hz( ...
-    fft_mode_frequency_hz <= fft_fmax_hz);
-[Y_ag_selected, freq_ag_selected] = fft_c(ag_sample, fft_fs_hz, ...
-    fft_fmax_hz);
-figure('Color', 'w', 'Name', 'HS response frequency content');
-layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-for floor_id = 1:n_story
-    ax = nexttile;
-    yyaxis(ax, 'left');
-    [Y_unit, freq_unit] = fft_c(unit_scale_u_num_floors_sample(:, floor_id), ...
-        fft_fs_hz, fft_fmax_hz);
-    [Y_selected, freq_selected] = fft_c(u_num_floors_sample(:, floor_id), ...
-        fft_fs_hz, fft_fmax_hz);
-    plot(ax, freq_unit, abs(Y_unit), '-', 'Color', [0.55 0.55 0.55], ...
-        'LineWidth', 1.0, 'DisplayName', 'Time scale = 1');
-    hold(ax, 'on');
-    plot(ax, freq_selected, abs(Y_selected), '-', 'Color', [0 0.486 0.659], ...
-        'LineWidth', 1.2, 'DisplayName', sprintf('Selected = %.3g', ...
-        hs.time_scale_factor));
-    for mode_id = 1:numel(fft_mode_frequency_hz)
-        xline(ax, fft_mode_frequency_hz(mode_id), 'k--', ...
-            'HandleVisibility', 'off', 'LineWidth', 0.8);
-    end
-    ylabel(ax, sprintf('|Floor %d| (m)', floor_id));
-
-    yyaxis(ax, 'right');
-    area(ax, freq_ag_selected, abs(Y_ag_selected), ...
-        'FaceColor', [0.9 0.1 0.1], 'FaceAlpha', 0.18, ...
-        'EdgeColor', 'none', 'DisplayName', 'Selected earthquake');
-    ylabel(ax, '|ag(f)| (m/s^2)');
-    ax.YAxis(1).Color = [0 0 0];
-    ax.YAxis(2).Color = [0.7 0 0];
-    hold(ax, 'off'); grid(ax, 'on');
-    xlim(ax, [0 fft_fmax_hz]);
-    if floor_id == 1, makeLegendToggle(ax); end
-end
-xlabel(ax, 'Frequency (Hz)');
-title(layout, sprintf(['%s: response frequency content; test duration = ' ...
-    '%.2f s'], hs.earthquake_type, fft_test_duration_s));
-subtitle(layout, ['Hybrid Simulation floor response, one-sided FFT ' ...
-    'amplitude; dashed lines = modal frequencies']);
-linkaxes(findall(gcf, 'Type', 'axes'), 'x');
+plot_hs_response_frequency_content(hs, u_num_floors_sample, ...
+    unit_scale_u_num_floors_sample, fft_fs_hz, fft_fmax_hz, ...
+    fft_test_duration_s, ag_sample);
 
 %% PARTITION GEOMETRY
 frame_x = (0:frame.n_bay)*frame.bay_width;
@@ -729,68 +690,6 @@ end
 stability.closed_loop_poles = closed_loop_poles;
 end
 
-function u_num_floors_sample = hybridResponseAtTimeScale( ...
-    hs, fem_num, k_experimental, hs_sample_dt, time_scale_factor)
-% Units: time [s], displacement [m], stiffness [N/m].
-fem_file_info = dir(hs.fem_file);
-fem_file_stamp = 0;
-if ~isempty(fem_file_info)
-    fem_file_stamp = fem_file_info.datenum;
-end
-cache_key = sprintf('%s|%.17g|%.17g|%.17g|%.17g|%.17g|%s', ...
-    hs.earthquake_type, hs.intensity_factor, time_scale_factor, ...
-    k_experimental, hs_sample_dt, fem_file_stamp, hs.fem_file);
-persistent cache
-if ~isempty(cache)
-    hit = find(strcmp({cache.key}, cache_key), 1);
-    if ~isempty(hit)
-        u_num_floors_sample = cache(hit).u_num_floors_sample;
-        return
-    end
-end
-
-hs.time_scale_factor = time_scale_factor;
-model_time = hs.time;
-real_time = model_time*hs.time_scale_factor;
-ag = hs.ag;
-n_hs_sample = ceil(real_time(end)/hs_sample_dt) + 1;
-hs_real_time = (0:n_hs_sample-1)'*hs_sample_dt;
-hs_model_time = hs_real_time/hs.time_scale_factor;
-ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
-
-floor_dofs = fem_num.floor_dofs(:)';
-interface_dof = fem_num.interface_dof;
-K_coupled = fem_num.K;
-K_coupled(interface_dof, interface_dof) = ...
-    K_coupled(interface_dof, interface_dof) + k_experimental;
-K_floor_floor = K_coupled(floor_dofs, floor_dofs);
-K_floor_interface = K_coupled(floor_dofs, interface_dof);
-K_interface_floor = K_coupled(interface_dof, floor_dofs);
-K_interface_interface = K_coupled(interface_dof, interface_dof);
-K_hybrid_reference = K_floor_floor - K_floor_interface ...
-    *(K_interface_interface\K_interface_floor);
-interface_from_floors = -(K_interface_interface\K_interface_floor);
-
-numerical_load_sample = hs.ground_force_gain*ag_sample';
-u_hybrid_reference_sample = newmarkAverageAcceleration(hs_real_time, ...
-    hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
-interface_displacement_reference_sample = ...
-    (interface_from_floors*u_hybrid_reference_sample')';
-measured_force_sample = k_experimental*interface_displacement_reference_sample;
-
-state = [];
-u_num_floors_sample = zeros(numel(hs_real_time), hs.n_floor);
-for step = 2:numel(hs_real_time)
-    [~, state] = step_HS(measured_force_sample(step), 0, hs_sample_dt, ...
-        hs, state);
-    u_num_floors_sample(step, :) = state(1:hs.n_floor)';
-end
-
-entry.key = cache_key;
-entry.u_num_floors_sample = u_num_floors_sample;
-cache = [cache, entry];
-end
-
 function system = discreteSiso(system_model, sample_time)
 % Units: sample_time [s].
 if get(system_model, 'Ts') == 0
@@ -868,6 +767,7 @@ end
 function colors = getPlotColors()
 % Units: RGB outputs are dimensionless.
 colors.green = hexToRgb('39BF5E');
+colors.dark_green = hexToRgb('006B2E');
 colors.black = [0 0 0];
 colors.blue = hexToRgb('007CA8');
 colors.red = hexToRgb('901500');

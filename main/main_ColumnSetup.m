@@ -310,11 +310,19 @@ visualize_saved_results(result)
 
 % Compare the recorded HS response against the full FEM reference.
 try
-    if exist('hs', 'var') && isfield(hs, 'fem') ...
-            && exist('file_name', 'var') && isfile(file_name)
-        compare_hs_response_to_reference(hs.fem, file_name, ...
-            hs.earthquake_type, hs.intensity_factor, ...
-            hs.time_scale_factor, hs.force_sign);
+    if exist('file_name', 'var') && isfile(file_name)
+        recorded_data = file_name;
+    elseif exist('result', 'var') && isstruct(result)
+        recorded_data = result;
+    else
+        recorded_data = [];
+    end
+
+    if exist('hs', 'var') && isstruct(hs) && isfield(hs, 'fem') ...
+            && ~isempty(recorded_data)
+        compare_hs_response_to_reference(hs.fem, recorded_data);
+    elseif ~isempty(recorded_data)
+        compare_hs_response_to_reference([], recorded_data);
     else
         compare_hs_response_to_reference();
     end

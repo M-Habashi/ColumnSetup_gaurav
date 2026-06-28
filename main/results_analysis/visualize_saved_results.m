@@ -35,6 +35,11 @@ dc = result.dc(:);
 dm = result.dm(:);
 fm = result.fm(:);
 am = result.am(:);
+fs = result.fs;
+dt = result.dt;
+dm_filtfilt_cutoff_hz = 30;
+dm_filtfilt_order = 4;
+dm_filtfilt = filtfiltDm(dm, fs, dm_filtfilt_cutoff_hz, dm_filtfilt_order);
 hasTseEstimate = isfield(result, 'm_hat') && isfield(result, 'c_hat') ...
     && isfield(result, 'k_hat') && ~isempty(result.m_hat);
 useNumericalSub = hasNumericalSubEvaluation(result);
@@ -57,6 +62,7 @@ t = t(1:n);
 logged_dd = logged_dd(1:n);
 dc = dc(1:n);
 dm = dm(1:n);
+dm_filtfilt = dm_filtfilt(1:n);
 fm = fm(1:n);
 am = am(1:n);
 if hasTseEstimate
@@ -82,22 +88,22 @@ if plotIndex(end) ~= n
     plotIndex = [plotIndex n];
 end
 
-trackingError = trackingSignal - dm;
+trackingError = trackingSignal - dm_filtfilt;
 rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
 duration = t(end) - t(1);
-fs = result.fs;
-dt = result.dt;
 test_type = getTestType(result);
 resultName = getResultName(result);
 
 summary = struct('name', resultName, 'test_type', test_type, ...
     'duration', duration, 'sample_count', n, 'fs', fs, 'dt', dt, ...
     'tracking_signal', trackingSignalName, ...
+    'dm_filtfilt_cutoff_hz', dm_filtfilt_cutoff_hz, ...
+    'dm_filtfilt_order', dm_filtfilt_order, ...
     'rms_tracking_error', rmsError);
 if useNumericalSub
-    summary.rms_d_n_dm = rmsError;
+    summary.rms_d_n_dm_filtfilt = rmsError;
 else
-    summary.rms_dd_dm = rmsError;
+    summary.rms_dd_dm_filtfilt = rmsError;
 end
 
 fprintf('\n===============================================================\n');
@@ -109,7 +115,7 @@ fprintf('Duration:        %.3f s\n', duration);
 fprintf('Sample count:    %d\n', n);
 fprintf('fs:              %.6g Hz\n', fs);
 fprintf('dt:              %.6g s\n', dt);
-fprintf('RMS(%s - dm):   %.6g mm\n', trackingSignalName, rmsError);
+fprintf('RMS(%s - dm_filtfilt):   %.6g mm\n', trackingSignalName, rmsError);
 fprintf('===============================================================\n\n');
 
 figure('Name', resultName, 'WindowState', 'maximized');
@@ -118,6 +124,7 @@ tPlot = t(plotIndex);
 trackingPlot = trackingSignal(plotIndex);
 dcPlot = dc(plotIndex);
 dmPlot = dm(plotIndex);
+dmFiltfiltPlot = dm_filtfilt(plotIndex);
 fmPlot = fm(plotIndex);
 amPlot = am(plotIndex);
 
@@ -126,15 +133,18 @@ hDesired = plot(tPlot, trackingPlot, '--', 'Color', colors.black, ...
     'LineWidth', 1.8, 'DisplayName', trackingLegendName); hold on
 plot(tPlot, dcPlot, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, ...
     'DisplayName', 'dc');
-hMeasured = plot(tPlot, dmPlot, '-', 'Color', colors.blue, ...
-    'LineWidth', 1.2, 'DisplayName', 'dm');
+hMeasuredRaw = plot(tPlot, dmPlot, '-', 'Color', colors.blue, ...
+    'LineWidth', 1.0, 'DisplayName', 'dm');
+hMeasured = plot(tPlot, dmFiltfiltPlot, '-', 'Color', colors.blue, ...
+    'LineWidth', 1.4, 'DisplayName', 'dm\_filtfilt');
 uistack(hDesired, 'top')
+uistack(hMeasuredRaw, 'top')
 uistack(hMeasured, 'top')
 grid on
 xlabel('Time (s)')
 ylabel('Displacement (mm)')
 title('Displacement Tracking')
-setAxisLimitsFromSignals(gca, t, [trackingSignal dc dm])
+setAxisLimitsFromSignals(gca, t, [trackingSignal dc dm dm_filtfilt])
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
@@ -214,6 +224,12 @@ end
 function rgb = hexToRgb(hexColor)
 % Units: hexadecimal input and RGB output are dimensionless.
     rgb = sscanf(hexColor, '%2x%2x%2x', [1 3]) / 255;
+end
+
+function y = filtfiltDm(dm, fs, cutoff_hz, order)
+% Units: dm/y [mm], fs/cutoff_hz [Hz].
+    [b, a] = butter(order, cutoff_hz/(fs/2), 'low');
+    y = filtfilt(b, a, dm - dm(1)) + dm(1);
 end
 
 function toggleSignalVisibility(~, event)
