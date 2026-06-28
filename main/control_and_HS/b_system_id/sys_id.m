@@ -11,7 +11,7 @@ max_freq_hz = 80;
 
 % controller optimization inputs
 gm = 16;             % Minimum gain margin in dB; use 0 for no constraint.
-pm = 70;             % Minimum phase margin in degree6s; use 0 for no constraint.
+pm = 80;             % Minimum phase margin in degree6s; use 0 for no constraint.
 overshooting = 0;    % Maximum step overshoot in percent; use 0 for no constraint.
 d_gain = 0.0015;          % Maximum derivative gain D; use 0 for no constraint.
 noise_random_seed = 0;
@@ -60,6 +60,9 @@ else
         load_saved_result_file(step_root, 'specimens', false, specimen_file);
 end
 
+tf_model_name = prompt_transfer_function_model_name();
+tf_model_file_stem = make_safe_file_stem(tf_model_name);
+
 if use_trim_selector
     experimental_data = trim_recording_time_window(experimental_data);
 end
@@ -106,6 +109,7 @@ end
 fprintf('\nDigital-controller dynamics selections\n')
 fprintf('Experimental data: %s\n', data_file)
 fprintf('Specimen parameters: %s\n', specimen_file)
+fprintf('TF model name: %s\n', tf_model_name)
 fprintf('Test type: %s\n', test_type)
 fprintf('Analysis time window: [%.6g, %.6g] s (%s)\n', ...
     analysis_time_window(1), analysis_time_window(2), time_window_source)
@@ -230,14 +234,13 @@ disp(pid_table)
 run_datetime = datetime('now', 'Format', 'yyyyMMdd_HHmmss');
 run_timestamp = char(run_datetime);
 [source_folder, source_base_name, source_ext] = fileparts(data_file);
-[~, loaded_data_base_name] = fileparts(data_name);
 [~, source_folder_name] = fileparts(source_folder);
 model_results_dir = fullfile(step_root, 'saved_results', 'exp_tf');
 if ~exist(model_results_dir, 'dir')
     mkdir(model_results_dir)
 end
 model_results_path = fullfile(model_results_dir, ...
-    sprintf('%s_%s.mat', loaded_data_base_name, run_timestamp));
+    sprintf('%s_%s.mat', tf_model_file_stem, run_timestamp));
 pid_values = struct('P', P, 'I', I, 'D', D, ...
     'derivative_filter_N', derivative_filter_N, 'dt', dt);
 optimized_pid_values = struct('P', new_pid_results.gains(1), ...
@@ -248,6 +251,8 @@ model_metadata = struct( ...
     'run_timestamp', run_timestamp, ...
     'run_datetime', run_datetime, ...
     'script_file', mfilename('fullpath'), ...
+    'tf_model_name', tf_model_name, ...
+    'tf_model_file_stem', tf_model_file_stem, ...
     'data_file', data_file, ...
     'data_name', data_name, ...
     'source_folder', source_folder, ...
@@ -304,6 +309,7 @@ save(model_results_path, 'H_dc_dm', 'H_dd_dm', 'H_dc_dm_param', ...
     'H_dc_dm_xfunc', 'H_dd_dm_xfunc', 'parametric_identification', ...
     'parametric_model', ...
     'new_pid_results', 'fit_table', 'margin_table', 'pid_table', ...
+    'tf_model_name', 'tf_model_file_stem', ...
     'model_results_path')
 fprintf('\nSaved system-identification run models = %s\n', model_results_path)
 
@@ -521,4 +527,24 @@ function open_loop = build_discrete_pid_open_loop(plant, dt, ...
         1/derivative_filter_N, dt, 'IFormula', 'ForwardEuler', ...
         'DFormula', 'ForwardEuler');
     open_loop = controller*plant;
+end
+
+function tf_model_name = prompt_transfer_function_model_name()
+    tf_model_name = '';
+    while isempty(tf_model_name)
+        tf_model_name = strtrim(input( ...
+            '\nEnter transfer-function model name (without .mat): ', 's'));
+    end
+end
+
+function file_stem = make_safe_file_stem(name)
+    file_stem = regexprep(strtrim(char(string(name))), '[<>:"/\\|?*]', '_');
+    if endsWith(lower(file_stem), '.mat')
+        file_stem = file_stem(1:end-4);
+    end
+    file_stem = regexprep(file_stem, '[. ]+$', '');
+    if isempty(file_stem)
+        error('sys_id:InvalidModelName', ...
+            'The transfer-function model name must contain at least one valid filename character.');
+    end
 end
