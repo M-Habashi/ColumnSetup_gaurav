@@ -5,6 +5,7 @@
 % The Hybrid Simulation path uses the same step_HS function as Simulink.
 
 clearvars -except outputVerificationFile fem_file_override ...
+    specimen_file_override exp_specimen_file_override ...
     h_dc_dm_model_file_override pid_gain_override ...
     delay_comp_file_override; ...
     clc; close all;
@@ -28,8 +29,23 @@ hs = struct( ...
     'intensity_factor', 0.025, ...
     'time_scale_factor', 1, ...
     'force_sign', 1.0);
-k_exp_r = 0.6;
+k_exp_r =1 ;
 hs_sample_dt = 1/2048;
+if exist('exp_specimen_file_override', 'var') ...
+        && ~isempty(exp_specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, exp_specimen_file_override);
+elseif exist('specimen_file_override', 'var') ...
+        && ~isempty(specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, specimen_file_override);
+else
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens');
+end
+assert(isfield(specimen, 'k'), ...
+    'The selected specimen file must contain lateral stiffness k.');
+specimen_si = specimen_params_si(specimen);
 if exist('h_dc_dm_model_file_override', 'var') ...
         && ~isempty(h_dc_dm_model_file_override)
     h_dc_dm_model_file = h_dc_dm_model_file_override;
@@ -72,12 +88,13 @@ else
     [fem, fem_file, ~] = loadFemDefinition(project_root, false);
 end
 hs.fem_file = fem_file;
+hs.specimen_file = specimen_file;
 
 fem_num = fem.num;
 fem_ref = fem.ref;
 frame = fem_num.frame;
 n_story = frame.n_story;
-k_experimental = k_exp_r*fem_num.experimental_k;
+k_experimental = k_exp_r*specimen_si.stiffness;
 
 validateattributes(k_exp_r, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative', '<=', 1});
@@ -238,8 +255,10 @@ else
     fprintf('Phase lead after numerical dd: disabled\n');
 end
 fprintf('FEM schema version: %d\n', fem.schema_version);
-fprintf('Specimen name: %s\n', fem.specimen_name);
-fprintf('Specimen file: %s\n', fem.specimen_file);
+fprintf('FEM specimen name: %s\n', fem.specimen_name);
+fprintf('FEM specimen file: %s\n', fem.specimen_file);
+fprintf('Experimental specimen name: %s\n', specimen_name);
+fprintf('Experimental specimen file: %s\n', specimen_file);
 fprintf('Frame: %d stories, %d bays, bay width %.12g m, story height %.12g m\n', ...
     frame.n_story, frame.n_bay, frame.bay_width, frame.story_height);
 fprintf('Frame E: %.12g Pa; beam connection k: %.12g N*m/rad\n', ...
