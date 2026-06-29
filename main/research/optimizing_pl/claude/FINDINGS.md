@@ -432,6 +432,169 @@ Practical notes:
    GM ≥ 7 dB online. Prefer `PID·a` over the lead/command scalar as the primary
    authority knob; keep the notch+lead as the fixed structure underneath.
 
+## Predicting the required authority, estimating NCF, and regulating it online
+
+### The required `a` is closed form (no search)
+Scaling the PID by `a` (`a·C_pid`) scales the inner open loop `L = a·C_pid·H_dc_dm`
+**uniformly at every frequency**, so the phase — hence the ~37 Hz −180° crossover —
+is unchanged and the inner gain margin is exact:
+
+```
+GM_dB(a) = GM_dB(1) − 20·log10(a)        (predicted = actual to 0.01 dB)
+⇒  a_required = 10^((GM_dB(1) − GM_target)/20)
+```
+
+Verified (`predict_inner_margin.m`): healthy inner GM 16.4 dB, damaged 6.9 dB;
+to hold a **10 dB** inner GM the damaged plant needs **a = 0.698** (and the model
+returns exactly 10.0 dB there). The damaged inner GM (6.9 dB) ≈ your experimental
+**"GM of 7"** floor — i.e. the floor *is* the inner-loop gain margin. The inner
+loop alone goes unstable at γ ≥ 6.6 (≈2.7× the measured damage).
+
+### Can we estimate NCF from this? Yes — two complementary ways
+1. **Inner NCF tracks inner GM 1:1.** The inner loop has a single binding
+   resonance (37 Hz), so its NCF and GM carry the same information (measured):
+
+   | inner GM | 6.9 | 8.8 | 11.3 | 14.8 | 17.3 dB |
+   |---|---|---|---|---|---|
+   | inner NCF | 0.34 | 0.42 | 0.49 | 0.57 | 0.60 |
+
+   So an online inner-GM (or OSI `Spk`) estimate gives inner NCF directly, and the
+   analytic bound `b ≤ (g−1)/(g+1)`, `g=10^(GM_dB/20)` (in `predict_inner_margin`)
+   brackets it. `Spk ≈ ‖S_inner‖∞` is itself an NCF-type peak-sensitivity reading,
+   so **your OSI Method 7 already estimates this margin output-only.**
+2. **Coupled NCF is regulated indirectly.** It is *not* a pure function of inner
+   GM (it also depends on the lead and which mode binds), but with the robust
+   **notch+lead** base it is **monotone in `a`** (no unstable dip): on the damaged
+   plant `cplNCF` rises 0.342→0.440 and `cplGM` 11.9→23 dB as `a`:1→0.3. So pick
+   the inner-GM setpoint that was validated (offline, over the damage bracket) to
+   keep coupled NCF ≥ target, then hold that setpoint online.
+
+### Is closing a loop on the margin error a good idea? Yes — with guards
+Updating `a` from the margin error `e = GM_set − GM_est` (an integral/supervisory
+regulator, `authority_regulator.m`) is sound **specifically because the
+margin-vs-`a` map has a fixed, known sign** (lower `a` ⇒ higher GM, monotone and
+closed form). The integral correction can never chase the wrong direction — unlike
+retuning `P`, `I`, or the lead ratio, whose sign flips. Demonstrated under damage
+ramping γ:1→4 with a noisy (±0.4 dB) estimate: `a` walks 1.0→0.65 and the coupled
+loop is held at **NCF 0.32–0.43, GM ≥ 16 dB** throughout, no oscillation.
+
+This is the principled version of "drop `a` decisively, recover slowly." The
+guards are what make it safe, and they are not optional:
+- **Asymmetric gains** `k_down ≫ k_up`: lose margin (damage) fast, recover
+  performance slowly.
+- **Slow vs the estimation window + deadband + rate limit**: the margin estimate
+  (`Spk`) is windowed/noisy; adapt slower than the window and ignore small errors,
+  or you regulate noise.
+- **Hold on dropout**: with weak excitation the margin is unobservable — freeze
+  `a`, never relax blindly.
+- **Saturate** `a∈[a_min,a_max]` with clamping (anti-windup); `a_min≈0.3` keeps
+  enough bandwidth that tracking does not collapse (J4 blows up below ~0.3).
+- **Run it on a robust base** (notch+lead) so the `a`-path is monotone (no
+  transition through the unstable dip that a plain aggressive lead creates).
+
+Caveat: this regulates a *linearized* margin around the current operating point;
+it is a supervisory layer, not a substitute for the offline worst-case design.
+Keep the bracket-feasible notch+lead underneath; let the regulator buy back
+performance (raise `a`) only when the measured margin is comfortably above set.
+
+## Estimating NCF directly (not via GM) — GM is blind to low phase margin
+
+You are right that GM→NCF is unsafe: GM only inspects the −180° crossing, so a
+Nyquist curve that swings near −1 at the **gain** crossover (low PM) gives a low
+NCF while GM stays large. Measured proof on the real loop:
+
+```
+coupled H5 + lead7 :  GM = Inf dB   but   NCF = 0.246   (loop is actually fragile)
+```
+
+GM says "infinite margin"; NCF (and the pole radius) correctly flag it. So
+estimate NCF **directly**, from the whole Nyquist curve.
+
+### The identity that makes NCF directly measurable
+With `S = 1/(1+L)` (sensitivity) and `T = L/(1+L)` (complementary sensitivity):
+
+```
+b(ω) = |1+L|/sqrt(2(1+|L|²)) = 1 / ( sqrt(2)·sqrt(|S(jω)|² + |T(jω)|²) )
+NCF  = min_ω b(ω) = 1 / ( sqrt(2) · max_ω sqrt(|S(jω)|² + |T(jω)|²) )
+```
+
+Verified exact against `custom_stability_margins` (0.3438 vs 0.3438 inner;
+0.2461 vs 0.2461 coupled). Because it uses `|S|` and `|T|` at **every** frequency
+it captures the low-PM / near-−1 approach a gain margin misses — `|S|` peaks
+wherever the loop nears −1, at the gain crossover or anywhere else.
+
+### Why this is *directly* measurable online (no GM, no open-loop inversion)
+For unity feedback, `T` is the **closed-loop FRF from command to output**. For the
+inner actuator loop that is exactly `T = dm/dd_lead`, which you already log, and
+`S = 1 − T`. Closed-loop FRFs are bounded and well-conditioned even at modest
+coherence (unlike inverting to the open loop). So:
+
+```
+1. estimate T̂(jω) = dm/dd_lead over the binding band (e.g. xfunc)
+2. Ŝ = 1 − T̂
+3. NCF = 1/(sqrt(2)·max_ω sqrt(|Ŝ|² + |T̂|²))          (estimate_ncf_direct.m, kind='comp')
+```
+
+Demonstrated from a **noisy** `dm/dd_lead` time history (1% measurement noise):
+estimated NCF **0.345 vs true 0.344**, binding at 39 Hz. (Coherence at 35–45 Hz
+must be adequate; the earthquake is low-frequency, so add a **small command
+dither** to excite the ~37 Hz binding band if operating data is too weak there —
+a few % of the command suffices and does not perturb the test.)
+
+### Inner vs coupled
+- **Inner NCF** (`T = dm/dd_lead`) needs no probe — it is the loop where damage
+  bites and the 37 Hz lives, and it is the cleanest online reading. Best default.
+- **Coupled NCF** is the true RTHS margin. Its `T` is the closed-loop transfer of
+  the *coupled* loop; estimate it by a small **dither at the dd command node** and
+  the loop-FRF ratio (same `estimate_ncf_direct`, `kind='open'` on the measured
+  `L_c`, or `kind='comp'` on the measured coupled `T`). Use the inner NCF as the
+  fast indicator and the coupled NCF as the periodic check.
+
+### Use it to regulate `a` on NCF error directly
+The authority regulator can now key off **measured NCF** instead of GM:
+`e = NCF_set − NCF_est`, with the sign flipped (lower `a` ⇒ higher NCF). NCF is
+the better regulated variable precisely because it is not fooled by low PM. Keep
+the same guards (asymmetric, deadband, rate-limit, hold-on-dropout, saturation).
+`Spk` from OSI Method 7 reads the resonant `|T|` peak; the full `sqrt(|S|²+|T|²)`
+reading here is its low-PM-aware generalization.
+
+## OSI Method 8: direct S,T NCF as an online indicator (vs M6, M7)
+
+Packaged the direct-NCF estimator as a new OSI indicator and ran it **unchanged
+beside the published Method 6 (open-loop FRF Kalman) and Method 7 (output
+resonance)** on the same `research/OSI/damage_jump` benchmark: the healthy→damaged
+`H_dc_dm` jump (7000→5000 at t=10 s) under the **3 input cases** (high-band 1731,
+low-band 1749, mixed), over the same **per-seed disturbance ensemble** (`rng(s)`,
+10 seeds) the M7 robustness study uses. No dither; unity feedback assumed.
+`T = dm/dd_lead`, `S = 1−T`, `NCF = 1/(√2·max_ω √(|S|²+|T|²))`.
+
+Result (true loop-only NCF 0.588 healthy → 0.344 damaged):
+
+| case | M6 open-loop FRF | M7 output reson. | **M8 direct S,T** |
+|---|---|---|---|
+| high-band | 0.591→0.364 detects | 0.587→0.354 (10/10) | **0.591→0.372 detects (10/10)** |
+| low-band | **0.227→0.002 FALSE COLLAPSE** | 0.587→0.415 (10/10) | **0.588→0.600 blind-but-safe (0/10)** |
+| mixed | 0.591→0.364 detects | 0.587→0.354 (10/10) | **0.591→0.372 detects (10/10)** |
+
+What M8 adds, and its limit:
+- **Reads the *true* NCF absolutely** (0.591≈0.588 healthy, 0.372≈0.344 damaged) —
+  no calibration, no model, unlike M7's relative `Spk` map. And it is the
+  low-PM-aware reading (uses the whole Nyquist curve, see the S,T section above).
+- **Never false-collapses.** In the low band the open-loop FRF (M6/M1) hits the
+  feedback-lock tautology `dm/dc → −1/C` and alarms even when healthy (0.227, and
+  →0.002 "damaged"). M8 uses the *exogenous* command `dd_lead`, so an unexcited
+  35 Hz bin is just low-coherence and gated out — M8 holds at the true ~0.59.
+- **Cost of "no dither":** like every FRF method, M8 can only *see* the 35 Hz
+  collapse when the command excites 35 Hz (high/mixed). Under a purely
+  low-frequency input it is blind there (0/10) — safe, but only **output-only M7
+  detects** in that case. So M8 complements M7: M8 for an accurate, low-PM-aware,
+  false-alarm-proof margin whenever the band is excited; M7 as the output-only
+  backstop when it is not. Figure: `results/osi_method8_vs_m6_m7.png`.
+
+(These OSI files live here in `optimizing_pl/claude` and call the OSI methods
+read-only; they can be moved into `research/OSI` as `osi_method8` / `trial_8` if
+you want M8 folded into `run_all_and_compare`/`show_all_indicators`.)
+
 ## Files in this folder
 
 | file | purpose |
@@ -440,8 +603,14 @@ Practical notes:
 | `damage_bracket.m` | multiplicative-`γ` + `k_exp` damage ensemble from a healthy baseline (Q2) |
 | `hybrid_loop_margins.m` | NCF / GM / pole radius of the coupled RTHS loop for one (plant, lead) |
 | `robust_pl_score.m` | worst-case (min–max) criterion over the bracket (Q1) |
+| `predict_inner_margin.m` | inner PID+H_dc_dm GM/NCF and the **closed-form `a`** for a target GM |
+| `estimate_ncf_direct.m` | NCF straight from an FRF via `S,T` (no GM step); takes measured `T=dm/dd_lead` |
+| `osi_method8_ncf_direct.m` | the same estimator as an OSI indicator (windowed, gated, `ctx`/`cfg` interface) |
+| `run_osi_ncf_direct_compare.m` | runs M8 beside M6 & M7 on the 3 input cases / seed ensemble → `results/osi_method8_vs_m6_m7.png` |
+| `apply_pid_authority.m` | scale PID by the authority `a` (`PID·a`) |
+| `authority_regulator.m` | one margin-error update of `a` (asymmetric, deadband, rate-limit, hold-on-dropout) |
 | `build_num_tf.m` | numerical-substructure `force→dd` model (mirrors vHS internals) |
-| `run_robust_pl_study.m` | reproduces every table above; prints the robust lead |
+| `run_robust_pl_study.m` | reproduces every table above (incl. Q4 `PID·a` + regulator) |
 
 ### Folding the criterion into the real optimizer
 `optimize_vHS_phase_lead.m` only needs three localized edits (kept out of this

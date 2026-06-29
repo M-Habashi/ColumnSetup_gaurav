@@ -1,11 +1,12 @@
 # OSI test: healthy → damaged `H_dc_dm` jump (low-band input)
 
 A synthetic 20 s time history for testing the online stability indicators (OSI)
-against a **mid-experiment specimen damage event**, and a run of **Method 7** on
-it. The record uses the **undamaged** `H_dc_dm` for the first 10 s and the
-**damaged** `H_dc_dm` for the last 10 s; everything else (PID, phase lead, FEM /
-reference excitation) is held fixed, so the only thing that changes at `t = 10 s`
-is the specimen damage — exactly the partition `vHS.m` uses to simulate damage.
+against a **mid-experiment specimen damage event**, and a head-to-head of
+**Method 6 (FRF Kalman) vs Method 7 (output resonance)** on it. The record swaps
+the black-box plant `H_dc_dm` from the **undamaged** model (`..._7000`) for the
+first 10 s to the **damaged** model (`..._5000`) for the last 10 s, and the
+specimen `k` with it; everything else (PID, phase lead, FEM / reference
+excitation) is held fixed — exactly the partition `vHS.m` uses to simulate damage.
 
 ## What changes at the jump, and what does not
 
@@ -58,12 +59,42 @@ FRF methods 1–6 are blind and Method 7 (output-only) is the right tool.
 
 ```matlab
 cd main/research/OSI/damage_jump
-make_damage_th     % builds data/damage_th.mat (+ data/damage_th_record.png)
-run_osi7           % runs Method 7, writes results/osi7_damage.png + .mat
-osi7_robustness    % optional: 20-seed detection statistics + results/osi7_robustness.png
+make_damage_th       % builds data/damage_th.mat (+ data/damage_th_record.png)
+run_osi6_vs_osi7     % Method 6 vs Method 7 comparison -> results/osi6_vs_osi7.png
+run_osi7             % Method 7 alone (deliverable figure) -> results/osi7_damage.png
+osi7_robustness      % optional: 20-seed detection statistics -> results/osi7_robustness.png
 ```
 
-## Result
+## Result — Method 6 vs Method 7, three input bands (`run_osi6_vs_osi7.m`)
+
+Both methods published and **unchanged**; only `cfg` differs. The same
+healthy→damaged jump (true loop-only NCF 0.588 → 0.344) is run under three input
+excitations. Method 6 uses the binding band `[10 58]` (the fair "can you see the
+35 Hz margin?" test); Method 7 is shown as the per-seed **ensemble** + seed mean.
+
+| Input band | M6 healthy b | M6 damaged b | M6 verdict | M7 healthy b | M7 damaged b | M7 verdict |
+|---|---|---|---|---|---|---|
+| **high** (broadband 1731, med ~40 Hz) | 0.59 | 0.36 | **detects** (agrees w/ M7) | 0.59 | 0.35 | detects |
+| **low** (1749, med ~3 Hz) | **0.23** | **0.00** | **FALSE COLLAPSE** (alarms in healthy phase) | 0.59 | 0.42 | detects |
+| **mixed** (high + low) | 0.59 | 0.36 | **detects** (agrees w/ M7) | 0.59 | 0.35 | detects |
+
+The picture (`results/osi6_vs_osi7_all_cases.png`, 3 stacked panels):
+
+- **When the input excites 35 Hz (high, mixed):** the FRF is identifiable, so
+  Method 6 tracks the margin and collapses at the jump exactly like Method 7 —
+  the two **cross-validate** each other (both land on the true ~0.35).
+- **Under the low-band input:** the binding mode is excited only *from inside the
+  loop*, so `dc` and `dm` are **locked** at 35 Hz (`dc ≈ −C·dm`). Method 6 sees a
+  spurious **coherence ≈ 0.99** (the lock, not real excitation), its gate does not
+  fire, the FRF reads `−1/C`, the loop point lands on `−1`, and the margin
+  **false-collapses to ~0 in both phases** — it alarms ~4 s in, before any damage.
+  Only **Method 7**, reading the resonance amplitude in `dm` alone, stays correct
+  (0.59 healthy → ~0.41 damaged).
+
+This is the case Method 7 was created for: output-only, input-agnostic, and the
+only method that survives the low-band closed-loop tautology.
+
+## Result — Method 7 detail (`run_osi7.m`, `osi7_robustness.m`)
 
 Published `osi_method7_resonance.m`, unchanged. Bands retuned for this record:
 peak `[25 42]`, floor `[55 75]` Hz (the damaged resonance at 39 Hz contaminates
@@ -93,15 +124,21 @@ is a **drop from the calibrated nominal**: `b < 0.80·b_nom` fires on every seed
 ## Files
 
 ```
-make_damage_th.m       build the synthetic record
-run_osi7.m             run Method 7 on it (the deliverable figure)
-osi7_robustness.m      detection statistics over disturbance seeds
-data/damage_th.mat     the record: t, dd, dd_lead, dc, dm, fm, fs, dt, switch_time, meta
-data/damage_th_record.png   record + spectrogram (resonance brightening after 10 s)
-results/osi7_damage.png      Method 7 margin time series
+make_damage_th.m          build the low-band record used by run_osi7 / osi7_robustness
+run_osi6_vs_osi7.m        *** main comparison: M6 vs M7 over high/low/mixed input bands ***
+run_osi7.m                Method 7 alone on the low-band record (single-seed detail figure)
+osi7_robustness.m         Method 7 detection statistics over 20 disturbance seeds (low band)
+data/damage_th.mat        the low-band record: t, dd, dd_lead, dc, dm, fm, fs, dt, switch_time, meta
+data/damage_th_record.png    record + spectrogram (resonance brightening after 10 s)
+results/osi6_vs_osi7_all_cases.png   <-- the 3-band M6-vs-M7 comparison (run this one)
+results/osi7_damage.png              Method 7 margin time series (low band)
 results/osi7_damage_result.mat
-results/osi7_robustness.png  20-seed ensemble
+results/osi7_robustness.png          20-seed ensemble (low band)
 ```
+
+**To see the plots:** run `run_osi6_vs_osi7` for the three-band M6-vs-M7 figure
+(`results/osi6_vs_osi7_all_cases.png`). `run_osi7` and `osi7_robustness` give the
+low-band Method-7 detail and seed statistics (run `make_damage_th` first for those).
 
 The record is a drop-in for the other OSI trials: it exposes the same
 `t, dd, dc, dm, fs` fields, so Methods 1–6 can be pointed at `data/damage_th.mat`

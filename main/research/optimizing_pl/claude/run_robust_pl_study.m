@@ -100,9 +100,91 @@ for N = [1.5 3 5 8 12 18]
     fprintf('%6.1f | %12.4f | %12.4f\n', N, mh.max_abs_pole, md.max_abs_pole);
 end
 
+% ---- Q4: PID authority a (PID*a) -- the inner-loop knob ----
+% Robust base compensator: notch at the ~37 Hz CSI mode + an in-band lead.
+notchlead = make_notch_lead(37, 0.05, 0.7, 3, 15);
+
+fprintf('\n=== Q4(a): inner PID+H_dc_dm margins and the CLOSED-FORM required a ===\n');
+target_gm = 10;   % dB inner-loop gain-margin setpoint
+for cse = struct('tag', {'healthy', 'damaged'}, 'Hdc', {H.H_dc_dm, D.H_dc_dm})
+    info = predict_inner_margin(cse.Hdc, pidv, dt, target_gm);
+    fprintf(['%-8s: inner GM %5.2f dB, inner NCF %.3f, f180 %4.1f Hz | ' ...
+        'a for GM=%g dB = %.3f (predicted GM at a = %.2f dB)\n'], ...
+        cse.tag, info.gm_db, info.ncf, info.f180_hz, target_gm, ...
+        info.a_required, info.gm_db_at(info.a_required));
+end
+
+fprintf('\n=== Q4(b): PID*a on the damaged plant + robust notch+lead (GM, NCF monotone) ===\n');
+fprintf('%6s | %8s %8s %8s\n', 'a', 'innGM', 'cplGM', 'cplNCF');
+for a = [1 0.8 0.6 0.5 0.4 0.3]
+    pid_a = apply_pid_authority(pidv, a);
+    inner = predict_inner_margin(D.H_dc_dm, pidv, dt);
+    m = hybrid_loop_margins(num_tf, D.H_dc_dm, s5.stiffness, notchlead, pid_a, dt);
+    fprintf('%6.2f | %8.2f %8.2f %8.3f\n', a, inner.gm_db_at(a), m.gm_db, m.ncf);
+end
+
+fprintf('\n=== Q4(c): margin-setpoint regulator (PID*a) under ramping damage ===\n');
+fprintf('regulate inner GM -> %g dB; report coupled GM / NCF held\n', target_gm);
+fprintf('%6s %7s %8s %8s | %8s %8s\n', 'step', 'gamma', 'GMest', 'a', 'cplGM', 'cplNCF');
+a = 1; reg = struct();
+gammas = linspace(1, 4, 13);
+rng(0);
+for i = 1:numel(gammas)
+    g = gammas(i);
+    Hg = g*H.H_dc_dm;
+    k_g = (1 + (g-1)/(2.4-1)*(s5.stiffness/s7.stiffness - 1))*s7.stiffness;
+    info = predict_inner_margin(Hg, apply_pid_authority(pidv, a), dt);
+    gm_est = info.gm_db + 0.4*randn;   % noisy online estimate (e.g. from OSI Spk)
+    [a, ~, reg] = authority_regulator(a, gm_est, ...
+        struct('gm_set', target_gm, 'a_min', 0.3), reg);
+    m = hybrid_loop_margins(num_tf, Hg, k_g, notchlead, apply_pid_authority(pidv, a), dt);
+    fprintf('%6d %7.2f %8.2f %8.3f | %8.2f %8.3f\n', i, g, gm_est, a, m.gm_db, m.ncf);
+end
+
+% ---- Q5: estimate NCF DIRECTLY (S,T), not via GM ----
+% NCF = 1/(sqrt(2)*max_w sqrt(|S|^2+|T|^2)); for unity feedback T is the measurable
+% closed-loop FRF (inner loop: T = dm/dd_lead), S = 1-T. Sees the whole Nyquist
+% curve -> catches low-PM cases that GM misses.
+frng = [0.1 80];
+fgrid = logspace(log10(frng(1)), log10(frng(2)), 6000)';
+Cd = pid(pidv(1), pidv(2), pidv(3), 1/pidv(4), dt, ...
+    'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+Tin = feedback(Cd*c2d(D.H_dc_dm, dt, 'zoh'), 1);          % inner T (dm/dd_lead)
+Lc = -minreal(num_tf*(s5.stiffness/1000)*c2d(pl7, dt, 'tustin')*Tin, [], false);
+
+fprintf('\n=== Q5(a): direct NCF (S,T) matches custom, and GM can be BLIND ===\n');
+[gmi, ~, ni] = custom_stability_margins(Cd*c2d(D.H_dc_dm, dt, 'zoh'), frng);
+[gmc, ~, nc] = custom_stability_margins(Lc, frng);
+oi = estimate_ncf_direct(Cd*c2d(D.H_dc_dm, dt, 'zoh'), 'open', fgrid);
+oc = estimate_ncf_direct(Lc, 'open', fgrid);
+fprintf('inner H5      : NCF custom %.4f | NCF S,T %.4f | GM %6.2f dB\n', ni, oi.ncf, gmi);
+fprintf('coupled H5+pl7: NCF custom %.4f | NCF S,T %.4f | GM %6.2f dB  <- GM blind\n', nc, oc.ncf, gmc);
+
+fprintf('\n=== Q5(b): NCF from a measured noisy T = dm/dd_lead (data-driven) ===\n');
+fs = 1/dt; N = 40*fs; tt = (0:N-1)'/fs; rng(2);
+u = filter(ones(1,200)/200, 1, randn(N,1)); u = 2*u/std(u) + 0.03*randn(N,1);
+y = lsim(Tin, u, tt); y = y + 0.01*std(y)*randn(N,1);     % 1% measurement noise
+[Tpts, fhz, spec] = xfunc(u, y, fs, 4096, 2048);
+coh = abs(spec(:,3)).^2 ./ max(spec(:,1).*spec(:,2), eps);
+sel = fhz >= 5 & fhz <= 70 & coh >= 0.5;
+od = estimate_ncf_direct(Tpts(sel), 'comp', fhz(sel));
+ot = estimate_ncf_direct(Tin, 'comp', fhz(sel));          % model T on same grid
+fprintf('inner NCF: model T %.3f | estimated from noisy dm/dd_lead %.3f (binding %.0f Hz)\n', ...
+    ot.ncf, od.ncf, od.binding_hz);
+
 function lead = make_lead(center_hz, ratio)
 % Unity DC gain, high-frequency gain = ratio (matches the optimizer parameterization).
 wz = 2*pi*center_hz/sqrt(ratio);
 wp = 2*pi*center_hz*sqrt(ratio);
 lead = ratio*tf([1 wz], [1 wp]);
+end
+
+function G = make_notch_lead(notch_hz, zeta_zero, zeta_pole, lead_zero_hz, lead_pole_hz)
+% Notch at the CSI frequency (removes loop gain only there) times a unity-DC lead
+% (supplies in-band phase). High-frequency lead gain = lead_pole_hz/lead_zero_hz.
+wn = 2*pi*notch_hz;
+notch = tf([1 2*zeta_zero*wn wn^2], [1 2*zeta_pole*wn wn^2]);
+lead = (lead_pole_hz/lead_zero_hz) ...
+    * tf([1 2*pi*lead_zero_hz], [1 2*pi*lead_pole_hz]);
+G = notch*lead;
 end

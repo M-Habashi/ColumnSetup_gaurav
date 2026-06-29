@@ -1,3 +1,11 @@
+# Stability:
+- Try to design the phase lead as a notch to be more robust [the notch is arount the the crossover phase? what is that 35hz?]
+- Try to penalty the control max command whileoptimizing the PL
+- think about how can w update the authority gain
+- understand and test claude M7, try to link it to NCF
+- Test !!
+
+
 # NOW
 - can you see the 19 hz in the vHS?
 - is it better to use releigh damping?

@@ -5,8 +5,9 @@
 % The Hybrid Simulation path uses the same step_HS function as Simulink.
 
 clearvars -except outputVerificationFile fem_file_override ...
+    specimen_file_override exp_specimen_file_override ...
     h_dc_dm_model_file_override pid_gain_override ...
-    delay_comp_file_override; ...
+    delay_comp_file_override PID_scale; ...
     clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
@@ -28,8 +29,26 @@ hs = struct( ...
     'intensity_factor', 0.025, ...
     'time_scale_factor', 1, ...
     'force_sign', 1.0);
-k_exp_r = 0.6;
+PID_scale = 0.;
+validateattributes(PID_scale, {'numeric'}, ...
+    {'scalar', 'real', 'finite'}, mfilename, 'PID_scale');
+k_exp_r =1;
 hs_sample_dt = 1/2048;
+if exist('exp_specimen_file_override', 'var') ...
+        && ~isempty(exp_specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, exp_specimen_file_override);
+elseif exist('specimen_file_override', 'var') ...
+        && ~isempty(specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, specimen_file_override);
+else
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens');
+end
+assert(isfield(specimen, 'k'), ...
+    'The selected specimen file must contain lateral stiffness k.');
+specimen_si = specimen_params_si(specimen);
 if exist('h_dc_dm_model_file_override', 'var') ...
         && ~isempty(h_dc_dm_model_file_override)
     h_dc_dm_model_file = h_dc_dm_model_file_override;
@@ -72,12 +91,13 @@ else
     [fem, fem_file, ~] = loadFemDefinition(project_root, false);
 end
 hs.fem_file = fem_file;
+hs.specimen_file = specimen_file;
 
 fem_num = fem.num;
 fem_ref = fem.ref;
 frame = fem_num.frame;
 n_story = frame.n_story;
-k_experimental = k_exp_r*fem_num.experimental_k;
+k_experimental = k_exp_r*specimen_si.stiffness;
 
 validateattributes(k_exp_r, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative', '<=', 1});
@@ -111,7 +131,7 @@ hs.ag = hs.intensity_factor*earthquake(:, 2);
 [PID_H_dc_dm, pid_h_dc_dm_values, h_dc_dm_model_file, ...
     actuator_open_loop] = ...
     loadPidHdcDmModel(project_root, h_dc_dm_model_file, ...
-    pid_gain_override, hs_sample_dt);
+    pid_gain_override, PID_scale, hs_sample_dt);
 
 %% SAMPLE GRID AND EARTHQUAKE INPUT
 model_time = hs.time;
@@ -228,6 +248,7 @@ fprintf('H_dc_dm model file: %s\n', h_dc_dm_model_file);
 fprintf('PID_H_dc_dm gains: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
     pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, ...
     pid_h_dc_dm_values.derivative_filter_N);
+fprintf('PID output scale: %.6g\n', pid_h_dc_dm_values.PID_scale);
 fprintf('Phase-lead compensator loaded: %s\n', delay_comp_file);
 if ~isempty(phase_lead) && phase_lead.enabled
     fprintf('Phase lead after numerical dd: %s\n', ...
@@ -238,8 +259,10 @@ else
     fprintf('Phase lead after numerical dd: disabled\n');
 end
 fprintf('FEM schema version: %d\n', fem.schema_version);
-fprintf('Specimen name: %s\n', fem.specimen_name);
-fprintf('Specimen file: %s\n', fem.specimen_file);
+fprintf('FEM specimen name: %s\n', fem.specimen_name);
+fprintf('FEM specimen file: %s\n', fem.specimen_file);
+fprintf('Experimental specimen name: %s\n', specimen_name);
+fprintf('Experimental specimen file: %s\n', specimen_file);
 fprintf('Frame: %d stories, %d bays, bay width %.12g m, story height %.12g m\n', ...
     frame.n_story, frame.n_bay, frame.bay_width, frame.story_height);
 fprintf('Frame E: %.12g Pa; beam connection k: %.12g N*m/rad\n', ...
@@ -439,7 +462,7 @@ disp(vhs_stability_table)
 
 function [PID_H_dc_dm, pid_values, model_file, actuator_open_loop] = ...
         loadPidHdcDmModel( ...
-        project_root, model_file, pid_gain_override, sample_time)
+        project_root, model_file, pid_gain_override, PID_scale, sample_time)
 % Units: H_dc_dm maps dc [mm] to dm [mm]; PID_H_dc_dm maps dd [mm] to dm [mm].
 if isempty(model_file)
     [~, model_file, ~] = load_saved_result_file(project_root, 'exp_tf');
@@ -460,6 +483,7 @@ else
         'derivative_filter_N', 512);
 end
 pid_values = applyPidGainOverride(pid_values, pid_gain_override);
+pid_values.PID_scale = PID_scale;
 if get(H_dc_dm, 'Ts') == 0
     H_dc_dm = c2d(H_dc_dm, sample_time, 'zoh');
 elseif abs(get(H_dc_dm, 'Ts')-sample_time) > 10*eps(sample_time)
@@ -468,6 +492,7 @@ end
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, sample_time, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+digital_controller = pid_values.PID_scale*digital_controller;
 actuator_open_loop = digital_controller*H_dc_dm;
 PID_H_dc_dm = feedback(actuator_open_loop, 1);
 end
@@ -562,6 +587,7 @@ lead_filter = discreteSiso(delay_comp_tf_discrete, hs_sample_dt);
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, hs_sample_dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+digital_controller = pid_values.PID_scale*digital_controller;
 controller = discreteSiso(digital_controller, hs_sample_dt);
 stability = analyzeActuatorLoop(num_model, actuator, lead_filter, ...
     k_experimental, hs_sample_dt);

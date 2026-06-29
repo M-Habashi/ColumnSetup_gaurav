@@ -28,3 +28,20 @@ Nothing is saved.
 - Loop-gain "authority" is a **monotone** stability knob (pole radius only
   decreases); PID `I` and lead ratio are **not** (and ratio acts oppositely on
   the healthy vs damaged plant).
+- The instability is the **inner PID+H_dc_dm loop** at its ~37 Hz −180° point.
+  Scaling the PID by `a` (`PID·a`) is the right authority knob — its inner gain
+  margin is **closed form**, `GM_dB(a)=GM_dB(1)−20log10(a)`, so the required `a`
+  for a target margin needs no search (`predict_inner_margin.m`).
+- Because the margin-vs-`a` map has a fixed sign, you can **regulate `a` online**
+  from a margin-error setpoint (`authority_regulator.m`); demoed holding coupled
+  NCF 0.32–0.43 under damage ramping γ:1→4.
+- **NCF can be estimated directly** (not via GM, which is blind to low phase
+  margin): `NCF = 1/(√2·max_ω √(|S|²+|T|²))`, and `T = dm/dd_lead` is a measurable
+  closed-loop FRF, `S = 1−T` (`estimate_ncf_direct.m`). Recovered NCF 0.345 vs
+  true 0.344 from a noisy time history; catches the GM=∞-but-fragile case.
+- Packaged as **OSI Method 8** (`osi_method8_ncf_direct.m`) and compared beside
+  M6 & M7 on the damage-jump benchmark (3 input bands, seed ensemble):
+  `run_osi_ncf_direct_compare.m` → `results/osi_method8_vs_m6_m7.png`. M8 reads
+  the *true* NCF (0.59→0.37), never false-collapses (unlike M6 in the low band),
+  but needs binding-band excitation to detect (no-dither cost) — output-only M7
+  remains the low-band backstop.
