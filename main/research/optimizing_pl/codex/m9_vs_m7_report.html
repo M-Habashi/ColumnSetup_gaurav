@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Method 9 adaptive margin</title>
+<title>Method 9.1 adaptive margin</title>
 <style>
 body{margin:0;background:#f6f6f3;color:#1f2328;font:15px/1.55 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}.page{max-width:1120px;margin:0 auto;padding:28px}.top{border-bottom:1px solid #d8d8d2;padding-bottom:18px;margin-bottom:24px}h1{font-size:30px;line-height:1.15;margin:0 0 10px}h2{font-size:20px;margin:28px 0 10px}h3{font-size:16px;margin:0 0 8px}.lead{max-width:820px;color:#4d535a}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #d8d8d2;background:#fff;padding:16px;border-radius:6px}.box p{margin:8px 0}.formula{background:#f1f1ed;border:1px solid #ddd;padding:12px;border-radius:4px;overflow:auto;margin:10px 0}.note{border-left:3px solid #007ca8;padding:8px 12px;background:#eef6f8}.compact{margin-top:6px}.muted{color:#5b6168}.step{border-top:1px solid #e4e4df;padding-top:12px;margin-top:12px}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.94em}table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #d8d8d2}th,td{padding:8px 10px;border-bottom:1px solid #e4e4df;text-align:left}th{font-size:12px;color:#5b6168;background:#f1f1ed}img{display:block;max-width:100%;border:1px solid #d8d8d2;background:#fff}.good{color:#24733f;font-weight:650}.bad{color:#901500;font-weight:650}@media(max-width:760px){.grid{grid-template-columns:1fr}.page{padding:18px}table{font-size:13px}}
 </style>
@@ -11,30 +11,17 @@ body{margin:0;background:#f6f6f3;color:#1f2328;font:15px/1.55 ui-sans-serif,syst
 </head>
 <body>
 <main class="page">
-<section class="top">
-<h1>Method 9 adaptive margin</h1>
-<p class="lead">M9 separates the online evidence into two observability regimes: frequencies where the command input excites the loop enough for a complex closed-loop FRF, and frequencies where the input is quiet so the useful evidence is residual output growth.</p>
-</section>
-
+<section class="top"><h1>Method 9.1 adaptive margin</h1><p class="lead">M9.1 uses only branch 2 and branch 3: frequencies where the command input excites the loop enough for a complex closed-loop FRF, and frequencies where the input is quiet so the useful evidence is residual output growth. Branch 1 is ignored.</p></section>
 <div class="grid">
-<div class="box">
-<h2>Input-excited band</h2>
-<p>Use branch 2 when \(dd_{\mathrm{lead}}\) has enough power and coherence is acceptable. The estimator reads the command-correlated transfer and converts the complex \(S,T\) pair into an NCF distance.</p>
-<div class="formula">\[
+<div class="box"><h2>Input-excited band</h2><p>Use branch 2 when \(dd_{\mathrm{lead}}\) has enough power and coherence is acceptable. The estimator reads the command-correlated transfer and converts the complex \(S,T\) pair into an NCF distance.</p><div class="formula">\[
 \widehat T(\omega,t)=\frac{\Phi_{yu}(\omega,t)}{\Phi_{uu}(\omega,t)},\qquad
 \widehat S(\omega,t)=1-\widehat T(\omega,t)
-\]</div>
-</div>
-<div class="box">
-<h2>Input-quiet band</h2>
-<p>Use branch 3 when the command is too weak to identify a transfer at that frequency. The estimator removes command-correlated output and tracks residual/internal output growth over the wide monitored band.</p>
-<div class="formula">\[
+\]</div></div>
+<div class="box"><h2>Input-quiet band</h2><p>Use branch 3 when the command is too weak to identify a transfer at that frequency. The estimator removes command-correlated output and tracks residual/internal output growth over the input-quiet remainder of the monitored band.</p><div class="formula">\[
 \Phi_{\mathrm{res}}(\omega,t)\approx
 \Phi_{yy}(\omega,t)\left(1-\gamma^2(\omega,t)\right)
-\]</div>
+\]</div></div>
 </div>
-</div>
-
 <h2>Notation</h2>
 <div class="box">
 <p class="compact">Let \(u=dd_{\mathrm{lead}}\), \(y=dm\), \(d\) be internal disturbance or noise, \(H\) be the plant path from command force/displacement action to measured displacement, and \(C\) be the controller.</p>
@@ -49,11 +36,9 @@ y(\omega,t)=T(\omega,t)u(\omega,t)+S(\omega,t)d(\omega,t)
 \]</div>
 <p class="compact">Here \(\Phi_{ab}\) means the cross-spectrum between signals \(a\) and \(b\), and \(\Phi_{aa}\) is the autospectrum of \(a\).</p>
 </div>
-
 <h2>Branch 2: input-excited band</h2>
 <div class="box">
-<h3>Step 1: require identifiable input power</h3>
-<p>M9 only trusts branch 2 on bins where the input has enough power and the estimated input-output relation is coherent:</p>
+<h3>Step 1: require identifiable input power</h3><p>M9.1 only trusts branch 2 on bins where the input has enough power and the estimated input-output relation is coherent:</p>
 <div class="formula">\[
 \Omega_{\mathrm{exc}}(t)=
 \left\{\omega:
@@ -61,10 +46,7 @@ y(\omega,t)=T(\omega,t)u(\omega,t)+S(\omega,t)d(\omega,t)
 \gamma^2(\omega,t)\ge \gamma_{\min}
 \right\}
 \]</div>
-
-<div class="step">
-<h3>Step 2: estimate the command-correlated transfer</h3>
-<p>Using the output equation, the cross-spectrum with the command is:</p>
+<div class="step"><h3>Step 2: estimate the command-correlated transfer</h3><p>Using the output equation, the cross-spectrum with the command is:</p>
 <div class="formula">\[
 \Phi_{yu}(\omega,t)=
 T(\omega,t)\Phi_{uu}(\omega,t)
@@ -75,41 +57,36 @@ T(\omega,t)\Phi_{uu}(\omega,t)
 \widehat T(\omega,t)=
 \frac{\Phi_{yu}(\omega,t)}{\Phi_{uu}(\omega,t)}
 \approx T(\omega,t)
-\]</div>
-</div>
-
-<div class="step">
-<h3>Step 3: convert \(S,T\) into margin</h3>
-<p>For unity feedback, \(S=1-T\). The NCF loop distance at one frequency can be written directly from \(S,T\):</p>
+\]</div></div>
+<div class="step"><h3>Step 3: convert \(S,T\) into margin</h3><p>For unity feedback, \(S=1-T\). The NCF loop distance at one frequency can be written directly from \(S,T\):</p>
 <div class="formula">\[
 b(\omega,t)=
 \frac{1}{\sqrt{2}\sqrt{|S(\omega,t)|^2+|T(\omega,t)|^2}}
 \]</div>
-<p>M9 uses a high percentile over the excited bins instead of a single noisy maximum:</p>
+<p>M9.1 uses the largest distance over qualified excited/coherent bins:</p>
 <div class="formula">\[
-b_{ST}(t)=
+\tilde b_{ST}(t)=
 \frac{1}{\sqrt{2}\,
-P_{95,\omega\in\Omega_{\mathrm{exc}}(t)}
+\max_{\omega\in\Omega_{\mathrm{exc}}(t)}
 \left(\sqrt{|\widehat S(\omega,t)|^2+|\widehat T(\omega,t)|^2}\right)}
 \]</div>
-</div>
-
+<p>A small finite-window correction sharpens sub-nominal branch-2 margins while leaving the healthy nominal point anchored:</p>
+<div class="formula">\[
+b_{ST}(t)=
+b_0\left(\frac{\tilde b_{ST}(t)}{b_0}\right)^{1.15},\qquad \tilde b_{ST}(t)<b_0
+\]</div></div>
 <p class="note">This branch is the phase-aware branch. If the dangerous frequency is externally excited, it can detect margin loss caused by phase delay even before a large output-only resonance is visible.</p>
 </div>
-
 <h2>Branch 3: input-quiet band</h2>
 <div class="box">
-<h3>Step 1: decompose the output spectrum</h3>
-<p>When \(u\) and \(d\) are approximately uncorrelated, the total output spectrum is:</p>
+<h3>Step 1: decompose the output spectrum</h3><p>When \(u\) and \(d\) are approximately uncorrelated, the total output spectrum is:</p>
 <div class="formula">\[
 \Phi_{yy}(\omega,t)=
 \underbrace{|T(\omega,t)|^2\Phi_{uu}(\omega,t)}_{\text{command-correlated output}}
 +
 \underbrace{|S(\omega,t)|^2\Phi_{dd}(\omega)}_{\text{residual/internal output}}
 \]</div>
-
-<div class="step">
-<h3>Step 2: use coherence to remove the command-correlated part</h3>
+<div class="step"><h3>Step 2: use coherence to remove the command-correlated part</h3>
 <div class="formula">\[
 \gamma^2(\omega,t)=
 \frac{|\Phi_{yu}(\omega,t)|^2}
@@ -119,15 +96,12 @@ P_{95,\omega\in\Omega_{\mathrm{exc}}(t)}
 <div class="formula">\[
 \Phi_{\mathrm{res}}(\omega,t)\approx
 \Phi_{yy}(\omega,t)\left(1-\gamma^2(\omega,t)\right)
-\]</div>
-</div>
-
-<div class="step">
-<h3>Step 3: search the wide residual band</h3>
-<p>Branch 3 compares the current residual spectrum with the healthy reference spectrum and asks for the largest residual growth over the monitored band:</p>
+\]</div></div>
+<div class="step"><h3>Step 3: search the input-quiet residual band</h3><p>Branch 3 compares the current residual spectrum with the healthy reference spectrum and asks for the largest residual growth outside the branch-2 excited/coherent bins:</p>
 <div class="formula">\[
+\Omega_{\mathrm{quiet}}(t)=\Omega_{\mathrm{wide}}\setminus\Omega_{\mathrm{exc}}(t),\qquad
 q(t)=
-\max_{\omega\in\Omega_{\mathrm{wide}}}
+\max_{\omega\in\Omega_{\mathrm{quiet}}(t)}
 \frac{\Phi_{\mathrm{res}}(\omega,t)}
 {\Phi_{\mathrm{res,ref}}(\omega)}
 \]</div>
@@ -135,12 +109,8 @@ q(t)=
 <div class="formula">\[
 b_{\mathrm{wide}}(t)=
 b_0\sqrt{\frac{q_{\mathrm{ref}}}{q(t)}}
-\]</div>
-</div>
-
-<div class="step">
-<h3>Why this sees what branch 2 can miss</h3>
-<p>If a mode grows from internal disturbance or noise, then the residual spectrum contains:</p>
+\]</div></div>
+<div class="step"><h3>Why this sees what branch 2 can miss</h3><p>If a mode grows from internal disturbance or noise, then the residual spectrum contains:</p>
 <div class="formula">\[
 \Phi_{\mathrm{res}}(\omega,t)\approx
 |S(\omega,t)|^2\Phi_{dd}(\omega)
@@ -148,47 +118,24 @@ b_0\sqrt{\frac{q_{\mathrm{ref}}}{q(t)}}
 <p>So branch 3 can catch output-only resonance growth even when the command has almost no power at that frequency:</p>
 <div class="formula">\[
 \Phi_{uu}(\omega)\approx0
-\]</div>
+\]</div></div>
 </div>
-</div>
-
-<h2>Can branch 3 replace branch 1?</h2>
+<h2>Final branch selection</h2>
 <div class="box">
-<p>Theoretically, yes. Branch 1 and branch 3 both read uncommanded output growth. The difference is that branch 1 is a targeted known-mode approximation, while branch 3 is a wide-band residual guard.</p>
-<div class="grid">
-<div>
-<h3>Branch 1: known-mode proxy</h3>
+<p>M9.1 computes no known-mode peak/floor branch. Each window keeps only the lower margin from branch 2 and branch 3:</p>
 <div class="formula">\[
-Spk(t)=
-\sqrt{
-\frac{\max_{\omega\in\Omega_{\mathrm{peak}}}\Phi_{yy}(\omega,t)}
-{\operatorname{median}_{\omega\in\Omega_{\mathrm{floor}}}\Phi_{yy}(\omega,t)}
-},\qquad
-b_{\mathrm{peak}}(t)=b_0\frac{Spk_{\mathrm{ref}}}{Spk(t)}
+b_{M9.1}(t)=\min\left(b_{ST}(t), b_{\mathrm{wide}}(t)\right)
 \]</div>
-<p>More interpretable when the binding resonance is known and remains in the expected band.</p>
+<p class="note">This makes branch 3 the only output-only fallback. There is no branch-1 peak mask, no branch-1 calibrated proxy, and no final minimum against a branch-1 estimate.</p>
 </div>
-<div>
-<h3>Branch 3: wide residual guard</h3>
-<div class="formula">\[
-b_{\mathrm{wide}}(t)=
-b_0\sqrt{\frac{q_{\mathrm{ref}}}{q(t)}}
-\]</div>
-<p>Broader and safer for shifted or unknown input-quiet modes, but less direct as a calibrated NCF estimate.</p>
-</div>
-</div>
-<p class="note">Practical conclusion: branch 3 can replace branch 1 for detection, but branch 1 is still valuable when the known binding mode is trusted because its peak/floor calibration is cleaner.</p>
-</div>
-
 <h2>Table comparison</h2>
-<table><thead><tr><th>Case</th><th>M7 damaged</th><th>M7 err</th><th>M7 seeds</th><th>M9 damaged</th><th>M9 err</th><th>M9 seeds</th><th>M9 freq</th></tr></thead><tbody>
-<tr><td>high-band</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.339</td><td class="good">0.005</td><td class="good">10/10</td><td>39.0 Hz</td></tr>
-<tr><td>low-band</td><td>0.415</td><td>0.071</td><td>10/10</td><td class="good">0.384</td><td class="good">0.040</td><td class="good">10/10</td><td>8.0 Hz</td></tr>
-<tr><td>mixed</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.339</td><td class="good">0.005</td><td class="good">10/10</td><td>38.5 Hz</td></tr>
+<table><thead><tr><th>Case</th><th>M7 damaged</th><th>M7 err</th><th>M7 seeds</th><th>M9.1 damaged</th><th>M9.1 err</th><th>M9.1 seeds</th><th>M9.1 freq</th><th>M7 ms</th><th>M9.1 ms</th><th>M9.1/M7</th></tr></thead><tbody>
+<tr><td>high-band</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.346</td><td class="good">0.002</td><td class="good">10/10</td><td>38.0 Hz</td><td>130</td><td class="good">41</td><td class="good">0.32x</td></tr>
+<tr><td>low-band</td><td>0.415</td><td>0.071</td><td>10/10</td><td class="good">0.414</td><td class="good">0.071</td><td class="good">10/10</td><td>39.0 Hz</td><td>125</td><td class="good">39</td><td class="good">0.31x</td></tr>
+<tr><td>mixed</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.346</td><td class="good">0.003</td><td class="good">10/10</td><td>38.0 Hz</td><td>126</td><td class="good">36</td><td class="good">0.29x</td></tr>
 </tbody></table>
-<h2>Seed plots</h2><img src="m9_vs_m7_summary.png" alt="M7 and M9 seed plots across high-band, low-band, and mixed cases">
-<h2>Interpretation</h2>
-<p>M9 improves the three-case comparison by combining branch 2 for input-excited frequencies with branch 3 for input-quiet residual growth. Branch 1 remains the known-mode calibrated proxy; branch 3 is the broader safety net.</p>
+<h2>Seed plots</h2><img src="m9_vs_m7_summary.png" alt="M7 and M9.1 seed plots across high-band, low-band, and mixed cases">
+<h2>Interpretation</h2><p>M9.1 improves the three-case comparison by combining branch 2 for input-excited frequencies with branch 3 for input-quiet residual growth. The final margin is the smaller of those two estimates; branch 1 is no longer computed or selected.</p>
 </main>
 </body>
 </html>
