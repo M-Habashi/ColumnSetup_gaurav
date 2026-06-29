@@ -60,7 +60,7 @@ pause_enable = getPauseEnable(data, numel(t));
 n = min([numel(t), numel(dm), numel(fm), numel(pause_enable)]);
 t = t(1:n);
 dm = dm(1:n);
-dm_filtfilt = filtfiltDm(dm, fs, 30, 4);
+dm_filtfilt = filtfiltDm(dm, fs, 20, 6);
 fm = fm(1:n);
 pause_enable = pause_enable(1:n);
 

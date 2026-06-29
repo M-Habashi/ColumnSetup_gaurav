@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M7 — Reading stability from the output alone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0B0F1A; --panel:#121829; --panel-2:#0E1422; --grid:#222C44;
+    --amber:#F5A623; --amber-bright:#FFC152; --cyan:#56C7D6; --danger:#FF5269;
+    --text:#E9EDF6; --muted:#8B93A8; --line:#1E2740;
+    --display:"Space Grotesk", system-ui, sans-serif;
+    --body:"IBM Plex Sans", system-ui, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:var(--body); font-size:17px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(1100px 600px at 78% -8%, rgba(245,166,35,0.07), transparent 60%),
+      radial-gradient(900px 500px at 0% 4%, rgba(86,199,214,0.05), transparent 55%);
+  }
+  .wrap{max-width:1120px; margin:0 auto; padding:0 28px;}
+
+  /* ---- header ---- */
+  header.top{display:flex; align-items:center; justify-content:space-between;
+    padding:22px 0 8px; border-bottom:1px solid var(--line); margin-bottom:54px;}
+  .mono-label{font-family:var(--mono); font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--muted);}
+  .monogram{font-family:var(--display); font-weight:700; font-size:20px; letter-spacing:.02em;}
+  .monogram b{color:var(--amber);}
+
+  /* ---- hero ---- */
+  .hero{padding-top:18px;}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.26em;
+    text-transform:uppercase; color:var(--amber); margin:0 0 22px;}
+  h1{font-family:var(--display); font-weight:700; letter-spacing:-0.02em;
+    font-size:clamp(2.3rem, 6vw, 4.1rem); line-height:1.04; margin:0 0 22px; max-width:16ch;}
+  h1 .accent{color:var(--amber);}
+  .lede{font-size:clamp(1.05rem,2.2vw,1.32rem); color:#C9D0DE; max-width:60ch; margin:0;}
+  .lede b{color:var(--text); font-weight:600;}
+
+  /* ---- instrument ---- */
+  .instrument{margin:46px 0 14px; background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    box-shadow:0 30px 80px -40px rgba(0,0,0,0.8);}
+  .inst-head{display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; gap:10px;}
+  .inst-title{font-family:var(--mono); font-size:12px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--muted);}
+  .inst-title b{color:var(--text);}
+  .state-pill{font-family:var(--mono); font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; padding:5px 11px; border-radius:999px;
+    border:1px solid var(--line); color:var(--amber);}
+  .inst-body{display:grid; grid-template-columns:1fr 168px; gap:0;}
+  .scope{position:relative; min-height:330px; border-right:1px solid var(--line);}
+  canvas#scope{display:block; width:100%; height:100%;}
+  .gauge{padding:18px 18px 20px; display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .gauge-track{position:relative; width:54px; height:210px; border:1px solid var(--line);
+    border-radius:7px; background:#0A0E18; overflow:hidden;}
+  .gauge-fill{position:absolute; left:0; right:0; bottom:0; height:50%;
+    background:linear-gradient(180deg,var(--amber-bright),var(--amber));
+    transition:height .12s linear, background .25s linear;}
+  .gauge-mark{position:absolute; left:0; right:0; height:0; border-top:1px dashed var(--muted);
+    font-family:var(--mono); font-size:9px; color:var(--muted);}
+  .gauge-mark span{position:absolute; right:2px; top:-11px; background:rgba(11,15,26,.6); padding:0 2px;}
+  .gauge-read{font-family:var(--mono); text-align:center; line-height:1.3;}
+  .gauge-read .b{font-size:30px; font-weight:600; color:var(--amber);}
+  .gauge-read .blab{font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);}
+
+  .inst-foot{display:flex; align-items:center; gap:22px; flex-wrap:wrap;
+    padding:14px 20px; border-top:1px solid var(--line);}
+  .readout{font-family:var(--mono); font-size:13px; color:var(--muted);}
+  .readout b{color:var(--cyan); font-weight:500;}
+  .readout.amber b{color:var(--amber);}
+  .controls{margin-left:auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .controls label{font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted);}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:170px; height:4px;
+    background:var(--line); border-radius:3px; outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px;
+    border-radius:50%; background:var(--amber); cursor:pointer; border:2px solid var(--ink);}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:50%;
+    background:var(--amber); cursor:pointer; border:2px solid var(--ink);}
+  .btn{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text); background:transparent; border:1px solid var(--line);
+    padding:7px 13px; border-radius:7px; cursor:pointer; transition:border-color .2s, color .2s;}
+  .btn[aria-pressed=true]{border-color:var(--amber); color:var(--amber);}
+  .btn:hover{border-color:var(--amber);}
+  .caption{font-family:var(--mono); font-size:12px; color:var(--muted);
+    margin:14px 2px 0; letter-spacing:.02em;}
+
+  /* ---- spec strip ---- */
+  .spec{display:flex; flex-wrap:wrap; gap:10px; margin:34px 0 8px;}
+  .chip{font-family:var(--mono); font-size:12px; color:var(--muted);
+    border:1px solid var(--line); border-radius:7px; padding:8px 12px; background:var(--panel-2);}
+  .chip b{color:var(--text); font-weight:500;}
+
+  /* ---- sections ---- */
+  section.block{padding:64px 0; border-top:1px solid var(--line);}
+  section.block:first-of-type{border-top:none;}
+  .sec-eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.24em;
+    text-transform:uppercase; color:var(--cyan); margin:0 0 16px;}
+  h2{font-family:var(--display); font-weight:600; letter-spacing:-0.01em;
+    font-size:clamp(1.55rem,3.4vw,2.3rem); line-height:1.12; margin:0 0 18px; max-width:22ch;}
+  .prose{max-width:64ch; color:#C9D0DE;}
+  .prose p{margin:0 0 16px;}
+  .prose b{color:var(--text); font-weight:600;}
+  .mono-inline{font-family:var(--mono); color:var(--amber-bright); font-size:0.92em;}
+  .mono-inline.cy{color:var(--cyan);}
+
+  .formula{font-family:var(--mono); font-size:clamp(0.95rem,2.2vw,1.18rem);
+    background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--amber);
+    border-radius:9px; padding:16px 18px; margin:8px 0 0; color:var(--text); overflow-x:auto;}
+  .formula .c{color:var(--muted);}
+
+  /* derivation steps (a true sequence -> numbered) */
+  .steps{display:grid; gap:16px; margin-top:8px;}
+  .step{display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:start;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px;}
+  .step .n{font-family:var(--mono); font-size:13px; color:var(--amber);
+    border:1px solid var(--line); border-radius:7px; padding:6px 9px; letter-spacing:.06em;}
+  .step h3{font-family:var(--display); font-weight:600; font-size:1.12rem; margin:2px 0 8px;}
+  .step p{margin:0 0 12px; color:#C2C9D8; font-size:0.97rem;}
+  .step .formula{margin-top:0;}
+
+  /* two-col compare */
+  .compare{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px;}
+  .card.win{border-color:rgba(245,166,35,0.4);}
+  .card .tag{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 8px;}
+  .card.win .tag{color:var(--amber);}
+  .card h3{font-family:var(--display); font-weight:600; font-size:1.08rem; margin:0 0 8px;}
+  .card p{margin:0; font-size:0.95rem; color:#C2C9D8;}
+
+  footer{border-top:1px solid var(--line); padding:34px 0 60px; color:var(--muted);
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.04em;}
+  footer b{color:var(--text); font-weight:500;}
+
+  a{color:var(--amber); text-decoration:none;}
+  :focus-visible{outline:2px solid var(--amber); outline-offset:3px; border-radius:4px;}
+
+  @media (max-width:760px){
+    .inst-body{grid-template-columns:1fr;}
+    .scope{border-right:none; border-bottom:1px solid var(--line); min-height:260px;}
+    .gauge{flex-direction:row; justify-content:center; gap:24px;}
+    .gauge-track{height:120px;}
+    .controls{margin-left:0; width:100%;}
+    .compare{grid-template-columns:1fr;}
+    .step{grid-template-columns:1fr;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    .gauge-fill{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="monogram">M<b>7</b></div>
+    <div class="mono-label">RTHS · online stability indicator</div>
+  </header>
+
+  <div class="hero">
+    <p class="eyebrow">Output-only marginality · method 7</p>
+    <h1>The structure warns you before it goes unstable — <span class="accent">if you listen to the output.</span></h1>
+    <p class="lede">In a real-time hybrid simulation the loop can lose stability at a single
+      sharp resonance near <b>37 Hz</b>. M7 hears that resonance in the measured displacement
+      <span class="mono-inline">dm</span> alone and turns it into a live stability margin —
+      <b>no input, no model inversion, no dither.</b></p>
+  </div>
+
+  <!-- ============ SIGNATURE INSTRUMENT ============ -->
+  <div class="instrument" role="group" aria-label="Interactive spectrum-to-margin instrument">
+    <div class="inst-head">
+      <div class="inst-title">spectrum of <b>dm</b> &nbsp;·&nbsp; output displacement</div>
+      <div class="state-pill" id="statePill">healthy</div>
+    </div>
+    <div class="inst-body">
+      <div class="scope"><canvas id="scope" aria-hidden="true"></canvas></div>
+      <div class="gauge">
+        <div class="gauge-track" aria-hidden="true">
+          <div class="gauge-fill" id="gaugeFill"></div>
+          <div class="gauge-mark" id="markNom"><span>0.588</span></div>
+          <div class="gauge-mark" id="markThr"><span>0.40</span></div>
+          <div class="gauge-mark" id="markDmg"><span>0.344</span></div>
+        </div>
+        <div class="gauge-read">
+          <div class="b" id="bVal">0.588</div>
+          <div class="blab">NCF margin&nbsp;b</div>
+        </div>
+      </div>
+    </div>
+    <div class="inst-foot">
+      <span class="readout amber">S<sub>pk</sub> = <b id="spkVal">2.00</b></span>
+      <span class="readout">S<sub>pk,ref</sub> = <b>2.00</b></span>
+      <span class="readout">peak/floor of PSD</span>
+      <div class="controls">
+        <label for="dmg">damage</label>
+        <input type="range" id="dmg" min="0" max="1" step="0.001" value="0" aria-label="damage level" />
+        <button class="btn" id="autoBtn" aria-pressed="true">▸ auto-sweep</button>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Drag <b style="color:var(--text)">damage</b> or let it sweep. As the 37 Hz peak grows, S<sub>pk</sub> rises and the margin b falls toward the 0.40 alarm — the entire method, in one panel.</p>
+
+  <div class="spec">
+    <span class="chip">PEAK BAND <b>25–42 Hz</b></span>
+    <span class="chip">FLOOR BAND <b>55–75 Hz</b></span>
+    <span class="chip">b<sub>nom</sub> <b>0.588</b></span>
+    <span class="chip">CALIBRATE <b>first 7.5 s</b></span>
+    <span class="chip">ALARM <b>b &lt; 0.40</b></span>
+  </div>
+
+  <!-- ============ PREMISE ============ -->
+  <section class="block">
+    <p class="sec-eyebrow">The premise</p>
+    <h2>Why the output knows what the input can't</h2>
+    <div class="prose">
+      <p>Near the stability edge the loop grows a tall <b>sensitivity peak</b> at about 37 Hz.
+        The closed loop amplifies its own internal noise — servo hum, friction, quantization —
+        right there, so the resonance shows up in the measured displacement
+        <span class="mono-inline">dm</span> <b>even when the test input never visits 37 Hz</b>.</p>
+      <p>That growth <b>is</b> the incipient instability. So the output carries a warning the
+        input physically cannot deliver — which is exactly why M7 can stay blind to the command
+        and still see trouble coming.</p>
+    </div>
+  </section>
+
+  <!-- ============ MEASUREMENT ============ -->
+  <section class="block">
+    <p class="sec-eyebrow">The measurement</p>
+    <h2>One number from the spectrum</h2>
+    <div class="prose">
+      <p>Take a short window of <span class="mono-inline">dm</span>. Compare the energy in the
+        resonance band to a quiet reference band off to the side:</p>
+    </div>
+    <div class="formula">S<sub>pk</sub> = sqrt( <span style="color:var(--amber)">peak PSD over 25–42 Hz</span> / <span style="color:var(--cyan)">median PSD over 55–75 Hz</span> )</div>
+    <div class="prose" style="margin-top:16px">
+      <p>A flat spectrum gives <span class="mono-inline">S<sub>pk</sub> ≈ 1</span>. A sharpening
+        37 Hz peak drives it up. The floor band sits above the 60 Hz line so the ratio tracks the
+        <b>resonance</b>, not the overall noise level.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONVERSION ============ -->
+  <section class="block">
+    <p class="sec-eyebrow">The conversion</p>
+    <h2>From a peak to a margin, in three steps</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div>
+        <div>
+          <h3>The peak is the sensitivity</h3>
+          <p>The output PSD near resonance is <span class="mono-inline">|S(jω)|²</span> times the
+            internal noise. So the peak/floor ratio is the height of the sensitivity peak itself.</p>
+          <div class="formula">S<sub>pk</sub> ≈ ‖S‖<sub>∞</sub> &nbsp;<span class="c">(peak sensitivity)</span></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <div>
+          <h3>Peak sensitivity is closeness to −1</h3>
+          <p><span class="mono-inline">‖S‖<sub>∞</sub></span> is the inverse of the closest the
+            loop comes to the −1 instability point. The NCF margin is that distance, normalized —
+            so the margin is inversely proportional to the peak.</p>
+          <div class="formula">‖S‖<sub>∞</sub> = 1 / min|1+L| &nbsp;<span class="c">⟹</span>&nbsp; b ∝ 1 / S<sub>pk</sub></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <div>
+          <h3>Pin the constant on a healthy start</h3>
+          <p>Assume the model is right at the beginning. Take the median <span class="mono-inline">S<sub>pk</sub></span>
+            over the first 7.5 s as the reference and the model's binding-band margin
+            <span class="mono-inline cy">b<sub>nom</sub> = 0.588</span>. Healthy reads
+            <span class="mono-inline cy">b<sub>nom</sub></span>; as the peak grows, b falls.</p>
+          <div class="formula">b(t) = b<sub>nom</sub> · <span style="color:var(--cyan)">S<sub>pk,ref</sub></span> / <span style="color:var(--amber)">S<sub>pk</sub>(t)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="prose" style="margin-top:20px">
+      <p>Because the constant is calibrated, M7 is a <b>relative</b> reading — it needs the healthy
+        reference. That is the price of being output-only. A companion method that estimates
+        <span class="mono-inline">b</span> straight from the closed-loop S and T reads it
+        <b>absolutely</b>, but needs the band excited.</p>
+    </div>
+  </section>
+
+  <!-- ============ OUTPUT-ONLY ADVANTAGE ============ -->
+  <section class="block">
+    <p class="sec-eyebrow">Why output-only</p>
+    <h2>Where the FRF methods get fooled</h2>
+    <div class="compare">
+      <div class="card">
+        <p class="tag">FRF methods</p>
+        <h3>Locked to a false alarm</h3>
+        <p>Under a low-frequency input, the open-loop FRF <span class="mono-inline">dm/dc</span>
+          collapses to the tautology <span class="mono-inline">−1/C</span> at 37 Hz — it reports a
+          near-zero margin even when the loop is perfectly healthy.</p>
+      </div>
+      <div class="card win">
+        <p class="tag">Method 7</p>
+        <h3>Reads the resonance directly</h3>
+        <p>M7 ignores the input, so the lock can't fool it. It reads the 37 Hz resonance in
+          <span class="mono-inline">dm</span> — and is the only indicator that still detects when
+          the input has no energy up there.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SPEED ============ -->
+  <section class="block">
+    <p class="sec-eyebrow">Speed</p>
+    <h2>Why it lags — and how to make it fast</h2>
+    <div class="prose">
+      <p>M7's resolution comes from a multi-second PSD buffer, so the reading lags by roughly
+        half the buffer, and the resonance itself takes a few cycles to build. That is a
+        configuration choice, not a law.</p>
+      <p>Swap the block PSD for a <b>recursive narrowband tracker</b> — a bandpass at 37 Hz plus an
+        exponential power estimate — and <span class="mono-inline">S<sub>pk</sub></span> updates
+        every sample with ~0.2–0.5 s of memory instead of seconds. The real floor is physics:
+        telling a 37 Hz tone from noise needs only a few of its cycles, about
+        <span class="mono-inline">0.1 s</span>.</p>
+    </div>
+  </section>
+
+  <footer>
+    <b>Method 7</b> — output-only resonance / sensitivity-peak NCF margin. Part of the RTHS
+    online-stability-indicator study. Interactive model is illustrative; constants match the
+    column test (b<sub>nom</sub> 0.588 → 0.344 at the measured damage).
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var FR = 37, FMAX = 80, BNOM = 0.588, BCAP = 1/Math.SQRT2;
+  var PEAK_LO = 25, PEAK_HI = 42, FLOOR_LO = 55, FLOOR_HI = 75;
+  var A0 = 4.0, RATIO = 2.92;            // healthy peak 4x floor; damaged 2.92x taller
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var canvas = document.getElementById('scope');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0, dpr = 1;
+
+  function resize(){
+    var r = canvas.parentElement.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(320, r.width); H = Math.max(240, r.height);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  // expected PSD model at frequency f (Hz) for damage d in [0,1]
+  function psd(f, d){
+    var A = A0 * (1 + d*(RATIO-1));            // resonance amplification over floor
+    var hw = 3.0 - 0.7*d;                      // peak narrows slightly with damage
+    var x = (f - FR)/hw;
+    var floor = 1 + 0.06*Math.sin(f*0.5) + 0.04*Math.sin(f*0.17+1.3); // gentle floor ripple
+    return floor * (1 + (A-1)/(1 + x*x));
+  }
+  function spkOf(d){
+    var peak = 0, floorVals = [];
+    for(var f=0; f<=FMAX; f+=0.25){
+      var v = psd(f,d);
+      if(f>=PEAK_LO && f<=PEAK_HI) peak = Math.max(peak, v);
+      if(f>=FLOOR_LO && f<=FLOOR_HI) floorVals.push(v);
+    }
+    floorVals.sort(function(a,b){return a-b;});
+    var med = floorVals[Math.floor(floorVals.length/2)] || 1;
+    return Math.sqrt(peak/med);
+  }
+  var SPK_REF = spkOf(0);
+
+  function xOf(f){ return 54 + (f/FMAX)*(W-54-14); }
+  function yOf(v, vmax){ return H-30 - (v/vmax)*(H-30-22); }
+
+  var fill = document.getElementById('gaugeFill');
+  var bValEl = document.getElementById('bVal');
+  var spkValEl = document.getElementById('spkVal');
+  var statePill = document.getElementById('statePill');
+  var slider = document.getElementById('dmg');
+
+  function placeMark(id, b){
+    var el = document.getElementById(id);
+    el.style.bottom = (100*Math.min(b,BCAP)/BCAP) + '%';
+  }
+  placeMark('markNom', 0.588); placeMark('markThr', 0.40); placeMark('markDmg', 0.344);
+
+  function draw(d){
+    var spk = spkOf(d);
+    var b = Math.min(BNOM * SPK_REF / spk, BCAP);
+    var vmax = A0*RATIO + 1;                   // fixed vertical scale across sweep
+
+    ctx.clearRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle = '#1A2238'; ctx.lineWidth = 1; ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#5A647C'; ctx.textAlign = 'center';
+    for(var fg=0; fg<=FMAX; fg+=10){
+      var gx = xOf(fg);
+      ctx.beginPath(); ctx.moveTo(gx,18); ctx.lineTo(gx,H-30); ctx.stroke();
+      ctx.fillText(fg, gx, H-14);
+    }
+    ctx.textAlign='left'; ctx.fillText('Hz', xOf(FMAX)+2, H-14);
+
+    // bands
+    function band(lo,hi,col){
+      ctx.fillStyle = col;
+      ctx.fillRect(xOf(lo),18, xOf(hi)-xOf(lo), H-30-18);
+    }
+    band(PEAK_LO,PEAK_HI,'rgba(245,166,35,0.10)');
+    band(FLOOR_LO,FLOOR_HI,'rgba(86,199,214,0.09)');
+    ctx.fillStyle='rgba(245,166,35,0.8)'; ctx.font='10px "IBM Plex Mono", monospace';
+    ctx.fillText('peak band', xOf(PEAK_LO)+3, 30);
+    ctx.fillStyle='rgba(86,199,214,0.8)';
+    ctx.fillText('floor band', xOf(FLOOR_LO)+3, 30);
+
+    // trace
+    ctx.beginPath();
+    for(var f=0; f<=FMAX; f+=0.4){
+      var jitter = 1 + 0.05*Math.sin(f*7.3 + d*9) + 0.03*Math.sin(f*3.1);
+      var px = xOf(f), py = yOf(psd(f,d)*jitter, vmax);
+      if(f===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle = (b<0.40)? '#FF5269' : '#F5A623';
+    ctx.lineWidth = 2; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 9;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    // 37 Hz marker
+    var mx = xOf(FR);
+    ctx.strokeStyle = 'rgba(233,237,246,0.25)'; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(mx,22); ctx.lineTo(mx, yOf(psd(FR,d),vmax)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#E9EDF6'; ctx.textAlign='center';
+    ctx.fillText('37 Hz', mx, 14);
+    ctx.textAlign='left';
+    ctx.fillStyle='#8B93A8'; ctx.fillText('dm spectrum', 8, 14);
+
+    // gauge + readouts
+    fill.style.height = (100*Math.min(b,BCAP)/BCAP) + '%';
+    fill.style.background = (b<0.40)
+      ? 'linear-gradient(180deg,#FF7A88,#FF5269)'
+      : 'linear-gradient(180deg,#FFC152,#F5A623)';
+    bValEl.textContent = b.toFixed(3);
+    bValEl.style.color = (b<0.40)? '#FF5269' : '#F5A623';
+    spkValEl.textContent = spk.toFixed(2);
+    var st = (b>=0.50)? 'healthy' : (b>=0.40? 'near edge' : 'alarm');
+    statePill.textContent = st;
+    statePill.style.color = (b<0.40)? '#FF5269' : (b<0.50? '#FFC152' : '#56C7D6');
+    statePill.style.borderColor = (b<0.40)? 'rgba(255,82,105,0.5)' : 'var(--line)';
+  }
+
+  // ---- drive: auto-sweep or manual ----
+  var auto = !reduce, d = reduce? 0.6 : 0, t0 = performance.now();
+  var autoBtn = document.getElementById('autoBtn');
+  autoBtn.setAttribute('aria-pressed', String(auto));
+
+  function setAuto(on){ auto = on; autoBtn.setAttribute('aria-pressed', String(on)); if(on){ t0 = performance.now() - d* (1) ; } }
+  autoBtn.addEventListener('click', function(){ setAuto(!auto); if(auto) loop(performance.now()); });
+  slider.addEventListener('input', function(){ setAuto(false); d = parseFloat(slider.value); draw(d); });
+
+  function loop(now){
+    if(auto){
+      var period = 14000;
+      var ph = ((now - t0) % period)/period;       // 0..1
+      d = 0.5 - 0.5*Math.cos(2*Math.PI*ph);          // smooth 0..1..0
+      slider.value = d.toFixed(3);
+      draw(d);
+      requestAnimationFrame(loop);
+    }
+  }
+
+  function init(){ resize(); draw(d); if(auto) requestAnimationFrame(loop); }
+  window.addEventListener('resize', function(){ resize(); draw(d); });
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(init); } else { init(); }
+  init();
+})();
+</script>
+</body>
+</html>
