@@ -1,5 +1,5 @@
 %% Compare Saved Transfer Functions
-% Compare two saved exp_tf files or two saved delay_comp files.
+% Compare two or three saved exp_tf files or saved delay_comp files.
 % Units: frequencies are Hz in plots and rad/s inside transfer functions.
 
 clear; clc
@@ -10,26 +10,50 @@ addpath(fullfile(projectFolder, 'control_and_HS', 'b_system_id', ...
     'id_utils'))
 
 comparisonType = selectComparisonType();
-[firstData, firstFile, firstName] = load_saved_result_file( ...
-    projectFolder, comparisonType, true, '', false);
-[secondData, secondFile, secondName] = load_saved_result_file( ...
-    projectFolder, comparisonType, true, '', false);
+modelCount = selectModelCount();
+[data, files, names] = loadComparisonFiles(projectFolder, comparisonType, ...
+    modelCount);
 
 switch comparisonType
     case 'exp_tf'
-        firstModel = expTfModel(firstData, firstName);
-        secondModel = expTfModel(secondData, secondName);
+        models = cell(1, modelCount);
+        for k = 1:modelCount
+            models{k} = expTfModel(data{k}, names{k});
+        end
         titleText = 'PID + H_{dc,dm} comparison';
-        createExpTfFigure({firstModel, secondModel}, titleText)
+        createExpTfFigure(models, titleText)
     case 'delay_comp'
-        firstModel = delayCompModel(firstData, firstName);
-        secondModel = delayCompModel(secondData, secondName);
+        models = cell(1, modelCount);
+        for k = 1:modelCount
+            models{k} = delayCompModel(data{k}, names{k});
+        end
         titleText = 'Delay compensator comparison';
-        createDelayCompFigure({firstModel, secondModel}, titleText)
+        createDelayCompFigure(models, titleText)
 end
 
-fprintf('Loaded %s\n', firstFile)
-fprintf('Loaded %s\n', secondFile)
+for k = 1:modelCount
+    fprintf('Loaded %s\n', files{k})
+end
+
+function [data, files, names] = loadComparisonFiles(projectFolder, ...
+        comparisonType, modelCount)
+data = cell(1, modelCount);
+files = cell(1, modelCount);
+names = cell(1, modelCount);
+for k = 1:modelCount
+    fprintf('\nSelect transfer function %d of %d.\n', k, modelCount)
+    [data{k}, files{k}, names{k}] = load_saved_result_file( ...
+        projectFolder, comparisonType, true, '', false);
+end
+end
+
+function modelCount = selectModelCount()
+modelCount = input('\nHow many transfer functions to compare [2 or 3]: ');
+if ~ismember(modelCount, [2 3])
+    error('compare:InvalidModelCount', ...
+        'Select 2 or 3 transfer functions to compare.')
+end
+end
 
 function comparisonType = selectComparisonType()
 fprintf('\nCompare saved transfer functions:\n')
@@ -96,7 +120,8 @@ end
 
 function createExpTfFigure(models, titleText)
 [frequencyHz, response] = frequencyResponses(models);
-fig = figure('Color', 'w', 'Name', titleText);
+fig = figure('Color', 'w', 'Name', titleText, ...
+    'Position', [100 100 1000 780]);
 layout = tiledlayout(fig, 3, 1, 'TileSpacing', 'compact');
 
 magAx = nexttile(layout, 1);
@@ -111,9 +136,9 @@ grid(phaseAx, 'on')
 xlabel(phaseAx, 'Frequency (Hz)')
 ylabel(phaseAx, 'Phase (deg)')
 
-colors = {[0 0.486 0.659], [0.6745 0.3922 0.1255]};
-lineHandles = cell(2, 2);
-for k = 1:2
+colors = modelColors(numel(models));
+lineHandles = cell(numel(models), 2);
+for k = 1:numel(models)
     lineHandles{k, 1} = semilogx(magAx, frequencyHz, ...
         magnitudeDb(response{k}), 'LineWidth', 1.7, ...
         'Color', colors{k}, 'DisplayName', models{k}.name);
@@ -131,7 +156,8 @@ end
 
 function createDelayCompFigure(models, titleText)
 [frequencyHz, response] = frequencyResponses(models);
-fig = figure('Color', 'w', 'Name', titleText);
+fig = figure('Color', 'w', 'Name', titleText, ...
+    'Position', [100 100 1000 780]);
 layout = tiledlayout(fig, 3, 1, 'TileSpacing', 'compact');
 
 magAx = nexttile(layout, 1);
@@ -146,9 +172,9 @@ grid(phaseAx, 'on')
 xlabel(phaseAx, 'Frequency (Hz)')
 ylabel(phaseAx, 'Phase (deg)')
 
-colors = {[0 0.486 0.659], [0.6745 0.3922 0.1255]};
-lineHandles = cell(2, 2);
-for k = 1:2
+colors = modelColors(numel(models));
+lineHandles = cell(numel(models), 2);
+for k = 1:numel(models)
     lineHandles{k, 1} = semilogx(magAx, frequencyHz, ...
         magnitudeDb(response{k}), 'LineWidth', 1.7, ...
         'Color', colors{k}, 'DisplayName', models{k}.name);
@@ -169,11 +195,12 @@ panelPosition = getpixelposition(ax, true);
 delete(ax)
 labels = {'P', 'I', 'D'};
 fields = {'P', 'I', 'D'};
-editBoxes = cell(2, 3);
-marginText = cell(2, 1);
+modelCount = numel(models);
+editBoxes = cell(modelCount, 3);
+marginText = cell(modelCount, 1);
 
-for k = 1:2
-    y = panelPosition(2) + panelPosition(4) - 35 - (k - 1)*80;
+for k = 1:modelCount
+    y = panelPosition(2) + panelPosition(4) - 35 - (k - 1)*75;
     uicontrol(fig, 'Style', 'text', 'String', models{k}.name, ...
         'HorizontalAlignment', 'left', 'BackgroundColor', 'w', ...
         'Position', [panelPosition(1), y + 30, panelPosition(3), 20]);
@@ -192,7 +219,7 @@ for k = 1:2
 end
 
     function updatePlot()
-        for modelId = 1:2
+        for modelId = 1:modelCount
             pidValues = models{modelId}.pid;
             for fieldId = 1:3
                 value = str2double(get(editBoxes{modelId, fieldId}, ...
@@ -225,11 +252,12 @@ panelPosition = getpixelposition(ax, true);
 delete(ax)
 labels = {'Gain', 'Zeros rad/s', 'Poles rad/s'};
 fields = {'gain', 'zero_rad_s', 'pole_rad_s'};
-editBoxes = cell(2, 3);
-marginText = cell(2, 1);
+modelCount = numel(models);
+editBoxes = cell(modelCount, 3);
+marginText = cell(modelCount, 1);
 
-for k = 1:2
-    y = panelPosition(2) + panelPosition(4) - 35 - (k - 1)*80;
+for k = 1:modelCount
+    y = panelPosition(2) + panelPosition(4) - 35 - (k - 1)*75;
     uicontrol(fig, 'Style', 'text', 'String', models{k}.name, ...
         'HorizontalAlignment', 'left', 'BackgroundColor', 'w', ...
         'Position', [panelPosition(1), y + 30, panelPosition(3), 20]);
@@ -248,7 +276,7 @@ for k = 1:2
 end
 
     function updatePlot()
-        for modelId = 1:2
+        for modelId = 1:modelCount
             phaseLead = models{modelId}.phaseLead;
             for fieldId = 1:3
                 value = parseNumericVector(get(editBoxes{modelId, ...
@@ -350,6 +378,16 @@ end
 
 function value = magnitudeDb(response)
 value = 20*log10(max(abs(response), realmin));
+end
+
+function colors = modelColors(modelCount)
+palette = {
+    [0 0.486 0.659]
+    [0.6745 0.3922 0.1255]
+    [0.2235 0.7490 0.3686]
+    [0.5647 0.0824 0]
+    [0.4549 0.0196 0.5412]};
+colors = palette(1:modelCount);
 end
 
 function handle = createMarginText(fig, panelPosition, y)
