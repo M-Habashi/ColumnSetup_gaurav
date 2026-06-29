@@ -11,13 +11,13 @@ body{margin:0;background:#f6f6f3;color:#1f2328;font:15px/1.55 ui-sans-serif,syst
 </head>
 <body>
 <main class="page">
-<section class="top"><h1>Method 9.1 adaptive margin</h1><p class="lead">M9.1 uses only branch 2 and branch 3: frequencies where the command input excites the loop enough for a complex closed-loop FRF, and frequencies where the input is quiet so the useful evidence is residual output growth. Branch 1 is ignored.</p></section>
+<section class="top"><h1>Method 9.1 adaptive margin</h1><p class="lead">M9.1 uses only branch 2 and branch 3: a complex closed-loop FRF where the command excites the loop, plus residual output growth for output-only evidence. Branch 1 is ignored.</p></section>
 <div class="grid">
 <div class="box"><h2>Input-excited band</h2><p>Use branch 2 when \(dd_{\mathrm{lead}}\) has enough power and coherence is acceptable. The estimator reads the command-correlated transfer and converts the complex \(S,T\) pair into an NCF distance.</p><div class="formula">\[
 \widehat T(\omega,t)=\frac{\Phi_{yu}(\omega,t)}{\Phi_{uu}(\omega,t)},\qquad
 \widehat S(\omega,t)=1-\widehat T(\omega,t)
 \]</div></div>
-<div class="box"><h2>Input-quiet band</h2><p>Use branch 3 when the command is too weak to identify a transfer at that frequency. The estimator removes command-correlated output and tracks residual/internal output growth over the input-quiet remainder of the monitored band.</p><div class="formula">\[
+<div class="box"><h2>Residual branch</h2><p>Use branch 3 for output-only evidence. The normal path searches input-quiet bins; a frequency-matched early-warning path may scan the full band when the direct S,T branch is already moving at the same frequency.</p><div class="formula">\[
 \Phi_{\mathrm{res}}(\omega,t)\approx
 \Phi_{yy}(\omega,t)\left(1-\gamma^2(\omega,t)\right)
 \]</div></div>
@@ -77,7 +77,7 @@ b_0\left(\frac{\tilde b_{ST}(t)}{b_0}\right)^{1.15},\qquad \tilde b_{ST}(t)<b_0
 \]</div></div>
 <p class="note">This branch is the phase-aware branch. If the dangerous frequency is externally excited, it can detect margin loss caused by phase delay even before a large output-only resonance is visible.</p>
 </div>
-<h2>Branch 3: input-quiet band</h2>
+<h2>Branch 3: residual output evidence</h2>
 <div class="box">
 <h3>Step 1: decompose the output spectrum</h3><p>When \(u\) and \(d\) are approximately uncorrelated, the total output spectrum is:</p>
 <div class="formula">\[
@@ -97,7 +97,7 @@ b_0\left(\frac{\tilde b_{ST}(t)}{b_0}\right)^{1.15},\qquad \tilde b_{ST}(t)<b_0
 \Phi_{\mathrm{res}}(\omega,t)\approx
 \Phi_{yy}(\omega,t)\left(1-\gamma^2(\omega,t)\right)
 \]</div></div>
-<div class="step"><h3>Step 3: search the input-quiet residual band</h3><p>Branch 3 compares the current residual spectrum with the healthy reference spectrum and asks for the largest residual growth outside the branch-2 excited/coherent bins:</p>
+<div class="step"><h3>Step 3: search residual growth</h3><p>Branch 3 compares the current residual spectrum with the healthy reference spectrum. The normal fallback searches outside the branch-2 excited/coherent bins:</p>
 <div class="formula">\[
 \Omega_{\mathrm{quiet}}(t)=\Omega_{\mathrm{wide}}\setminus\Omega_{\mathrm{exc}}(t),\qquad
 q(t)=
@@ -109,13 +109,14 @@ q(t)=
 <div class="formula">\[
 b_{\mathrm{wide}}(t)=
 b_0\sqrt{\frac{q_{\mathrm{ref}}}{q(t)}}
-\]</div></div>
+\]</div>
+<p>For faster damage-reduction detection, M9.1 also checks a full-band residual candidate. It is accepted only when it binds within 4.0 Hz of the direct S,T branch and S,T has already moved below nominal but not below the relative alarm level. In that case the residual candidate is bounded below by 80% of the direct S,T margin.</p></div>
 <div class="step"><h3>Why this sees what branch 2 can miss</h3><p>If a mode grows from internal disturbance or noise, then the residual spectrum contains:</p>
 <div class="formula">\[
 \Phi_{\mathrm{res}}(\omega,t)\approx
 |S(\omega,t)|^2\Phi_{dd}(\omega)
 \]</div>
-<p>So branch 3 can catch output-only resonance growth even when the command has almost no power at that frequency:</p>
+<p>So branch 3 can catch output-only resonance growth when the command has almost no power at that frequency, and the bounded early-warning path can also catch the first residual growth at an already-observed S,T frequency:</p>
 <div class="formula">\[
 \Phi_{uu}(\omega)\approx0
 \]</div></div>
@@ -128,14 +129,15 @@ b_{M9.1}(t)=\min\left(b_{ST}(t), b_{\mathrm{wide}}(t)\right)
 \]</div>
 <p class="note">This makes branch 3 the only output-only fallback. There is no branch-1 peak mask, no branch-1 calibrated proxy, and no final minimum against a branch-1 estimate.</p>
 </div>
+<h2>Seed spread</h2><p class="note">M9.1 seed spread includes injected noise/disturbance variability plus a bootstrap perturbation of the spectral subsegments. It is still not a full model-uncertainty interval, but it avoids plotting a deterministic averaged estimator as if finite-window spectral uncertainty were zero.</p>
 <h2>Table comparison</h2>
 <table><thead><tr><th>Case</th><th>M7 damaged</th><th>M7 err</th><th>M7 seeds</th><th>M9.1 damaged</th><th>M9.1 err</th><th>M9.1 seeds</th><th>M9.1 freq</th><th>M7 ms</th><th>M9.1 ms</th><th>M9.1/M7</th></tr></thead><tbody>
-<tr><td>high-band</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.346</td><td class="good">0.002</td><td class="good">10/10</td><td>38.0 Hz</td><td>130</td><td class="good">41</td><td class="good">0.32x</td></tr>
-<tr><td>low-band</td><td>0.415</td><td>0.071</td><td>10/10</td><td class="good">0.414</td><td class="good">0.071</td><td class="good">10/10</td><td>39.0 Hz</td><td>125</td><td class="good">39</td><td class="good">0.31x</td></tr>
-<tr><td>mixed</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.346</td><td class="good">0.003</td><td class="good">10/10</td><td>38.0 Hz</td><td>126</td><td class="good">36</td><td class="good">0.29x</td></tr>
+<tr><td>high-band</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.342</td><td class="good">0.002</td><td class="good">10/10</td><td>38.0 Hz</td><td>112</td><td class="good">72</td><td class="good">0.64x</td></tr>
+<tr><td>low-band</td><td>0.415</td><td>0.071</td><td>10/10</td><td class="good">0.405</td><td class="good">0.061</td><td class="good">10/10</td><td>39.0 Hz</td><td>95</td><td class="good">62</td><td class="good">0.65x</td></tr>
+<tr><td>mixed</td><td>0.354</td><td>0.010</td><td>10/10</td><td class="good">0.344</td><td class="good">0.001</td><td class="good">10/10</td><td>38.0 Hz</td><td>94</td><td class="good">59</td><td class="good">0.63x</td></tr>
 </tbody></table>
 <h2>Seed plots</h2><img src="m9_vs_m7_summary.png" alt="M7 and M9.1 seed plots across high-band, low-band, and mixed cases">
-<h2>Interpretation</h2><p>M9.1 improves the three-case comparison by combining branch 2 for input-excited frequencies with branch 3 for input-quiet residual growth. The final margin is the smaller of those two estimates; branch 1 is no longer computed or selected.</p>
+<h2>Interpretation</h2><p>M9.1 improves the three-case comparison by matching M7's damage-reduction timing while preserving the direct phase-aware branch. The residual branch is normally input-quiet, with a frequency-matched early-warning path bounded by the direct S,T estimate; branch 1 is no longer computed or selected.</p>
 </main>
 </body>
 </html>

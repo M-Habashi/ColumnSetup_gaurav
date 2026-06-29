@@ -3,12 +3,13 @@ function out = osi_method9_adaptive_margin(ctx, cfg)
 %
 % M9.1 fuses only branches 2 and 3 on one frequency grid:
 %   2) excited bins: direct closed-loop S,T NCF from T = dm/dd_lead and S = 1-T;
-%   3) input-quiet bins: residual output spectrum normalized by the healthy start.
+%   3) residual output spectrum normalized by the healthy start.
 %
 % The S,T branch is absolute and phase-aware. The residual branch is the
-% output-only fallback; it searches the input-quiet remainder of the configured
-% band and subtracts the command-correlated part of the output through the
-% coherence. Branch 1's known-mode peak/floor proxy is intentionally not used.
+% output-only fallback; it normally searches the input-quiet remainder of the
+% configured band. A full-band residual early-warning path can be enabled when
+% it agrees with the direct S,T branch frequency. Branch 1's known-mode
+% peak/floor proxy is intentionally not used.
 
 fs = ctx.fs;
 f9 = (cfg.m9_band(1):cfg.m9_df:cfg.m9_band(2)).';
@@ -46,9 +47,10 @@ for k = 1:nW
     Y = fft(win.*detrend(y(seg_idx)), nfft, 1);
     U = U(bins,:);
     Y = Y(bins,:);
-    Suu = sum(abs(U).^2, 2);
-    Syy = sum(abs(Y).^2, 2);
-    Suy = sum(Y.*conj(U), 2);
+    wseg = segmentWeights(n_d, cfg.m9_bootstrap_strength);
+    Suu = abs(U).^2*wseg;
+    Syy = abs(Y).^2*wseg;
+    Suy = (Y.*conj(U))*wseg;
     That(:,k) = Suy./max(Suu, eps);
     g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
     gam2(:,k) = max(0, (n_d*g2 - 1)/(n_d - 1));
@@ -78,8 +80,10 @@ if ~isfinite(q_ref) || q_ref <= 0
 end
 
 ncf_res = nan(nW,1);
+ncf_res_early = nan(nW,1);
 ncf_st = nan(nW,1);
 f_res = nan(nW,1);
+f_res_early = nan(nW,1);
 f_st = nan(nW,1);
 n_excited = zeros(nW,1);
 n_quiet = zeros(nW,1);
@@ -101,6 +105,18 @@ for k = 1:nW
     f_res(k) = f9(iq);
     ncf_res(k) = min(cfg.m9_cap, nominal*sqrt(q_ref/max(q_now, q_ref)));
 
+    if cfg.m9_residual_early_all_bins
+        q_scan = ratio(:,k);
+        q_scan(~freq_keep) = NaN;
+        [q_now, iq] = max(q_scan, [], 'omitnan');
+        if isempty(q_now) || ~isfinite(q_now) || q_now <= 0
+            q_now = q_ref;
+            iq = nominal_idx;
+        end
+        f_res_early(k) = f9(iq);
+        ncf_res_early(k) = min(cfg.m9_cap, nominal*sqrt(q_ref/max(q_now, q_ref)));
+    end
+
     if k > cfg.m9_nwarm && nnz(keep) >= cfg.m9_min_bins
         T = That(keep,k);
         S = 1 - T;
@@ -118,6 +134,22 @@ for k = 1:nW
         ncf_st(k) = cfg.m9_cap;
         f_st(k) = NaN;
     end
+
+    if isfinite(f_st(k)) && ncf_st(k) > cfg.m9_res_early_st_gate_frac*nominal ...
+            && ncf_st(k) < nominal
+        ncf_floor = cfg.m9_res_early_st_floor_frac*ncf_st(k);
+        if isfinite(f_res(k)) && abs(f_st(k) - f_res(k)) <= cfg.m9_res_early_match_hz
+            ncf_res(k) = max(ncf_res(k), ncf_floor);
+        end
+        if cfg.m9_residual_early_all_bins && isfinite(f_res_early(k)) ...
+                && abs(f_st(k) - f_res_early(k)) <= cfg.m9_res_early_match_hz
+            ncf_early = max(ncf_res_early(k), ncf_floor);
+            if ncf_early < ncf_res(k)
+                ncf_res(k) = ncf_early;
+                f_res(k) = f_res_early(k);
+            end
+        end
+    end
 end
 
 ncf_raw = min([ncf_st, ncf_res], [], 2, 'omitnan');
@@ -133,10 +165,12 @@ if ~isempty(hit)
 end
 
 out = struct('tc', tc, 'ncf', ncf, 'ncf_raw', ncf_raw, ...
-    'ncf_residual', ncf_res, 'ncf_st', ncf_st, ...
+    'ncf_residual', ncf_res, 'ncf_residual_early', ncf_res_early, ...
+    'ncf_st', ncf_st, ...
     'nominal', nominal, 'threshold', cfg.ncf_threshold, ...
     'detect_time', detect_time, 'f9', f9, ...
-    'f_residual', f_res, 'f_st', f_st, 'n_excited', n_excited, ...
+    'f_residual', f_res, 'f_residual_early', f_res_early, ...
+    'f_st', f_st, 'n_excited', n_excited, ...
     'n_quiet', n_quiet, 'q_ref', q_ref, 'nominal_hz', f9(nominal_idx));
 end
 
@@ -149,4 +183,15 @@ for k = 1:size(x,2)
         y(k) = prctile(v, p);
     end
 end
+end
+
+function w = segmentWeights(n, strength)
+if strength <= 0
+    w = ones(n, 1);
+    return
+end
+w = -log(max(rand(n, 1), realmin));
+w = 1 + strength*(w/mean(w) - 1);
+w = max(w, 0);
+w = n*w/sum(w);
 end
