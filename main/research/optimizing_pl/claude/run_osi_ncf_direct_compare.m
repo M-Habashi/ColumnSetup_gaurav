@@ -33,21 +33,21 @@ warm     = 3;        % s, discarded loop warm-up
 switch_s = 10;       % s, healthy -> damaged jump
 dur      = 20;       % s, record length
 
-%% ---- models, controller, phase lead (identical in all cases / both halves) ----
+%% ---- models, controller, phase_lead (identical in all cases / both halves) ----
 H7 = load(fullfile(sr, 'exp_tf', 'tf_sp_1_7000_20260627_210411.mat'));
 H5 = load(fullfile(sr, 'exp_tf', 'tf_sp1_5000_20260627_233333.mat'));
-PL = load(fullfile(sr, 'delay_comp', 'pl_sp1_5000.mat'));
+PL = load(fullfile(sr, 'phase_lead', 'pl_sp1_5000.mat'));
 dt = 1/2048; fs = 2048; pv = H7.pid_values;
 C  = tf(pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler'));
 Hh = H7.models.H_dc_dm_d;  Hd = H5.models.H_dc_dm_d;
-GT = c2d(PL.delay_comp_tf, dt, 'tustin');
+GT = c2d(PL.phase_lead_tf, dt, 'tustin');
 Th = feedback(C*Hh,1);  Sh = feedback(1,C*Hh);
 Td = feedback(C*Hd,1);  Sd = feedback(1,C*Hd);
 sigma = H7.source_noise_std;
 ncf_h = min_ncf(C, Hh);  ncf_d = min_ncf(C, Hd);   % true loop-only NCF: 0.588 -> 0.344
 
-%% ---- input references (each warm+dur s), then phase lead -----------------------
+%% ---- input references (each warm+dur s), then phase_lead -----------------------
 N = round((dur+warm)*fs) + 1;  t = (0:N-1).'/fs;
 ddh = grab(fullfile(sr,'tests','important', ...
     '20260617_1731_sp_1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat'), 620-warm, N);  % high band
@@ -82,7 +82,7 @@ tl = tiledlayout(numel(cases), 1, 'TileSpacing','compact','Padding','compact');
 fprintf('\n=== OSI Method 8 (direct S,T NCF) vs M6, M7 | true loop-only NCF %.3f -> %.3f ===\n', ncf_h, ncf_d);
 
 for ci = 1:numel(cases)
-    dd_lead = lsim(GT, cases(ci).dd, t);                  % phase lead (same all cases/halves)
+    dd_lead = lsim(GT, cases(ci).dd, t);                  % phase_lead (same all cases/halves)
     trk_h = lsim(Th, dd_lead, t);  trk_d = lsim(Td, dd_lead, t);   % seed-independent tracking
     ddlk = dd_lead(keep);  ctx.dd_lead = ddlk;            % M8 needs the inner-loop command
 

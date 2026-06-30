@@ -1,5 +1,5 @@
 
-to understand the current situation I am performing a realtime hybrid simulation to test a column. first I identify the column parameters k, m, c using a_specimen_id. second I identify the black box model containing the MTS hardware and the controller and the specimen (this is H_dc_dm) and connect it with a PID controller using sys_id, the main output hre is PID+H_dc_dm tf. thirs, I create the fem model that we will use in the hybrid simulation. Finally, to enhance the stability and performance I optimize a phase lead that adjust the signal going to the H_dc_dm. The main issue we are trying to account for here is the fact that the specimen actually degrades. we observed that the specimen degradation is to some extenct equivalent to incrasing the P gain to the MTS hardware which is affecting th H_dc_dm. Your goal is to answer the following. inside the saved files you have two specimen files one is sp1_7000.mat is the original healthy specimen. and the damaged the partially damaged specimen sp1_5000.mat. and the for the H_dc_dm for the healthy is tf_sp_1_7000_20260627_210411.mat and for the damaged is tf_sp1_5000_20260627_233333.mat.
+to understand the current situation I am performing a realtime hybrid simulation to test a column. first I identify the column parameters k, m, c using a_specimen_id. second I identify the black box model containing the MTS hardware and the controller and the specimen (this is H_dc_dm) and connect it with a PID controller using sys_id, the main output hre is PID+H_dc_dm tf. thirs, I create the fem model that we will use in the hybrid simulation. Finally, to enhance the stability and performance I optimize a phase_lead that adjust the signal going to the H_dc_dm. The main issue we are trying to account for here is the fact that the specimen actually degrades. we observed that the specimen degradation is to some extenct equivalent to incrasing the P gain to the MTS hardware which is affecting th H_dc_dm. Your goal is to answer the following. inside the saved files you have two specimen files one is sp1_7000.mat is the original healthy specimen. and the damaged the partially damaged specimen sp1_5000.mat. and the for the H_dc_dm for the healthy is tf_sp_1_7000_20260627_210411.mat and for the damaged is tf_sp1_5000_20260627_233333.mat.
 and the FEM dosn't change, we always use fem_sp1_7000.mat. to give you an idea how do i simulate the damage numerically using vHS.m here is the selections for the healthy sepcimen:
 
 Available files:
@@ -30,7 +30,7 @@ Select file number to load: 5
 Available files:
 
 saved_results
-  |-- delay_comp
+  |-- phase_lead
     |-- [1] fem3_ncf3.mat
     |-- [2] fem3_ncf4.mat
     |-- [3] fem3_ncf4_2p2z.mat
@@ -85,7 +85,7 @@ Select file number to load: 5
 Available files:
 
 saved_results
-  |-- delay_comp
+  |-- phase_lead
     |-- [1] fem3_ncf3.mat
     |-- [2] fem3_ncf4.mat
     |-- [3] fem3_ncf4_2p2z.mat
@@ -109,17 +109,17 @@ saved_results
 Select file number to load: 1
 
 
-as shown to simulate the fact that only the specimn is damaged here, PID, phase lead, and the FEM are kept the same in both cases
+as shown to simulate the fact that only the specimn is damaged here, PID, phase_lead, and the FEM are kept the same in both cases
 the only folder you are alloweed to edit is research/OSI
 
 
 the only folder you are alloweed to edit is research/optimizing_pl/codex
-1- based on this what is the best optimization criteria I can think about in the optimize_vHS_delay_comp_min_ncf.m to find a systeem that has good performance in both different damage levels? even for further exess damag it remains stable. I observed experimentally at least i need an ncf margin of 0.3 or a gm of 7 to mantain stabiltiy
+1- based on this what is the best optimization criteria I can think about in the optimize_vHS_phase_lead_min_ncf.m to find a systeem that has good performance in both different damage levels? even for further exess damag it remains stable. I observed experimentally at least i need an ncf margin of 0.3 or a gm of 7 to mantain stabiltiy
 
 2- can we predict how the damage affect the transfer function H_dc_dm? can this prediction prect even further exessive damage ? and be working on a different initial H_dc_dm?
 
 3- what can we do to enhance thee stability online? tuning the P and I gains of the PID for example is difficult and not straightforward as increasing I aggressivly cause instability but also lowering it cause instabiltiy. is there a way to have one parameter that we increase and gurantee that increasing it only increases the stabiltiy?
-the same thing with the phase lead?
+the same thing with the phase_lead?
 
 the answer is :
 The one fact that unifies all three answers
@@ -178,7 +178,7 @@ A low‑pass at ~25 Hz: hurts both performance and stability
 Your structural modes are 2.4, 8.7, 18.1 Hz and the instability is the ~37 Hz actuator CSI mode, so a 25 Hz cutoff does sit in the gap. But measured over the damage bracket (worst‑case NCF) with a real time‑domain performance metric (J4 = floor‑1 RMS error vs reference):
 
 ┌────────────────────────────────┬────────────────┬──────────────────┬────────────┬────────────┐
-│          compensator           │ worst‑case NCF │    max|pole|     │ J4 healthy │ J4 damaged │
+│          phase_lead           │ worst‑case NCF │    max|pole|     │ J4 healthy │ J4 damaged │
 ├────────────────────────────────┼────────────────┼──────────────────┼────────────┼────────────┤
 │ none                           │ 0.256          │ 0.9999           │ 88%        │ 48%        │
 ├────────────────────────────────┼────────────────┼──────────────────┼────────────┼────────────┤
@@ -197,9 +197,9 @@ Why the LP backfires: it cuts gain broadband, so it injects phase lag in the str
 
 The LP only earns its keep when the 37 Hz CSI mode is binding (heavy damage, or after an aggressive lead has pushed the crossover up to 37). So keep it as a damage‑triggered emergency roll‑off scheduled by your OSI margin, not a fixed performance filter.
 
-A "specific higher‑level phase lead": yes — decisively
+A "specific higher‑level phase_lead": yes — decisively
 
-The first‑order lead is too blunt: it buys in‑band phase but pays with +17 dB of gain at 37 Hz, which is exactly what destabilizes the damaged plant. The fix is to decouple the two jobs with a higher‑order compensator — a notch at the CSI frequency + an in‑band lead:
+The first‑order lead is too blunt: it buys in‑band phase but pays with +17 dB of gain at 37 Hz, which is exactly what destabilizes the damaged plant. The fix is to decouple the two jobs with a higher‑order phase_lead — a notch at the CSI frequency + an in‑band lead:
 
 - the notch removes loop gain only at ~37 Hz (−10 to −14 dB there), preserving in‑band phase (unlike the broadband LP);
 - the lead supplies the in‑band phase that performance and the 37 Hz phase margin need.
@@ -208,7 +208,7 @@ notch@37 + lead(z3,p15) gives worst‑case NCF 0.320 (clears your 0.30 floor), s
 
 This is precisely the 2‑pole/2‑zero family you already started (fem3_ncf4_2p2z.mat). Recommendation: optimize that structure (or notch+lead) with the min–max damage‑bracket criterion — not a first‑order lead.
 
-Two caveats: center the notch at f_inst (the actuator −180° frequency, ~37 Hz) and make it wide enough to cover the damage drift 37→~42 Hz or schedule it (a sharp notch can ring — the smooth lead‑lag roll‑off at NCF 0.282 is a gentler alternative). And the residual ceiling on worst‑case NCF is set by the 2.4 Hz mode, which is a PID job — lower I — so co‑tune I with the compensator.
+Two caveats: center the notch at f_inst (the actuator −180° frequency, ~37 Hz) and make it wide enough to cover the damage drift 37→~42 Hz or schedule it (a sharp notch can ring — the smooth lead‑lag roll‑off at NCF 0.282 is a gentler alternative). And the residual ceiling on worst‑case NCF is set by the 2.4 Hz mode, which is a PID job — lower I — so co‑tune I with the phase_lead.
 
 Bottom line
 

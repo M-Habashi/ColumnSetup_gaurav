@@ -1,5 +1,5 @@
 %% Compare Saved Transfer Functions
-% Compare two or three saved exp_tf files or saved delay_comp files.
+% Compare two or three saved exp_tf files or saved phase_lead files.
 % Units: frequencies are Hz in plots and rad/s inside transfer functions.
 
 clear; clc
@@ -22,13 +22,13 @@ switch comparisonType
         end
         titleText = 'PID + H_{dc,dm} comparison';
         createExpTfFigure(models, titleText)
-    case 'delay_comp'
+    case 'phase_lead'
         models = cell(1, modelCount);
         for k = 1:modelCount
-            models{k} = delayCompModel(data{k}, names{k});
+            models{k} = phaseLeadModel(data{k}, names{k});
         end
-        titleText = 'Delay compensator comparison';
-        createDelayCompFigure(models, titleText)
+        titleText = 'phase_lead comparison';
+        createPhaseLeadFigure(models, titleText)
 end
 
 for k = 1:modelCount
@@ -58,15 +58,15 @@ end
 function comparisonType = selectComparisonType()
 fprintf('\nCompare saved transfer functions:\n')
 fprintf('  [1] saved_results\\exp_tf\n')
-fprintf('  [2] saved_results\\delay_comp\n')
+fprintf('  [2] saved_results\\phase_lead\n')
 selection = input('\nSelect file type to compare: ');
 if selection == 1
     comparisonType = 'exp_tf';
 elseif selection == 2
-    comparisonType = 'delay_comp';
+    comparisonType = 'phase_lead';
 else
     error('compare:InvalidSelection', ...
-        'Select 1 for exp_tf or 2 for delay_comp.')
+        'Select 1 for exp_tf or 2 for phase_lead.')
 end
 end
 
@@ -101,14 +101,14 @@ if isfield(data, 'model_metadata') ...
 end
 end
 
-function model = delayCompModel(data, fileName)
-if ~isfield(data, 'delay_comp_tf')
-    error('compare:MissingDelayCompTf', ...
-        '%s does not contain delay_comp_tf.', fileName)
+function model = phaseLeadModel(data, fileName)
+if ~isfield(data, 'phase_lead_tf')
+    error('compare:MissingPhaseLeadTf', ...
+        '%s does not contain phase_lead_tf.', fileName)
 end
 
 model.name = fileName;
-model.system = data.delay_comp_tf;
+model.system = data.phase_lead_tf;
 model.marginLoop = model.system;
 if isfield(data, 'phase_lead')
     model.phaseLead = normalizePhaseLead(data.phase_lead);
@@ -154,7 +154,7 @@ axis(controlPanel, 'off')
 createPidControls(fig, controlPanel, models, lineHandles, frequencyHz)
 end
 
-function createDelayCompFigure(models, titleText)
+function createPhaseLeadFigure(models, titleText)
 [frequencyHz, response] = frequencyResponses(models);
 fig = figure('Color', 'w', 'Name', titleText, ...
     'Position', [100 100 1000 780]);
@@ -187,7 +187,7 @@ legend(phaseAx, 'Location', 'best', 'Interpreter', 'none')
 
 controlPanel = nexttile(layout, 3);
 axis(controlPanel, 'off')
-createDelayCompControls(fig, controlPanel, models, lineHandles, frequencyHz)
+createPhaseLeadControls(fig, controlPanel, models, lineHandles, frequencyHz)
 end
 
 function createPidControls(fig, ax, models, lineHandles, frequencyHz)
@@ -247,7 +247,7 @@ end
     end
 end
 
-function createDelayCompControls(fig, ax, models, lineHandles, frequencyHz)
+function createPhaseLeadControls(fig, ax, models, lineHandles, frequencyHz)
 panelPosition = getpixelposition(ax, true);
 delete(ax)
 labels = {'Gain', 'Zeros rad/s', 'Poles rad/s'};

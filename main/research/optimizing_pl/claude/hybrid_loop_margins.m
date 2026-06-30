@@ -1,6 +1,6 @@
 function m = hybrid_loop_margins(num_tf, H_dc_dm, k_exp, lead_tf, pid_values, dt, extra)
 %HYBRID_LOOP_MARGINS Coupled RTHS loop margins for one (plant, lead) pair.
-% Builds the same loop the optimizer constrains as num_delay_comp_exp:
+% Builds the same loop the optimizer constrains as num_phase_lead_exp:
 %   L = -num_tf * (k_exp/1000) * extra * lead * feedback(C_pid*H_dc_dm, 1)
 % and returns NCF margin, gain margin [dB], and the dominant closed-loop pole
 % radius. NCF is the primary robustness gate: b >= 0.30 simultaneously

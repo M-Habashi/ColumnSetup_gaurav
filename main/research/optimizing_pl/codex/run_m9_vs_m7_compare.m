@@ -80,7 +80,7 @@ end
 function [ctx0, cases, truth] = loadStudyContext(sr, cfg)
 H7 = load(fullfile(sr, 'exp_tf', 'tf_sp_1_7000_20260627_210411.mat'));
 H5 = load(fullfile(sr, 'exp_tf', 'tf_sp1_5000_20260627_233333.mat'));
-PL = load(fullfile(sr, 'delay_comp', 'pl_sp1_5000.mat'));
+PL = load(fullfile(sr, 'phase_lead', 'pl_sp1_5000.mat'));
 dt = 1/2048;
 fs = 2048;
 pv = H7.pid_values;
@@ -88,7 +88,7 @@ C = tf(pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler'));
 Hh = H7.models.H_dc_dm_d;
 Hd = H5.models.H_dc_dm_d;
-GT = c2d(PL.delay_comp_tf, dt, 'tustin');
+GT = c2d(PL.phase_lead_tf, dt, 'tustin');
 
 N = round((cfg.dur + cfg.warm)*fs) + 1;
 t = (0:N-1).'/fs;

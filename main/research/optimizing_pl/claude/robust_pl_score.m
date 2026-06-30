@@ -1,6 +1,6 @@
 function s = robust_pl_score(lead_tf, members, num_tf, pid_values, dt, cfg)
-%ROBUST_PL_SCORE Worst-case (min-max) phase-lead criterion over a damage set.
-% This is the criterion recommended for optimize_vHS_delay_comp_min_ncf.m:
+%ROBUST_PL_SCORE Worst-case (min-max) phase_lead criterion over a damage set.
+% This is the criterion recommended for optimize_vHS_phase_lead_min_ncf.m:
 % instead of scoring ONE specimen / ONE H_dc_dm, score the WORST damage case in
 % a bracket (see damage_bracket.m). Returns per-member margins, the worst-case
 % summary, a feasibility flag, and a scalar score (lower is better) suitable for

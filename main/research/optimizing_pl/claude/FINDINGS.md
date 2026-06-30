@@ -1,4 +1,4 @@
-# Damage-robust phase lead, damage prediction, and online stability
+# Damage-robust phase_lead, damage prediction, and online stability
 
 Answers to the three questions, grounded in the actual saved models
 (`tf_sp_1_7000`, `tf_sp1_5000`, `sp1_7000`, `sp1_5000`, `pl_sp1_7000`,
@@ -37,15 +37,15 @@ Answers to the three questions, grounded in the actual saved models
 
 ## The loop
 
-The compensated RTHS path the optimizer must protect is
+The phase_lead RTHS path the optimizer must protect is
 
 ```
-ag → [numerical substructure num_tf] → dd → [phase lead G_T] → dd_lead
+ag → [numerical substructure num_tf] → dd → [phase_lead G_T] → dd_lead
         → [actuator loop  T = feedback(C_pid·H_dc_dm, 1)] → dm → force = k_exp·dm ↺
 ```
 
 and the loop transfer function whose margins matter (this is exactly the
-optimizer's `num_delay_comp_exp` object) is
+optimizer's `num_phase_lead_exp` object) is
 
 ```
 L = − num_tf · (k_exp/1000) · G_T · feedback(C_pid · H_dc_dm, 1)
@@ -105,7 +105,7 @@ GM is misleading: on the unstable `H5+lead7` it returns `Inf`.
 
 ### What is wrong with the current one
 `scoreVhsPhaseLead` minimizes `J4` on **one** plant and adds a *soft* penalty if
-the *nominal* `num_delay_comp_exp` NCF `< 0.3`. Optimizing on healthy yields
+the *nominal* `num_phase_lead_exp` NCF `< 0.3`. Optimizing on healthy yields
 `lead7`, which is **unstable** on the damaged specimen. A single-plant objective
 cannot see that.
 
@@ -158,7 +158,7 @@ Because `𝒟` includes extrapolated members (`γ` up, `k_exp` down) **beyond** 
 specimen you measured, a design that is feasible on `𝒟` is certified for damage
 you have not yet tested — this is multiplicative-uncertainty robust design, not
 curve-fitting to two specimens. Push `rho_max` until the worst-case feasibility
-just holds to read off the damage level your compensator can survive.
+just holds to read off the damage level your phase_lead can survive.
 
 ---
 
@@ -283,20 +283,20 @@ onset   = |L(j2π f_inst)| = 1/GM ,  L = −num_tf·(k_exp/1000)·G_T·feedback(
 
 You cannot get `f_inst` from `k, P, I` alone — `k` only shifts it a few Hz and `P,I`
 move *which* mode binds. But given the identified `H_dc_dm`, `f_inst` is
-predictable and stable across experiments, and the phase-lead should put its
+predictable and stable across experiments, and the phase_lead should put its
 phase peak **near `f_inst`** while keeping the ratio modest (extra gain at
 `f_inst` is what destabilizes the damaged plant). Caution: as the specimen
 softens, its mode (64→50 Hz) descends **toward** the ~40 Hz actuator crossover,
 so heavy damage also risks mode coalescence near 40 Hz.
 
-## Low-pass at the highest mode vs a higher-order (notch+lead) compensator
+## Low-pass at the highest mode vs a higher-order (notch+lead) phase_lead
 
 Structural modes are **2.4, 8.7, 18.1 Hz**; the instability is the ~37 Hz
 actuator CSI mode. A low-pass with corner in the gap (~25 Hz) is the intuitive
 fix, but measured over the damage bracket (worst-case NCF) with a true
 time-domain performance metric `J4` (floor-1 RMS error vs reference, %):
 
-| compensator | worst NCF | max\|pole\| | J4 healthy | J4 damaged |
+| phase_lead | worst NCF | max\|pole\| | J4 healthy | J4 damaged |
 |---|---|---|---|---|
 | none | 0.256 | 0.9999 | 88 | 48 |
 | **LP @ 25 Hz** | **0.225** | 0.9999 | **100** | **56** |
@@ -337,7 +337,7 @@ Practical notes: center the notch at `f_inst` (the actuator −180° frequency) 
 make it wide enough to cover the damage drift (37→~42 Hz) or schedule it; a
 sharp notch can ring, so the smooth lead-lag roll-off (NCF 0.282) is a gentler
 alternative. The residual ceiling on worst-case NCF is set by the **2.4 Hz mode
-(a PID job — lower `I`)**, so co-tune `I` with the compensator.
+(a PID job — lower `I`)**, so co-tune `I` with the phase_lead.
 
 ## Scheduling the authority scalar: good performance before AND after damage?
 
@@ -617,7 +617,7 @@ you want M8 folded into `run_all_and_compare`/`show_all_indicators`.)
 folder because the instructions limit edits here):
 1. `prepareVhsPhaseLeadProblem`: build a list of `(num_tf or k_exp, PID_H_dc_dm)`
    members from `damage_bracket` instead of the single loaded model.
-2. `evaluateVhsPhaseLead` / `numDelayCompExpMetrics`: compute NCF, GM, `max|pole|`
+2. `evaluateVhsPhaseLead` / `numPhaseLeadExpMetrics`: compute NCF, GM, `max|pole|`
    for **each** member; simulate `J4` per member.
 3. `scoreVhsPhaseLead` / `candidateMeetsMinimums`: replace nominal NCF and
    stability with `min_i NCF_i`, `max_i |pole|_i`, and `max_i J4_i` per the score

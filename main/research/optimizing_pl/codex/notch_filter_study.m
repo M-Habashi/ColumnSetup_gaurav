@@ -1,4 +1,4 @@
-%% Notch Filter Study for Damage-Robust vHS Compensation
+%% Notch Filter Study for Damage-Robust vHS phase_lead
 % Focused offline study for frequency-shaped authority reduction.
 % The notch has unity DC/high-frequency gain and attenuates a selected band:
 % A(s) = (s^2 + 2*zeta_z*w0*s + w0^2)/(s^2 + 2*zeta_p*w0*s + w0^2)

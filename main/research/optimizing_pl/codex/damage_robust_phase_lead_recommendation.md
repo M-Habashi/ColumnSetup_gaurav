@@ -1,8 +1,8 @@
-# Damage-robust phase-lead optimization recommendation
+# Damage-robust phase_lead optimization recommendation
 
 ## Summary
 
-The phase-lead optimizer should not optimize one selected specimen or one selected
+The phase_lead optimizer should not optimize one selected specimen or one selected
 `H_dc_dm` model. Use an ensemble objective and score the worst damage case. The
 minimum acceptable constraints should be evaluated on the coupled hybrid loop
 
@@ -10,7 +10,7 @@ minimum acceptable constraints should be evaluated on the coupled hybrid loop
 L_i = -num_tf_i * (k_i/1000) * G_T * feedback(C_pid * H_i, 1)
 ```
 
-where `G_T` is the phase lead and each case `i` represents one plausible damage
+where `G_T` is the phase_lead and each case `i` represents one plausible damage
 state.
 
 Recommended hard feasibility checks:
@@ -96,7 +96,7 @@ So yes, damage can be approximated as a gain increase, but not exactly. The
 damaged model also has frequency-dependent magnitude and phase changes. A scalar
 gain-only model is useful as a conservative envelope; it is not a physical law.
 
-Current saved phase leads do not dominate across all cases. For example, using
+Current saved phase_leads do not dominate across all cases. For example, using
 the coupled loop `-num*k*G_T*feedback(C_pid*H,1)`:
 
 ```text
@@ -150,8 +150,8 @@ more damage levels are identified and the trend is validated.
 ## Online stability improvement
 
 Do not try to make live stability depend on increasing only `P`, only `I`, or only
-phase-lead ratio. These are not monotonic stability knobs. Increasing integral
-action can destabilize one mode while helping another, and increasing phase lead
+phase_lead ratio. These are not monotonic stability knobs. Increasing integral
+action can destabilize one mode while helping another, and increasing phase_lead
 also increases high-frequency gain and can reduce margin in another damage case.
 
 The safer online strategy is:

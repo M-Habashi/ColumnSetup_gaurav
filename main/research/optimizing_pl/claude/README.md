@@ -1,6 +1,6 @@
 # optimizing_pl / claude
 
-Damage-robust phase-lead analysis for the RTHS column test.
+Damage-robust phase_lead analysis for the RTHS column test.
 
 **Read [`FINDINGS.md`](FINDINGS.md)** — it answers the three questions
 (robust optimization criterion, predicting damage on `H_dc_dm`, and an online

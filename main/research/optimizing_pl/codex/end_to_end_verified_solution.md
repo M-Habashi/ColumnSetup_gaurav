@@ -1,4 +1,4 @@
-# End-to-end verified solution for damage-robust vHS compensation
+# End-to-end verified solution for damage-robust vHS phase_lead
 
 ## What was verified
 
@@ -11,7 +11,7 @@ research/optimizing_pl/codex/robust_vhs_phase_lead_optimization.m
 It was run successfully offline in MATLAB. It evaluated:
 
 ```text
-918 compensation candidates
+918 phase_lead candidates
 19 healthy/damaged/further-damaged frequency-domain cases
 33 selected candidates x 13 rational full-record time-domain cases
 ```
@@ -28,7 +28,7 @@ No Speedgoat or physical workflow was run.
 
 ## Main conclusion
 
-A static phase lead alone is not the robust solution. With the damage envelope
+A static phase_lead alone is not the robust solution. With the damage envelope
 expanded beyond the two measured endpoints, the best no-authority candidate is
 `no lead`, and it still fails the robustness target:
 
@@ -62,7 +62,7 @@ max full-record J4 = 72.288 %
 worst margin case = measured-shape rho 2, predicted k
 ```
 
-Pure saved phase leads are not robust over this envelope:
+Pure saved phase_leads are not robust over this envelope:
 
 ```text
 pl_sp1_5000, alpha 1:
@@ -78,7 +78,7 @@ pl_sp1_7000, alpha 1:
   worst case = scalar H gain 2, predicted k
 ```
 
-So the production answer is not "find a more aggressive phase lead". The answer
+So the production answer is not "find a more aggressive phase_lead". The answer
 is to split the problem:
 
 ```text
@@ -118,7 +118,7 @@ score =
   + margin_shortfall_penalties
 ```
 
-The important change from `optimize_vHS_delay_comp_min_ncf.m` is that every
+The important change from `optimize_vHS_phase_lead_min_ncf.m` is that every
 margin and every response metric is computed over the damage ensemble, not one
 selected `specimen_file` and one selected `H_dc_dm`.
 
@@ -152,7 +152,7 @@ responses for margin screening.
 
 ## Q3: online stability enhancement
 
-Do not tune `P`, `I`, or phase-lead ratio live as the safety action. Those
+Do not tune `P`, `I`, or phase_lead ratio live as the safety action. Those
 directions are not monotonic across the damage cases.
 
 Use one online authority scalar:

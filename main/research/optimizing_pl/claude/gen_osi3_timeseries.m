@@ -12,10 +12,10 @@ sr=fullfile(project_main,'saved_results'); dt=1/2048; fs=2048;
 
 H7=load(fullfile(sr,'exp_tf','tf_sp_1_7000_20260627_210411.mat'));
 H5=load(fullfile(sr,'exp_tf','tf_sp1_5000_20260627_233333.mat'));
-PL=load(fullfile(sr,'delay_comp','pl_sp1_5000.mat'));
+PL=load(fullfile(sr,'phase_lead','pl_sp1_5000.mat'));
 pv=H7.pid_values;
 C=tf(pid(pv.P,pv.I,pv.D,1/pv.derivative_filter_N,dt,'IFormula','ForwardEuler','DFormula','ForwardEuler'));
-Hh=H7.models.H_dc_dm_d; Hd=H5.models.H_dc_dm_d; GT=c2d(PL.delay_comp_tf,dt,'tustin');
+Hh=H7.models.H_dc_dm_d; Hd=H5.models.H_dc_dm_d; GT=c2d(PL.phase_lead_tf,dt,'tustin');
 Th=feedback(C*Hh,1); Sh=feedback(1,C*Hh); Td=feedback(C*Hd,1); Sd=feedback(1,C*Hd);
 sigma=H7.source_noise_std;
 w=2*pi*logspace(0,log10(90),4000).'; ncf=@(L) min(abs(1+L)./sqrt(2*(1+abs(L).^2)));

@@ -3,13 +3,13 @@
 % indicators. The actuator loop tracks a recorded low-band reference while a
 % broadband internal disturbance excites the binding ~35 Hz resonance from inside
 % the loop. The plant H_dc_dm is the HEALTHY model for the first 10 s and the
-% DAMAGED model for the last 10 s; the PID, the phase lead and the FEM/reference
+% DAMAGED model for the last 10 s; the PID, the phase_lead and the FEM/reference
 % are identical in both halves, so the only thing that changes at t = 10 s is the
 % specimen damage (k:7.2e6->5.4e6 N/m), exactly as in vHS.m.
 %
 % Loop (per vHS hybridResponseWithPidHdcDm signal path), output-disturbance form:
 %   dd      : recorded numerical-substructure reference (low band, from 1749)
-%   dd_lead : phase-lead(dd)                              (G_T, same both halves)
+%   dd_lead : phase_lead(dd)                              (G_T, same both halves)
 %   dm      = T*dd_lead + S*d   with   T = C*H/(1+C*H),  S = 1/(1+C*H)
 %   dc      = PID*(dd_lead - dm)
 % where d is broadband output disturbance (sensor/process noise + nonlinearity),
@@ -39,7 +39,7 @@ cfg.crossfade_s        = 0.1;           % raised-cosine blend at the jump (remov
 
 healthy_tf_file = fullfile(sr, 'exp_tf', 'tf_sp_1_7000_20260627_210411.mat');  % healthy H_dc_dm
 damaged_tf_file = fullfile(sr, 'exp_tf', 'tf_sp1_5000_20260627_233333.mat');   % damaged H_dc_dm
-phase_lead_file = fullfile(sr, 'delay_comp', 'pl_sp1_5000.mat');               % kept same both halves
+phase_lead_file = fullfile(sr, 'phase_lead', 'pl_sp1_5000.mat');               % kept same both halves
 ref_record_file = fullfile(sr, 'tests', 'important', ...
     '20260617_1749_sp_1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat');       % low-band input
 healthy_specimen_file = fullfile(sr, 'specimens', 'sp1_7000.mat');            % k for force (0-10 s)
@@ -58,7 +58,7 @@ C  = tf(pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler'));
 Hh = Hh_data.models.H_dc_dm_d;                            % healthy discrete plant (Ts = dt)
 Hd = Hd_data.models.H_dc_dm_d;                            % damaged discrete plant (Ts = dt)
-GT = c2d(PL.delay_comp_tf, dt, 'tustin');                % phase-lead compensator, discrete
+GT = c2d(PL.phase_lead_tf, dt, 'tustin');                % phase_lead, discrete
 
 % closed-loop tracking (T) and sensitivity (S) for each plant
 Th = feedback(C*Hh, 1);  Sh = feedback(1, C*Hh);

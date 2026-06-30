@@ -23,12 +23,16 @@ else
         ['No combined FEM files found under %s. Run build_fem_3.m to ' ...
          'create saved_results/fem/fem_<specimen>_3.mat.'], femFolder);
 
-    fprintf('\nAvailable FEM files:\n\n');
-    fprintf('saved_results\n  |-- fem\n');
-    for file_id = 1:numel(files)
-        fprintf('      |-- [%d] %s\n', file_id, files(file_id).name);
+    if ~forcePrompt && numel(files) == 1
+        selection = 1;
+    else
+        fprintf('\nAvailable FEM files:\n\n');
+        fprintf('saved_results\n  |-- fem\n');
+        for file_id = 1:numel(files)
+            fprintf('      |-- [%d] %s\n', file_id, files(file_id).name);
+        end
+        selection = input('\nSelect file number to load: ');
     end
-    selection = input('\nSelect file number to load: ');
     filePath = fullfile(files(selection).folder, files(selection).name);
 end
 

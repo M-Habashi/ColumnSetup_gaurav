@@ -1,7 +1,7 @@
 function phase_lead = normalizePhaseLeadConfig(phase_lead_override, ...
         section_count)
-%NORMALIZEPHASELEADCONFIG Return a validated phase-lead configuration.
-% The continuous compensator is gain*prod(s + zi)/prod(s + pi), with
+%NORMALIZEPHASELEADCONFIG Return a validated phase_lead configuration.
+% The continuous phase_lead is gain*prod(s + zi)/prod(s + pi), with
 % zeros and poles entered in Hz for easier tuning.
 
 if nargin < 1
@@ -82,7 +82,7 @@ if numel(phase_lead.zero_hz) ~= section_count ...
 end
 if any(phase_lead.pole_hz <= phase_lead.zero_hz)
     error('normalizePhaseLeadConfig:InvalidLead', ...
-        'For each phase-lead section, pole_hz must be greater than zero_hz.')
+        'For each phase_lead section, pole_hz must be greater than zero_hz.')
 end
 
 phase_lead.zero_rad_s = 2*pi*phase_lead.zero_hz;

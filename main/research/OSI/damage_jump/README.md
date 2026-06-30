@@ -5,7 +5,7 @@ against a **mid-experiment specimen damage event**, and a head-to-head of
 **Method 6 (FRF Kalman) vs Method 7 (output resonance)** on it. The record swaps
 the black-box plant `H_dc_dm` from the **undamaged** model (`..._7000`) for the
 first 10 s to the **damaged** model (`..._5000`) for the last 10 s, and the
-specimen `k` with it; everything else (PID, phase lead, FEM / reference
+specimen `k` with it; everything else (PID, phase_lead, FEM / reference
 excitation) is held fixed — exactly the partition `vHS.m` uses to simulate damage.
 
 ## What changes at the jump, and what does not
@@ -15,7 +15,7 @@ excitation) is held fixed — exactly the partition `vHS.m` uses to simulate dam
 | `H_dc_dm` (actuator + specimen) | `tf_sp_1_7000_20260627_210411.mat` | `tf_sp1_5000_20260627_233333.mat` |
 | specimen `k` | 7.20e6 N/m (`sp1_7000`) | 5.38e6 N/m (`sp1_5000`) |
 | **PID** | `P=0.15, I=20, D=0.0015, N=512` | *same* |
-| **phase lead** `G_T` | `pl_sp1_5000.mat` | *same* |
+| **phase_lead** `G_T` | `pl_sp1_5000.mat` | *same* |
 | **input / reference** | 20 s of the low-band 1749 `dd` | *same* |
 
 Effect on the inner actuator loop `L = C·H_dc_dm` (the loop Method 7 is calibrated
@@ -31,7 +31,7 @@ form (the channel through which the closed-loop resonance shows up in `dm`):
 
 ```
 dd      : recorded numerical-substructure reference  (20 s of the 1749 low-band dd)
-dd_lead : G_T(dd)                                     (phase lead, same both halves)
+dd_lead : G_T(dd)                                     (phase_lead, same both halves)
 dm      = T·dd_lead + S·d        T = C·H/(1+C·H),  S = 1/(1+C·H)
 dc      = PID·(dd_lead − dm)
 fm      = k·dm

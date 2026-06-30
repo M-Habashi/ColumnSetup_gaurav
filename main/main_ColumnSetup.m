@@ -53,10 +53,9 @@ testname = test_type;
 
 %% Hybrid Simulation Parameters
 hs = struct( ...
-    'fem_file', fullfile(projectFolder, 'saved_results', 'fem', ...
-     'fem_sp_1_org_3.mat'), ... % Run build_fem_3.m first.
-    'delay_comp_file', fullfile(projectFolder, 'saved_results', ...
-     'delay_comp', 'fem3_ncf3.mat'), ...
+    'fem_file', '', ... % Selected from saved_results/fem below.
+    'phase_lead_file', fullfile(projectFolder, 'saved_results', ...
+     'phase_lead', 'fem3_ncf3.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
     'intensity_factor', 0.06, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
@@ -71,16 +70,16 @@ dt = 1/fs;                      % Sampling period [s]
 zero_alpha = dt/0.5;              % Adaptive measurement zeroing update gain
 t_ending = 5;                   % Smooth-stop transition time [s]
 
-% Phase-lead compensator used on the Hybrid Simulation numerical dd command.
-[delay_comp_data, delay_comp_file, delay_comp_name] = ...
-    load_saved_result_file(projectFolder, 'delay_comp', false, ...
-    hs.delay_comp_file);
-delay_comp_tf = delay_comp_data.delay_comp_tf;
-delay_comp_tf_discrete = c2d(delay_comp_tf, dt, 'tustin');
-[delay_comp_num, delay_comp_den] = tfdata(delay_comp_tf_discrete, 'v');
-delay_comp_num = delay_comp_num(:).';
-delay_comp_den = delay_comp_den(:).';
-fprintf('Phase-lead compensator loaded: %s\n', delay_comp_file)
+% phase_lead used on the Hybrid Simulation numerical dd command.
+[phase_lead_data, phase_lead_file, phase_lead_name] = ...
+    load_saved_result_file(projectFolder, 'phase_lead', false, ...
+    hs.phase_lead_file);
+phase_lead_tf = phase_lead_data.phase_lead_tf;
+phase_lead_tf_discrete = c2d(phase_lead_tf, dt, 'tustin');
+[phase_lead_num, phase_lead_den] = tfdata(phase_lead_tf_discrete, 'v');
+phase_lead_num = phase_lead_num(:).';
+phase_lead_den = phase_lead_den(:).';
+fprintf('phase_lead loaded: %s\n', phase_lead_file)
 
 % Conversion Factors
 % Voltage to Engineering Units
@@ -127,8 +126,8 @@ disp(file_name)
 % Select the active test signal manually in Simulink.
 tend = inf;
 
-data = load(hs.fem_file, 'fem');
-hs.fem = data.fem;
+[hs.fem, hs.fem_file, hs.fem_name] = loadFemDefinition( ...
+    projectFolder, false, hs.fem_file);
 fem_num = hs.fem.num;
 fem_ref = hs.fem.ref;
 floor_dofs = fem_num.floor_dofs(:)';
@@ -205,7 +204,7 @@ fprintf('  Intensity factor: %.6g\n', hs.intensity_factor)
 fprintf('  Earthquake duration: %.6g s\n', hs.time(end))
 fprintf('  Time scale factor: %.6g\n', hs.time_scale_factor)
 fprintf('  FEM file: %s\n', hs.fem_file)
-fprintf('  Delay compensator file: %s\n', delay_comp_file)
+fprintf('  phase_lead file: %s\n', phase_lead_file)
 continue_response = lower(strtrim(input('Continue and open Simulink? (y/n): ', 's')));
 if ~strcmp(continue_response, 'y')
     disp('Script stopped before opening Simulink.')
@@ -272,11 +271,11 @@ result = struct('t', t, 'dd', dd, 'dc', dc, 'dm', dm, ...
 if exist('hs', 'var')
     result.hs = hs;
 end
-if exist('delay_comp_file', 'var')
-    result.delay_comp_file = delay_comp_file;
+if exist('phase_lead_file', 'var')
+    result.phase_lead_file = phase_lead_file;
 end
-if exist('delay_comp_name', 'var')
-    result.delay_comp_name = delay_comp_name;
+if exist('phase_lead_name', 'var')
+    result.phase_lead_name = phase_lead_name;
 end
 
 save(file_name, 'result', '-v7.3')

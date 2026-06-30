@@ -1,4 +1,4 @@
-%% Damage-robust phase-lead study (reproducible)
+%% Damage-robust phase_lead study (reproducible)
 % Demonstrates the recommended worst-case criterion on the real saved models and
 % reproduces the three findings behind the answers in FINDINGS.md:
 %   Q1  a min-max (worst damage case) NCF criterion finds a gentle robust lead
@@ -23,8 +23,8 @@ D  = load(fullfile(sr, 'exp_tf', 'tf_sp1_5000_20260627_233333.mat'), 'H_dc_dm');
 s7 = specimen_params_si(load(fullfile(sr, 'specimens', 'sp1_7000.mat')));
 s5 = specimen_params_si(load(fullfile(sr, 'specimens', 'sp1_5000.mat')));
 fem = getfield(load(fullfile(sr, 'fem', 'fem_sp1_7000.mat'), 'fem'), 'fem');
-pl7 = getfield(load(fullfile(sr, 'delay_comp', 'pl_sp1_7000.mat'), 'delay_comp_tf'), 'delay_comp_tf');
-pl5 = getfield(load(fullfile(sr, 'delay_comp', 'pl_sp1_5000.mat'), 'delay_comp_tf'), 'delay_comp_tf');
+pl7 = getfield(load(fullfile(sr, 'phase_lead', 'pl_sp1_7000.mat'), 'phase_lead_tf'), 'phase_lead_tf');
+pl5 = getfield(load(fullfile(sr, 'phase_lead', 'pl_sp1_5000.mat'), 'phase_lead_tf'), 'phase_lead_tf');
 
 num_tf = build_num_tf(fem, dt);
 
@@ -101,7 +101,7 @@ for N = [1.5 3 5 8 12 18]
 end
 
 % ---- Q4: PID authority a (PID*a) -- the inner-loop knob ----
-% Robust base compensator: notch at the ~37 Hz CSI mode + an in-band lead.
+% Robust base phase_lead: notch at the ~37 Hz CSI mode + an in-band lead.
 notchlead = make_notch_lead(37, 0.05, 0.7, 3, 15);
 
 fprintf('\n=== Q4(a): inner PID+H_dc_dm margins and the CLOSED-FORM required a ===\n');
