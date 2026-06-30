@@ -48,18 +48,23 @@ disp('                        Simulation To.ol                        ')
 disp('===============================================================')
 
 %% Test Inputs
-test_type = 'RTHS_02';
+test_type = 'testing_OSI';
 testname = test_type;
 
 %% Hybrid Simulation Parameters
 hs = struct( ...
     'fem_file', '', ... % Selected from saved_results/fem below.
+    'exp_tf_file', fullfile(projectFolder, 'saved_results', ...
+    'exp_tf', 'tf_sp1_5000_20260627_233333.mat'), ...
     'phase_lead_file', fullfile(projectFolder, 'saved_results', ...
-     'phase_lead', 'fem3_ncf3.mat'), ...
+    'phase_lead', 'pl_7000_ncf4.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
     'intensity_factor', 0.06, ...   % Earthquake acceleration multiplier.
     'time_scale_factor', 1.0, ...  % >1 stretches earthquake time; dt is unchanged.
-    'force_sign', 1.0);            % Use -1 only if force calibration requires it.
+    'force_sign', 1.0, ...         % Use -1 only if force calibration requires it.
+    'osi_gain_initial', 0.3, ...
+    'osi_gain_min', 0.08, ...
+    'target_outer_ncf', 0.3);
 
 
 %% Simulation Parameters
@@ -80,6 +85,15 @@ phase_lead_tf_discrete = c2d(phase_lead_tf, dt, 'tustin');
 phase_lead_num = phase_lead_num(:).';
 phase_lead_den = phase_lead_den(:).';
 fprintf('phase_lead loaded: %s\n', phase_lead_file)
+
+osi_gain_setup = prepare_osi_gain_runtime(projectFolder, dt, hs);
+exp_tf_file = osi_gain_setup.exp_tf_file;
+exp_tf_name = osi_gain_setup.exp_tf_name;
+fprintf('exp_tf loaded: %s\n', exp_tf_file)
+fprintf('M9.1 setup: window %.3g s, update %.3g s, nominal NCF %.4g\n', ...
+    osi_gain_setup.m91_cfg.window_s, ...
+    osi_gain_setup.m91_cfg.update_interval_actual_s, ...
+    osi_gain_setup.m91_cfg.nominal)
 
 % Conversion Factors
 % Voltage to Engineering Units
@@ -205,7 +219,12 @@ fprintf('  Earthquake duration: %.6g s\n', hs.time(end))
 fprintf('  Time scale factor: %.6g\n', hs.time_scale_factor)
 fprintf('  FEM file: %s\n', hs.fem_file)
 fprintf('  phase_lead file: %s\n', phase_lead_file)
-continue_response = lower(strtrim(input('Continue and open Simulink? (y/n): ', 's')));
+fprintf('  exp_tf file: %s\n', exp_tf_file)
+fprintf('  OSI gain initial: %.6g, minimum factor: %.6g\n', ...
+    osi_gain_setup.gain_initial, osi_gain_setup.gain_min)
+continue_prompt = sprintf(['Continue and open Simulink? ' ...
+    '(OSI minimum factor %.6g) (y/n): '], osi_gain_setup.gain_min);
+continue_response = lower(strtrim(input(continue_prompt, 's')));
 if ~strcmp(continue_response, 'y')
     disp('Script stopped before opening Simulink.')
     return
@@ -213,6 +232,11 @@ end
 
 tg = connect_speedgoat_target;
 fileLogRunCountBefore = height(list(tg.FileLog));
+load_system(model);
+osi_gain_enable_parameter = Simulink.Parameter(0);
+osi_gain_enable_parameter.CoderInfo.StorageClass = 'ExportedGlobal';
+assignin(get_param(model, 'ModelWorkspace'), ...
+    'osi_gain_enable_initial', osi_gain_enable_parameter);
 open_system(model);
 disp('*** Run the Simulink model ***')
 disp('*** Click on "Run on Target" button under the "REAL-TIME" tab ***') 
@@ -249,22 +273,40 @@ m_hat = [];
 c_hat = [];
 k_hat = [];
 tse_fallback = [];
+dd_pause_enable_log = [];
+ncf_m91 = [];
+ncf_filtered = [];
+osi_gain = [];
 if size(Results{1}, 2) >= 9
     m_hat = Results{1}(:,6);
     c_hat = Results{1}(:,7);
     k_hat = Results{1}(:,8);
     tse_fallback = Results{1}(:,9);
 end
+if size(Results{1}, 2) >= 10
+    dd_pause_enable_log = Results{1}(:,10);
+end
+if size(Results{1}, 2) >= 13
+    ncf_m91 = Results{1}(:,11);
+    ncf_filtered = Results{1}(:,12);
+    osi_gain = Results{1}(:,13);
+end
 
 units = struct('t', 's', 'dt', 's', 'fs', 'Hz', ...
     'dd', 'mm', 'dc', 'mm', 'dm', 'mm', ...
     'fm', 'N', 'am', 'g', 'm_hat', 'kg', 'c_hat', 'N*s/m', ...
-    'k_hat', 'N/m', 'tse_fallback', 'dimensionless');
+    'k_hat', 'N/m', 'tse_fallback', 'dimensionless', ...
+    'dd_pause_enable_log', 'dimensionless', ...
+    'ncf_m91', 'dimensionless', 'ncf_filtered', 'dimensionless', ...
+    'osi_gain', 'dimensionless');
 
 result = struct('t', t, 'dd', dd, 'dc', dc, 'dm', dm, ...
     'fm', fm, 'am', am, 'fs', fs, 'dt', dt, ...
     'm_hat', m_hat, 'c_hat', c_hat, 'k_hat', k_hat, ...
-    'tse_fallback', tse_fallback, 'units', units, ...
+    'tse_fallback', tse_fallback, ...
+    'dd_pause_enable_log', dd_pause_enable_log, ...
+    'ncf_m91', ncf_m91, 'ncf_filtered', ncf_filtered, ...
+    'osi_gain', osi_gain, 'units', units, ...
     'Results', Results, 'logsout', logsout, 'testname', testname, ...
     'test_type', test_type, 'model', model, 'runStartTime', runStartTime, ...
     'file', [timestamp '_' testname '.mat']);
@@ -276,6 +318,12 @@ if exist('phase_lead_file', 'var')
 end
 if exist('phase_lead_name', 'var')
     result.phase_lead_name = phase_lead_name;
+end
+if exist('exp_tf_file', 'var')
+    result.exp_tf_file = exp_tf_file;
+end
+if exist('exp_tf_name', 'var')
+    result.exp_tf_name = exp_tf_name;
 end
 
 save(file_name, 'result', '-v7.3')

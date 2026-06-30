@@ -41,8 +41,14 @@ function [out, state, info, seeds] = m91_adaptive_margin(varargin)
 if ischar(varargin{1})
     [out, state, info, seeds] = commandMode(varargin{:});
 else
-    [out, state, info, seeds] = stepMode(varargin{1}, varargin{2}, ...
-        varargin{3}, varargin{4});
+    if nargout >= 4
+        [out, state, info, seeds] = stepMode(varargin{1}, varargin{2}, ...
+            varargin{3}, varargin{4}, true);
+    else
+        [out, state, info] = stepMode(varargin{1}, varargin{2}, ...
+            varargin{3}, varargin{4}, false);
+        seeds = [];
+    end
 end
 end
 
@@ -291,64 +297,23 @@ result = struct('tc', tc, 'ncf', ncf, 'ncf_raw', ncf_raw, ...
     'q_ref', q_ref, 'nominal_hz', cfg.nominal_hz);
 end
 
-function [margin, state, info, seeds] = stepMode(dd, dm, cfg, state)
+function [margin, state, info, seeds] = stepMode(dd, dm, cfg, state, want_seeds)
 dd = dd(:);
 dm = dm(:);
 [T, gamma2, pin, residual] = spectra(dd, dm, cfg);
-state.window_count = state.window_count + 1;
-
-if ~state.ready
-    state.cal_count = state.cal_count + 1;
-    state.residual_cal(:, state.cal_count) = residual;
-    if state.cal_count >= cfg.calibration_windows
-        [state.residual_baseline, state.q_ref] = ...
-            residualReference(state.residual_cal, cfg);
-        state.ready = true;
+[margin, state, info] = m91_step_from_spectra( ...
+    T, gamma2, pin, residual, cfg, state);
+if want_seeds
+    ratio = NaN(size(residual));
+    if state.ready
+        ratio = residual./state.residual_baseline;
+        ratio(~cfg.freq_keep | ratio <= 0) = NaN;
+        ratio = osi_moving_median(ratio, cfg.freq_medfilt_n);
     end
-    margin = cfg.nominal;
-    info = infoStruct(cfg, state, margin, cfg.cap, cfg.nominal, ...
-        NaN, NaN, cfg.nominal_hz, 0, nnz(cfg.freq_keep));
-    seeds = seedStruct(cfg, T, gamma2, pin, residual, NaN(size(residual)));
-    return
+    seeds = seedStruct(cfg, T, gamma2, pin, residual, ratio);
+else
+    seeds = [];
 end
-
-excited = pin >= max(pin(cfg.freq_keep)) - cfg.input_power_range_db;
-keep_st = excited & gamma2 >= cfg.gamma_min & cfg.freq_keep;
-ratio = residual./state.residual_baseline;
-ratio(~cfg.freq_keep | ratio <= 0) = NaN;
-ratio = osi_moving_median(ratio, cfg.freq_medfilt_n);
-
-[ncf_res, f_res] = residualBranch(ratio, cfg.freq_keep & ~keep_st, ...
-    cfg, state.q_ref);
-[ncf_res_early, f_res_early] = residualBranch(ratio, cfg.freq_keep, ...
-    cfg, state.q_ref);
-[ncf_st, f_st] = stBranch(T, keep_st, cfg, state.window_count);
-
-if cfg.residual_early_all_bins && isfinite(f_st) ...
-        && ncf_st > cfg.residual_early_st_gate_frac*cfg.nominal ...
-        && ncf_st < cfg.nominal ...
-        && abs(f_st - f_res_early) <= cfg.residual_early_match_hz
-    ncf_res = min(ncf_res, max(ncf_res_early, ...
-        cfg.residual_early_st_floor_frac*ncf_st));
-    f_res = f_res_early;
-end
-
-state.margin_history = [state.margin_history(2:end); min(ncf_st, ncf_res)];
-margin = osi_prctile_finite(state.margin_history, 50);
-if state.window_count <= cfg.warm_windows
-    margin = cfg.nominal;
-end
-
-below = margin < cfg.threshold;
-state.below_history = [state.below_history(2:end); below];
-if ~state.detected && nnz(state.below_history) >= cfg.detect_consecutive
-    state.detected = true;
-    state.detect_window = state.window_count;
-end
-
-info = infoStruct(cfg, state, margin, ncf_st, ncf_res, ...
-    f_st, f_res, f_res_early, nnz(keep_st), nnz(cfg.freq_keep & ~keep_st));
-seeds = seedStruct(cfg, T, gamma2, pin, residual, ratio);
 end
 
 function [T, gamma2, pin, residual] = spectra(dd, dm, cfg)
@@ -376,21 +341,6 @@ g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
 gamma2 = max(0, (cfg.n_segment*g2 - 1)/(cfg.n_segment - 1));
 pin = 10*log10(Suu + eps);
 residual = Syy.*max(1 - gamma2, cfg.residual_floor);
-end
-
-function [baseline, q_ref] = residualReference(residual_cal, cfg)
-baseline = median(residual_cal, 2, 'omitnan');
-baseline = max(baseline, median(baseline, 'omitnan')*1e-6);
-ratio_cal = residual_cal./baseline;
-ratio_cal(~cfg.freq_keep, :) = NaN;
-for k = 1:size(ratio_cal, 2)
-    ratio_cal(:, k) = osi_moving_median(ratio_cal(:, k), ...
-        cfg.freq_medfilt_n);
-end
-q_ref = median(prctile(ratio_cal, cfg.residual_prctile, 1), 'omitnan');
-if ~isfinite(q_ref) || q_ref <= 0
-    q_ref = 1;
-end
 end
 
 function [ncf, freq_hz] = residualBranch(ratio, keep, cfg, q_ref)
@@ -441,17 +391,6 @@ if ncf < cfg.nominal
     ncf = cfg.nominal*(ncf/cfg.nominal)^cfg.st_power;
 end
 ncf = min(cfg.cap, ncf);
-end
-
-function info = infoStruct(cfg, state, margin, ncf_st, ncf_res, ...
-        f_st, f_res, f_res_early, n_excited, n_quiet)
-info = struct('margin', margin, 'ncf_st', ncf_st, ...
-    'ncf_residual', ncf_res, 'f_st_hz', f_st, ...
-    'f_residual_hz', f_res, 'f_residual_early_hz', f_res_early, ...
-    'n_excited', n_excited, 'n_quiet', n_quiet, ...
-    'nominal', cfg.nominal, 'threshold', cfg.threshold, ...
-    'q_ref', state.q_ref, 'baseline_ready', state.ready, ...
-    'detected', state.detected, 'detect_window', state.detect_window);
 end
 
 function seeds = seedStruct(cfg, T, gamma2, pin, residual, ratio)
