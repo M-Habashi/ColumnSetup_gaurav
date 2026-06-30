@@ -15,7 +15,9 @@ function [out, state, info, seeds] = m91_adaptive_margin(varargin)
 %       building cfg. It is not used on the target.
 %   dd_window - command displacement entering the loop, cfg.window_n samples.
 %   dm_window - measured displacement in the same units, cfg.window_n samples.
-%   cfg - numeric setup returned by the 'config' command.
+%   cfg - numeric setup returned by the 'config' command. Set
+%       override.update_interval_s to choose the OSI update interval. The
+%       default is 0.005 s.
 %   state - online state returned by the 'state' command or prior step.
 %
 % Outputs:
@@ -78,7 +80,7 @@ cfg = struct( ...
     'band_hz', [2 100], ...
     'df_hz', 1, ...
     'window_s', 5, ...
-    'window_hop_s', 0.5, ...
+    'update_interval_s', 0.005, ...
     'segment_s', 512/2048, ...
     'segment_hop_s', 256/2048, ...
     'bootstrap_strength', 0, ...
@@ -104,14 +106,26 @@ cfg = struct( ...
 
 names = fieldnames(override);
 for i = 1:numel(names)
+    if ~isfield(cfg, names{i})
+        error('m91_adaptive_margin:UnknownConfigField', ...
+            'Unknown M9.1 config field: %s', names{i})
+    end
     cfg.(names{i}) = override.(names{i});
+end
+
+if ~isscalar(cfg.update_interval_s) || ~isnumeric(cfg.update_interval_s) ...
+        || ~isfinite(cfg.update_interval_s) || cfg.update_interval_s <= 0
+    error('m91_adaptive_margin:InvalidUpdateInterval', ...
+        'update_interval_s must be a positive finite scalar in seconds.')
 end
 
 cfg.freq_hz = (cfg.band_hz(1):cfg.df_hz:cfg.band_hz(2)).';
 cfg.window_n = round(cfg.window_s*cfg.fs);
 cfg.segment_n = round(cfg.segment_s*cfg.fs);
 cfg.segment_hop_n = round(cfg.segment_hop_s*cfg.fs);
-cal_tc = cfg.window_s:cfg.window_hop_s:cfg.calibration_s;
+cfg.update_interval_n = max(1, round(cfg.update_interval_s*cfg.fs));
+cfg.update_interval_actual_s = cfg.update_interval_n/cfg.fs;
+cal_tc = cfg.window_s:cfg.update_interval_actual_s:cfg.calibration_s;
 cfg.calibration_windows = nnz(cal_tc < cfg.calibration_s);
 if cfg.calibration_windows == 0
     cfg.calibration_windows = cfg.warm_windows;
@@ -153,7 +167,7 @@ function [result, seeds] = runRecord(dd_lead, dm, dt, initial_loop_tf, override)
 cfg = makeConfig(dt, initial_loop_tf, override);
 dd_lead = dd_lead(:);
 dm = dm(:);
-hop_n = round(cfg.window_hop_s*cfg.fs);
+hop_n = cfg.update_interval_n;
 n_window = floor((min(numel(dd_lead), numel(dm)) - cfg.window_n)/hop_n) + 1;
 
 tc = ((0:n_window-1)'*hop_n + cfg.window_n)*dt;
