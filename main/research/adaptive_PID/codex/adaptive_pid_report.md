@@ -8,7 +8,7 @@ Target NCF margin: `0.500`. Change it in `params/adaptive_pid_config.m` using `c
 
 The adaptive law is uniform PID authority scaling: `P`, `I`, and `D` are multiplied by the same authority factor `a` while derivative-filter `N` is unchanged.
 
-The Simulink/Speedgoat-compatible authority update is encapsulated in `adaptive_pid_authority_step.m`; the study calls that same function.
+The Simulink/Speedgoat-compatible authority update is encapsulated in `main/control_and_HS/OSI/auth_stability_gain.m`; the study calls that same OSI-level function.
 
 Excitations are now explicit: high-band, low-band, and mixed high + low.
 
@@ -18,7 +18,7 @@ When M9.1 estimates margin below target, authority drops quickly from the raw ma
 
 `a_desired = a * (max(m91_margin, 0.05) / target_margin)^power`
 
-Raw M9.1 is preserved in `ncf_m91` and is always the M9.1 trace shown in the plots. The adaptive law also forms an internal guarded margin. Severe dips below `down_immediate_margin` pass immediately, moderate dips must persist for `down_confirm_n` updates, and non-severe guarded-margin movement is rate-limited; this keeps the adaptation from chasing estimator spikes without changing or hiding the raw M9.1 estimate.
+Raw M9.1 is preserved in `ncf_m91`. The validation plots show `ncf_m91_guarded`, which is the adaptive decision signal. Severe dips below `down_immediate_margin` pass immediately, moderate dips must persist for `down_confirm_n` updates, and non-severe guarded-margin movement is rate-limited; this keeps the adaptation from chasing estimator spikes while keeping the raw M9.1 estimate saved separately.
 
 When guarded margin is above target, authority only recovers after it stays above the upper deadband for the configured hold time, then rises by a small rate limit. Configure this in `cfg.authority_gain`.
 

@@ -12,7 +12,7 @@
 <main class="wrap">
 <header>
 <h1>Adaptive PID Authority Case Comparison</h1>
-<p class="lead">Authority-only adaptive PID study using production OSI M9.1 at a 0.050 s update interval. Plots show raw M9.1. An internal guarded post-estimator margin and fast bounded authority slew keep adaptation from chasing spikes without delaying safety drops.</p>
+<p class="lead">Authority-only adaptive PID study using production OSI M9.1 at a 0.050 s update interval. Plots show the guarded adaptive M9.1 decision signal. Raw M9.1 remains saved in <code>ncf_m91</code>, while fast bounded authority slew keeps adaptation from chasing spikes without delaying safety drops.</p>
 </header>
 <section class="metrics">
 <div class="metric"><b>0.050 s</b><span>M9.1 update interval</span></div>
@@ -21,7 +21,7 @@
 <div class="metric"><b>0.536</b><span>worst adaptive settled true NCF</span></div>
 </section>
 <p class="note">Excitations are explicit: high-band, low-band, and mixed high + low. The immediate post-switch minimum is shared by causal adaptive runs before enough M9.1 window data is available; the settled metric starts after the configured reaction delay.</p>
-<p class="note">The authority update used here is the standalone code-generation-friendly function <code>adaptive_pid_authority_step.m</code>, intended for a Simulink MATLAB Function block with scalar state feedback.</p>
+<p class="note">The authority update used here is the standalone code-generation-friendly OSI function <code>auth_stability_gain.m</code>, intended for a Simulink MATLAB Function block with scalar state feedback.</p>
 <h2>Summary Plot</h2>
 <div class="figure"><img src="plots/adaptive_pid_authority_summary.png" alt="Summary of fixed PID versus adaptive authority penalty exposure and settled NCF margin"></div>
 <h2>Case Comparison</h2>
@@ -55,7 +55,7 @@
 <h2>mixed high + low excitation</h2>
 <div class="figure"><img src="plots/adaptive_pid_authority_mixed.png" alt="Per-case NCF margin and authority traces for mixed high + low excitation"></div>
 <h2>Authority Law</h2>
-<p class="note"><code>a_desired = a * (max(m91_margin, 0.05) / target_margin)^power</code>. The plot shows raw adaptive M9.1. Internally, severe M9.1 dips below <code>down_immediate_margin</code> still reduce authority immediately; moderate dips must persist for <code>down_confirm_n</code> updates. Authority then applies <code>down_rate</code> to avoid step transients. Upward authority recovery waits on a guarded margin with bounded non-severe movement through <code>margin_guard_up_rate</code> and <code>margin_guard_down_rate</code>, plus an upper deadband, hold time, and small rate limit.</p>
+<p class="note"><code>a_desired = a * (max(m91_margin, 0.05) / target_margin)^power</code>. The plot shows adaptive M9.1 guard. Raw adaptive M9.1 remains stored in <code>ncf_m91</code>. Severe M9.1 dips below <code>down_immediate_margin</code> still reduce authority immediately; moderate dips must persist for <code>down_confirm_n</code> updates. Authority then applies <code>down_rate</code> to avoid step transients. Upward authority recovery waits on a guarded margin with bounded non-severe movement through <code>margin_guard_up_rate</code> and <code>margin_guard_down_rate</code>, plus an upper deadband, hold time, and small rate limit.</p>
 </main>
 </body>
 </html>

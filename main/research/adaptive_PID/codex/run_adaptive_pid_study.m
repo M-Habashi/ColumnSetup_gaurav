@@ -265,7 +265,7 @@ end
 function [authority, state] = updateAuthority(authority, state, margin, cfg)
 p = cfg.authority_gain;
 [authority, state.margin_filtered, state.margin_guarded, ...
-    state.above_count, state.below_count] = adaptive_pid_authority_step( ...
+    state.above_count, state.below_count] = auth_stability_gain( ...
     margin, authority, state.margin_filtered, state.margin_guarded, ...
     state.above_count, state.below_count, cfg.target_margin, ...
     cfg.m91_override.update_interval_s, p.a_min, p.a_max, ...
@@ -418,8 +418,8 @@ for j = 1:n_case
         'LineWidth', 1.1, 'DisplayName', 'fixed M9.1')
     plot(ax, adapt.tc, adapt.ncf_true, '-', 'Color', blue, ...
         'LineWidth', 1.8, 'DisplayName', 'adaptive true')
-    plot(ax, adapt.tc, adapt.ncf_m91, '-', 'Color', copper, ...
-        'LineWidth', 1.3, 'DisplayName', 'adaptive M9.1 raw')
+    plot(ax, adapt.tc, adapt.ncf_m91_guarded, '-', 'Color', copper, ...
+        'LineWidth', 1.3, 'DisplayName', 'adaptive M9.1 guard')
     yline(ax, result.config.target_margin, ':', 'target', ...
         'Color', red, 'HandleVisibility', 'off')
     xline(ax, result.config.event_time_s, '-', 'case switch', ...
@@ -473,13 +473,13 @@ fprintf(fid, 'The OSI estimator used here is `main/control_and_HS/OSI/m91_adapti
 fprintf(fid, 'Target NCF margin: `%.3f`. Change it in `params/adaptive_pid_config.m` using `cfg.target_margin`.\n\n', ...
     result.config.target_margin);
 fprintf(fid, 'The adaptive law is uniform PID authority scaling: `P`, `I`, and `D` are multiplied by the same authority factor `a` while derivative-filter `N` is unchanged.\n\n');
-fprintf(fid, 'The Simulink/Speedgoat-compatible authority update is encapsulated in `adaptive_pid_authority_step.m`; the study calls that same function.\n\n');
+fprintf(fid, 'The Simulink/Speedgoat-compatible authority update is encapsulated in `main/control_and_HS/OSI/auth_stability_gain.m`; the study calls that same OSI-level function.\n\n');
 fprintf(fid, 'Excitations are now explicit: high-band, low-band, and mixed high + low.\n\n');
 
 fprintf(fid, '## Authority law\n\n');
 fprintf(fid, 'When M9.1 estimates margin below target, authority drops quickly from the raw margin ratio, with a bounded per-update downward slew to avoid injecting authority-step transients:\n\n');
 fprintf(fid, '`a_desired = a * (max(m91_margin, 0.05) / target_margin)^power`\n\n');
-fprintf(fid, 'Raw M9.1 is preserved in `ncf_m91` and is always the M9.1 trace shown in the plots. The adaptive law also forms an internal guarded margin. Severe dips below `down_immediate_margin` pass immediately, moderate dips must persist for `down_confirm_n` updates, and non-severe guarded-margin movement is rate-limited; this keeps the adaptation from chasing estimator spikes without changing or hiding the raw M9.1 estimate.\n\n');
+fprintf(fid, 'Raw M9.1 is preserved in `ncf_m91`. The validation plots show `ncf_m91_guarded`, which is the adaptive decision signal. Severe dips below `down_immediate_margin` pass immediately, moderate dips must persist for `down_confirm_n` updates, and non-severe guarded-margin movement is rate-limited; this keeps the adaptation from chasing estimator spikes while keeping the raw M9.1 estimate saved separately.\n\n');
 fprintf(fid, 'When guarded margin is above target, authority only recovers after it stays above the upper deadband for the configured hold time, then rises by a small rate limit. Configure this in `cfg.authority_gain`.\n\n');
 
 fprintf(fid, '## Summary\n\n');
@@ -531,7 +531,7 @@ fprintf(fid, '<style>\n');
 fprintf(fid, ':root{color-scheme:dark;--bg:#09090b;--panel:#18181b;--line:#3f3f46;--soft:#27272a;--text:#f4f4f5;--muted:#a1a1aa;--blue:#007ca8;--copper:#ac6420;--red:#901500;--green:#39bf5e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Arial,Helvetica,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 36px}header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}h1{font-size:28px;line-height:1.15;margin:0 0 10px}h2{font-size:18px;margin:24px 0 10px}.lead{max-width:850px;color:var(--muted);margin:0}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 8px}.metric{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px}.metric b{display:block;font-size:20px;margin-bottom:2px}.metric span{color:var(--muted);font-size:12px}.figure{border:1px solid var(--line);background:#fff;border-radius:4px;padding:8px;margin:12px 0 24px}.figure img{display:block;width:100%%;height:auto}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}table{border-collapse:collapse;width:100%%;min-width:1040px}th,td{border-bottom:1px solid var(--soft);padding:9px 10px;text-align:right;white-space:nowrap}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2),th:nth-child(3),td:nth-child(3){text-align:left}th{color:var(--muted);font-weight:600;background:#111113}.good{color:var(--green);font-weight:700}.bad{color:#ffb4a8;font-weight:700}.note{border-left:3px solid var(--blue);padding:9px 12px;background:var(--panel);color:var(--muted)}code{font-family:Consolas,monospace;color:#e4e4e7}@media(max-width:780px){.metrics{grid-template-columns:1fr 1fr}.wrap{padding:20px 14px}h1{font-size:23px}}@media(max-width:520px){.metrics{grid-template-columns:1fr}}\n');
 fprintf(fid, '</style>\n</head>\n<body>\n<main class="wrap">\n');
 fprintf(fid, '<header>\n<h1>Adaptive PID Authority Case Comparison</h1>\n');
-fprintf(fid, '<p class="lead">Authority-only adaptive PID study using production OSI M9.1 at a %.3f s update interval. Plots show raw M9.1. An internal guarded post-estimator margin and fast bounded authority slew keep adaptation from chasing spikes without delaying safety drops.</p>\n', result.config.m91_override.update_interval_s);
+fprintf(fid, '<p class="lead">Authority-only adaptive PID study using production OSI M9.1 at a %.3f s update interval. Plots show the guarded adaptive M9.1 decision signal. Raw M9.1 remains saved in <code>ncf_m91</code>, while fast bounded authority slew keeps adaptation from chasing spikes without delaying safety drops.</p>\n', result.config.m91_override.update_interval_s);
 fprintf(fid, '</header>\n');
 
 fprintf(fid, '<section class="metrics">\n');
@@ -542,7 +542,7 @@ fprintf(fid, '<div class="metric"><b>%.3f</b><span>worst adaptive settled true N
 fprintf(fid, '</section>\n');
 
 fprintf(fid, '<p class="note">Excitations are explicit: high-band, low-band, and mixed high + low. The immediate post-switch minimum is shared by causal adaptive runs before enough M9.1 window data is available; the settled metric starts after the configured reaction delay.</p>\n');
-fprintf(fid, '<p class="note">The authority update used here is the standalone code-generation-friendly function <code>adaptive_pid_authority_step.m</code>, intended for a Simulink MATLAB Function block with scalar state feedback.</p>\n');
+fprintf(fid, '<p class="note">The authority update used here is the standalone code-generation-friendly OSI function <code>auth_stability_gain.m</code>, intended for a Simulink MATLAB Function block with scalar state feedback.</p>\n');
 fprintf(fid, '<h2>Summary Plot</h2>\n<div class="figure"><img src="plots/%s" alt="Summary of fixed PID versus adaptive authority penalty exposure and settled NCF margin"></div>\n', fileName(plot_files{1}));
 fprintf(fid, '<h2>Case Comparison</h2>\n<div class="table-wrap">\n<table>\n<thead><tr><th>Excitation</th><th>Case</th><th>Name</th><th>Fixed min true NCF</th><th>Adaptive settled true NCF</th><th>Fixed below area</th><th>Adaptive below area</th><th>Reduction</th><th>Min authority</th><th>Max authority</th></tr></thead>\n<tbody>\n');
 for i = 1:height(result.summary)
@@ -568,7 +568,7 @@ for i = 2:numel(plot_files)
         fileName(plot_files{i}), htmlEscape(char(result.excitations(i-1).name)));
 end
 fprintf(fid, '<h2>Authority Law</h2>\n');
-fprintf(fid, '<p class="note"><code>a_desired = a * (max(m91_margin, 0.05) / target_margin)^power</code>. The plot shows raw adaptive M9.1. Internally, severe M9.1 dips below <code>down_immediate_margin</code> still reduce authority immediately; moderate dips must persist for <code>down_confirm_n</code> updates. Authority then applies <code>down_rate</code> to avoid step transients. Upward authority recovery waits on a guarded margin with bounded non-severe movement through <code>margin_guard_up_rate</code> and <code>margin_guard_down_rate</code>, plus an upper deadband, hold time, and small rate limit.</p>\n');
+fprintf(fid, '<p class="note"><code>a_desired = a * (max(m91_margin, 0.05) / target_margin)^power</code>. The plot shows adaptive M9.1 guard. Raw adaptive M9.1 remains stored in <code>ncf_m91</code>. Severe M9.1 dips below <code>down_immediate_margin</code> still reduce authority immediately; moderate dips must persist for <code>down_confirm_n</code> updates. Authority then applies <code>down_rate</code> to avoid step transients. Upward authority recovery waits on a guarded margin with bounded non-severe movement through <code>margin_guard_up_rate</code> and <code>margin_guard_down_rate</code>, plus an upper deadband, hold time, and small rate limit.</p>\n');
 fprintf(fid, '</main>\n</body>\n</html>\n');
 end
 
