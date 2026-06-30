@@ -30,7 +30,7 @@ bins = round(f9*nfft/fs) + 1;
 
 tend = (cfg.t_start + cfg.m9_buf):cfg.m9_hop:cfg.t_end;
 nW = numel(tend);
-tc = tend.' - cfg.m9_buf/2;
+tc = tend.';
 i1s = round((tend - cfg.m9_buf - ctx.t(1))*fs) + 1;
 
 That = nan(nf, nW);

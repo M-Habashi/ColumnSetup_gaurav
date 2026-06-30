@@ -41,7 +41,7 @@ function out = osi_method8_ncf_direct(ctx, cfg)
     E = exp(-1j*2*pi*(0:Lsub-1).' * f8.' / fs);          % exact-frequency DTFT matrix
 
     tend = (cfg.t_start + cfg.m8_buf) : cfg.m8_hop : cfg.t_end;
-    nW = numel(tend);  tc = tend.' - cfg.m8_buf/2;
+    nW = numel(tend);  tc = tend.';   % causal timestamp = window-end time (look-back only)
     ncf_raw = nan(nW, 1);
 
     for k = 1:nW
@@ -69,7 +69,7 @@ function out = osi_method8_ncf_direct(ctx, cfg)
         end
     end
 
-    ncf = medfilt1(ncf_raw, cfg.m8_medfilt);
+    ncf = movmedian(ncf_raw, [cfg.m8_medfilt-1, 0]);   % TRAILING median (backward only)
     ncf(1:min(cfg.m8_nwarm, nW)) = nom;
 
     below = ncf < cfg.ncf_threshold;  below(isnan(ncf)) = false;

@@ -28,64 +28,66 @@ cases=struct('name',{'high-band','low-band','mixed'},'dd',{ddh,ddl,ddh+ddl});
 keep=t>=warm-1e-9; tk=t(keep)-warm;
 wgt=double(tk>=switch_s); rmp=abs(tk-switch_s)<=0.05; wgt(rmp)=0.5*(1+sin(pi*(tk(rmp)-switch_s)/0.1));
 
-% M7 config (as published in run_osi6_vs_osi7)
-cfg.t_start=0; cfg.t_end=dur; cfg.ncf_threshold=0.40;
-cfg.m7_buf=5; cfg.m7_hop=0.5; cfg.m7_peak_band=[25 42]; cfg.m7_floor_band=[55 75];
-cfg.m7_binding_band=[10 58]; cfg.m7_calib_s=7.5; cfg.m7_medfilt=5; cfg.m7_cap=0.70; cfg.m7_detect_consec=4;
-ctx.fs=fs; ctx.dt=dt; ctx.C=C; ctx.H0d=Hh; ctx.t=tk;
+cfg.t_start=0; cfg.t_end=dur;   % analysis window span
 
 % PP-wide config
 ppc.buf=4; ppc.hop=0.5; ppc.nfft=4096; ppc.win=hann(2048); ppc.ov=1024;
 [~,ff]=pwelch(randn(round(ppc.buf*fs),1),ppc.win,ppc.ov,ppc.nfft,fs);
 ppc.ppb = ff>=1.5 & ff<=90 & ~(ff>=58 & ff<=62); ppc.ff=ff;
-tend=(cfg.t_start+ppc.buf):ppc.hop:cfg.t_end; tc_pp=(tend-ppc.buf/2).';
+% CAUSAL grid: timestamp = window END (look-back only); both methods share it.
+tend=(cfg.t_start+ppc.buf):ppc.hop:cfg.t_end; tc=tend.';
+m7peak=ff>=25&ff<=42; m7floor=ff>=55&ff<=75; med=5;  % trailing-median taps
+s_m7=@(P) sqrt(max(P(m7peak))/median(P(m7floor)));
 
-out.tc_pp=tc_pp; out.switch_s=switch_s; out.threshold=0.40; out.nominal=bnom;
+out.tc_pp=tc; out.switch_s=switch_s; out.threshold=0.40; out.nominal=bnom;
 out.true_dmg=true_dmg; out.cases=struct('name',{},'pp_seeds',{},'pp_mean',{}, ...
   'm7_seeds',{},'m7_mean',{},'tc_m7',{},'pp_det',{},'m7_det',{});
 
-fprintf('bnom=%.3f true_dmg=%.3f. Generating %d cases x %d seeds...\n',bnom,true_dmg,numel(cases),n_seed);
+fprintf('bnom=%.3f true_dmg=%.3f. Generating %d cases x %d seeds (CAUSAL: backward window,\n',bnom,true_dmg,numel(cases),n_seed);
+fprintf('end timestamp, calib on past healthy, trailing median)...\n');
 for ci=1:numel(cases)
   dd_lead=lsim(GT,cases(ci).dd); trk_h=lsim(Th,dd_lead); trk_d=lsim(Td,dd_lead);
-  ddlk=dd_lead(keep);
   DM=zeros(numel(tk),n_seed);
   for s=1:n_seed
     rng(s); d=sigma*randn(N,1);
     dmh=trk_h+lsim(Sh,d); dmd=trk_d+lsim(Sd,d);
     DM(:,s)=(1-wgt).*dmh(keep)+wgt.*dmd(keep);
   end
-  % --- PP windowed PSDs ---
+  % backward window [tend-buf, tend] ending at tend -> per-window PSD
   nW=numel(tend); Pall=cell(nW,n_seed);
   for k=1:nW
-    i1=find(tk>=tend(k)-ppc.buf,1); idx=i1:i1+round(ppc.buf*fs)-1;
+    e=find(tk<=tend(k),1,'last'); idx=e-round(ppc.buf*fs)+1:e;   % samples up to tend only
     for s=1:n_seed, Pall{k,s}=pwelch(detrend(DM(idx,s)),ppc.win,ppc.ov,ppc.nfft,fs); end
   end
-  % calibrate on healthy windows (tc_pp < switch - buf/2), pooled over seeds
-  hmask=tc_pp < switch_s - ppc.buf/2;
+  % calibrate on PAST healthy windows (window entirely before the jump: tend<=switch)
+  hmask=tc<=switch_s;
   P0=zeros(size(ff)); cnt=0;
   for k=find(hmask).', for s=1:n_seed, P0=P0+Pall{k,s}; cnt=cnt+1; end, end
   P0=P0/cnt; floormask=ppc.ppb & (P0<prctile(P0(ppc.ppb),40));
-  spkW=@(P) sqrt(max(movmedian(P,3).*ppc.ppb)/median(P(floormask)));
-  rW=[]; for k=find(hmask).', for s=1:n_seed, rW(end+1)=spkW(Pall{k,s}); end, end %#ok<AGROW>
-  refW=median(rW);
-  B_PP=zeros(nW,n_seed);
-  for k=1:nW, for s=1:n_seed, B_PP(k,s)=min(bnom*refW/spkW(Pall{k,s}),1/sqrt(2)); end, end
-  % --- M7 per seed ---
-  m7=osi_method7_resonance(setfield(ctx,'dm',DM(:,1)),cfg); tc_m7=m7.tc; %#ok<SFLD>
-  B_M7=zeros(numel(tc_m7),n_seed);
-  for s=1:n_seed
-    cx=ctx; cx.dm=DM(:,s); cx.t=tk; cx.dc=lsim(C, ddlk-DM(:,s));
-    mm=osi_method7_resonance(cx,cfg); B_M7(:,s)=mm.ncf;
+  spkW=@(P) sqrt(max(movmedian(P,3).*ppc.ppb)/median(P(floormask)));   % movmedian over FREQ (within window)
+  hk=find(hmask).'; rW=zeros(numel(hk)*n_seed,1); rM=rW; q=0;
+  for k=hk
+    for s=1:n_seed, q=q+1; rW(q)=spkW(Pall{k,s}); rM(q)=s_m7(Pall{k,s}); end
   end
+  refW=median(rW); refM=median(rM);
+  B_PP=zeros(nW,n_seed); B_M7=zeros(nW,n_seed);
+  for k=1:nW
+    for s=1:n_seed
+      B_PP(k,s)=min(bnom*refW/spkW(Pall{k,s}),1/sqrt(2));
+      B_M7(k,s)=min(bnom*refM/s_m7(Pall{k,s}),1/sqrt(2));
+    end
+  end
+  B_PP=movmedian(B_PP,[med-1 0],1); B_M7=movmedian(B_M7,[med-1 0],1);   % TRAILING median (backward)
   ppm=mean(B_PP,2); m7m=mean(B_M7,2);
   out.cases(ci).name=cases(ci).name;
   out.cases(ci).pp_seeds=B_PP.'; out.cases(ci).pp_mean=ppm;
-  out.cases(ci).m7_seeds=B_M7.'; out.cases(ci).m7_mean=m7m; out.cases(ci).tc_m7=tc_m7;
-  out.cases(ci).pp_det=detect(ppm,tc_pp,0.40,5);
-  out.cases(ci).m7_det=detect(m7m,tc_m7,0.40,4);
+  out.cases(ci).m7_seeds=B_M7.'; out.cases(ci).m7_mean=m7m; out.cases(ci).tc_m7=tc;
+  out.cases(ci).pp_det=detect(ppm,tc,0.47,5);
+  out.cases(ci).m7_det=detect(m7m,tc,0.47,5);
+  dmask=tc>=switch_s+ppc.buf;
   fprintf('  %-10s: PP healthy %.2f damaged %.2f (det %.1fs) | M7 healthy %.2f damaged %.2f (det %.1fs)\n', ...
-    cases(ci).name, mean(ppm(hmask)), mean(ppm(tc_pp>switch_s+ppc.buf/2)), out.cases(ci).pp_det, ...
-    mean(m7m(tc_m7<switch_s-2.5)), mean(m7m(tc_m7>switch_s+2.5)), out.cases(ci).m7_det);
+    cases(ci).name, mean(ppm(hmask)), mean(ppm(dmask)), out.cases(ci).pp_det, ...
+    mean(m7m(hmask)), mean(m7m(dmask)), out.cases(ci).m7_det);
 end
 
 out_dir=fullfile(this_dir,'results'); if ~exist(out_dir,'dir'), mkdir(out_dir); end

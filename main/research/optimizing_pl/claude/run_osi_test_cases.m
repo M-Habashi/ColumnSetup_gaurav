@@ -63,25 +63,42 @@ function dm = sim_dm(c, seed, sigma, dt)
     S = feedback(1, c.C*Hd); rng(seed);
     dm = lsim(S, sigma*randn(N,1)); dm = dm + 0.01*std(dm)*randn(N,1);
 end
+function starts = win_starts(x, Nb, fs)
+    starts = 1:round(0.5*fs):(numel(x)-Nb+1);   % successive backward windows of Nb samples
+end
 function P = avgpsd(x, Nb, win, ov, nfft, fs)
-    P=0; c=0; for k=1:48, i1=1+round((k-1)*0.5*fs); if i1+Nb-1>numel(x), break; end
-        P=P+pwelch(detrend(x(i1:i1+Nb-1)),win,ov,nfft,fs); c=c+1; end, P=P/c;
+    P = 0; st = win_starts(x, Nb, fs);
+    for i1 = st
+        P = P + pwelch(detrend(x(i1:i1+Nb-1)), win, ov, nfft, fs);
+    end
+    P = P/numel(st);
 end
 function [rM,rP] = calib(x, Nb, fs, win, ov, nfft, sM, sP)
-    vM=[]; vP=[]; for k=1:48, i1=1+round((k-1)*0.5*fs); if i1+Nb-1>numel(x), break; end
-        P=pwelch(detrend(x(i1:i1+Nb-1)),win,ov,nfft,fs); vM(end+1)=sM(P); vP(end+1)=sP(P); end %#ok<AGROW>
-    rM=median(vM); rP=median(vP);
+    st = win_starts(x, Nb, fs); vM = zeros(numel(st),1); vP = vM;
+    for j = 1:numel(st)
+        P = pwelch(detrend(x(st(j):st(j)+Nb-1)), win, ov, nfft, fs);
+        vM(j) = sM(P); vP(j) = sP(P);
+    end
+    rM = median(vM); rP = median(vP);
 end
 function [vM,vP] = winb(x, Nb, fs, win, ov, nfft, sM, sP, rM, rP, bnom)
-    vM=[]; vP=[]; for k=1:48, i1=1+round((k-1)*0.5*fs); if i1+Nb-1>numel(x), break; end
-        P=pwelch(detrend(x(i1:i1+Nb-1)),win,ov,nfft,fs);
-        vM(end+1)=min(bnom*rM/sM(P),1/sqrt(2)); vP(end+1)=min(bnom*rP/sP(P),1/sqrt(2)); end %#ok<AGROW>
+    st = win_starts(x, Nb, fs); vM = zeros(numel(st),1); vP = vM;
+    for j = 1:numel(st)
+        P = pwelch(detrend(x(st(j):st(j)+Nb-1)), win, ov, nfft, fs);
+        vM(j) = min(bnom*rM/sM(P), 1/sqrt(2));
+        vP(j) = min(bnom*rP/sP(P), 1/sqrt(2));
+    end
 end
 function v = verdict(b, should, alarm)
-    if should
-        if b<alarm, v='detect'; else, v='MISS'; end
+    alarmed = b < alarm;
+    if should && alarmed
+        v = 'detect';
+    elseif should
+        v = 'MISS';
+    elseif alarmed
+        v = 'FALSE';
     else
-        if b<alarm, v='FALSE'; else, v='ok'; end
+        v = 'ok';
     end
 end
 function s = ternary(c,a,b), if c, s=a; else, s=b; end, end
