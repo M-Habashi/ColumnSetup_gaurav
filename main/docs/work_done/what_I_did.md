@@ -25,3 +25,13 @@
 
 ## Scaaled TSE method improvemetns
 
+## RTHS is performed perfectly for the linear range RTHS_02
+
+## The damage of the specimen:
+   - The damage of the specimen, is shown to be equivalent to increaing the outer loop gain, which confirms our finding in the previous paper t[wo tfs function to compare the 7000 and the 5000]
+
+## Online stability indicator to be tested [Claude M7] with uncertainty bounds
+## Addaptive authority gain in the outer loop to counter effect the specimen damage
+## Recommendations for GM PM and NCF margin
+
+

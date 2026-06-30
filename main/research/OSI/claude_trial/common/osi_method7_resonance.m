@@ -27,7 +27,7 @@ function out = osi_method7_resonance(ctx, cfg)
     nfft = 2^nextpow2(round(2*fs));  seg = min(2048, Nbuf);  ov = round(seg/2);
     win = hann(seg);
     tend = (cfg.t_start + buf) : cfg.m7_hop : cfg.t_end;
-    nW = numel(tend);  tc = tend.' - buf/2;
+    nW = numel(tend);  tc = tend.';  % causal timestamp: window end time
 
     Spk = nan(nW,1);
     for k = 1:nW

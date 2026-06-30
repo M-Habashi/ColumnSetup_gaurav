@@ -10,14 +10,14 @@ S = load(data_file);
 figure('Name', data_file, 'NumberTitle', 'off')
 
 subplot(2, 1, 1)
-plot(S.t, S.dm, 'Color', '#007CA8', 'DisplayName', 'measured')
+plot(S.t, S.dm, 'Color', '#007CA8', 'DisplayName', 'dm')
 grid on
 ylabel('Displacement (mm)')
 legend('Location', 'best')
 title(data_file, 'Interpreter', 'none')
 
 subplot(2, 1, 2)
-plot(S.t, S.fm, 'Color', '#74058A', 'DisplayName', 'force')
+plot(S.t, S.fm, 'Color', '#74058A', 'DisplayName', 'fm')
 grid on
 xlabel('Time (s)')
 ylabel('Force (N)')

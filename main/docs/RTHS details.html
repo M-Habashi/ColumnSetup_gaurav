@@ -226,6 +226,7 @@
       </div>
       <nav aria-label="Page sections">
         <a href="#signals">Signals</a>
+        <a href="#notation">Notation</a>
         <a href="#indicators">Indicators</a>
         <a href="#sources">Code sources</a>
       </nav>
@@ -236,16 +237,86 @@
     <section id="signals" class="split" aria-labelledby="signals-heading">
       <div>
         <h2 id="signals-heading">Signal Pairing</h2>
-        <p>The indicators use two different references. Tracking indicators compare measured displacement to the replayed numerical control point. Reference indicators compare replayed floors or measured displacement to the full FEM reference.</p>
+        <p>The indicators use two different references. Tracking indicators compare measured displacement to the numerical sub control point. Reference indicators compare numerical sub floors or measured displacement to the full FEM reference.</p>
       </div>
       <aside class="note" aria-label="Units note">
         <strong>Units in the code</strong>
         <ul class="signal-list">
-          <li><code>dm</code>, replayed numerical control point, and full FEM control point are compared in millimeters.</li>
+          <li><code>dm</code>, numerical sub control point <code>d_n</code>, and full FEM control point are compared in millimeters.</li>
           <li>Floor responses are compared in meters.</li>
           <li><code>J1</code> is reported in milliseconds. <code>J2</code> through <code>J7</code> are reported in percent.</li>
         </ul>
       </aside>
+    </section>
+
+    <section id="notation" aria-labelledby="notation-heading">
+      <h2 id="notation-heading">Notation</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric"><code>dm</code></td>
+            <td>Measured actuator displacement response from the experiment at the interface/control point, approximately the zero-moment point around mid-column.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>dc</code></td>
+            <td>Controller command displacement saved from <code>logsout</code>.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>dd</code></td>
+            <td>Logged actuator command channel. It is retained in saved results but is not used for RTHS error evaluation or comparison plotting.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>fm</code></td>
+            <td>Measured force.</td>
+          </tr>
+          <tr>
+            <td class="metric">numerical sub</td>
+            <td>Numerical sub FEM without the experimental column; measured feedback force <code>fm</code> is used to step this model forward.</td>
+          </tr>
+          <tr>
+            <td class="metric">full FEM</td>
+            <td>Complete FEM model driven by the same ground excitation <code>a_g</code>. This is also called the reference FEM.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x1_r</code></td>
+            <td>Full/reference FEM floor 1 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x1_n</code></td>
+            <td>Numerical sub FEM floor 1 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x2_r</code></td>
+            <td>Full/reference FEM floor 2 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x2_n</code></td>
+            <td>Numerical sub FEM floor 2 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x3_r</code></td>
+            <td>Full/reference FEM floor 3 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>x3_n</code></td>
+            <td>Numerical sub FEM floor 3 response.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>d_r</code></td>
+            <td>Full/reference FEM response at the interface/control point.</td>
+          </tr>
+          <tr>
+            <td class="metric"><code>d_n</code></td>
+            <td>Numerical sub interface/control-point displacement command, recomputed by stepping the numerical sub with logged <code>fm</code>.</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="indicators" aria-labelledby="indicators-heading">
@@ -261,32 +332,32 @@
         <tbody>
           <tr>
             <td class="metric">J1</td>
-            <td>Delay between measured <code>dm</code> and the replayed numerical control point from cross-correlation.</td>
+            <td>Delay between measured <code>dm</code> and the numerical sub control point from <code>finddelay(d_n, dm)</code>.</td>
             <td class="unit">ms</td>
           </tr>
           <tr>
             <td class="metric">J2</td>
-            <td>Normalized RMS/std error between measured <code>dm</code> and the replayed numerical control point.<p class="formula">100 * std(dm - dd_replay) / std(dd_replay)</p></td>
+            <td>Normalized standard-deviation error between measured <code>dm</code> and the numerical sub control point.<p class="formula">100 * std(dm - d_n) / std(d_n)</p></td>
             <td class="unit">%</td>
           </tr>
           <tr>
             <td class="metric">J3</td>
-            <td>Peak absolute error between measured <code>dm</code> and the replayed numerical control point.<p class="formula">100 * max(abs(dm - dd_replay)) / max(abs(dd_replay))</p></td>
+            <td>Peak absolute error between measured <code>dm</code> and the numerical sub control point.<p class="formula">100 * max(abs(dm - d_n)) / max(abs(d_n))</p></td>
             <td class="unit">%</td>
           </tr>
           <tr>
             <td class="metric">J4</td>
-            <td>First-floor replayed numerical response versus the first-floor full FEM reference.<p class="formula">100 * std(u_num_1 - u_ref_1) / std(u_ref_1)</p></td>
+            <td>First-floor numerical sub response versus the first-floor full FEM reference.<p class="formula">100 * std(x1_n - x1_r) / std(x1_r)</p></td>
             <td class="unit">%</td>
           </tr>
           <tr>
             <td class="metric">J5</td>
-            <td>Second-floor replayed numerical response versus the second-floor full FEM reference.<p class="formula">100 * std(u_num_2 - u_ref_2) / std(u_ref_2)</p></td>
+            <td>Second-floor numerical sub response versus the second-floor full FEM reference.<p class="formula">100 * std(x2_n - x2_r) / std(x2_r)</p></td>
             <td class="unit">%</td>
           </tr>
           <tr>
             <td class="metric">J6</td>
-            <td>Third-floor replayed numerical response versus the third-floor full FEM reference.<p class="formula">100 * std(u_num_3 - u_ref_3) / std(u_ref_3)</p></td>
+            <td>Third-floor numerical sub response versus the third-floor full FEM reference.<p class="formula">100 * std(x3_n - x3_r) / std(x3_r)</p></td>
             <td class="unit">%</td>
           </tr>
           <tr>
@@ -302,12 +373,16 @@
       <h2 id="sources-heading">Code Sources</h2>
       <div class="sources">
         <div class="source">
+          <h3><code>compare_hs_response_to_reference.m</code></h3>
+          <span>Shared HS utility for saved RTHS and vHS comparisons. It uses numerical sub displacement <code>d_n</code> for <code>J1</code>-<code>J3</code> and for comparison plotting.</span>
+        </div>
+        <div class="source">
           <h3><code>validation_metrics.m</code></h3>
           <span>Defines the J1-J7 metric handles and formulas.</span>
         </div>
         <div class="source">
           <h3><code>compare_hs_test_to_reference.m</code></h3>
-          <span>Applies the indicators to saved RTHS test data and the replayed numerical response.</span>
+          <span>Compatibility wrapper for older calls into the shared HS response comparison utility.</span>
         </div>
         <div class="source">
           <h3><code>vHS.m</code></h3>

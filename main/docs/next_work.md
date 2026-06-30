@@ -1,14 +1,22 @@
+# Stability:
+- Try to design the phase_lead as a notch to be more robust [the notch is arount the the crossover phase? what is that 35hz?]
+- Try to penalty the control max command whileoptimizing the PL
+- think about how can w update the authority gain
+- understand and test claude M7, try to link it to NCF
+- Test !!
+
+
 # NOW
 - can you see the 19 hz in the vHS?
 - is it better to use releigh damping?
 - make M6 faster
 - try the lower frequency file
 - fix signal selector and its if condition
-- Think about optimizing the phase lead or delay compensator 
+- Think about optimizing the phase_lead
     -- should it be autonomous?
     -- what plots to show in what colors
     -- what is the new order of folders
-- Building FEM should be a separate folder from vHS and the compensator is probably another folder
+- Building FEM should be a separate folder from vHS and the phase_lead is probably another folder
 - you need to know pausing times and resuming times to compare with the refernce later
 - The final plot should plot the reference response with the measures and the error indicators
 - compare the results based on a selectd window and show error indicators

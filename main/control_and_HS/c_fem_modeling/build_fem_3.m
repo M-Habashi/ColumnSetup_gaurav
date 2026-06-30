@@ -13,7 +13,7 @@
 % 3. The two inner-column base rotational springs are assigned double the
 %    calibrated exterior-column stiffness, and the inner columns are W12x40.
 % 4. Reference and numerical FEM definitions are saved together as one
-%    saved_results/fem/fem_<specimen>_3.mat file. SAP updating is skipped.
+%    saved_results/fem MAT file. SAP updating is skipped.
 %
 % CONSTANT MODELING ASSUMPTIONS
 % - Three stories and three 3.048 m bays; linear Euler-Bernoulli bending.
@@ -62,6 +62,9 @@ end
 assert(isfield(specimen, 'k'), ...
     'The selected specimen file must contain lateral stiffness k.');
 specimen_si = specimen_params_si(specimen);
+[~, specimen_stem] = fileparts(specimen_name);
+fem_model_name = prompt_fem_model_name();
+fem_file_stem = make_safe_file_stem(fem_model_name);
 
 %% STEP 1: MATCH THE MEASURED LATERAL STIFFNESS
 % The experimental column is an Euler-Bernoulli cantilever with a rotational
@@ -77,6 +80,7 @@ k_experimental = specimen_si.stiffness; % [N/m]
 
 fprintf('\nReference-model calibration: %s\n', specimen_name);
 fprintf('Specimen file: %s\n', specimen_file);
+fprintf('FEM model name: %s\n', fem_model_name);
 fprintf('Experimental column: %s, height = %.6g m\n', ...
     column.shape, column.height);
 fprintf('Measured lateral stiffness: %.6g N/m\n', k_experimental);
@@ -135,8 +139,7 @@ damping.beta = damping_info.beta;
 damping.frequency_hz = damping_info.frequency_hz;
 damping.modal_damping_ratio = damping_info.modal_damping_ratio;
 
-[~, specimen_stem] = fileparts(specimen_name);
-fem_name = ['fem_' specimen_stem '_3.mat'];
+fem_name = [fem_file_stem '.mat'];
 fem_directory = fullfile(project_root, 'saved_results', 'fem');
 if ~isfolder(fem_directory), mkdir(fem_directory); end
 fem_file = fullfile(fem_directory, fem_name);
@@ -183,6 +186,8 @@ fem_num.interface = struct( ...
 
 fem.kind = 'reference_and_numerical';
 fem.schema_version = 2;
+fem.model_name = fem_model_name;
+fem.model_file_stem = fem_file_stem;
 fem.specimen_name = specimen_stem;
 fem.specimen_file = specimen_file;
 fem.story_height_m = story_height;
@@ -210,6 +215,9 @@ fprintf(['Rayleigh damping fit: modes %d and %d at %.6g%%; ' ...
     'alpha = %.12g 1/s, beta = %.12g s\n'], ...
     damping.fit_modes(1), damping.fit_modes(2), 100*damping_ratio, ...
     damping.alpha, damping.beta);
+fprintf('Natural frequencies [Hz]:');
+fprintf(' %.6g', damping.frequency_hz);
+fprintf('\n');
 fprintf('Modal damping ratios [%%]:');
 fprintf(' %.6g', 100*damping.modal_damping_ratio);
 fprintf('\n');
@@ -220,4 +228,24 @@ function units = femUnits()
 units = struct('length', 'm', 'force', 'N', 'mass', 'kg', ...
     'stiffness', 'N/m', 'damping', 'N*s/m', ...
     'rotational_stiffness', 'N*m/rad', 'acceleration', 'm/s^2');
+end
+
+function fem_model_name = prompt_fem_model_name()
+    fem_model_name = '';
+    while isempty(fem_model_name)
+        fem_model_name = strtrim(input( ...
+            '\nEnter saved FEM model name (without .mat): ', 's'));
+    end
+end
+
+function file_stem = make_safe_file_stem(name)
+    file_stem = regexprep(strtrim(char(string(name))), '[<>:"/\\|?*]', '_');
+    if endsWith(lower(file_stem), '.mat')
+        file_stem = file_stem(1:end-4);
+    end
+    file_stem = regexprep(file_stem, '[. ]+$', '');
+    if isempty(file_stem)
+        error('build_fem_3:InvalidModelName', ...
+            'The saved FEM model name must contain at least one valid filename character.');
+    end
 end

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adaptive PID Authority Case Comparison</title>
+<style>
+:root{color-scheme:dark;--bg:#09090b;--panel:#18181b;--line:#3f3f46;--soft:#27272a;--text:#f4f4f5;--muted:#a1a1aa;--blue:#007ca8;--copper:#ac6420;--red:#901500;--green:#39bf5e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Arial,Helvetica,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 36px}header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}h1{font-size:28px;line-height:1.15;margin:0 0 10px}h2{font-size:18px;margin:24px 0 10px}.lead{max-width:850px;color:var(--muted);margin:0}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 8px}.metric{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px}.metric b{display:block;font-size:20px;margin-bottom:2px}.metric span{color:var(--muted);font-size:12px}.figure{border:1px solid var(--line);background:#fff;border-radius:4px;padding:8px;margin:12px 0 24px}.figure img{display:block;width:100%;height:auto}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}table{border-collapse:collapse;width:100%;min-width:1040px}th,td{border-bottom:1px solid var(--soft);padding:9px 10px;text-align:right;white-space:nowrap}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2),th:nth-child(3),td:nth-child(3){text-align:left}th{color:var(--muted);font-weight:600;background:#111113}.good{color:var(--green);font-weight:700}.bad{color:#ffb4a8;font-weight:700}.note{border-left:3px solid var(--blue);padding:9px 12px;background:var(--panel);color:var(--muted)}code{font-family:Consolas,monospace;color:#e4e4e7}@media(max-width:780px){.metrics{grid-template-columns:1fr 1fr}.wrap{padding:20px 14px}h1{font-size:23px}}@media(max-width:520px){.metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<h1>Adaptive PID Authority Case Comparison</h1>
+<p class="lead">Authority-only adaptive PID study using production OSI M9.1 at a 0.050 s update interval. Plots show the guarded adaptive M9.1 decision signal. Raw M9.1 remains saved in <code>ncf_m91</code>, while fast bounded authority slew keeps adaptation from chasing spikes without delaying safety drops.</p>
+</header>
+<section class="metrics">
+<div class="metric"><b>0.050 s</b><span>M9.1 update interval</span></div>
+<div class="metric"><b>0.500</b><span>target NCF margin</span></div>
+<div class="metric"><b>98.8%</b><span>below-target area reduction</span></div>
+<div class="metric"><b>0.536</b><span>worst adaptive settled true NCF</span></div>
+</section>
+<p class="note">Excitations are explicit: high-band, low-band, and mixed high + low. The immediate post-switch minimum is shared by causal adaptive runs before enough M9.1 window data is available; the settled metric starts after the configured reaction delay.</p>
+<p class="note">The authority update used here is the standalone code-generation-friendly OSI function <code>auth_stability_gain.m</code>, intended for a Simulink MATLAB Function block with scalar state feedback.</p>
+<h2>Summary Plot</h2>
+<div class="figure"><img src="plots/adaptive_pid_authority_summary.png" alt="Summary of fixed PID versus adaptive authority penalty exposure and settled NCF margin"></div>
+<h2>Case Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Excitation</th><th>Case</th><th>Name</th><th>Fixed min true NCF</th><th>Adaptive settled true NCF</th><th>Fixed below area</th><th>Adaptive below area</th><th>Reduction</th><th>Min authority</th><th>Max authority</th></tr></thead>
+<tbody>
+<tr><td>high</td><td>C1</td><td>Healthy</td><td>0.588</td><td class="good">0.588</td><td>0.000</td><td>0.000</td><td>0.0%</td><td>0.919</td><td>1.000</td></tr>
+<tr><td>high</td><td>C2</td><td>Gain damage (measured)</td><td>0.344</td><td class="good">0.574</td><td>3.119</td><td>0.023</td><td>99.3%</td><td>0.304</td><td>1.000</td></tr>
+<tr><td>high</td><td>C3</td><td>Excess gain (extrapolated)</td><td>0.249</td><td class="good">0.566</td><td>5.009</td><td>0.043</td><td>99.1%</td><td>0.236</td><td>1.000</td></tr>
+<tr><td>high</td><td>C4</td><td>Integral-driven</td><td>0.087</td><td class="good">0.636</td><td>8.255</td><td>0.082</td><td>99.0%</td><td>0.083</td><td>1.000</td></tr>
+<tr><td>high</td><td>C5</td><td>Phase-lag (added delay)</td><td>0.308</td><td class="good">0.639</td><td>3.843</td><td>0.033</td><td>99.2%</td><td>0.102</td><td>1.000</td></tr>
+<tr><td>low</td><td>C1</td><td>Healthy</td><td>0.588</td><td class="good">0.590</td><td>0.000</td><td>0.000</td><td>0.0%</td><td>0.080</td><td>1.000</td></tr>
+<tr><td>low</td><td>C2</td><td>Gain damage (measured)</td><td>0.344</td><td class="good">0.577</td><td>3.119</td><td>0.031</td><td>99.0%</td><td>0.080</td><td>1.000</td></tr>
+<tr><td>low</td><td>C3</td><td>Excess gain (extrapolated)</td><td>0.249</td><td class="good">0.580</td><td>5.009</td><td>0.043</td><td>99.1%</td><td>0.080</td><td>1.000</td></tr>
+<tr><td>low</td><td>C4</td><td>Integral-driven</td><td>0.087</td><td class="good">0.654</td><td>8.255</td><td>0.082</td><td>99.0%</td><td>0.080</td><td>1.000</td></tr>
+<tr><td>low</td><td>C5</td><td>Phase-lag (added delay)</td><td>0.308</td><td class="good">0.536</td><td>3.843</td><td>0.240</td><td>93.8%</td><td>0.080</td><td>1.000</td></tr>
+<tr><td>mixed</td><td>C1</td><td>Healthy</td><td>0.588</td><td class="good">0.588</td><td>0.000</td><td>0.000</td><td>0.0%</td><td>1.000</td><td>1.000</td></tr>
+<tr><td>mixed</td><td>C2</td><td>Gain damage (measured)</td><td>0.344</td><td class="good">0.574</td><td>3.119</td><td>0.023</td><td>99.3%</td><td>0.304</td><td>1.000</td></tr>
+<tr><td>mixed</td><td>C3</td><td>Excess gain (extrapolated)</td><td>0.249</td><td class="good">0.575</td><td>5.009</td><td>0.043</td><td>99.1%</td><td>0.235</td><td>1.000</td></tr>
+<tr><td>mixed</td><td>C4</td><td>Integral-driven</td><td>0.087</td><td class="good">0.636</td><td>8.255</td><td>0.082</td><td>99.0%</td><td>0.082</td><td>1.000</td></tr>
+<tr><td>mixed</td><td>C5</td><td>Phase-lag (added delay)</td><td>0.308</td><td class="good">0.627</td><td>3.843</td><td>0.033</td><td>99.2%</td><td>0.116</td><td>1.000</td></tr>
+</tbody>
+</table>
+</div>
+<h2>Margins And Authority Over Time</h2>
+<h2>high-band 1731 excitation</h2>
+<div class="figure"><img src="plots/adaptive_pid_authority_high.png" alt="Per-case NCF margin and authority traces for high-band 1731 excitation"></div>
+<h2>low-band 1749 excitation</h2>
+<div class="figure"><img src="plots/adaptive_pid_authority_low.png" alt="Per-case NCF margin and authority traces for low-band 1749 excitation"></div>
+<h2>mixed high + low excitation</h2>
+<div class="figure"><img src="plots/adaptive_pid_authority_mixed.png" alt="Per-case NCF margin and authority traces for mixed high + low excitation"></div>
+<h2>Authority Law</h2>
+<p class="note"><code>a_desired = a * (max(m91_margin, 0.05) / target_margin)^power</code>. The plot shows adaptive M9.1 guard. Raw adaptive M9.1 remains stored in <code>ncf_m91</code>. Severe M9.1 dips below <code>down_immediate_margin</code> still reduce authority immediately; moderate dips must persist for <code>down_confirm_n</code> updates. Authority then applies <code>down_rate</code> to avoid step transients. Upward authority recovery waits on a guarded margin with bounded non-severe movement through <code>margin_guard_up_rate</code> and <code>margin_guard_down_rate</code>, plus an upper deadband, hold time, and small rate limit.</p>
+</main>
+</body>
+</html>

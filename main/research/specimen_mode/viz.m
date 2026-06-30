@@ -25,7 +25,7 @@ plot(t, dc, 'Color', '#AC6420')
 plot(t, dm, 'Color', '#007CA8')
 grid on
 ylabel('Displacement (mm)')
-legend('desired', 'command', 'measured')
+legend('d\_n / dd', 'dc', 'dm')
 title(selected_file, 'Interpreter', 'none')
 
 subplot(2,1,2)

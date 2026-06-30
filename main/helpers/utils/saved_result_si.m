@@ -5,6 +5,10 @@ function si = saved_result_si(raw)
 %   Output si: t [s], dd/dc/dm [m], fm [N], am [m/s^2].
 %   Existing m_hat [kg], c_hat [N*s/m], and k_hat [N/m] pass through.
 
+if isfield(raw, 'result') && isstruct(raw.result)
+    raw = raw.result;
+end
+
 si = raw;
 si.dd = raw.dd/1000;
 si.dc = raw.dc/1000;

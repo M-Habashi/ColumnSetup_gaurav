@@ -5,8 +5,9 @@
 % The Hybrid Simulation path uses the same step_HS function as Simulink.
 
 clearvars -except outputVerificationFile fem_file_override ...
+    specimen_file_override exp_specimen_file_override ...
     h_dc_dm_model_file_override pid_gain_override ...
-    delay_comp_file_override; ...
+    phase_lead_file_override PID_scale; ...
     clc; close all;
 
 script_dir = fileparts(mfilename('fullpath'));
@@ -26,10 +27,28 @@ addpath(fullfile(project_root, 'control_and_HS', 'b_system_id', ...
 hs = struct( ...
     'earthquake_type', 'el_centro', ...
     'intensity_factor', 0.025, ...
-    'time_scale_factor', 20, ...
+    'time_scale_factor', 1, ...
     'force_sign', 1.0);
-k_exp_r = 1.0;
+PID_scale = 1;
+validateattributes(PID_scale, {'numeric'}, ...
+    {'scalar', 'real', 'finite'}, mfilename, 'PID_scale');
+k_exp_r =1;
 hs_sample_dt = 1/2048;
+if exist('exp_specimen_file_override', 'var') ...
+        && ~isempty(exp_specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, exp_specimen_file_override);
+elseif exist('specimen_file_override', 'var') ...
+        && ~isempty(specimen_file_override)
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens', false, specimen_file_override);
+else
+    [specimen, specimen_file, specimen_name] = load_saved_result_file( ...
+        project_root, 'specimens');
+end
+assert(isfield(specimen, 'k'), ...
+    'The selected specimen file must contain lateral stiffness k.');
+specimen_si = specimen_params_si(specimen);
 if exist('h_dc_dm_model_file_override', 'var') ...
         && ~isempty(h_dc_dm_model_file_override)
     h_dc_dm_model_file = h_dc_dm_model_file_override;
@@ -46,24 +65,6 @@ end
 if ~exist('pid_gain_override', 'var')
     pid_gain_override = [0.15 20 0.0015 512];
 end
-% Phase-lead compensator used on the Hybrid Simulation numerical dd command.
-if exist('delay_comp_file_override', 'var') ...
-        && ~isempty(delay_comp_file_override)
-    [delay_comp_data, delay_comp_file, delay_comp_name] = ...
-        load_saved_result_file(project_root, 'delay_comp', false, ...
-        delay_comp_file_override);
-else
-    [delay_comp_data, delay_comp_file, delay_comp_name] = ...
-        load_saved_result_file(project_root, 'delay_comp');
-end
-delay_comp_tf = delay_comp_data.delay_comp_tf;
-delay_comp_tf_discrete = c2d(delay_comp_tf, hs_sample_dt, 'tustin');
-phase_lead = [];
-if isfield(delay_comp_data, 'phase_lead')
-    phase_lead = normalizePhaseLeadConfig(delay_comp_data.phase_lead);
-end
-phase_lead_enabled = isempty(phase_lead) || phase_lead.enabled;
-
 %% SAVED FEM AND HS SETUP
 if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
     [fem, fem_file, ~] = loadFemDefinition(project_root, false, ...
@@ -71,13 +72,33 @@ if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
 else
     [fem, fem_file, ~] = loadFemDefinition(project_root, false);
 end
+
+% phase_lead used on the Hybrid Simulation numerical dd command.
+if exist('phase_lead_file_override', 'var') ...
+        && ~isempty(phase_lead_file_override)
+    [phase_lead_data, phase_lead_file, phase_lead_name] = ...
+        load_saved_result_file(project_root, 'phase_lead', false, ...
+        phase_lead_file_override);
+else
+    [phase_lead_data, phase_lead_file, phase_lead_name] = ...
+        load_saved_result_file(project_root, 'phase_lead');
+end
+phase_lead_tf = phase_lead_data.phase_lead_tf;
+phase_lead_tf_discrete = c2d(phase_lead_tf, hs_sample_dt, 'tustin');
+phase_lead = [];
+if isfield(phase_lead_data, 'phase_lead')
+    phase_lead = normalizePhaseLeadConfig(phase_lead_data.phase_lead);
+end
+phase_lead_enabled = isempty(phase_lead) || phase_lead.enabled;
+
 hs.fem_file = fem_file;
+hs.specimen_file = specimen_file;
 
 fem_num = fem.num;
 fem_ref = fem.ref;
 frame = fem_num.frame;
 n_story = frame.n_story;
-k_experimental = k_exp_r*fem_num.experimental_k;
+k_experimental = k_exp_r*specimen_si.stiffness;
 
 validateattributes(k_exp_r, {'numeric'}, ...
     {'scalar', 'real', 'finite', 'nonnegative', '<=', 1});
@@ -111,7 +132,7 @@ hs.ag = hs.intensity_factor*earthquake(:, 2);
 [PID_H_dc_dm, pid_h_dc_dm_values, h_dc_dm_model_file, ...
     actuator_open_loop] = ...
     loadPidHdcDmModel(project_root, h_dc_dm_model_file, ...
-    pid_gain_override, hs_sample_dt);
+    pid_gain_override, PID_scale, hs_sample_dt);
 
 %% SAMPLE GRID AND EARTHQUAKE INPUT
 model_time = hs.time;
@@ -166,7 +187,7 @@ end
     dc_pid_sample, experimental_force_pid_sample, ...
     pid_cl_stability] = ...
     hybridResponseWithPidHdcDm(hs, PID_H_dc_dm, pid_h_dc_dm_values, ...
-    k_experimental, hs_sample_dt, delay_comp_tf_discrete);
+    k_experimental, hs_sample_dt, phase_lead_tf_discrete);
 
 u_num_floors = interp1(hs_real_time, u_num_floors_sample, real_time, ...
     'linear');
@@ -190,7 +211,7 @@ experimental_force_pid = interp1(hs_real_time, ...
 if abs(hs.time_scale_factor-1) < eps
     unit_scale_u_num_floors_sample = u_num_floors_sample;
 else
-    unit_scale_u_num_floors_sample = hybridResponseAtTimeScale( ...
+    unit_scale_u_num_floors_sample = hybrid_response_at_time_scale( ...
         hs, fem_num, k_experimental, hs_sample_dt, 1);
 end
 
@@ -201,13 +222,20 @@ metric = validation_metrics();
 J4 = metric.J4(u_num_floors(:, 1), u_reference(:, 1));
 J5 = metric.J5(u_num_floors(:, 2), u_reference(:, 2));
 J6 = metric.J6(u_num_floors(:, 3), u_reference(:, 3));
-J4_pid = metric.J4(u_pid_floors(:, 1), u_reference(:, 1));
-J5_pid = metric.J5(u_pid_floors(:, 2), u_reference(:, 2));
-J6_pid = metric.J6(u_pid_floors(:, 3), u_reference(:, 3));
-J1_pid = metric.J1(dm_pid_sample, dd_pid_sample, hs_sample_dt);
-J2_pid = metric.J2(dm_pid_sample, dd_pid_sample);
-J3_pid = metric.J3(dm_pid_sample, dd_pid_sample);
-J7_pid = metric.J7(dm_pid_sample, 1000*u_control_reference_sample);
+vhs_result = struct('t', hs_real_time, ...
+    'dc', dc_pid_sample, 'dm', dm_pid_sample, ...
+    'fm', experimental_force_pid_sample, ...
+    'am', ag_sample/9.80665, 'fs', 1/hs_sample_dt, ...
+    'dt', hs_sample_dt, ...
+    'dd_pause_enable_log', zeros(size(hs_real_time)), ...
+    'hs', hs, 'testname', 'vHS', 'test_type', 'vHS');
+vhs_metric_table = compare_hs_response_to_reference(hs.fem, vhs_result, ...
+    hs.earthquake_type, hs.intensity_factor, hs.time_scale_factor, ...
+    hs.force_sign, struct('plot', false));
+control_metric_values = vhs_metric_table.Value;
+metric_names = vhs_metric_table.Properties.RowNames(:);
+metric_descriptions = cellstr(vhs_metric_table.Description);
+metric_units = cellstr(vhs_metric_table.Unit);
 colors = getPlotColors();
 if phase_lead_enabled
     control_path_label = 'num*G_T*PID*H_{dc,dm}*exp';
@@ -221,18 +249,21 @@ fprintf('H_dc_dm model file: %s\n', h_dc_dm_model_file);
 fprintf('PID_H_dc_dm gains: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
     pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, ...
     pid_h_dc_dm_values.derivative_filter_N);
-fprintf('Phase-lead compensator loaded: %s\n', delay_comp_file);
+fprintf('PID output scale: %.6g\n', pid_h_dc_dm_values.PID_scale);
+fprintf('phase_lead loaded: %s\n', phase_lead_file);
 if ~isempty(phase_lead) && phase_lead.enabled
-    fprintf('Phase lead after numerical dd: %s\n', ...
+    fprintf('phase_lead after numerical dd: %s\n', ...
         phaseLeadSummary(phase_lead));
 elseif phase_lead_enabled
-    fprintf('Phase lead after numerical dd: using loaded transfer function\n');
+    fprintf('phase_lead after numerical dd: using loaded transfer function\n');
 else
-    fprintf('Phase lead after numerical dd: disabled\n');
+    fprintf('phase_lead after numerical dd: disabled\n');
 end
 fprintf('FEM schema version: %d\n', fem.schema_version);
-fprintf('Specimen name: %s\n', fem.specimen_name);
-fprintf('Specimen file: %s\n', fem.specimen_file);
+fprintf('FEM specimen name: %s\n', fem.specimen_name);
+fprintf('FEM specimen file: %s\n', fem.specimen_file);
+fprintf('Experimental specimen name: %s\n', specimen_name);
+fprintf('Experimental specimen file: %s\n', specimen_file);
 fprintf('Frame: %d stories, %d bays, bay width %.12g m, story height %.12g m\n', ...
     frame.n_story, frame.n_bay, frame.bay_width, frame.story_height);
 fprintf('Frame E: %.12g Pa; beam connection k: %.12g N*m/rad\n', ...
@@ -292,17 +323,10 @@ fprintf('Maximum %s vs full-reference floor difference: %.6e m\n', ...
 fprintf('Peak interface displacement: %.6f m\n', ...
     max(abs(interface_displacement)));
 fprintf('Peak experimental force: %.6f N\n\n', max(abs(experimental_force)));
-validation_metric_table = table({'J1'; 'J2'; 'J3'; 'J4'; 'J5'; 'J6'; 'J7'}, ...
-    {'dm vs replayed numerical control-point delay'; ...
-    'dm vs replayed numerical control-point normalized RMS error'; ...
-    'dm vs replayed numerical control-point peak error'; ...
-    'First-floor normalized RMS error'; ...
-    'Second-floor normalized RMS error'; ...
-    'Third-floor normalized RMS error'; ...
-    'dm vs full FEM control-point NMSE'}, ...
-    {'ms'; '%'; '%'; '%'; '%'; '%'; '%'}, ...
+validation_metric_table = table(metric_names, ...
+    metric_descriptions, metric_units, ...
     [NaN; NaN; NaN; J4; J5; J6; NaN], ...
-    [J1_pid; J2_pid; J3_pid; J4_pid; J5_pid; J6_pid; J7_pid], ...
+    control_metric_values, ...
     'VariableNames', {'Metric', 'Description', 'Unit', ...
         'NumExp', 'ControlPath'});
 disp('Validation metrics')
@@ -314,18 +338,20 @@ figure('Color', 'w', 'Name', 'Reference and HS comparison');
 layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 for floor_id = 1:n_story
     ax = nexttile;
-    plot(ax, real_time, u_reference(:, floor_id), 'k--', 'LineWidth', 2.2, ...
-        'DisplayName', 'Reference');
+    plot(ax, real_time, u_reference(:, floor_id), '--', ...
+        'Color', colors.dark_green, 'LineWidth', 2.2, ...
+        'DisplayName', sprintf('x%d\\_r (full FEM)', floor_id));
     hold(ax, 'on');
     plot(ax, real_time, u_num_floors(:, floor_id), '-', ...
         'Color', colors.blue, 'LineWidth', 1.1, ...
-        'DisplayName', 'num*exp');
+        'DisplayName', sprintf('x%d\\_n (numerical sub)', floor_id));
     plot(ax, real_time, u_pid_floors(:, floor_id), '-', ...
         'Color', colors.copperwood, 'LineWidth', 1.1, ...
-        'DisplayName', control_path_label);
+        'DisplayName', sprintf('x%d\\_n (%s)', floor_id, ...
+        control_path_label));
     hold(ax, 'off'); grid(ax, 'on');
     ylabel(ax, sprintf('Floor %d (m)', floor_id));
-    if floor_id == 1, makeLegendToggle(ax); end
+    makeLegendToggle(ax);
 end
 xlabel(ax, 'Real time (s)');
 title(layout, sprintf('%s: reference and Hybrid Simulation response', ...
@@ -340,17 +366,20 @@ figure('Color', 'w', 'Name', 'PID_H_dc_dm control check');
 layout = tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 ax = nexttile;
 plot(ax, hs_real_time, dd_pid_sample, 'k--', 'LineWidth', 2.2, ...
-    'DisplayName', 'raw numerical dd');
+    'DisplayName', 'd\_n (numerical sub)');
 hold(ax, 'on');
 if phase_lead_enabled
     plot(ax, hs_real_time, dd_lead_pid_sample, '--', ...
         'Color', colors.green, 'LineWidth', 1.5, ...
-        'DisplayName', 'phase-lead desired dd');
+        'DisplayName', 'phase_lead d\_n');
 end
+plot(ax, hs_real_time, 1000*u_control_reference_sample, '-', ...
+    'Color', colors.red, 'LineWidth', 1.1, ...
+    'DisplayName', 'd\_r (full FEM)');
 plot(ax, hs_real_time, dc_pid_sample, '-', 'Color', colors.copperwood, ...
-    'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
+    'LineWidth', 1.0, 'DisplayName', 'dc (command)');
 plot(ax, hs_real_time, dm_pid_sample, '-', 'Color', colors.blue, ...
-    'LineWidth', 1.0, 'DisplayName', 'dm measured displacement');
+    'LineWidth', 1.0, 'DisplayName', 'dm (measured)');
 addPeakLines(ax, dm_pid_sample, 'dm', colors.blue, 'mm');
 addPeakLines(ax, dc_pid_sample, 'dc', colors.copperwood, 'mm');
 hold(ax, 'off'); grid(ax, 'on');
@@ -360,7 +389,7 @@ makeLegendToggle(ax);
 ax = nexttile;
 plot(ax, hs_real_time, experimental_force_pid_sample, '-', ...
     'Color', colors.purple, 'LineWidth', 1.0, ...
-    'DisplayName', 'fm measured force');
+    'DisplayName', 'fm (measured force)');
 hold(ax, 'on');
 addPeakLines(ax, experimental_force_pid_sample, 'fm', colors.purple, 'N');
 hold(ax, 'off'); grid(ax, 'on');
@@ -374,49 +403,9 @@ linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 fft_fmax_hz = 100;
 fft_fs_hz = 1/hs_sample_dt;
 fft_test_duration_s = hs.time(end)*hs.time_scale_factor;
-fft_mode_frequency_hz = building_mode_frequency_hz;
-fft_mode_frequency_hz = fft_mode_frequency_hz( ...
-    fft_mode_frequency_hz <= fft_fmax_hz);
-[Y_ag_selected, freq_ag_selected] = fft_c(ag_sample, fft_fs_hz, ...
-    fft_fmax_hz);
-figure('Color', 'w', 'Name', 'HS response frequency content');
-layout = tiledlayout(n_story, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-for floor_id = 1:n_story
-    ax = nexttile;
-    yyaxis(ax, 'left');
-    [Y_unit, freq_unit] = fft_c(unit_scale_u_num_floors_sample(:, floor_id), ...
-        fft_fs_hz, fft_fmax_hz);
-    [Y_selected, freq_selected] = fft_c(u_num_floors_sample(:, floor_id), ...
-        fft_fs_hz, fft_fmax_hz);
-    plot(ax, freq_unit, abs(Y_unit), '-', 'Color', [0.55 0.55 0.55], ...
-        'LineWidth', 1.0, 'DisplayName', 'Time scale = 1');
-    hold(ax, 'on');
-    plot(ax, freq_selected, abs(Y_selected), '-', 'Color', [0 0.486 0.659], ...
-        'LineWidth', 1.2, 'DisplayName', sprintf('Selected = %.3g', ...
-        hs.time_scale_factor));
-    for mode_id = 1:numel(fft_mode_frequency_hz)
-        xline(ax, fft_mode_frequency_hz(mode_id), 'k--', ...
-            'HandleVisibility', 'off', 'LineWidth', 0.8);
-    end
-    ylabel(ax, sprintf('|Floor %d| (m)', floor_id));
-
-    yyaxis(ax, 'right');
-    area(ax, freq_ag_selected, abs(Y_ag_selected), ...
-        'FaceColor', [0.9 0.1 0.1], 'FaceAlpha', 0.18, ...
-        'EdgeColor', 'none', 'DisplayName', 'Selected earthquake');
-    ylabel(ax, '|ag(f)| (m/s^2)');
-    ax.YAxis(1).Color = [0 0 0];
-    ax.YAxis(2).Color = [0.7 0 0];
-    hold(ax, 'off'); grid(ax, 'on');
-    xlim(ax, [0 fft_fmax_hz]);
-    if floor_id == 1, makeLegendToggle(ax); end
-end
-xlabel(ax, 'Frequency (Hz)');
-title(layout, sprintf(['%s: response frequency content; test duration = ' ...
-    '%.2f s'], hs.earthquake_type, fft_test_duration_s));
-subtitle(layout, ['Hybrid Simulation floor response, one-sided FFT ' ...
-    'amplitude; dashed lines = modal frequencies']);
-linkaxes(findall(gcf, 'Type', 'axes'), 'x');
+plot_hs_response_frequency_content(hs, u_num_floors_sample, ...
+    unit_scale_u_num_floors_sample, fft_fs_hz, fft_fmax_hz, ...
+    fft_test_duration_s, ag_sample);
 
 %% PARTITION GEOMETRY
 frame_x = (0:frame.n_bay)*frame.bay_width;
@@ -467,14 +456,21 @@ hold off;
 hybrid_margin_frequency_hz = [0.1, 80];
 vhs_stability_table = buildVhsStabilityTable(PID_H_dc_dm, ...
     actuator_open_loop, hs, k_experimental, hs_sample_dt, ...
-    delay_comp_tf_discrete, hybrid_margin_frequency_hz);
+    phase_lead_tf_discrete, hybrid_margin_frequency_hz);
 
 disp('Stability table')
 disp(vhs_stability_table)
+auth_target_ncf = 0.6;
+[auth_stability_factor, auth_stability_ncf] = recommendAuthStabilityFactor( ...
+    actuator_open_loop, pid_h_dc_dm_values.PID_scale, auth_target_ncf, ...
+    hybrid_margin_frequency_hz);
+fprintf(['Recommended auth_stability_factor for PID+H_dc_dm NCF %.3f: ' ...
+    '%.4g (estimated NCF %.4g)\n'], auth_target_ncf, ...
+    auth_stability_factor, auth_stability_ncf);
 
 function [PID_H_dc_dm, pid_values, model_file, actuator_open_loop] = ...
         loadPidHdcDmModel( ...
-        project_root, model_file, pid_gain_override, sample_time)
+        project_root, model_file, pid_gain_override, PID_scale, sample_time)
 % Units: H_dc_dm maps dc [mm] to dm [mm]; PID_H_dc_dm maps dd [mm] to dm [mm].
 if isempty(model_file)
     [~, model_file, ~] = load_saved_result_file(project_root, 'exp_tf');
@@ -495,6 +491,7 @@ else
         'derivative_filter_N', 512);
 end
 pid_values = applyPidGainOverride(pid_values, pid_gain_override);
+pid_values.PID_scale = PID_scale;
 if get(H_dc_dm, 'Ts') == 0
     H_dc_dm = c2d(H_dc_dm, sample_time, 'zoh');
 elseif abs(get(H_dc_dm, 'Ts')-sample_time) > 10*eps(sample_time)
@@ -503,52 +500,14 @@ end
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, sample_time, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+digital_controller = pid_values.PID_scale*digital_controller;
 actuator_open_loop = digital_controller*H_dc_dm;
 PID_H_dc_dm = feedback(actuator_open_loop, 1);
 end
 
-% Keep this duplicated helper synced with helpers\utils\compare_hs_test_to_reference.m.
-% If the full FEM control-point reconstruction changes here, update both files.
-function u_control = referenceControlDisplacement(fem_ref, floor_response)
-% Units: floor_response/u_control [m].
-assembly = fem_ref.assembly;
-retained = assembly.retained_dofs(:);
-internal = assembly.internal_dofs(:);
-K_full = assembly.K_full;
-q_internal = -(K_full(internal, internal) ...
-    \(K_full(internal, retained)*floor_response'))';
-
-n = size(floor_response, 1);
-q = zeros(n, size(K_full, 1));
-q(:, retained) = floor_response;
-q(:, internal) = q_internal;
-
-height = fem_ref.experimental_column.height;
-story_height = fem_ref.frame.story_height;
-xi = height/story_height;
-N1 = 1 - 3*xi^2 + 2*xi^3;
-N2 = story_height*(xi - 2*xi^2 + xi^3);
-N3 = 3*xi^2 - 2*xi^3;
-N4 = story_height*(-xi^2 + xi^3);
-
-joint_rotation = assembly.joint_rotation_dofs;
-theta_base = getDofSignal(q, joint_rotation(1, 1));
-theta_floor = getDofSignal(q, joint_rotation(1, 2));
-u_control = N1*zeros(n, 1) - N2*theta_base ...
-    + N3*floor_response(:, 1) - N4*theta_floor;
-end
-
-function value = getDofSignal(q, dof)
-if dof > 0
-    value = q(:, dof);
-else
-    value = zeros(size(q, 1), 1);
-end
-end
-
 function stability_table = buildVhsStabilityTable(PID_H_dc_dm, ...
         actuator_open_loop, hs, k_experimental, sample_time, ...
-        delay_comp_tf_discrete, freq_range_hz)
+        phase_lead_tf_discrete, freq_range_hz)
 % Units: margins use dB, deg, s, and discrete z-plane pole magnitude.
 num_model = numericalSubstructureDiscrete(hs, sample_time);
 num_tf = ss(num_model.A, num_model.B_fm, num_model.C, ...
@@ -556,10 +515,10 @@ num_tf = ss(num_model.A, num_model.B_fm, num_model.C, ...
 k_mm = k_experimental/1000;
 actuator = discreteSiso(PID_H_dc_dm, sample_time);
 unity_filter = discreteSiso(tf(1), sample_time);
-delay_filter = discreteSiso(delay_comp_tf_discrete, sample_time);
+delay_filter = discreteSiso(phase_lead_tf_discrete, sample_time);
 num_exp_stability = analyzeActuatorLoop(num_model, actuator, ...
     unity_filter, k_experimental, sample_time);
-num_delay_comp_exp_stability = analyzeActuatorLoop(num_model, actuator, ...
+num_phase_lead_exp_stability = analyzeActuatorLoop(num_model, actuator, ...
     delay_filter, k_experimental, sample_time);
 
 exp_metrics = stabilityMetrics(actuator_open_loop, ...
@@ -567,16 +526,16 @@ exp_metrics = stabilityMetrics(actuator_open_loop, ...
 num_exp_metrics = stabilityMetrics( ...
     -minreal(num_tf*k_mm*PID_H_dc_dm), ...
     num_exp_stability.coupled_max_abs_pole, freq_range_hz);
-num_delay_comp_exp_metrics = stabilityMetrics( ...
-    -minreal(num_tf*k_mm*delay_comp_tf_discrete*PID_H_dc_dm), ...
-    num_delay_comp_exp_stability.coupled_max_abs_pole, freq_range_hz);
+num_phase_lead_exp_metrics = stabilityMetrics( ...
+    -minreal(num_tf*k_mm*phase_lead_tf_discrete*PID_H_dc_dm), ...
+    num_phase_lead_exp_stability.coupled_max_abs_pole, freq_range_hz);
 
 stability_table = array2table([ ...
     metricColumn(exp_metrics), ...
     metricColumn(num_exp_metrics), ...
-    metricColumn(num_delay_comp_exp_metrics)], ...
-    'VariableNames', {'exp_PID_HdcDm', 'num_exp', ...
-    'num_delay_comp_exp'}, ...
+    metricColumn(num_phase_lead_exp_metrics)], ...
+    'VariableNames', {'PID_H_dc_dm', 'num_exp', ...
+    'num_phase_lead_exp'}, ...
     'RowNames', {'GM_dB', 'PM_deg', 't_cr_s', 'NCF_margin', ...
     'MaxAbsZPole'});
 end
@@ -592,6 +551,25 @@ end
 function values = metricColumn(metrics)
 values = [metrics.gm_db; metrics.pm_deg; metrics.t_cr_s; ...
     metrics.ncf_margin; metrics.max_abs_z_pole];
+end
+
+function [factor, ncf_margin] = recommendAuthStabilityFactor( ...
+        open_loop, current_factor, target_ncf, freq_range_hz)
+current_factor = max(abs(current_factor), eps);
+factors = linspace(0.02, 1, 80).';
+ncf = NaN(size(factors));
+for i = 1:numel(factors)
+    [~, ~, ncf(i)] = custom_stability_margins( ...
+        (factors(i)/current_factor)*open_loop, freq_range_hz);
+end
+ok = ncf >= target_ncf;
+if any(ok)
+    idx = find(ok, 1, 'last');
+else
+    [~, idx] = max(ncf);
+end
+factor = factors(idx);
+ncf_margin = ncf(idx);
 end
 
 function value = maxAbsPole(system_model)
@@ -628,14 +606,15 @@ end
 
 function [u_num_floors_sample, dd_sample, dd_lead_sample, dm_sample, dc_sample, ...
         force_sample, stability] = hybridResponseWithPidHdcDm(hs, PID_H_dc_dm, ...
-        pid_values, k_experimental, hs_sample_dt, delay_comp_tf_discrete)
+        pid_values, k_experimental, hs_sample_dt, phase_lead_tf_discrete)
 % Units: dd/dd_lead/dm/dc [mm], force [N], floor displacement [m].
 num_model = numericalSubstructureDiscrete(hs, hs_sample_dt);
 actuator = discreteSiso(PID_H_dc_dm, hs_sample_dt);
-lead_filter = discreteSiso(delay_comp_tf_discrete, hs_sample_dt);
+lead_filter = discreteSiso(phase_lead_tf_discrete, hs_sample_dt);
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, hs_sample_dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+digital_controller = pid_values.PID_scale*digital_controller;
 controller = discreteSiso(digital_controller, hs_sample_dt);
 stability = analyzeActuatorLoop(num_model, actuator, lead_filter, ...
     k_experimental, hs_sample_dt);
@@ -764,68 +743,6 @@ end
 stability.closed_loop_poles = closed_loop_poles;
 end
 
-function u_num_floors_sample = hybridResponseAtTimeScale( ...
-    hs, fem_num, k_experimental, hs_sample_dt, time_scale_factor)
-% Units: time [s], displacement [m], stiffness [N/m].
-fem_file_info = dir(hs.fem_file);
-fem_file_stamp = 0;
-if ~isempty(fem_file_info)
-    fem_file_stamp = fem_file_info.datenum;
-end
-cache_key = sprintf('%s|%.17g|%.17g|%.17g|%.17g|%.17g|%s', ...
-    hs.earthquake_type, hs.intensity_factor, time_scale_factor, ...
-    k_experimental, hs_sample_dt, fem_file_stamp, hs.fem_file);
-persistent cache
-if ~isempty(cache)
-    hit = find(strcmp({cache.key}, cache_key), 1);
-    if ~isempty(hit)
-        u_num_floors_sample = cache(hit).u_num_floors_sample;
-        return
-    end
-end
-
-hs.time_scale_factor = time_scale_factor;
-model_time = hs.time;
-real_time = model_time*hs.time_scale_factor;
-ag = hs.ag;
-n_hs_sample = ceil(real_time(end)/hs_sample_dt) + 1;
-hs_real_time = (0:n_hs_sample-1)'*hs_sample_dt;
-hs_model_time = hs_real_time/hs.time_scale_factor;
-ag_sample = interp1(model_time, ag, hs_model_time, 'linear', 0);
-
-floor_dofs = fem_num.floor_dofs(:)';
-interface_dof = fem_num.interface_dof;
-K_coupled = fem_num.K;
-K_coupled(interface_dof, interface_dof) = ...
-    K_coupled(interface_dof, interface_dof) + k_experimental;
-K_floor_floor = K_coupled(floor_dofs, floor_dofs);
-K_floor_interface = K_coupled(floor_dofs, interface_dof);
-K_interface_floor = K_coupled(interface_dof, floor_dofs);
-K_interface_interface = K_coupled(interface_dof, interface_dof);
-K_hybrid_reference = K_floor_floor - K_floor_interface ...
-    *(K_interface_interface\K_interface_floor);
-interface_from_floors = -(K_interface_interface\K_interface_floor);
-
-numerical_load_sample = hs.ground_force_gain*ag_sample';
-u_hybrid_reference_sample = newmarkAverageAcceleration(hs_real_time, ...
-    hs.M, hs.C, K_hybrid_reference, numerical_load_sample);
-interface_displacement_reference_sample = ...
-    (interface_from_floors*u_hybrid_reference_sample')';
-measured_force_sample = k_experimental*interface_displacement_reference_sample;
-
-state = [];
-u_num_floors_sample = zeros(numel(hs_real_time), hs.n_floor);
-for step = 2:numel(hs_real_time)
-    [~, state] = step_HS(measured_force_sample(step), 0, hs_sample_dt, ...
-        hs, state);
-    u_num_floors_sample(step, :) = state(1:hs.n_floor)';
-end
-
-entry.key = cache_key;
-entry.u_num_floors_sample = u_num_floors_sample;
-cache = [cache, entry];
-end
-
 function system = discreteSiso(system_model, sample_time)
 % Units: sample_time [s].
 if get(system_model, 'Ts') == 0
@@ -903,6 +820,7 @@ end
 function colors = getPlotColors()
 % Units: RGB outputs are dimensionless.
 colors.green = hexToRgb('39BF5E');
+colors.dark_green = hexToRgb('006B2E');
 colors.black = [0 0 0];
 colors.blue = hexToRgb('007CA8');
 colors.red = hexToRgb('901500');
@@ -913,37 +831,4 @@ end
 function rgb = hexToRgb(hex_color)
 % Units: hexadecimal input and RGB output are dimensionless.
 rgb = sscanf(hex_color, '%2x%2x%2x', [1 3]) / 255;
-end
-
-function u = newmarkAverageAcceleration(time, M, C, K, force)
-% Units: time [s], M [kg], C [N*s/m], K [N/m], force [N], output u [m].
-n_step = numel(time);
-n_dof = size(M, 1);
-u = zeros(n_step, n_dof);
-v = zeros(n_step, n_dof);
-a = zeros(n_step, n_dof);
-a(1, :) = (M\(force(:, 1)-C*v(1, :)'-K*u(1, :)'))';
-
-beta = 1/4;
-gamma = 1/2;
-for step = 2:n_step
-    dt = time(step)-time(step-1);
-    a0 = 1/(beta*dt^2);
-    a1 = gamma/(beta*dt);
-    a2 = 1/(beta*dt);
-    a3 = 1/(2*beta)-1;
-    a4 = gamma/beta-1;
-    a5 = dt*(gamma/(2*beta)-1);
-
-    effective_stiffness = K+a0*M+a1*C;
-    effective_rhs = force(:, step) ...
-        + M*(a0*u(step-1, :)'+a2*v(step-1, :)'+a3*a(step-1, :)') ...
-        + C*(a1*u(step-1, :)'+a4*v(step-1, :)'+a5*a(step-1, :)');
-
-    u(step, :) = (effective_stiffness\effective_rhs)';
-    a(step, :) = (a0*(u(step, :)'-u(step-1, :)') ...
-        - a2*v(step-1, :)'-a3*a(step-1, :)')';
-    v(step, :) = (v(step-1, :)'+dt*((1-gamma)*a(step-1, :)' ...
-        + gamma*a(step, :)'))';
-end
 end

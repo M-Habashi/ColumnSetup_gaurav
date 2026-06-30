@@ -1,88 +1,156 @@
+function summary = visualize_saved_results(result)
 %% Visualize Saved Column Setup Results
-% Lists saved result MAT files, prompts for one file, prints a compact
-% report, displacement tracking, measured force, and force-displacement
-% hysteresis.
+% Plots displacement tracking, measured force, measured acceleration, and
+% force-displacement hysteresis from a saved result struct.
 
 %% Units
 % Input/stored: t [s], dd/dc/dm [mm], fm [N], am [g], m_hat [kg],
-% c_hat [N*s/m], k_hat [N/m]. Plotted outputs preserve those stored units.
+% c_hat [N*s/m], k_hat [N/m]. RTHS tracking evaluation uses d_n
+% recomputed by stepping the numerical sub from logged fm.
 
+summary = [];
 scriptFolder = fileparts(mfilename('fullpath'));
 projectFolder = fileparts(scriptFolder);
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
-
-preferredFile = '';
-if exist('outputVerificationFile', 'var')
-    preferredFile = outputVerificationFile;
+if nargin < 1 || isempty(result)
+    [data, ~, selectedFileName] = load_saved_result_file( ...
+        projectFolder, 'tests', false, '', false);
+    if ~isfield(data, 'result') || ~isstruct(data.result)
+        printConversionMessage(selectedFileName)
+        return
+    end
+    result = data.result;
 end
-[data, filePath, selectedFileName] = load_saved_result_file( ...
-    projectFolder, 'tests', false, preferredFile);
+if isfield(result, 'result') && isstruct(result.result)
+    result = result.result;
+end
+if ~isNewResultStruct(result)
+    printConversionMessage(getResultName(result))
+    return
+end
 
-t = data.t(:);
-dd = data.dd(:);
-dc = data.dc(:);
-dm = data.dm(:);
-fm = data.fm(:);
-am = data.am(:);
-hasTseEstimate = isfield(data, 'm_hat') && isfield(data, 'c_hat') ...
-    && isfield(data, 'k_hat') && ~isempty(data.m_hat);
+t = result.t(:);
+logged_dd = result.dd(:);
+dc = result.dc(:);
+dm = result.dm(:);
+fm = result.fm(:);
+am = result.am(:);
+fs = result.fs;
+dt = result.dt;
+dm_filtfilt_cutoff_hz = 30;
+dm_filtfilt_order = 4;
+dm_filtfilt = filtfiltDm(dm, fs, dm_filtfilt_cutoff_hz, dm_filtfilt_order);
+hasTseEstimate = isfield(result, 'm_hat') && isfield(result, 'c_hat') ...
+    && isfield(result, 'k_hat') && ~isempty(result.m_hat);
+useNumericalSub = hasNumericalSubEvaluation(result);
+if useNumericalSub
+    numerical_sub = recompute_numerical_sub_response(result);
+else
+    numerical_sub = [];
+end
 
-n = min([numel(t), numel(dd), numel(dc), numel(dm), numel(fm), numel(am)]);
+n = min([numel(t), numel(logged_dd), numel(dc), numel(dm), ...
+    numel(fm), numel(am)]);
+if useNumericalSub
+    n = min([n, numel(numerical_sub.d_n_mm)]);
+end
 if hasTseEstimate
-    n = min([n, numel(data.m_hat), numel(data.c_hat), numel(data.k_hat)]);
+    n = min([n, numel(result.m_hat), numel(result.c_hat), ...
+        numel(result.k_hat)]);
 end
 t = t(1:n);
-dd = dd(1:n);
+logged_dd = logged_dd(1:n);
 dc = dc(1:n);
 dm = dm(1:n);
+dm_filtfilt = dm_filtfilt(1:n);
 fm = fm(1:n);
 am = am(1:n);
 if hasTseEstimate
-    m_hat = data.m_hat(1:n);
-    c_hat = data.c_hat(1:n);
-    k_hat = data.k_hat(1:n);
+    m_hat = result.m_hat(1:n);
+    c_hat = result.c_hat(1:n);
+    k_hat = result.k_hat(1:n);
 end
 
-trackingError = dd - dm;
-rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
+if useNumericalSub
+    trackingSignal = numerical_sub.d_n_mm(1:n);
+    trackingSignalName = 'd_n';
+    trackingLegendName = 'd\_n (numerical sub)';
+else
+    trackingSignal = logged_dd;
+    trackingSignalName = 'dd';
+    trackingLegendName = 'dd (logged command)';
+end
 
+maxPlotPoints = 50000;
+plotStep = max(1, ceil(n/maxPlotPoints));
+plotIndex = 1:plotStep:n;
+if plotIndex(end) ~= n
+    plotIndex = [plotIndex n];
+end
+
+trackingError = trackingSignal - dm_filtfilt;
+rmsError = sqrt(mean(trackingError.^2, 'omitnan'));
 duration = t(end) - t(1);
-fs = data.fs;
-dt = data.dt;
-test_type = getTestType(data);
+test_type = getTestType(result);
+resultName = getResultName(result);
+
+summary = struct('name', resultName, 'test_type', test_type, ...
+    'duration', duration, 'sample_count', n, 'fs', fs, 'dt', dt, ...
+    'tracking_signal', trackingSignalName, ...
+    'dm_filtfilt_cutoff_hz', dm_filtfilt_cutoff_hz, ...
+    'dm_filtfilt_order', dm_filtfilt_order, ...
+    'rms_tracking_error', rmsError);
+if useNumericalSub
+    summary.rms_d_n_dm_filtfilt = rmsError;
+else
+    summary.rms_dd_dm_filtfilt = rmsError;
+end
 
 fprintf('\n===============================================================\n');
 fprintf('                    Saved Result Summary\n');
 fprintf('===============================================================\n');
-fprintf('File name:       %s\n', selectedFileName);
+fprintf('Result:          %s\n', resultName);
 fprintf('Test type:       %s\n', test_type);
-fprintf('Full path:       %s\n', filePath);
 fprintf('Duration:        %.3f s\n', duration);
 fprintf('Sample count:    %d\n', n);
 fprintf('fs:              %.6g Hz\n', fs);
 fprintf('dt:              %.6g s\n', dt);
-fprintf('RMS(dd - dm):    %.6g mm\n', rmsError);
+fprintf('RMS(%s - dm_filtfilt):   %.6g mm\n', trackingSignalName, rmsError);
 fprintf('===============================================================\n\n');
 
-figure('Name', selectedFileName, 'WindowState', 'maximized');
+figure('Name', resultName, 'WindowState', 'maximized');
 colors = getPlotColors();
+tPlot = t(plotIndex);
+trackingPlot = trackingSignal(plotIndex);
+dcPlot = dc(plotIndex);
+dmPlot = dm(plotIndex);
+dmFiltfiltPlot = dm_filtfilt(plotIndex);
+fmPlot = fm(plotIndex);
+amPlot = am(plotIndex);
 
 ax(1) = subplot(3, 1, 1);
-hDesired = plot(t, dd, '--', 'Color', colors.black, 'LineWidth', 1.8, 'DisplayName', 'dd desired displacement'); hold on
-plot(t, dc, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'dc command displacement');
-hMeasured = plot(t, dm, '-', 'Color', colors.blue, 'LineWidth', 1.2, 'DisplayName', 'dm measured displacement');
+hDesired = plot(tPlot, trackingPlot, '--', 'Color', colors.black, ...
+    'LineWidth', 1.8, 'DisplayName', trackingLegendName); hold on
+plot(tPlot, dcPlot, '-', 'Color', colors.copperwood, 'LineWidth', 1.0, ...
+    'DisplayName', 'dc');
+hMeasuredRaw = plot(tPlot, dmPlot, '-', 'Color', colors.blue, ...
+    'LineWidth', 1.0, 'DisplayName', 'dm');
+hMeasured = plot(tPlot, dmFiltfiltPlot, '-', 'Color', colors.blue, ...
+    'LineWidth', 1.4, 'DisplayName', 'dm\_filtfilt');
 uistack(hDesired, 'top')
+uistack(hMeasuredRaw, 'top')
 uistack(hMeasured, 'top')
 grid on
 xlabel('Time (s)')
 ylabel('Displacement (mm)')
 title('Displacement Tracking')
-setAxisLimitsFromSignals(gca, t, [dd dc dm])
+setAxisLimitsFromSignals(gca, t, [trackingSignal dc dm dm_filtfilt])
 lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 ax(2) = subplot(3, 1, 2);
-plot(t, fm, '-', 'Color', colors.purple, 'LineWidth', 1.0, 'DisplayName', 'fm measured force');
+plot(tPlot, fmPlot, '-', 'Color', colors.purple, 'LineWidth', 1.0, ...
+    'DisplayName', 'fm');
 grid on
 xlabel('Time (s)')
 ylabel('Force (N)')
@@ -92,7 +160,8 @@ lgd = legend('Location', 'best');
 lgd.ItemHitFcn = @toggleSignalVisibility;
 
 ax(3) = subplot(3, 1, 3);
-plot(t, am, '-', 'Color', colors.green, 'LineWidth', 1.0, 'DisplayName', 'am measured acceleration');
+plot(tPlot, amPlot, '-', 'Color', colors.green, 'LineWidth', 1.0, ...
+    'DisplayName', 'am');
 grid on
 xlabel('Time (s)')
 ylabel('Acceleration (g)')
@@ -103,9 +172,8 @@ lgd.ItemHitFcn = @toggleSignalVisibility;
 
 linkaxes(ax, 'x')
 
-% Hysteresis shows the measured restoring force versus measured displacement.
-figure('Name', [selectedFileName ' - Hysteresis']);
-patch(dm, fm, zeros(size(dm)), 'FaceColor', 'none', ...
+figure('Name', [resultName ' - Hysteresis']);
+patch(dmPlot, fmPlot, zeros(size(dmPlot)), 'FaceColor', 'none', ...
     'EdgeColor', colors.purple, 'EdgeAlpha', 0.3, 'LineWidth', 1.0);
 grid on
 xlabel('Measured displacement (mm)')
@@ -113,26 +181,34 @@ ylabel('Measured force (N)')
 title('Force-Displacement Hysteresis')
 
 if hasTseEstimate
-    figure('Name', [selectedFileName ' - Online TSE'], 'WindowState', 'maximized');
+    figure('Name', [resultName ' - Online TSE'], 'WindowState', 'maximized');
+    mHatPlot = m_hat(plotIndex);
+    cHatPlot = c_hat(plotIndex);
+    kHatPlot = k_hat(plotIndex);
+
     ax_tse(1) = subplot(3, 1, 1);
-    plot(t, k_hat, 'Color', colors.blue, 'LineWidth', 1.0, 'DisplayName', 'k hat');
+    plot(tPlot, kHatPlot, 'Color', colors.blue, 'LineWidth', 1.0, ...
+        'DisplayName', 'k hat');
     grid on
     ylabel('k (N/m)')
     title('Online TSE Stiffness')
 
     ax_tse(2) = subplot(3, 1, 2);
-    plot(t, m_hat, 'Color', colors.purple, 'LineWidth', 1.0, 'DisplayName', 'm hat');
+    plot(tPlot, mHatPlot, 'Color', colors.purple, 'LineWidth', 1.0, ...
+        'DisplayName', 'm hat');
     grid on
     ylabel('m (kg)')
     title('Online TSE Mass')
 
     ax_tse(3) = subplot(3, 1, 3);
-    plot(t, c_hat, 'Color', colors.copperwood, 'LineWidth', 1.0, 'DisplayName', 'c hat');
+    plot(tPlot, cHatPlot, 'Color', colors.copperwood, 'LineWidth', 1.0, ...
+        'DisplayName', 'c hat');
     grid on
     xlabel('Time (s)')
     ylabel('c (N s/m)')
     title('Online TSE Damping')
     linkaxes(ax_tse, 'x')
+end
 end
 
 function colors = getPlotColors()
@@ -148,6 +224,12 @@ end
 function rgb = hexToRgb(hexColor)
 % Units: hexadecimal input and RGB output are dimensionless.
     rgb = sscanf(hexColor, '%2x%2x%2x', [1 3]) / 255;
+end
+
+function y = filtfiltDm(dm, fs, cutoff_hz, order)
+% Units: dm/y [mm], fs/cutoff_hz [Hz].
+    [b, a] = butter(order, cutoff_hz/(fs/2), 'low');
+    y = filtfilt(b, a, dm - dm(1)) + dm(1);
 end
 
 function toggleSignalVisibility(~, event)
@@ -198,13 +280,59 @@ function setAxisLimitsFromSignals(ax, time, signals)
     end
 end
 
-function test_type = getTestType(data)
+function test_type = getTestType(result)
 % Units: metadata input and text output are unitless.
-    if isfield(data, 'test_type')
-        test_type = char(string(data.test_type));
-    elseif isfield(data, 'testname')
-        test_type = char(string(data.testname));
+    if isfield(result, 'test_type')
+        test_type = char(string(result.test_type));
+    elseif isfield(result, 'testname')
+        test_type = char(string(result.testname));
     else
         test_type = 'unknown';
+    end
+end
+
+function tf = isNewResultStruct(result)
+% Units: metadata check is unitless.
+    requiredFields = {'file', 't', 'dd', 'dc', 'dm', 'fm', 'am', 'fs', 'dt'};
+    tf = isstruct(result) && all(isfield(result, requiredFields));
+end
+
+function tf = hasNumericalSubEvaluation(result)
+% Units: metadata check is unitless.
+    tf = isfield(result, 'hs') && isstruct(result.hs) ...
+        && isfield(result.hs, 'fem') && isfield(result, 'fm');
+end
+
+function printConversionMessage(resultName)
+% Units: text output is unitless.
+    if nargin < 1 || isempty(resultName)
+        resultName = 'selected MAT file';
+    end
+    fprintf('\n%s uses the old saved-result format.\n', resultName)
+    fprintf('Convert saved test MAT files from the main folder with:\n')
+    fprintf('  convert_saved_result_to_struct\n\n')
+end
+
+function resultName = getResultName(result)
+% Units: metadata input and text output are unitless.
+    if isfield(result, 'file')
+        resultName = pathLeaf(result.file);
+    elseif isfield(result, 'file_name')
+        resultName = pathLeaf(result.file_name);
+    elseif isfield(result, 'testname')
+        resultName = char(string(result.testname));
+    else
+        resultName = getTestType(result);
+    end
+end
+
+function name = pathLeaf(value)
+% Units: path or label input and label output are unitless.
+    value = char(string(value));
+    [~, baseName, ext] = fileparts(value);
+    if isempty(baseName)
+        name = value;
+    else
+        name = [baseName ext];
     end
 end

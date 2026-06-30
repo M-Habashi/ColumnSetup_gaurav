@@ -1,5 +1,5 @@
 function filter = buildPhaseLeadFilter(phase_lead, sample_time)
-%BUILDPHASELEADFILTER Build the discrete phase-lead prefilter.
+%BUILDPHASELEADFILTER Build the discrete phase_lead prefilter.
 % Input and output are displacement commands in the same units.
 
 phase_lead = normalizePhaseLeadConfig(phase_lead);
