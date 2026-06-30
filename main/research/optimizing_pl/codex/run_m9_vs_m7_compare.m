@@ -245,12 +245,14 @@ for ci = 1:numel(result.cases)
         'LineWidth', 1.7, 'MarkerSize', 4);
     h9 = plot(c.tc9, c.m9mean, '-d', 'Color', m9c, 'MarkerFaceColor', 'w', ...
         'LineWidth', 2.0, 'MarkerSize', 4);
-    yline(result.truth.healthy_ncf, '--', 'healthy true', 'Color', [0.35 0.35 0.35], ...
-        'HandleVisibility', 'off', 'FontSize', 7);
+    htrueh = yline(result.truth.healthy_ncf, '--', ...
+        sprintf('true healthy NCF %.3f', result.truth.healthy_ncf), ...
+        'Color', [0.22 0.22 0.22], 'LineWidth', 1.2, 'FontSize', 7);
     yline(result.config.ncf_threshold, ':', '0.40 alarm', 'Color', [0.55 0.35 0.10], ...
         'HandleVisibility', 'off', 'FontSize', 7);
-    yline(result.truth.damaged_ncf, '--', 'damaged true', 'Color', [0.45 0.45 0.45], ...
-        'HandleVisibility', 'off', 'FontSize', 7);
+    htrued = yline(result.truth.damaged_ncf, '--', ...
+        sprintf('true damaged NCF %.3f', result.truth.damaged_ncf), ...
+        'Color', [0.48 0.48 0.48], 'LineWidth', 1.2, 'FontSize', 7);
     xline(result.truth.switch_s, '-', 'damage', 'Color', [0.56 0.08 0], ...
         'HandleVisibility', 'off', 'FontSize', 7);
     grid on
@@ -262,7 +264,8 @@ for ci = 1:numel(result.cases)
         'Units', 'normalized', 'HorizontalAlignment', 'right', ...
         'FontSize', 7, 'Color', [0.30 0.30 0.30])
     if ci == 1
-        legend([h7 h9], {'M7 seed mean', 'M9.1 seed mean'}, 'Location', 'southwest')
+        legend([h7 h9 htrueh htrued], {'M7 seed mean', 'M9.1 seed mean', ...
+            'true healthy NCF', 'true damaged NCF'}, 'Location', 'southwest')
     end
     if ci == numel(result.cases)
         xlabel('time (s), causal window end')
@@ -305,13 +308,23 @@ fprintf(fid, '<!doctype html>\n<html lang="en">\n<head>\n');
 fprintf(fid, '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n');
 fprintf(fid, '<title>Method 9.1 adaptive margin</title>\n');
 fprintf(fid, '<style>\n');
-fprintf(fid, 'body{margin:0;background:#f6f6f3;color:#1f2328;font:15px/1.55 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}.page{max-width:1120px;margin:0 auto;padding:28px}.top{border-bottom:1px solid #d8d8d2;padding-bottom:18px;margin-bottom:24px}h1{font-size:30px;line-height:1.15;margin:0 0 10px}h2{font-size:20px;margin:28px 0 10px}h3{font-size:16px;margin:0 0 8px}.lead{max-width:820px;color:#4d535a}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #d8d8d2;background:#fff;padding:16px;border-radius:6px}.box p{margin:8px 0}.formula{background:#f1f1ed;border:1px solid #ddd;padding:12px;border-radius:4px;overflow:auto;margin:10px 0}.note{border-left:3px solid #007ca8;padding:8px 12px;background:#eef6f8}.compact{margin-top:6px}.muted{color:#5b6168}.step{border-top:1px solid #e4e4df;padding-top:12px;margin-top:12px}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.94em}table{border-collapse:collapse;width:100%%;background:#fff;border:1px solid #d8d8d2}th,td{padding:8px 10px;border-bottom:1px solid #e4e4df;text-align:left}th{font-size:12px;color:#5b6168;background:#f1f1ed}img{display:block;max-width:100%%;border:1px solid #d8d8d2;background:#fff}.good{color:#24733f;font-weight:650}.bad{color:#901500;font-weight:650}@media(max-width:760px){.grid{grid-template-columns:1fr}.page{padding:18px}table{font-size:13px}}\n');
+fprintf(fid, 'body{margin:0;background:#f6f6f3;color:#1f2328;font:15px/1.55 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}.page{max-width:1120px;margin:0 auto;padding:28px}.top{border-bottom:1px solid #d8d8d2;padding-bottom:18px;margin-bottom:24px}h1{font-size:30px;line-height:1.15;margin:0 0 10px}h2{font-size:20px;margin:28px 0 10px}h3{font-size:16px;margin:0 0 8px}.lead{max-width:820px;color:#4d535a}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #d8d8d2;background:#fff;padding:16px;border-radius:6px}.box p{margin:8px 0}.formula{background:#f1f1ed;border:1px solid #ddd;padding:12px;border-radius:4px;overflow:auto;margin:10px 0}.note{border-left:3px solid #007ca8;padding:8px 12px;background:#eef6f8}.compact{margin-top:6px}.muted{color:#5b6168}.step{border-top:1px solid #e4e4df;padding-top:12px;margin-top:12px}.truth{display:flex;gap:14px;flex-wrap:wrap}.pill{border:1px solid #d8d8d2;background:#fff;padding:10px 12px;border-radius:6px}.pill b{display:block;font-size:20px}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.94em}table{border-collapse:collapse;width:100%%;background:#fff;border:1px solid #d8d8d2}th,td{padding:8px 10px;border-bottom:1px solid #e4e4df;text-align:left}th{font-size:12px;color:#5b6168;background:#f1f1ed}img{display:block;max-width:100%%;border:1px solid #d8d8d2;background:#fff}.good{color:#24733f;font-weight:650}.bad{color:#901500;font-weight:650}@media(max-width:760px){.grid{grid-template-columns:1fr}.page{padding:18px}table{font-size:13px}}\n');
 fprintf(fid, '</style>\n<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>\n');
 fprintf(fid, '</head>\n<body>\n<main class="page">\n');
 fprintf(fid, '<section class="top"><h1>Method 9.1 adaptive margin</h1>');
 fprintf(fid, '<p class="lead">M9.1 uses only branch 2 and branch 3: a complex closed-loop FRF where the command excites the loop, plus residual output growth for output-only evidence. All plotted and reported times are causal window-end times. Branch 1 is ignored.</p></section>\n');
 writeHtmlTheory(fid, result.config);
+fprintf(fid, '<h2>True NCF references</h2><div class="truth">');
+fprintf(fid, '<div class="pill"><span class="muted">Healthy true NCF</span><b>%.3f</b></div>', ...
+    result.truth.healthy_ncf);
+fprintf(fid, '<div class="pill"><span class="muted">Damaged true NCF</span><b>%.3f</b></div>', ...
+    result.truth.damaged_ncf);
+fprintf(fid, '<div class="pill"><span class="muted">Damage time</span><b>%.1f s</b></div>', ...
+    result.truth.switch_s);
+fprintf(fid, '</div><p class="compact muted">The dashed horizontal lines in the seed plot are these true loop-only NCF values, not seed-dependent estimates.</p>\n');
 fprintf(fid, '<h2>Seed spread</h2><p class="note">M9.1 seed spread includes injected noise/disturbance variability plus a bootstrap perturbation of the spectral subsegments. It is still not a full model-uncertainty interval, but it avoids plotting a deterministic averaged estimator as if finite-window spectral uncertainty were zero.</p>\n');
+fprintf(fid, '<p>Between seeds, the plant, controller, damage timing, and command profile are fixed. What changes is the disturbance/noise realization, and for M9.1 the spectral-bootstrap perturbation used inside each finite-window estimate. The differences below are therefore estimator/data-window variability around the same true NCF values.</p>\n');
+writeHtmlSeedSpread(fid, result);
 fprintf(fid, '<h2>Table comparison</h2>\n');
 writeHtmlTable(fid, result.summary);
 fprintf(fid, '<h2>Seed plots</h2><img src="%s" alt="M7 and M9.1 seed plots across high-band, low-band, and mixed cases">\n', img);
@@ -468,6 +481,40 @@ for i = 1:height(summary)
         summary.M7RuntimeMs(i), speed_cls, summary.M9RuntimeMs(i), speed_cls, summary.M9RuntimeRatio(i));
 end
 fprintf(fid, '</tbody></table>\n');
+end
+
+function writeHtmlSeedSpread(fid, result)
+fprintf(fid, '<table><thead><tr><th>Case</th><th>What differs</th><th>M9.1 damaged seed range</th><th>M9.1 max seed spread</th><th>M9.1 detection range</th><th>M7 damaged seed range</th><th>M7 detection range</th></tr></thead><tbody>\n');
+for i = 1:numel(result.cases)
+    c = result.cases(i);
+    d9 = c.tc9 >= result.config.switch_s + result.config.m9_buf;
+    d7 = c.tc7 >= result.config.switch_s + result.config.m7_buf;
+    m9_seed_damaged = mean(c.B9(d9, :), 1, 'omitnan');
+    m7_seed_damaged = mean(c.B7(d7, :), 1, 'omitnan');
+    m9_window_spread = max(c.B9, [], 2, 'omitnan') ...
+        - min(c.B9, [], 2, 'omitnan');
+    m9_detect = formatRange(c.td9);
+    m7_detect = formatRange(c.td7);
+    fprintf(fid, '<tr><td>%s</td><td>noise realization + M9.1 spectral bootstrap</td><td>%.3f-%.3f</td><td>%.3f</td><td>%s</td><td>%.3f-%.3f</td><td>%s</td></tr>\n', ...
+        c.name, min(m9_seed_damaged, [], 'omitnan'), ...
+        max(m9_seed_damaged, [], 'omitnan'), ...
+        max(m9_window_spread, [], 'omitnan'), m9_detect, ...
+        min(m7_seed_damaged, [], 'omitnan'), ...
+        max(m7_seed_damaged, [], 'omitnan'), m7_detect);
+end
+fprintf(fid, '</tbody></table>\n');
+fprintf(fid, '<p class="compact muted">Damaged seed range is the per-seed mean after the estimator buffer has cleared the damage step. Max seed spread is the largest vertical separation between M9.1 seed traces at any plotted timestamp.</p>\n');
+end
+
+function text = formatRange(values)
+values = values(~isnan(values));
+if isempty(values)
+    text = 'none';
+elseif min(values) == max(values)
+    text = sprintf('%.1f s', min(values));
+else
+    text = sprintf('%.1f-%.1f s', min(values), max(values));
+end
 end
 
 function dd = grab(file, t0, N)
