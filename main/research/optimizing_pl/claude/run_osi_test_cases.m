@@ -44,7 +44,7 @@ for i=1:numel(cases)
     for s=1:nseed
         x = sim_dm(c, s, sigma, dt);
         [vM,vP] = winb(x, Nb, fs, win, ov, nfft, s_m7, s_pp, refM, refP, bnom);
-        bM=[bM vM]; bP=[bP vP]; %#ok<AGROW>
+        bM=[bM; vM]; bP=[bP; vP]; %#ok<AGROW>
     end
     mM=mean(bM); mP=mean(bP); should = bt<0.40;
     band = ternary(fb>=25 && fb<=42, 'IN', 'OUT');

@@ -132,9 +132,9 @@ b_{M9.1}(t)=\min\left(b_{ST}(t), b_{\mathrm{wide}}(t)\right)
 <h2>Seed spread</h2><p class="note">M9.1 seed spread includes injected noise/disturbance variability plus a bootstrap perturbation of the spectral subsegments. It is still not a full model-uncertainty interval, but it avoids plotting a deterministic averaged estimator as if finite-window spectral uncertainty were zero.</p>
 <h2>Table comparison</h2>
 <table><thead><tr><th>Case</th><th>M7 damaged</th><th>M7 err</th><th>M7 seeds</th><th>M9.1 damaged</th><th>M9.1 err</th><th>M9.1 seeds</th><th>M9.1 freq</th><th>M7 ms</th><th>M9.1 ms</th><th>M9.1/M7</th></tr></thead><tbody>
-<tr><td>high-band</td><td>0.329</td><td>0.015</td><td>10/10</td><td class="good">0.343</td><td class="good">0.001</td><td class="good">10/10</td><td>38.0 Hz</td><td>114</td><td class="good">64</td><td class="good">0.56x</td></tr>
-<tr><td>low-band</td><td>0.417</td><td>0.073</td><td>10/10</td><td class="good">0.404</td><td class="good">0.060</td><td class="good">10/10</td><td>37.0 Hz</td><td>95</td><td class="good">58</td><td class="good">0.61x</td></tr>
-<tr><td>mixed</td><td>0.329</td><td>0.015</td><td>10/10</td><td class="good">0.344</td><td class="good">0.000</td><td class="good">10/10</td><td>38.0 Hz</td><td>88</td><td class="good">56</td><td class="good">0.64x</td></tr>
+<tr><td>high-band</td><td>0.329</td><td>0.015</td><td>10/10</td><td class="good">0.343</td><td class="good">0.001</td><td class="good">10/10</td><td>38.0 Hz</td><td>92</td><td class="good">56</td><td class="good">0.61x</td></tr>
+<tr><td>low-band</td><td>0.417</td><td>0.073</td><td>10/10</td><td class="good">0.403</td><td class="good">0.059</td><td class="good">10/10</td><td>37.0 Hz</td><td>88</td><td class="good">54</td><td class="good">0.61x</td></tr>
+<tr><td>mixed</td><td>0.329</td><td>0.015</td><td>10/10</td><td class="good">0.343</td><td class="good">0.001</td><td class="good">10/10</td><td>38.0 Hz</td><td>85</td><td class="good">52</td><td class="good">0.61x</td></tr>
 </tbody></table>
 <h2>Seed plots</h2><img src="m9_vs_m7_summary.png" alt="M7 and M9.1 seed plots across high-band, low-band, and mixed cases">
 <h2>Interpretation</h2><p>M9.1 improves the three-case comparison by matching M7's damage-reduction timing while preserving the direct phase-aware branch. The residual branch is normally input-quiet, with a frequency-matched early-warning path bounded by the direct S,T estimate; branch 1 is no longer computed or selected.</p>
