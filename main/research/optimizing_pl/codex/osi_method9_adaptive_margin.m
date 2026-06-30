@@ -153,7 +153,7 @@ for k = 1:nW
 end
 
 ncf_raw = min([ncf_st, ncf_res], [], 2, 'omitnan');
-ncf = medfilt1(ncf_raw, cfg.m9_medfilt, 'omitnan', 'truncate');
+ncf = movmedian(ncf_raw, [cfg.m9_medfilt-1 0], 'omitnan');
 ncf(1:min(cfg.m9_nwarm, nW)) = nominal;
 
 below = ncf < cfg.ncf_threshold;

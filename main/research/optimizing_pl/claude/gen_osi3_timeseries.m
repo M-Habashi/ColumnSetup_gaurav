@@ -7,6 +7,7 @@ this_dir = fileparts(mfilename('fullpath'));
 project_main = fileparts(fileparts(fileparts(this_dir)));
 addpath(fullfile(project_main,'research','OSI','claude_trial','common'));   % osi_method7_resonance
 addpath(fullfile(project_main,'control_and_HS','b_system_id','id_utils'));
+addpath(fullfile(project_main,'research','optimizing_pl','codex'));         % osi_method9_adaptive_margin (M9.1), unchanged
 sr=fullfile(project_main,'saved_results'); dt=1/2048; fs=2048;
 
 H7=load(fullfile(sr,'exp_tf','tf_sp_1_7000_20260627_210411.mat'));
@@ -30,6 +31,16 @@ wgt=double(tk>=switch_s); rmp=abs(tk-switch_s)<=0.05; wgt(rmp)=0.5*(1+sin(pi*(tk
 
 cfg.t_start=0; cfg.t_end=dur;   % analysis window span
 
+% --- M9.1 config (verbatim from codex run_m9_vs_m7_compare.m; method file unchanged) ---
+cfg9=cfg; cfg9.ncf_threshold=0.40; cfg9.input_power_range_db=30; cfg9.rel_alarm_frac=0.80;
+cfg9.m9_band=[2 100]; cfg9.m9_df=1; cfg9.m9_buf=5; cfg9.m9_hop=0.5; cfg9.m9_Lsub=512; cfg9.m9_hsub=256;
+cfg9.m9_bootstrap_strength=1.0; cfg9.m9_gamma_min=0.47; cfg9.m9_min_bins=3; cfg9.m9_nwarm=5;
+cfg9.m9_medfilt=3; cfg9.m9_detect_consec=1; cfg9.m9_calib_s=7.5; cfg9.m9_cap=0.70;
+cfg9.m9_residual_floor=0.03; cfg9.m9_res_prctile=99; cfg9.m9_residual_early_all_bins=true;
+cfg9.m9_res_early_match_hz=4; cfg9.m9_res_early_st_floor_frac=0.80; cfg9.m9_res_early_st_gate_frac=0.80;
+cfg9.m9_st_prctile=100; cfg9.m9_st_power=1.15; cfg9.m9_freq_medfilt=3; cfg9.m9_line_reject=[58 62];
+tc9=((cfg9.t_start+cfg9.m9_buf):cfg9.m9_hop:cfg9.t_end).';
+
 % PP-wide config
 ppc.buf=4; ppc.hop=0.5; ppc.nfft=4096; ppc.win=hann(2048); ppc.ov=1024;
 [~,ff]=pwelch(randn(round(ppc.buf*fs),1),ppc.win,ppc.ov,ppc.nfft,fs);
@@ -39,20 +50,31 @@ tend=(cfg.t_start+ppc.buf):ppc.hop:cfg.t_end; tc=tend.';
 m7peak=ff>=25&ff<=42; m7floor=ff>=55&ff<=75; med=5;  % trailing-median taps
 s_m7=@(P) sqrt(max(P(m7peak))/median(P(m7floor)));
 
-out.tc_pp=tc; out.switch_s=switch_s; out.threshold=0.40; out.nominal=bnom;
+out.tc_pp=tc; out.tc9=tc9; out.switch_s=switch_s; out.threshold=0.40; out.nominal=bnom;
 out.true_dmg=true_dmg; out.cases=struct('name',{},'pp_seeds',{},'pp_mean',{}, ...
-  'm7_seeds',{},'m7_mean',{},'tc_m7',{},'pp_det',{},'m7_det',{});
+  'm7_seeds',{},'m7_mean',{},'tc_m7',{},'m9_seeds',{},'m9_mean',{}, ...
+  'pp_det',{},'m7_det',{},'m9_det',{});
 
 fprintf('bnom=%.3f true_dmg=%.3f. Generating %d cases x %d seeds (CAUSAL: backward window,\n',bnom,true_dmg,numel(cases),n_seed);
 fprintf('end timestamp, calib on past healthy, trailing median)...\n');
 for ci=1:numel(cases)
   dd_lead=lsim(GT,cases(ci).dd); trk_h=lsim(Th,dd_lead); trk_d=lsim(Td,dd_lead);
+  ddlk=dd_lead(keep);
   DM=zeros(numel(tk),n_seed);
   for s=1:n_seed
     rng(s); d=sigma*randn(N,1);
     dmh=trk_h+lsim(Sh,d); dmd=trk_d+lsim(Sd,d);
     DM(:,s)=(1-wgt).*dmh(keep)+wgt.*dmd(keep);
   end
+  % --- M9.1 (codex osi_method9_adaptive_margin), called UNCHANGED, its own grid ---
+  B9=zeros(numel(tc9),n_seed); nom9=bnom;
+  for s=1:n_seed
+    rng(s);                                   % reproducible bootstrap per seed
+    ctx9=struct('fs',fs,'dt',dt,'C',C,'H0d',Hh,'t',tk,'dd_lead',ddlk,'dm',DM(:,s));
+    m9=osi_method9_adaptive_margin(ctx9,cfg9);
+    B9(:,s)=m9.ncf; nom9=m9.nominal;
+  end
+  m9m=mean(B9,2,'omitnan');
   % backward window [tend-buf, tend] ending at tend -> per-window PSD
   nW=numel(tend); Pall=cell(nW,n_seed);
   for k=1:nW
@@ -82,12 +104,16 @@ for ci=1:numel(cases)
   out.cases(ci).name=cases(ci).name;
   out.cases(ci).pp_seeds=B_PP.'; out.cases(ci).pp_mean=ppm;
   out.cases(ci).m7_seeds=B_M7.'; out.cases(ci).m7_mean=m7m; out.cases(ci).tc_m7=tc;
+  out.cases(ci).m9_seeds=B9.'; out.cases(ci).m9_mean=m9m;
   out.cases(ci).pp_det=detect(ppm,tc,0.47,5);
   out.cases(ci).m7_det=detect(m7m,tc,0.47,5);
-  dmask=tc>=switch_s+ppc.buf;
-  fprintf('  %-10s: PP healthy %.2f damaged %.2f (det %.1fs) | M7 healthy %.2f damaged %.2f (det %.1fs)\n', ...
+  out.cases(ci).m9_det=detect(m9m,tc9,cfg9.rel_alarm_frac*nom9,cfg9.m9_detect_consec);
+  dmask=tc>=switch_s+ppc.buf; d9=tc9>=switch_s+cfg9.m9_buf;
+  fprintf(['  %-10s: PP h%.2f d%.2f (det %.1fs) | M7 h%.2f d%.2f (det %.1fs) | ' ...
+    'M9.1 h%.2f d%.2f (det %.1fs)\n'], ...
     cases(ci).name, mean(ppm(hmask)), mean(ppm(dmask)), out.cases(ci).pp_det, ...
-    mean(m7m(hmask)), mean(m7m(dmask)), out.cases(ci).m7_det);
+    mean(m7m(hmask)), mean(m7m(dmask)), out.cases(ci).m7_det, ...
+    mean(m9m(tc9<=switch_s)), mean(m9m(d9)), out.cases(ci).m9_det);
 end
 
 out_dir=fullfile(this_dir,'results'); if ~exist(out_dir,'dir'), mkdir(out_dir); end
