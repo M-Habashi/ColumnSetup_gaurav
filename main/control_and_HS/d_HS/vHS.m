@@ -29,7 +29,7 @@ hs = struct( ...
     'intensity_factor', 0.025, ...
     'time_scale_factor', 1, ...
     'force_sign', 1.0);
-PID_scale = 0.9;
+PID_scale = 0.2;
 validateattributes(PID_scale, {'numeric'}, ...
     {'scalar', 'real', 'finite'}, mfilename, 'PID_scale');
 k_exp_r =1;
@@ -65,6 +65,14 @@ end
 if ~exist('pid_gain_override', 'var')
     pid_gain_override = [0.15 20 0.0015 512];
 end
+%% SAVED FEM AND HS SETUP
+if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
+    [fem, fem_file, ~] = loadFemDefinition(project_root, false, ...
+        fem_file_override);
+else
+    [fem, fem_file, ~] = loadFemDefinition(project_root, false);
+end
+
 % Phase-lead compensator used on the Hybrid Simulation numerical dd command.
 if exist('delay_comp_file_override', 'var') ...
         && ~isempty(delay_comp_file_override)
@@ -83,13 +91,6 @@ if isfield(delay_comp_data, 'phase_lead')
 end
 phase_lead_enabled = isempty(phase_lead) || phase_lead.enabled;
 
-%% SAVED FEM AND HS SETUP
-if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
-    [fem, fem_file, ~] = loadFemDefinition(project_root, false, ...
-        fem_file_override);
-else
-    [fem, fem_file, ~] = loadFemDefinition(project_root, false);
-end
 hs.fem_file = fem_file;
 hs.specimen_file = specimen_file;
 
@@ -459,6 +460,13 @@ vhs_stability_table = buildVhsStabilityTable(PID_H_dc_dm, ...
 
 disp('Stability table')
 disp(vhs_stability_table)
+auth_target_ncf = 0.6;
+[auth_stability_factor, auth_stability_ncf] = recommendAuthStabilityFactor( ...
+    actuator_open_loop, pid_h_dc_dm_values.PID_scale, auth_target_ncf, ...
+    hybrid_margin_frequency_hz);
+fprintf(['Recommended auth_stability_factor for PID+H_dc_dm NCF %.3f: ' ...
+    '%.4g (estimated NCF %.4g)\n'], auth_target_ncf, ...
+    auth_stability_factor, auth_stability_ncf);
 
 function [PID_H_dc_dm, pid_values, model_file, actuator_open_loop] = ...
         loadPidHdcDmModel( ...
@@ -543,6 +551,25 @@ end
 function values = metricColumn(metrics)
 values = [metrics.gm_db; metrics.pm_deg; metrics.t_cr_s; ...
     metrics.ncf_margin; metrics.max_abs_z_pole];
+end
+
+function [factor, ncf_margin] = recommendAuthStabilityFactor( ...
+        open_loop, current_factor, target_ncf, freq_range_hz)
+current_factor = max(abs(current_factor), eps);
+factors = linspace(0.02, 1, 80).';
+ncf = NaN(size(factors));
+for i = 1:numel(factors)
+    [~, ~, ncf(i)] = custom_stability_margins( ...
+        (factors(i)/current_factor)*open_loop, freq_range_hz);
+end
+ok = ncf >= target_ncf;
+if any(ok)
+    idx = find(ok, 1, 'last');
+else
+    [~, idx] = max(ncf);
+end
+factor = factors(idx);
+ncf_margin = ncf(idx);
 end
 
 function value = maxAbsPole(system_model)
