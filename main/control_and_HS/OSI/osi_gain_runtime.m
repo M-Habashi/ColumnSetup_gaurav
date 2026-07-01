@@ -22,7 +22,7 @@ function [osi_gain_out, ncf_m91, ncf_filtered] = ...
 persistent dd_buffer dm_buffer sample_count hop_count m91_state ...
     osi_gain_state last_margin margin_filtered_state margin_guarded_state ...
     above_count below_count cfg update_active update_segment ...
-    dd_work dm_work Suu_acc Syy_acc Suy_acc
+    dd_work dm_work Suu_seg Syy_seg Suy_seg
 
 if isempty(sample_count)
     dd_buffer = m91buf0;
@@ -50,9 +50,9 @@ if isempty(sample_count)
     update_segment = 1;
     dd_work = m91buf0;
     dm_work = m91buf0;
-    Suu_acc = zeros(numel(m91f), 1);
-    Syy_acc = zeros(numel(m91f), 1);
-    Suy_acc = complex(zeros(numel(m91f), 1));
+    Suu_seg = zeros(numel(m91f), m91s(39));
+    Syy_seg = zeros(numel(m91f), m91s(39));
+    Suy_seg = complex(zeros(numel(m91f), m91s(39)));
 end
 
 pause_enable = enable >= 2;
@@ -69,9 +69,9 @@ if pause_enable ~= 0
     update_segment = 1;
     dd_work = m91buf0;
     dm_work = m91buf0;
-    Suu_acc(:) = 0;
-    Syy_acc(:) = 0;
-    Suy_acc(:) = complex(0);
+    Suu_seg(:) = 0;
+    Syy_seg(:) = 0;
+    Suy_seg(:) = complex(0);
     if ~m91_state.ready
         m91_state.cal_count = 0;
         m91_state.residual_cal = m91res0;
@@ -109,20 +109,21 @@ if sample_count >= m91s(32)
         update_segment = 1;
         dd_work = dd_buffer;
         dm_work = dm_buffer;
-        Suu_acc(:) = 0;
-        Syy_acc(:) = 0;
-        Suy_acc(:) = complex(0);
+        Suu_seg(:) = 0;
+        Syy_seg(:) = 0;
+        Suy_seg(:) = complex(0);
     end
 end
 
 if update_active
-    [Suu_acc, Syy_acc, Suy_acc] = accumulateSpectraSegment( ...
-        dd_work, dm_work, cfg, update_segment, Suu_acc, Syy_acc, Suy_acc);
+    [Suu_seg, Syy_seg, Suy_seg] = storeSpectraSegment( ...
+        dd_work, dm_work, cfg, update_segment, Suu_seg, Syy_seg, Suy_seg);
     update_segment = update_segment + 1;
     if update_segment > cfg.n_segment
-        Suu = Suu_acc/cfg.n_segment;
-        Syy = Syy_acc/cfg.n_segment;
-        Suy = Suy_acc/cfg.n_segment;
+        Suu = median(Suu_seg, 2);
+        Syy = median(Syy_seg, 2);
+        Suy = complex(median(real(Suy_seg), 2), ...
+            median(imag(Suy_seg), 2));
         T = Suy./max(Suu, eps);
         g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
         gamma2 = max(0, (cfg.n_segment*g2 - 1)/(cfg.n_segment - 1));
@@ -207,6 +208,7 @@ cfg.freq_keep = m91keep ~= 0;
 cfg.nominal = m91s(40);
 cfg.nominal_index = m91s(41);
 cfg.nominal_hz = m91s(42);
+cfg.nominal_curve = m91keep;
 cfg.st_freq_keep = cfg.freq_keep ...
     & cfg.freq_hz >= cfg.st_branch_hz(1) ...
     & cfg.freq_hz <= cfg.st_branch_hz(2);
@@ -215,14 +217,14 @@ cfg.residual_freq_keep = cfg.freq_keep ...
     & cfg.freq_hz <= cfg.residual_branch_hz(2);
 end
 
-function [Suu, Syy, Suy] = accumulateSpectraSegment( ...
+function [Suu, Syy, Suy] = storeSpectraSegment( ...
         dd, dm, cfg, segment_index, Suu, Syy, Suy)
 idx = cfg.segment_start(segment_index) + (0:cfg.segment_n-1);
 U = fft(cfg.window.*osi_detrend_linear(dd(idx)), cfg.nfft);
 Y = fft(cfg.window.*osi_detrend_linear(dm(idx)), cfg.nfft);
 U = U(cfg.bin);
 Y = Y(cfg.bin);
-Suu = Suu + abs(U).^2;
-Syy = Syy + abs(Y).^2;
-Suy = Suy + Y.*conj(U);
+Suu(:, segment_index) = abs(U).^2;
+Syy(:, segment_index) = abs(Y).^2;
+Suy(:, segment_index) = Y.*conj(U);
 end

@@ -134,7 +134,9 @@ m91f = m91_cfg.freq_hz;
 m91b = m91_cfg.bin;
 m91seg = m91_cfg.segment_start;
 m91w = m91_cfg.window;
-m91keep = double(m91_cfg.freq_keep);
+% Nonzero entries are both the keep mask and the residual branch's local
+% nominal NCF anchor for each frequency.
+m91keep = double(m91_cfg.freq_keep).*m91_cfg.nominal_curve;
 m91buf0 = zeros(m91_cfg.window_n, 1);
 m91res0 = m91_state_initial.residual_cal;
 m91base0 = m91_state_initial.residual_baseline;

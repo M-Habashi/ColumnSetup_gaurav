@@ -47,10 +47,7 @@ for k = 1:nW
     Y = fft(win.*detrend(y(seg_idx)), nfft, 1);
     U = U(bins,:);
     Y = Y(bins,:);
-    wseg = segmentWeights(n_d, cfg.m9_bootstrap_strength);
-    Suu = abs(U).^2*wseg;
-    Syy = abs(Y).^2*wseg;
-    Suy = (Y.*conj(U))*wseg;
+    [Suu, Syy, Suy] = medianSpectra(U, Y);
     That(:,k) = Suy./max(Suu, eps);
     g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
     gam2(:,k) = max(0, (n_d*g2 - 1)/(n_d - 1));
@@ -103,7 +100,7 @@ for k = 1:nW
         iq = nominal_idx;
     end
     f_res(k) = f9(iq);
-    ncf_res(k) = min(cfg.m9_cap, nominal*sqrt(q_ref/max(q_now, q_ref)));
+    ncf_res(k) = min(cfg.m9_cap, dist0(iq)*sqrt(q_ref/max(q_now, q_ref)));
 
     if cfg.m9_residual_early_all_bins
         q_scan = ratio(:,k);
@@ -114,7 +111,7 @@ for k = 1:nW
             iq = nominal_idx;
         end
         f_res_early(k) = f9(iq);
-        ncf_res_early(k) = min(cfg.m9_cap, nominal*sqrt(q_ref/max(q_now, q_ref)));
+        ncf_res_early(k) = min(cfg.m9_cap, dist0(iq)*sqrt(q_ref/max(q_now, q_ref)));
     end
 
     if k > cfg.m9_nwarm && nnz(keep) >= cfg.m9_min_bins
@@ -185,13 +182,9 @@ for k = 1:size(x,2)
 end
 end
 
-function w = segmentWeights(n, strength)
-if strength <= 0
-    w = ones(n, 1);
-    return
-end
-w = -log(max(rand(n, 1), realmin));
-w = 1 + strength*(w/mean(w) - 1);
-w = max(w, 0);
-w = n*w/sum(w);
+function [Suu, Syy, Suy] = medianSpectra(U, Y)
+Suu = median(abs(U).^2, 2);
+Syy = median(abs(Y).^2, 2);
+Suy_seg = Y.*conj(U);
+Suy = complex(median(real(Suy_seg), 2), median(imag(Suy_seg), 2));
 end

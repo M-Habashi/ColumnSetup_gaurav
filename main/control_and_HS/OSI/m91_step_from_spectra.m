@@ -131,7 +131,8 @@ if isempty(q_now) || ~isfinite(q_now)
     idx = cfg.nominal_index;
 end
 freq_hz = cfg.freq_hz(idx);
-ncf = min(cfg.cap, cfg.nominal*sqrt(q_ref/max(q_now, q_ref)));
+ncf0 = cfg.nominal_curve(idx);
+ncf = min(cfg.cap, ncf0*sqrt(q_ref/max(q_now, q_ref)));
 end
 
 function [ncf, freq_hz] = stBranch(T, keep, cfg, window_count)

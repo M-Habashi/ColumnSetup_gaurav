@@ -428,7 +428,7 @@ fprintf(fid, '\\]</div>\n');
 fprintf(fid, '<p>Then it maps the residual growth to a conservative margin proxy:</p>\n');
 fprintf(fid, '<div class="formula">\\[\n');
 fprintf(fid, 'b_{\\mathrm{wide}}(t)=\n');
-fprintf(fid, 'b_0\\sqrt{\\frac{q_{\\mathrm{ref}}}{q(t)}}\n');
+fprintf(fid, 'b_0(\\omega^*)\\sqrt{\\frac{q_{\\mathrm{ref}}}{q(t)}}\n');
 fprintf(fid, '\\]</div>\n');
 fprintf(fid, '<p>For faster damage-reduction detection, M9.1 also checks a full-band residual candidate. It is accepted only when it binds within %.1f Hz of the direct S,T branch and S,T has already moved below nominal but not below the relative alarm level. In that case the residual candidate is bounded below by %.0f%% of the direct S,T margin.</p></div>\n', cfg.m9_res_early_match_hz, 100*cfg.m9_res_early_st_floor_frac);
 fprintf(fid, '<div class="step"><h3>Why this sees what branch 2 can miss</h3><p>If a mode grows from internal disturbance or noise, then the residual spectrum contains:</p>\n');

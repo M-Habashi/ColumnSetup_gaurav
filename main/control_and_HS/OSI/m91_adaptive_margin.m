@@ -35,8 +35,9 @@ function [out, state, info, seeds] = m91_adaptive_margin(varargin)
 %   This is phase-aware. Branch 3 is best when the input is quiet near the
 %   critical frequency; it tracks residual output power after removing the
 %   command-correlated part by coherence and compares it to the healthy
-%   calibration. The reported margin is min(b_ST, b_res). Branch 1 is not
-%   used.
+%   calibration. Residual growth is anchored to the nominal margin at the
+%   residual branch's selected frequency. The reported margin is
+%   min(b_ST, b_res). Branch 1 is not used.
 
 if ischar(varargin{1})
     [out, state, info, seeds] = commandMode(varargin{:});
@@ -164,6 +165,7 @@ cfg.residual_freq_keep = cfg.freq_keep ...
 
 L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
 dist = abs(1 + L0(:))./sqrt(2*(1 + abs(L0(:)).^2));
+cfg.nominal_curve = dist;
 [cfg.nominal, cfg.nominal_index] = min(dist);
 cfg.nominal_hz = cfg.freq_hz(cfg.nominal_index);
 end
@@ -207,10 +209,7 @@ for k = 1:n_window
     Y = fft(cfg.window.*detrend(y(seg_idx)), cfg.nfft, 1);
     U = U(cfg.bin, :);
     Y = Y(cfg.bin, :);
-    wseg = segmentWeights(cfg.n_segment, cfg.bootstrap_strength);
-    Suu = abs(U).^2*wseg;
-    Syy = abs(Y).^2*wseg;
-    Suy = (Y.*conj(U))*wseg;
+    [Suu, Syy, Suy] = medianSpectra(U, Y);
     That(:, k) = Suy./max(Suu, eps);
     g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
     gam2(:, k) = max(0, (cfg.n_segment*g2 - 1)/(cfg.n_segment - 1));
@@ -361,29 +360,30 @@ end
 
 function [T, gamma2, pin, residual] = spectra(dd, dm, cfg)
 nf = numel(cfg.freq_hz);
-Suu = zeros(nf, 1);
-Syy = zeros(nf, 1);
-Suy = complex(zeros(nf, 1));
+Uall = complex(zeros(nf, cfg.n_segment));
+Yall = complex(zeros(nf, cfg.n_segment));
 
 for k = 1:cfg.n_segment
     idx = cfg.segment_start(k) + (0:cfg.segment_n-1);
     U = fft(cfg.window.*osi_detrend_linear(dd(idx)), cfg.nfft);
     Y = fft(cfg.window.*osi_detrend_linear(dm(idx)), cfg.nfft);
-    U = U(cfg.bin);
-    Y = Y(cfg.bin);
-    Suu = Suu + abs(U).^2;
-    Syy = Syy + abs(Y).^2;
-    Suy = Suy + Y.*conj(U);
+    Uall(:, k) = U(cfg.bin);
+    Yall(:, k) = Y(cfg.bin);
 end
 
-Suu = Suu/cfg.n_segment;
-Syy = Syy/cfg.n_segment;
-Suy = Suy/cfg.n_segment;
+[Suu, Syy, Suy] = medianSpectra(Uall, Yall);
 T = Suy./max(Suu, eps);
 g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
 gamma2 = max(0, (cfg.n_segment*g2 - 1)/(cfg.n_segment - 1));
 pin = 10*log10(Suu + eps);
 residual = Syy.*max(1 - gamma2, cfg.residual_floor);
+end
+
+function [Suu, Syy, Suy] = medianSpectra(U, Y)
+Suu = median(abs(U).^2, 2);
+Syy = median(abs(Y).^2, 2);
+Suy_seg = Y.*conj(U);
+Suy = complex(median(real(Suy_seg), 2), median(imag(Suy_seg), 2));
 end
 
 function ncf = combineBranches(ncf_st, ncf_res, n_excited, cfg)
@@ -412,24 +412,14 @@ if isempty(q_now) || ~isfinite(q_now)
     idx = cfg.nominal_index;
 end
 freq_hz = cfg.freq_hz(idx);
-ncf = min(cfg.cap, cfg.nominal*sqrt(q_ref/max(q_now, q_ref)));
+ncf0 = cfg.nominal_curve(idx);
+ncf = min(cfg.cap, ncf0*sqrt(q_ref/max(q_now, q_ref)));
 end
 
 function y = localPrctileColumns(x, pct)
 y = NaN(1, size(x, 2));
 for k = 1:size(x, 2)
     y(k) = osi_prctile_finite(x(:, k), pct);
-end
-end
-
-function w = segmentWeights(n, strength)
-if strength <= 0
-    w = ones(n, 1);
-else
-    w = -log(max(rand(n, 1), realmin));
-    w = 1 + strength*(w/mean(w) - 1);
-    w = max(w, 0);
-    w = n*w/sum(w);
 end
 end
 
