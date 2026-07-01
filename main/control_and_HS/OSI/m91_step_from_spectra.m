@@ -21,16 +21,17 @@ if ~state.ready
     return
 end
 
-excited = pin >= max(pin(cfg.freq_keep)) - cfg.input_power_range_db;
-keep_st = excited & gamma2 >= cfg.gamma_min & cfg.freq_keep;
+excited = pin >= branchPowerReference(pin, cfg) ...
+    - cfg.input_power_range_db;
+keep_st = excited & gamma2 >= cfg.gamma_min & cfg.st_freq_keep;
 ratio = residual./state.residual_baseline;
-ratio(~cfg.freq_keep | ratio <= 0) = NaN;
+ratio(~cfg.residual_freq_keep | ratio <= 0) = NaN;
 ratio = osi_moving_median(ratio, cfg.freq_medfilt_n);
 
-[ncf_res, f_res] = residualBranch(ratio, cfg.freq_keep & ~keep_st, ...
-    cfg, state.q_ref);
-[ncf_res_early, f_res_early] = residualBranch(ratio, cfg.freq_keep, ...
-    cfg, state.q_ref);
+[ncf_res, f_res] = residualBranch(ratio, ...
+    cfg.residual_freq_keep & ~keep_st, cfg, state.q_ref);
+[ncf_res_early, f_res_early] = residualBranch(ratio, ...
+    cfg.residual_freq_keep, cfg, state.q_ref);
 [ncf_st, f_st] = stBranch(T, keep_st, cfg, state.window_count);
 
 if cfg.residual_early_all_bins && isfinite(f_st) ...
@@ -42,7 +43,8 @@ if cfg.residual_early_all_bins && isfinite(f_st) ...
     f_res = f_res_early;
 end
 
-state.margin_history = [state.margin_history(2:end); min(ncf_st, ncf_res)];
+branch_margin = combineBranches(ncf_st, ncf_res, nnz(keep_st), cfg, state);
+state.margin_history = [state.margin_history(2:end); branch_margin];
 margin = osi_prctile_finite(state.margin_history, 50);
 if state.window_count <= cfg.warm_windows
     margin = cfg.nominal;
@@ -56,7 +58,30 @@ if ~state.detected && nnz(state.below_history) >= cfg.detect_consecutive
 end
 
 info = infoStruct(cfg, state, margin, ncf_st, ncf_res, ...
-    f_st, f_res, f_res_early, nnz(keep_st), nnz(cfg.freq_keep & ~keep_st));
+    f_st, f_res, f_res_early, nnz(keep_st), ...
+    nnz(cfg.residual_freq_keep & ~keep_st));
+end
+
+function power_db = branchPowerReference(pin, cfg)
+if any(cfg.st_freq_keep)
+    power_db = max(pin(cfg.st_freq_keep));
+else
+    power_db = max(pin(cfg.freq_keep));
+end
+end
+
+function branch_margin = combineBranches(ncf_st, ncf_res, n_excited, ...
+        cfg, state)
+if cfg.use_residual_branch
+    branch_margin = min(ncf_st, ncf_res);
+elseif n_excited >= cfg.min_bins && isfinite(ncf_st)
+    branch_margin = ncf_st;
+else
+    branch_margin = state.margin_history(end);
+    if ~isfinite(branch_margin)
+        branch_margin = cfg.nominal;
+    end
+end
 end
 
 function [baseline, q_ref] = residualReference(residual, residual_cal, cfg)
@@ -64,7 +89,7 @@ if coder.target('MATLAB')
     baseline = median(residual_cal, 2, 'omitnan');
     baseline = max(baseline, median(baseline, 'omitnan')*1e-6);
     ratio_cal = bsxfun(@rdivide, residual_cal, baseline);
-    ratio_cal(~cfg.freq_keep, :) = NaN;
+    ratio_cal(~cfg.residual_freq_keep, :) = NaN;
     for k = 1:size(ratio_cal, 2)
         ratio_cal(:, k) = osi_moving_median(ratio_cal(:, k), ...
             cfg.freq_medfilt_n);

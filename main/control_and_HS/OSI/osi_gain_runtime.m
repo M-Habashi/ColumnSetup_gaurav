@@ -44,6 +44,46 @@ if isempty(sample_count)
     Suy_acc = complex(zeros(numel(m91f), 1));
 end
 
+pause_enable = enable >= 2;
+if pause_enable
+    enable = enable - 2;
+end
+
+if pause_enable ~= 0
+    dd_buffer = m91buf0;
+    dm_buffer = m91buf0;
+    sample_count = 0;
+    hop_count = 0;
+    update_active = false;
+    update_segment = 1;
+    dd_work = m91buf0;
+    dm_work = m91buf0;
+    Suu_acc(:) = 0;
+    Syy_acc(:) = 0;
+    Suy_acc(:) = complex(0);
+    if ~m91_state.ready
+        m91_state.cal_count = 0;
+        m91_state.residual_cal = m91res0;
+        m91_state.margin_history = m91hist0;
+        m91_state.below_history = m91below0 ~= 0;
+        m91_state.detected = false;
+        m91_state.detect_window = NaN;
+        last_margin = m91s(40);
+        margin_filtered_state = osigs(2);
+        margin_guarded_state = osigs(2);
+        above_count = 0;
+        below_count = 0;
+    end
+    if enable ~= 0
+        osi_gain_out = osi_gain_state;
+    else
+        osi_gain_out = osigs(1);
+    end
+    ncf_m91 = last_margin;
+    ncf_filtered = margin_filtered_state;
+    return
+end
+
 dd_buffer(1:end-1) = dd_buffer(2:end);
 dd_buffer(end) = dd;
 dm_buffer(1:end-1) = dm_buffer(2:end);
@@ -134,7 +174,12 @@ cfg = struct('dt', m91s(1), ...
     'st_prctile', m91s(27), ...
     'st_power', m91s(28), ...
     'freq_medfilt_n', m91s(29), ...
-    'line_reject_hz', [m91s(30) m91s(31)]);
+    'line_reject_hz', [m91s(30) m91s(31)], ...
+    'use_residual_branch', m91s(43) ~= 0, ...
+    'st_branch_hz', [m91s(44) m91s(45)], ...
+    'residual_branch_hz', [m91s(46) m91s(47)], ...
+    'st_freq_keep', false(size(m91f)), ...
+    'residual_freq_keep', false(size(m91f)));
 cfg.freq_hz = m91f;
 cfg.window_n = m91s(32);
 cfg.segment_n = m91s(33);
@@ -151,6 +196,12 @@ cfg.freq_keep = m91keep ~= 0;
 cfg.nominal = m91s(40);
 cfg.nominal_index = m91s(41);
 cfg.nominal_hz = m91s(42);
+cfg.st_freq_keep = cfg.freq_keep ...
+    & cfg.freq_hz >= cfg.st_branch_hz(1) ...
+    & cfg.freq_hz <= cfg.st_branch_hz(2);
+cfg.residual_freq_keep = cfg.freq_keep ...
+    & cfg.freq_hz >= cfg.residual_branch_hz(1) ...
+    & cfg.freq_hz <= cfg.residual_branch_hz(2);
 end
 
 function [Suu, Syy, Suy] = accumulateSpectraSegment( ...

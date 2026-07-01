@@ -108,7 +108,10 @@ cfg = struct( ...
     'st_prctile', 100, ...
     'st_power', 1.15, ...
     'freq_medfilt_n', 3, ...
-    'line_reject_hz', [58 62]);
+    'line_reject_hz', [58 62], ...
+    'use_residual_branch', true, ...
+    'st_branch_hz', [NaN NaN], ...
+    'residual_branch_hz', [NaN NaN]);
 
 names = fieldnames(override);
 for i = 1:numel(names)
@@ -118,6 +121,11 @@ for i = 1:numel(names)
     end
     cfg.(names{i}) = override.(names{i});
 end
+
+cfg.st_branch_hz = normalizeBranchBand(cfg.st_branch_hz, ...
+    cfg.band_hz, 'st_branch_hz');
+cfg.residual_branch_hz = normalizeBranchBand(cfg.residual_branch_hz, ...
+    cfg.band_hz, 'residual_branch_hz');
 
 if ~isscalar(cfg.update_interval_s) || ~isnumeric(cfg.update_interval_s) ...
         || ~isfinite(cfg.update_interval_s) || cfg.update_interval_s <= 0
@@ -147,6 +155,12 @@ cfg.freq_keep = cfg.freq_hz >= cfg.band_hz(1) ...
     & cfg.freq_hz <= cfg.band_hz(2) ...
     & ~(cfg.freq_hz >= cfg.line_reject_hz(1) ...
     & cfg.freq_hz <= cfg.line_reject_hz(2));
+cfg.st_freq_keep = cfg.freq_keep ...
+    & cfg.freq_hz >= cfg.st_branch_hz(1) ...
+    & cfg.freq_hz <= cfg.st_branch_hz(2);
+cfg.residual_freq_keep = cfg.freq_keep ...
+    & cfg.freq_hz >= cfg.residual_branch_hz(1) ...
+    & cfg.freq_hz <= cfg.residual_branch_hz(2);
 
 L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
 dist = abs(1 + L0(:))./sqrt(2*(1 + abs(L0(:)).^2));
@@ -215,7 +229,7 @@ pres0 = max(pres0, median(pres0(isfinite(pres0) & pres0 > 0), ...
     'omitnan')*1e-6);
 
 ratio = pres./pres0;
-ratio(~cfg.freq_keep, :) = NaN;
+ratio(~cfg.residual_freq_keep, :) = NaN;
 for k = 1:n_window
     ratio(:, k) = osi_moving_median(ratio(:, k), cfg.freq_medfilt_n);
     seeds{k}.residual_ratio = ratio(:, k);
@@ -237,11 +251,11 @@ n_excited = zeros(n_window, 1);
 n_quiet = zeros(n_window, 1);
 
 for k = 1:n_window
-    excited = pin(:, k) >= max(pin(:, k), [], 'omitnan') ...
+    excited = pin(:, k) >= branchPowerReference(pin(:, k), cfg) ...
         - cfg.input_power_range_db;
-    keep = excited & gam2(:, k) >= cfg.gamma_min & cfg.freq_keep;
+    keep = excited & gam2(:, k) >= cfg.gamma_min & cfg.st_freq_keep;
     n_excited(k) = nnz(keep);
-    quiet_keep = cfg.freq_keep & ~keep;
+    quiet_keep = cfg.residual_freq_keep & ~keep;
     n_quiet(k) = nnz(quiet_keep);
 
     [ncf_res(k), f_res(k)] = residualBranch(ratio(:, k), ...
@@ -249,7 +263,7 @@ for k = 1:n_window
 
     if cfg.residual_early_all_bins
         [ncf_res_early(k), f_res_early(k)] = residualBranch( ...
-            ratio(:, k), cfg.freq_keep, cfg, q_ref);
+            ratio(:, k), cfg.residual_freq_keep, cfg, q_ref);
     end
 
     [ncf_st(k), f_st(k)] = stBranch(That(:, k), keep, cfg, k);
@@ -274,7 +288,7 @@ for k = 1:n_window
     end
 end
 
-ncf_raw = min([ncf_st, ncf_res], [], 2, 'omitnan');
+ncf_raw = combineBranches(ncf_st, ncf_res, n_excited, cfg);
 ncf = movmedian(ncf_raw, [cfg.margin_filter_n-1 0], 'omitnan');
 ncf(1:min(cfg.warm_windows, n_window)) = cfg.nominal;
 
@@ -294,7 +308,9 @@ result = struct('tc', tc, 'ncf', ncf, 'ncf_raw', ncf_raw, ...
     'f9', cfg.freq_hz, 'f_residual', f_res, ...
     'f_residual_early', f_res_early, 'f_st', f_st, ...
     'n_excited', n_excited, 'n_quiet', n_quiet, ...
-    'q_ref', q_ref, 'nominal_hz', cfg.nominal_hz);
+    'q_ref', q_ref, 'nominal_hz', cfg.nominal_hz, ...
+    'st_branch_hz', cfg.st_branch_hz, ...
+    'residual_branch_hz', cfg.residual_branch_hz);
 end
 
 function [margin, state, info, seeds] = stepMode(dd, dm, cfg, state, want_seeds)
@@ -307,12 +323,39 @@ if want_seeds
     ratio = NaN(size(residual));
     if state.ready
         ratio = residual./state.residual_baseline;
-        ratio(~cfg.freq_keep | ratio <= 0) = NaN;
+        ratio(~cfg.residual_freq_keep | ratio <= 0) = NaN;
         ratio = osi_moving_median(ratio, cfg.freq_medfilt_n);
     end
     seeds = seedStruct(cfg, T, gamma2, pin, residual, ratio);
 else
     seeds = [];
+end
+end
+
+function band = normalizeBranchBand(band, default_band, name)
+band = band(:).';
+if numel(band) ~= 2
+    error('m91_adaptive_margin:InvalidBranchBand', ...
+        '%s must have two elements [low high].', name)
+end
+if ~isfinite(band(1))
+    band(1) = default_band(1);
+end
+if ~isfinite(band(2))
+    band(2) = default_band(2);
+end
+if band(1) < default_band(1) || band(2) > default_band(2) ...
+        || band(1) > band(2)
+    error('m91_adaptive_margin:InvalidBranchBand', ...
+        '%s must lie inside band_hz and satisfy low <= high.', name)
+end
+end
+
+function power_db = branchPowerReference(pin, cfg)
+if any(cfg.st_freq_keep)
+    power_db = max(pin(cfg.st_freq_keep), [], 'omitnan');
+else
+    power_db = max(pin(cfg.freq_keep), [], 'omitnan');
 end
 end
 
@@ -341,6 +384,23 @@ g2 = min(abs(Suy).^2./max(Suu.*Syy, eps), 1);
 gamma2 = max(0, (cfg.n_segment*g2 - 1)/(cfg.n_segment - 1));
 pin = 10*log10(Suu + eps);
 residual = Syy.*max(1 - gamma2, cfg.residual_floor);
+end
+
+function ncf = combineBranches(ncf_st, ncf_res, n_excited, cfg)
+if cfg.use_residual_branch
+    ncf = min([ncf_st, ncf_res], [], 2, 'omitnan');
+else
+    ncf = ncf_st;
+    for k = 1:numel(ncf)
+        if n_excited(k) < cfg.min_bins || ~isfinite(ncf(k))
+            if k == 1
+                ncf(k) = cfg.nominal;
+            else
+                ncf(k) = ncf(k-1);
+            end
+        end
+    end
+end
 end
 
 function [ncf, freq_hz] = residualBranch(ratio, keep, cfg, q_ref)
