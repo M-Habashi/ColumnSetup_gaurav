@@ -1,15 +1,19 @@
-function [a_next, ast, decision] = fable_auth(b, valid_up, fast_trip, ...
-    pred_margin, pred_valid, alpha_grid, ast, prm, st_binding)
+function [a_next, ast, decision] = fable_auth(b, valid_up, trip_reason, ...
+    b_fast, pred_margin, pred_valid, alpha_grid, ast, prm, st_binding, ...
+    regime_recal)
 %FABLE_AUTH Supervisory authority-factor law driven by the fable OSI.
 %
-%   [a_next, ast, decision] = fable_auth(b, valid_up, fast_trip, ...
-%       pred_margin, pred_valid, alpha_grid, ast, prm, st_binding)
+%   [a_next, ast, decision] = fable_auth(b, valid_up, trip_reason, ...
+%       b_fast, pred_margin, pred_valid, alpha_grid, ast, prm, st_binding)
 %
-% Inputs (per OSI update):
-%   b           - current margin estimate (NaN when the OSI has no evidence)
+% Inputs (per OSI step, cadence prm.dt_update):
+%   b           - slow margin estimate (NaN when the OSI has no evidence)
 %   valid_up    - true when the margin is backed by coherent input (ST
 %                 branch): required to allow model-guided recovery speed
-%   fast_trip   - fast-guard divergence flag from fable_osi
+%   trip_reason - fast-path trip from fable_osi: 0 none, 1 quiet-band
+%                 burst (divergence-like), 2 fast ST margin collapse
+%   b_fast      - fast short-memory margin (NaN if unavailable): sizes the
+%                 immediate drop on a type-2 trip
 %   pred_margin - margin predicted at relative loop-gain multipliers
 %                 alpha_grid (from fable_osi info); the loop at multiplier
 %                 alpha has authority alpha*ast.a
@@ -26,17 +30,24 @@ function [a_next, ast, decision] = fable_auth(b, valid_up, fast_trip, ...
 % Also:  prm = fable_auth('params', override);  ast = fable_auth('state', prm)
 %
 % Design contract (safety first, then performance):
-%   1. NEVER increase authority on the same update that shows a deficit,
+%   1. Fast trips act IMMEDIATELY (within one 0.125 s step):
+%      - burst trips (reason 1) compound x trip_drop every step while the
+%        divergence evidence persists;
+%      - fast-ST trips (reason 2) apply ONE decisive drop sized by the fast
+%        margin, a*(b_fast/target)^power_law (at most trip_drop), then hand
+%        regulation to the confirmed path - no pointless slam to the floor;
+%        the trip re-arms after the cooldown.
+%   2. NEVER increase authority on the same update that shows a deficit,
 %      during the post-event cooldown, or while the margin is NaN.
-%   2. Confirmed deficit => move DOWN toward the better (smaller) of a
+%   3. Confirmed deficit => move DOWN toward the better (smaller) of a
 %      model-predicted safe authority and a power-law fallback, rate
-%      limited; a severe deficit or a fast-guard trip acts immediately.
-%   3. Recovery is slow, hold-time gated, and CAPPED by the predicted safe
+%      limited; a severe deficit acts immediately.
+%   4. Recovery is slow, hold-time gated, and CAPPED by the predicted safe
 %      authority when a prediction exists. Without coherent input the law
 %      still probes upward, but three times slower, so a silent record can
 %      recover while the fast guard and residual branch stand watch
 %      ("probe and verify").
-%   4. All state is scalar; the law is codegen-friendly.
+%   5. All state is scalar; the law is codegen-friendly.
 %
 % decision codes: 0 hold, 1 down, 2 severe down, 3 up, 4 fast trip.
 
@@ -51,7 +62,9 @@ if ischar(b)
         case 'state'
             a_next = struct('a', valid_up.a_init, 'b_filt', NaN, ...
                 'below_n', 0, 'above_n', 0, 'trip_cool', 0, ...
-                'blind_hops', 0, 'a_latch', valid_up.a_max);
+                'blind_hops', 0, 'a_latch', valid_up.a_max, ...
+                'trip_armed', true, 'trip_age', 1e6, ...
+                'a_pre_trip', valid_up.a_init);
         otherwise
             error('fable_auth:UnknownCommand', ...
                 'Use ''params'', ''state'', or the numeric step call.')
@@ -61,23 +74,71 @@ if ischar(b)
     return
 end
 
+if nargin < 11
+    regime_recal = false;
+end
+
 decision = 0;
 a = ast.a;
+ast.trip_age = min(ast.trip_age + 1, 1e6);
 
-% --- fast guard: act immediately, regardless of margin validity ---------
-if fast_trip
+% --- trip undo: a confirmed excitation-regime recalibration right after a
+% fast trip means the trip WAS the transition, not the plant - restore ----
+if regime_recal && ast.trip_age <= round(2.5/prm.dt_update)
+    a = max(a, ast.a_pre_trip);
+    ast.a_latch = prm.a_max;
+    ast.trip_cool = 0;
+    ast.trip_armed = true;
+    ast.a = min(max(a, prm.a_min), prm.a_max);
+    a_next = ast.a;
+    return
+end
+
+% --- fast trips: act immediately, regardless of margin validity ---------
+if trip_reason == 1
+    % quiet-band burst: divergence-like evidence - compound every step
+    if ast.trip_age > round(prm.trip_cool_s/prm.dt_update)
+        ast.a_pre_trip = a;    % remember for a possible regime undo
+    end
+    ast.trip_age = 0;
     a = max(prm.a_min, a*prm.trip_drop);
     ast.trip_cool = round(prm.trip_cool_s/prm.dt_update);
+    ast.trip_armed = false;
     ast.above_n = 0;
     ast.below_n = 0;
     decision = 4;
     ast.a = min(max(a, prm.a_min), prm.a_max);
+    % a trip is hard evidence the plant changed while the prediction may
+    % not see where: latch the recovery ceiling (slowly forgotten)
+    ast.a_latch = min(ast.a_latch, max(prm.latch_relax*ast.a, 2*prm.a_min));
+    a_next = ast.a;
+    return
+elseif trip_reason == 2 && ast.trip_armed
+    % fast ST collapse: ONE decisive drop sized by the fast margin, then
+    % the confirmed path (which sees the fast dip in b) regulates
+    ast.a_pre_trip = a;
+    ast.trip_age = 0;
+    r = prm.trip_drop;
+    if isfinite(b_fast)
+        r = min(prm.trip_drop, ...
+            (max(b_fast, 0.05)/prm.target)^prm.power_law);
+    end
+    a = max(prm.a_min, a*r);
+    ast.trip_cool = round(prm.trip_cool_s/prm.dt_update);
+    ast.trip_armed = false;
+    ast.above_n = 0;
+    decision = 4;
+    ast.a = min(max(a, prm.a_min), prm.a_max);
+    ast.a_latch = min(ast.a_latch, max(prm.latch_relax*ast.a, 2*prm.a_min));
     a_next = ast.a;
     return
 end
 
 if ast.trip_cool > 0
     ast.trip_cool = ast.trip_cool - 1;
+    if ast.trip_cool == 0
+        ast.trip_armed = true;
+    end
 end
 
 % --- no evidence: hold ----------------------------------------------------
@@ -207,7 +268,7 @@ prm = struct( ...
     'a_min', 0.08, ...
     'a_max', 1.00, ...
     'a_init', 1.00, ...
-    'dt_update', 0.25, ...     % seconds between OSI updates
+    'dt_update', 0.125, ...    % seconds between OSI steps
     'down_rate', 1.0, ...      % authority units per second (confirmed)
     'sev_down_rate', 3.0, ...  % severe shed rate
     'up_rate', 0.02, ...       % model-verified recovery (per second)

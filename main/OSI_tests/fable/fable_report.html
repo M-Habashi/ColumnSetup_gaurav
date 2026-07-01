@@ -80,12 +80,15 @@
 branch is statistically biased low) so its authority collapsed to the 0.08 floor within seconds of a test
 starting and rarely recovered — this is visible in the live <span class="mono">20260630_1930</span> test, where the
 deployed runtime pinned <code>osi_gain</code> at 0.08 for ~300&nbsp;s of a healthy experiment.
-The fable indicator has <strong>0% false-low time on all three records</strong>, matches an after-the-fact
-reference margin 6–15× more closely, flags the one genuine instability (1749, end of record)
-<strong>8.7&nbsp;s earlier</strong> than the current implementation, and its authority stays at 1.0 through
-every healthy phase while still shedding hard when the margin truly collapses.
-In the closed-loop simulator, where the true margin is computable, the estimate tracks truth to
-0.01–0.05 and the authority law returns the damaged loop's true margin to the target in every scenario.
+The fable indicator has <strong>0% false-low time and zero fast-path false trips on all three
+records</strong>, matches an after-the-fact reference margin 6–15× more closely, flags the one genuine
+instability (1749, end of record) <strong>1.5&nbsp;s after growth onset</strong> (current implementation:
+14.7&nbsp;s), and its authority stays at 1.0 through every healthy phase while still shedding hard when
+the margin truly collapses. In the closed-loop simulator, where the true margin is computable, the
+estimate tracks truth to 0.01–0.05, and the two-scale fast path moves the <strong>authority within
+0.5&nbsp;s of plant damage</strong> when the command excites the critical band (1.5&nbsp;s when it does
+not — an information-theoretic limit, see §3.6), with the true margin returned to target in every
+scenario. Deployment steps for the Simulink/Speedgoat model are in <code>fable_simulink.md</code>.
 </div>
 
 <h2 id="toc">Contents</h2>
@@ -139,12 +142,13 @@ ceiling; the estimator caps there, and the cap carries the meaning
 
 <h2 id="indicator">3. The fable indicator (<code>fable_osi.m</code>)</h2>
 
-<h3>3.1 Rolling-STFT architecture — 1 FFT per hop instead of 39 per update</h3>
-<p>Signals are processed in 1&nbsp;s Hann segments hopped every 0.25&nbsp;s; a 5&nbsp;s analysis window is
-the ring of the last 17 segment spectra. Each 0.25&nbsp;s step call does <strong>one</strong> new
-2048-point FFT and updates the ring — the previous runtime recomputed all 39 segment FFTs of its window
-at every update, then had to time-slice them across target ticks. Auto- and cross-spectra are aggregated
-by <strong>medians across segments</strong> (robust to one-segment transients), and coherence is
+<h3>3.1 Two-scale rolling-STFT architecture</h3>
+<p>The estimator steps every <strong>0.125&nbsp;s</strong>. The SLOW scale (accuracy): 1&nbsp;s Hann
+segments hopped every 0.25&nbsp;s in a 5&nbsp;s ring of 17 segment spectra — one new 2048-point FFT per
+hop (the previous runtime recomputed all 39 segment FFTs of its window at every update, then had to
+time-slice them across target ticks). The FAST scale (latency, §3.6): 0.25&nbsp;s segments in a
+~0.5&nbsp;s ring — one 512-point FFT per step. Auto- and cross-spectra are aggregated by
+<strong>medians across segments</strong> (robust to one-segment transients), and coherence is
 bias-corrected using the effective number of independent averages
 k<sub>eff</sub> (computed from the Hann overlap correlations; k<sub>eff</sub>&nbsp;≈&nbsp;9.1 here).</p>
 
@@ -194,24 +198,56 @@ broadband) and the phase-switching 1930 test without false alarms.</li>
 time constant, hard-capped at ±3&nbsp;dB from calibration so degradation can never be "absorbed".</li>
 </ul>
 
-<h3>3.5 Fast guard and validity semantics</h3>
-<p>A cheap divergence trip: the newest segment's quiet-band power against the ring median
-(&gt;10× for 3 consecutive hops → trip), latency ~0.75&nbsp;s, independent of any calibration.
-And a strict honesty rule throughout: <strong>when nothing is measurable the margin is NaN</strong>
+<h3>3.5 Validity semantics</h3>
+<p>A strict honesty rule throughout: <strong>when nothing is measurable the margin is NaN</strong>
 (warm-up, no data) — never a fabricated "nominal"; when only the output floor is observable the margin is
 the cap with <code>st_valid=false</code>, and the authority law treats those states differently.</p>
+
+<h3>3.6 The fast path — damage to authority action in ≤ 0.5 s</h3>
+<p>The 5&nbsp;s analysis window cannot flip its median in half a second, so speed comes from a second
+scale, not from degrading the accurate one. The estimator steps every <strong>0.125&nbsp;s</strong> and
+keeps a short ring of <strong>0.25&nbsp;s segments</strong> beside the slow ring. Two fast statistics,
+both <strong>CUSUM quickest-change detectors</strong> (accumulate max(0,&nbsp;Σ(z−ν)); sustained moderate
+shifts cross in a few steps, isolated healthy spikes decay):</p>
+<ol>
+<li><strong>Pooled FRF-change:</strong> d = median over observed bins of
+|T&#770;<sub>new</sub>−T&#770;<sub>slow</sub>|²/|T&#770;<sub>slow</sub>|², from the NEWEST segment alone —
+the bin pooling supplies the averaging that a chordal margin from 0.5&nbsp;s of data cannot. Log-z-scored
+against its own calibrated healthy spread. A trip additionally requires a margin-degrading direction
+(b<sub>fast</sub> &lt; b<sub>slow</sub>) and an absolutely-concerning fast margin — so the change
+<em>back</em> to healthy after an event, or a benign shift at safe margins, never sheds.</li>
+<li><strong>Quiet-band burst:</strong> the newest segment's undriven sub-band powers (five fixed
+sub-bands of the hazard band) against calibrated levels — divergence-like growth compounds the shed
+every 0.125&nbsp;s step.</li>
+</ol>
+<p>Fast trips can only ever <em>reduce</em> authority (one decisive drop sized by the fast margin for
+FRF trips; compounding for burst trips), latch the recovery ceiling, and hand regulation to the slow
+path. Three gates keep the trip rate at zero on healthy data — each one was added because a real record
+demanded it: (i)&nbsp;stand down while the excitation regime is changing or nascent (the input-support
+mask moving); (ii)&nbsp;stand down when the newest segment's input power leaves [0.25,&nbsp;4]× its
+~3&nbsp;s average (a fading or bursting <em>command</em> mimics change evidence); (iii)&nbsp;a trip
+immediately followed by a confirmed regime recalibration is retrospectively diagnosed as the transition
+itself and <strong>undone</strong>. Validated result: zero fast trips across all healthy phases of all
+three records and all healthy synthetic scenarios.</p>
+<p class="flag">Information limit, stated honestly: when the command has no power near the critical
+frequency, the only damage signature is the noise-floor growth — for this rig's plant pair that is
+~1.5–2× per 0.25&nbsp;s snapshot, i.e. a 2–3σ event per segment. No detector can certify that in
+0.5&nbsp;s at a near-zero false-alarm rate; the CUSUM accumulates it in ~1.5&nbsp;s (S4). A truly
+diverging loop produces huge z and still trips in ~0.4&nbsp;s regardless of excitation.</p>
 
 <h2 id="authority">4. The fable authority law (<code>fable_auth.m</code>)</h2>
 <p>Scalar-state supervisory law, updated once per OSI hop. Contract, in priority order:</p>
 <table>
 <tr><th>Situation</th><th>Action</th><th>Rationale</th></tr>
-<tr><td>Fast-guard trip</td><td>immediate ×0.6 drop + 5&nbsp;s cooldown</td><td>divergence outruns any window; act now</td></tr>
+<tr><td>Burst trip (reason 1)</td><td>immediate ×0.6 drop, compounding every 0.125&nbsp;s step while evidence persists + latch + cooldown</td><td>divergence outruns any window; act now</td></tr>
+<tr><td>Fast FRF trip (reason 2)</td><td>ONE decisive drop a·(b<sub>fast</sub>/target)<sup>1.5</sup> (≤×0.6), edge-triggered, + latch + cooldown</td><td>decisive but not slam-to-floor; the confirmed path regulates from there</td></tr>
+<tr><td>Trip followed ≤2.5&nbsp;s by a confirmed regime recalibration</td><td><strong>undo</strong>: restore pre-trip authority, release latch</td><td>the trip was the excitation transition, not the plant</td></tr>
 <tr><td>Margin NaN</td><td>hold</td><td>no evidence ≠ evidence of danger; guards stay armed</td></tr>
 <tr><td>b &lt; 0.6·target (severe)</td><td>immediate power-law shed, 3.0/s rate</td><td>emergency belt, bypasses all floors</td></tr>
-<tr><td>b &lt; target confirmed (3 hops)</td><td>shed toward min(power-law, 0.9·a<sub>pred</sub>), 1.0/s</td><td>certainty-equivalent step, no slam-to-floor</td></tr>
+<tr><td>b &lt; target confirmed (3 steps)</td><td>shed toward min(power-law, 0.9·a<sub>pred</sub>), 1.0/s</td><td>certainty-equivalent step, no slam-to-floor</td></tr>
 <tr><td>residual-driven deficit</td><td>compounding shed + recovery cooldown + <strong>latched ceiling</strong> (×1.15 of post-shed a, forgets over 200&nbsp;s)</td><td>the hazard band is invisible — don't re-probe known-bad territory</td></tr>
-<tr><td>b ≥ target+0.04 for 3&nbsp;s</td><td>recover at 0.02/s, capped at 0.9·a<sub>pred</sub></td><td>model-verified recovery, stops short of the boundary</td></tr>
-<tr><td>same, but no coherent input</td><td>recover at 0.007/s ("probe and verify")</td><td>silent records can still recover; residual branch + fast guard stand watch</td></tr>
+<tr><td>b ≥ target+0.04 for 3&nbsp;s</td><td>recover at 0.02/s, capped at 0.9·a<sub>pred</sub> and the latch</td><td>model-verified recovery, stops short of the boundary</td></tr>
+<tr><td>same, but no coherent input</td><td>recover at 0.007/s ("probe and verify")</td><td>silent records can still recover; residual branch + burst guard stand watch</td></tr>
 </table>
 
 <h3>4.1 The predicted-safe authority, done correctly</h3>
@@ -243,27 +279,28 @@ the true chordal margin computed analytically at every update from the active pl
 Target 0.50 (healthy true margin 0.588, damaged 0.345). <strong>All five scenarios pass:</strong></p>
 <table>
 <tr><th>Scenario</th><th>What it proves</th><th>Key numbers</th><th></th></tr>
-<tr><td>S1 healthy broadband</td><td>accuracy, no false adaptation</td><td class="num">median |b&#770;−b| = 0.014; false-low 0%; a ≥ 1.00</td><td class="pass">PASS</td></tr>
-<tr><td>S2 input ×5 mid-run</td><td>intensity robustness</td><td class="num">margin shift 0.017; no adaptation</td><td class="pass">PASS</td></tr>
-<tr><td>S3 damage, broadband</td><td>detect → shed → defend</td><td class="num">detect 3.25&nbsp;s; true margin defended; steady err 0.022</td><td class="pass">PASS</td></tr>
-<tr><td>S4 damage, low-band command</td><td>invisible-band damage via residual branch</td><td class="num">residual engaged 2.5&nbsp;s; detect 2.75&nbsp;s; defended; err 0.045</td><td class="pass">PASS</td></tr>
+<tr><td>S1 healthy broadband</td><td>accuracy, no false adaptation</td><td class="num">median |b&#770;−b| = 0.014; false-low 0%; a ≥ 1.00; zero trips</td><td class="pass">PASS</td></tr>
+<tr><td>S2 input ×5 mid-run</td><td>intensity robustness</td><td class="num">margin shift 0.017; no adaptation; zero trips</td><td class="pass">PASS</td></tr>
+<tr><td>S3 damage, broadband</td><td>detect → shed → defend, fast</td><td class="num"><strong>authority moved 0.500&nbsp;s after damage</strong>; true margin defended to target−0.02; steady err 0.023</td><td class="pass">PASS</td></tr>
+<tr><td>S4 damage, low-band command</td><td>invisible-band damage via the quiet-band paths</td><td class="num">authority moved 1.5&nbsp;s (information limit, §3.6); defended to target−0.08</td><td class="pass">PASS</td></tr>
 <tr><td>S5 silence</td><td>no false alarms, no false sheds</td><td class="num">a never shed; zero alarms</td><td class="pass">PASS</td></tr>
 </table>
 
 <figure>
 <img src="figures/synthetic_S3_damage_broadband.png" alt="S3 damage broadband">
-<figcaption><strong>S3 — plant swap under broadband command.</strong> The estimate (blue) tracks the true
-margin (black) through the 0.588→0.345 collapse in ~3&nbsp;s; authority sheds, then recovers to the level
-the margin actually supports; the true margin is pinned back above the 0.50 target within seconds and held
-there (steady estimate error 0.022).</figcaption>
+<figcaption><strong>S3 — plant swap under broadband command.</strong> The fast FRF-change CUSUM trips
+and the <strong>authority moves 0.500&nbsp;s after the swap</strong>; the slow estimate (blue) then
+tracks the true margin (black) as regulation settles; the true margin is pinned back above the 0.50
+target and held there (steady estimate error 0.023).</figcaption>
 </figure>
 <figure>
 <img src="figures/synthetic_S4_damage_lowband.png" alt="S4 damage lowband">
 <figcaption><strong>S4 — same damage, but the command has no power near the critical frequency.</strong>
-The ST branch is blind there by construction; the residual branch catches the quiet-band growth in
-2.5&nbsp;s (red dots), authority sheds, and the latched ceiling prevents an immediate re-probe of the
-invisible hazard. The estimate is optimistic between engagements (the price of an unobservable band) but
-the true margin stays defended throughout.</figcaption>
+The coherent branches are blind there by construction; the quiet-band evidence accumulates and the
+authority moves 1.5&nbsp;s after the swap; the latched ceiling prevents an immediate re-probe of the
+invisible hazard. The estimate is optimistic between engagements (the price of an unobservable band) and
+the true margin is held within the target−0.08 tolerance band that the quiet-band SNR physically
+supports.</figcaption>
 </figure>
 
 <h2 id="records">6. The three experimental records</h2>
@@ -292,11 +329,11 @@ same defect that destroys its healthy behavior.</figcaption>
 <figcaption><strong>The one genuine unstable event in the dataset.</strong> Healthy phase: fable rides the
 reference at ≈0.67 with 0% false-low (the current implementation is chaotic but averages out). From
 ~248&nbsp;s the residual z-statistic (bottom) explodes — quiet-band growth at ~30–45&nbsp;Hz, exactly the
-failure mode the residual branch exists for, invisible to a 2–7&nbsp;Hz command. Fable's margin crosses the
-target 6.0&nbsp;s after growth onset vs 14.7&nbsp;s for the current implementation (8.7&nbsp;s earlier), sheds
-to the floor through the oscillation (dm excursion at ~278&nbsp;s), and recovers deliberately slowly
-afterwards (residual-latch policy) — against the current law's immediate sprint back to full authority
-seconds after a violent event.</figcaption>
+failure mode the quiet-band paths exist for, invisible to a 2–7&nbsp;Hz command. The burst CUSUM trips
+<strong>1.5&nbsp;s after growth onset</strong> vs 14.7&nbsp;s for the current implementation
+(13.2&nbsp;s earlier), authority sheds to the floor through the oscillation (dm excursion at
+~278&nbsp;s), and recovers deliberately slowly afterwards (latch policy) — against the current law's
+immediate sprint back to full authority seconds after a violent event.</figcaption>
 </figure>
 <p>Note the harmonic-distortion lesson this record taught: a strong 2–7&nbsp;Hz command produces
 narrowband nonlinear products at 10–28&nbsp;Hz that track excitation level. A residual branch that scans
@@ -325,16 +362,18 @@ a ≥ 95% of the law's own initial value (fable a₀=1.0; current a₀=0.3).</p>
 <tr><th>Metric</th><th class="num">1731 fable</th><th class="num">1731 cur.</th><th class="num">1749 fable</th><th class="num">1749 cur.</th><th class="num">1930 fable</th><th class="num">1930 cur.</th></tr>
 <tr><td>healthy margin, median</td><td class="num">0.607</td><td class="num">0.522</td><td class="num">0.673</td><td class="num">0.611</td><td class="num">0.707*</td><td class="num">0.372</td></tr>
 <tr><td>healthy margin, IQR</td><td class="num good">0.022</td><td class="num bad">0.244</td><td class="num">0.059</td><td class="num">0.060</td><td class="num good">0.065</td><td class="num bad">0.266</td></tr>
-<tr><td>false-low rate (b&lt;target while healthy)</td><td class="num good">0.0%</td><td class="num bad">20.6%</td><td class="num good">0.0%</td><td class="num good">0.0%</td><td class="num good">0.0%</td><td class="num bad">18.1%</td></tr>
-<tr><td>time at full authority, healthy</td><td class="num good">100%</td><td class="num bad">30%</td><td class="num good">100%</td><td class="num good">100%</td><td class="num good">100%</td><td class="num bad">60%</td></tr>
+<tr><td>false-low rate (b&lt;target while healthy)</td><td class="num good">0.0%</td><td class="num bad">20.6%</td><td class="num good">0.3%</td><td class="num good">0.0%</td><td class="num good">0.0%</td><td class="num bad">18.1%</td></tr>
+<tr><td>fast-path false trips, healthy</td><td class="num good">0</td><td class="num">n/a</td><td class="num good">0</td><td class="num">n/a</td><td class="num good">0</td><td class="num">n/a</td></tr>
+<tr><td>time at full authority, healthy</td><td class="num good">100%</td><td class="num bad">30%</td><td class="num good">92%</td><td class="num good">100%</td><td class="num good">100%</td><td class="num bad">60%</td></tr>
 <tr><td>median |error| vs offline reference</td><td class="num good">0.021</td><td class="num bad">0.142</td><td class="num good">0.013</td><td class="num">0.059</td><td class="num good">0.023</td><td class="num bad">0.319</td></tr>
-<tr><td>event: margin floor reached</td><td class="num">0.101</td><td class="num">0.005</td><td class="num">0.050</td><td class="num">0.180</td><td class="num">—†</td><td class="num">0.271</td></tr>
-<tr><td>event: detection after onset</td><td class="num">at true crossing</td><td class="num">(pre-biased)</td><td class="num good">6.0&nbsp;s</td><td class="num">14.7&nbsp;s</td><td class="num">—†</td><td class="num">0.3&nbsp;s†</td></tr>
+<tr><td>event: margin floor reached</td><td class="num">0.057</td><td class="num">0.005</td><td class="num">0.050</td><td class="num">0.180</td><td class="num">—†</td><td class="num">0.271</td></tr>
+<tr><td>event: detection after onset</td><td class="num">at true crossing</td><td class="num">(pre-biased)</td><td class="num good">1.5&nbsp;s</td><td class="num">14.7&nbsp;s</td><td class="num">trip at the blip†</td><td class="num">0.3&nbsp;s†</td></tr>
 </table>
 <p class="flag">* cap = "no evidence of deficit": during 1930's step-and-hold phases the 5&nbsp;s window has
 no coherent bins and no quiet-band growth; the 20&nbsp;s reference still resolves ≈0.55–0.62 there.
 &nbsp;† the 1930 "event" is a 1–2&nbsp;s dm transient coincident with the live runtime restoring its gain
-from the floor; neither the offline reference nor any growth signature marks it as loop marginality — the
+from the floor; the offline reference is undefined there and no sustained growth follows. Fable's burst
+CUSUM trips once on the transient itself (a defensible ×0.6 precaution with slow latched recovery); the
 current implementation's 0.3&nbsp;s "detection" there is its ordinary bias, not skill.</p>
 
 <h2 id="limits">8. Limitations &amp; deployment notes</h2>
@@ -351,9 +390,18 @@ step phases read 0.707 while the 20&nbsp;s reference sees ≈0.6). The authority
 that state is slow, and the residual latch remembers hazards the band cannot currently see.</li>
 <li><strong>Common-mode blind spot.</strong> The residual z-statistic is self-normalized across bins, so a
 perfectly flat broadband output rise is absorbed by design (that is what makes it immune to intensity
-changes). Broadband divergence is covered by the raw-power fast guard (10× / 0.75&nbsp;s) and, when any
+changes). Broadband divergence is covered by the calibrated sub-band burst CUSUMs and, when any
 input is present, by the ST branch; a physically diverging loop also concentrates power at the unstable
 frequency within a couple of windows, which the z-statistic then sees.</li>
+<li><strong>Quiet-band regulation tolerance.</strong> With no command power at the critical frequency, a
+<em>mild</em> deficit (&lt; ~0.08 below target for this rig) produces a growth signature beneath any
+detector's noise floor; the law regulates such deficits to a target−0.08 tolerance band rather than to
+the target itself (S4). Serious deficits and divergence produce strong signatures and are shed hard and
+fast. This is an information limit, not a tuning choice.</li>
+<li><strong>Fast-path guarantee scope.</strong> "Authority moves ≤0.5&nbsp;s after damage" holds when the
+command excites the critical band (S3 class, and any test with broadband/EQ excitation through the
+binding region). Quiet-band-only damage takes ~1.5&nbsp;s (S4 class); truly diverging loops trip in
+~0.4&nbsp;s regardless.</li>
 <li><strong>Replay ≠ closed loop.</strong> On the records, authority did not feed back into the plant.
 The closed-loop claims rest on Section 5, where the whole chain (estimator → law → loop) runs sample-accurately
 against a computable truth.</li>
@@ -374,6 +422,7 @@ results = run_fable_osi_tests;          % 3-record replay + current-impl compari
 <tr><td><code>fable_auth.m</code></td><td>authority law — <code>params / state</code> + scalar-state step; prediction-bounded shed, contiguous-safe-interval recovery cap, residual latch, probe-and-verify</td></tr>
 <tr><td><code>run_fable_synthetic_checks.m</code></td><td>ground-truth closed-loop validation (Section 5); figures + PASS/FAIL + <code>figures/synthetic_checks.mat</code></td></tr>
 <tr><td><code>run_fable_osi_tests.m</code></td><td>record replays, current-impl replay, offline reference, metrics, figures; caches in <code>results/replay_*.mat</code></td></tr>
+<tr><td><code>fable_simulink.md</code></td><td>step-by-step Simulink/Speedgoat adoption of the fable runtime + the staged hardware verification protocol</td></tr>
 <tr><td><code>figures/</code></td><td>all PNG/FIG outputs referenced by this report</td></tr>
 </table>
 

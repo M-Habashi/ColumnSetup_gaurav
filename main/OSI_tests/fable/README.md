@@ -16,6 +16,7 @@ ground-truth closed-loop simulator.
 | `run_fable_synthetic_checks.m` | Ground-truth validation: sample-accurate closed loop (PID x identified plant) with computable true margin. 5 scenarios, PASS/FAIL. |
 | `run_fable_osi_tests.m` | Replay on the 3 records + faithful replay of the current implementation + offline reference margin. Figures, metrics, caches under `results/`. |
 | `fable_report.html` | The report (open in a browser). |
+| `fable_simulink.md` | Simulink/Speedgoat adoption steps + staged hardware verification protocol. |
 
 ## Run
 
@@ -30,11 +31,17 @@ delete those to force recomputation after changing the estimator.
 
 ## Key numbers (healthy operation / events, target = 0.30)
 
-| Record | false-low (fable / current) | time at full authority | median err vs offline reference |
-|---|---|---|---|
-| 20260617_1731 | 0.0% / 20.6% | 100% / 30% | 0.021 / 0.142 |
-| 20260617_1749 | 0.0% / 0.0% | 100% / 100% | 0.013 / 0.059 |
-| 20260630_1930 | 0.0% / 18.1% | 100% / 60% | 0.023 / 0.319 |
+| Record | false-low (fable / current) | fast false trips | time at full authority | median err vs reference |
+|---|---|---|---|---|
+| 20260617_1731 | 0.0% / 20.6% | 0 | 100% / 30% | 0.021 / 0.142 |
+| 20260617_1749 | 0.3% / 0.0% | 0 | 92% / 100% | 0.013 / 0.059 |
+| 20260630_1930 | 0.0% / 18.1% | 0 | 100% / 60% | 0.023 / 0.319 |
 
-On 1749 the genuine end-of-record instability is flagged 8.7 s earlier than
-by the current implementation (6.0 s vs 14.7 s after growth onset).
+Speed (two-scale fast path, CUSUM change detection): in the closed-loop
+ground-truth scenarios the **authority moves 0.5 s after plant damage**
+when the command excites the critical band, 1.5 s when it does not
+(information limit — see report §3.6). On 1749 the genuine end-of-record
+instability is flagged 1.5 s after growth onset (current: 14.7 s).
+
+For Simulink/Speedgoat adoption steps and the staged hardware test
+protocol, see `fable_simulink.md`.

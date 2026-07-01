@@ -138,7 +138,7 @@ ovr = struct('threshold', target, 'cal_skip_s', 12);
 run = fable_osi('run', data.dd, data.dm, data.dt, L0, ovr);
 
 prm = fable_auth('params', struct('target', target, 'a_init', 1.0, ...
-    'a_min', 0.08, 'dt_update', run.cfg.hop_s));
+    'a_min', 0.08, 'dt_update', run.cfg.step_s));
 ast = fable_auth('state', prm);
 nU = numel(run.tc);
 a = NaN(nU, 1);
@@ -147,15 +147,18 @@ for k = 1:nU
     st_binding = run.st_valid(k) && ...
         (isnan(run.b_res(k)) || run.b_st(k) <= run.b_res(k));
     [ak, ast, dk] = fable_auth(run.b(k), run.st_valid(k), ...
-        run.fast_trip(k), run.pred_margin(:, k), run.pred_valid(k), ...
-        run.alpha_grid, ast, prm, st_binding);
+        run.trip_reason(k), run.b_fast(k), run.pred_margin(:, k), ...
+        run.pred_valid(k), run.alpha_grid, ast, prm, st_binding, ...
+        run.regime_recal(k));
     a(k) = ak;
     dec(k) = dk;
 end
 fab = struct('tc', run.tc, 'b', run.b, 'valid', run.valid, ...
-    'b_st', run.b_st, 'b_res', run.b_res, 'f_st', run.f_st, ...
+    'b_st', run.b_st, 'b_res', run.b_res, 'b_fast', run.b_fast, ...
+    'f_st', run.f_st, ...
     'f_res', run.f_res, 'z_max', run.z_max, 'st_valid', run.st_valid, ...
     'res_on', run.res_on, 'fast_trip', run.fast_trip, ...
+    'trip_reason', run.trip_reason, ...
     'n_excited', run.n_excited, 'a', a, 'decision', dec, ...
     'cap', run.cfg.cap, 'a_init', prm.a_init);
 % keep the pred matrix out of the saved struct (large, reproducible)
@@ -273,6 +276,10 @@ for src = {'fable', 'current'}
     m.healthy_margin_med = median(bh);
     m.healthy_margin_iqr = iqrLocal(bh);
     m.healthy_false_low = mean(bh < target);
+    m.healthy_fast_trips = 0;
+    if isfield(s, 'fast_trip')
+        m.healthy_fast_trips = nnz(s.fast_trip(hw));
+    end
     m.healthy_a_hi = mean(s.a(hw) >= 0.95*s.a_init);
     m.min_a = min(s.a);
     m.event_min_margin = min(s.b(ew), [], 'omitnan');
@@ -305,6 +312,7 @@ rows = {
     'healthy margin (median)', 'healthy_margin_med'
     'healthy margin IQR', 'healthy_margin_iqr'
     'healthy false-low rate', 'healthy_false_low'
+    'healthy fast trips (n)', 'healthy_fast_trips'
     'healthy time at full auth', 'healthy_a_hi'
     'min authority', 'min_a'
     'event min margin', 'event_min_margin'
