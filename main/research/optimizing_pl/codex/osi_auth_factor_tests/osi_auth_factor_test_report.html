@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OSI Auth-Factor Tests</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7d9dc;
+      --panel: #ffffff;
+      --page: #f5f6f7;
+      --blue: #007ca8;
+      --copper: #ac6420;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font: 15px/1.45 "Segoe UI", Arial, sans-serif;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 22px 42px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.15;
+      margin: 0 0 8px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 28px 0 12px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin: 0 0 10px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 10px;
+      color: var(--muted);
+    }
+
+    code {
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 11px 12px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .metric strong {
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 840px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e6e7e9;
+      padding: 8px 10px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      background: #eceef0;
+      color: #3f4348;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .low {
+      color: #901500;
+      font-weight: 650;
+    }
+
+    .plots {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .plot {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 14px;
+    }
+
+    .plot-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+
+    .plot a {
+      color: var(--blue);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .plot a:hover {
+      text-decoration: underline;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #e1e3e5;
+      background: #fff;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch::before {
+      content: "";
+      display: inline-block;
+      width: 22px;
+      height: 3px;
+      background: var(--ink);
+    }
+
+    .swatch.dm::before {
+      background: var(--blue);
+    }
+
+    .swatch.auth::before {
+      background: var(--copper);
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 20px 14px 32px;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      .plot-head {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>OSI/Auth-Factor Test Results</h1>
+      <p>Offline replay of the OSI_tests case matrix. Desired target NCF is <code>0.3</code>. Outputs are generated from the current M9.1 estimator and authority-factor law.</p>
+      <div class="meta" aria-label="Run metadata">
+        <div class="metric"><span>Cases</span><strong>8</strong></div>
+        <div class="metric"><span>Plot files</span><strong>8 PNG / 8 FIG</strong></div>
+        <div class="metric"><span>Generated</span><strong>2026-07-01 02:09</strong></div>
+      </div>
+    </header>
+
+    <section>
+      <h2>Summary</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Windows</th>
+              <th>Paused</th>
+              <th>Min OSI</th>
+              <th>Min auth_factor</th>
+              <th>Final auth_factor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>20260617_1731_current_split_band</td><td>16435</td><td>0</td><td class="low">0.0044</td><td>0.0800</td><td>0.0800</td></tr>
+            <tr><td>20260617_1731_low_band</td><td>16435</td><td>0</td><td class="low">0.0160</td><td>0.0800</td><td>0.2300</td></tr>
+            <tr><td>20260617_1731_wide_band</td><td>16435</td><td>0</td><td class="low">0.0046</td><td>0.0800</td><td>0.0800</td></tr>
+            <tr><td>20260617_1731_pause_resume</td><td>16435</td><td>702</td><td class="low">0.0044</td><td>0.0800</td><td>0.0800</td></tr>
+            <tr><td>20260617_1749_current_split_band</td><td>6075</td><td>0</td><td class="low">0.0124</td><td>0.0800</td><td>0.0950</td></tr>
+            <tr><td>20260617_1749_low_band</td><td>6075</td><td>0</td><td class="low">0.0155</td><td>0.0800</td><td>0.7565</td></tr>
+            <tr><td>20260617_1749_wide_band</td><td>6075</td><td>0</td><td class="low">0.0068</td><td>0.0800</td><td>0.0815</td></tr>
+            <tr><td>20260617_1749_pause_resume</td><td>6075</td><td>702</td><td class="low">0.0124</td><td>0.0800</td><td>0.0950</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span class="swatch dm">dm response</span>
+        <span class="swatch">selected OSI</span>
+        <span class="swatch auth">auth_factor</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Plots</h2>
+      <div class="plots">
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1731 current split band</h3><a href="figures/20260617_1731_current_split_band.fig">Open FIG</a></div>
+          <img src="figures/20260617_1731_current_split_band.png" alt="20260617_1731 current split band OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1731 low band</h3><a href="figures/20260617_1731_low_band.fig">Open FIG</a></div>
+          <img src="figures/20260617_1731_low_band.png" alt="20260617_1731 low band OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1731 wide band</h3><a href="figures/20260617_1731_wide_band.fig">Open FIG</a></div>
+          <img src="figures/20260617_1731_wide_band.png" alt="20260617_1731 wide band OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1731 pause resume</h3><a href="figures/20260617_1731_pause_resume.fig">Open FIG</a></div>
+          <img src="figures/20260617_1731_pause_resume.png" alt="20260617_1731 pause resume OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1749 current split band</h3><a href="figures/20260617_1749_current_split_band.fig">Open FIG</a></div>
+          <img src="figures/20260617_1749_current_split_band.png" alt="20260617_1749 current split band OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1749 low band</h3><a href="figures/20260617_1749_low_band.fig">Open FIG</a></div>
+          <img src="figures/20260617_1749_low_band.png" alt="20260617_1749 low band OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1749 wide band</h3><a href="figures/20260617_1749_wide_band.fig">Open FIG</a></div>
+          <img src="figures/20260617_1749_wide_band.png" alt="20260617_1749 wide band OSI and authority-factor plot">
+        </article>
+        <article class="plot">
+          <div class="plot-head"><h3>20260617_1749 pause resume</h3><a href="figures/20260617_1749_pause_resume.fig">Open FIG</a></div>
+          <img src="figures/20260617_1749_pause_resume.png" alt="20260617_1749 pause resume OSI and authority-factor plot">
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

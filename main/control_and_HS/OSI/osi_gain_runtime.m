@@ -5,6 +5,17 @@ function [osi_gain_out, ncf_m91, ncf_filtered] = ...
 %OSI_GAIN_RUNTIME Simulink runtime wrapper for M9.1-driven OSI gain.
 % Uses workspace setup prepared by main_ColumnSetup.m at compile time, then
 % calls the production M9.1 estimator and OSI gain law during target runtime.
+%
+% Speedgoat replacement contract:
+% - Keep this entry point scalar-sample, fixed-size, and codegen-safe.
+% - Inputs dd and dm are displacement signals in mm. Do not require fm in
+%   the runtime path unless a future study proves a significant performance
+%   gain and keeps a documented no-fm fallback.
+% - The first output is the recommended authority factor, logged in the
+%   current model as osi_gain_out/osi_gain and named auth_factor in offline
+%   OSI tests. The other outputs are the selected and filtered OSI margins.
+% - Branch diagnostics belong in offline tests unless the Simulink model is
+%   deliberately expanded with fixed-size, codegen-safe logging signals.
 
 %#codegen
 

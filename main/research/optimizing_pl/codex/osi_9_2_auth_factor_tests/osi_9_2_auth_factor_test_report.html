@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OSI Method 9.2 Auth Factor Tests</title>
+<style>body{margin:0;background:#f5f6f7;color:#202124;font:15px/1.45 "Segoe UI",Arial,sans-serif}main{max-width:1180px;margin:0 auto;padding:28px 22px 42px}header{border-bottom:1px solid #d7d9dc;margin-bottom:22px;padding-bottom:18px}h1{font-size:28px;line-height:1.15;margin:0 0 8px;letter-spacing:0}h2{font-size:18px;margin:28px 0 12px;letter-spacing:0}h3{font-size:16px;margin:0 0 10px;letter-spacing:0}p{margin:0 0 10px;color:#5f6368}code{font-family:Consolas,"Cascadia Mono",monospace;font-size:.94em}.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}.metric{background:#fff;border:1px solid #d7d9dc;border-radius:4px;padding:11px 12px}.metric span{display:block;color:#5f6368;font-size:12px;margin-bottom:3px}.metric strong{font-size:18px;font-weight:650}.table-wrap{overflow-x:auto;background:#fff;border:1px solid #d7d9dc;border-radius:4px}table{width:100%;border-collapse:collapse;min-width:920px}th,td{border-bottom:1px solid #e6e7e9;padding:8px 10px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{background:#eceef0;color:#3f4348;font-size:12px;font-weight:650}tr:last-child td{border-bottom:0}.plots{display:grid;grid-template-columns:1fr;gap:18px}.plot{background:#fff;border:1px solid #d7d9dc;border-radius:4px;padding:14px}.plot-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:10px}.plot a{color:#007ca8;font-weight:600;text-decoration:none}.plot a:hover{text-decoration:underline}img{display:block;width:100%;height:auto;border:1px solid #e1e3e5;background:#fff}@media(max-width:760px){main{padding:20px 14px 32px}.meta{grid-template-columns:1fr}.plot-head{display:block}}</style>
+</head>
+<body>
+<main>
+<header>
+<h1>OSI Method 9.2 Auth-Factor Trial</h1>
+<p>Research-only simplified trial. Authority is calculated directly from the selected OSI as <code>auth_factor = clamp(OSI / target_ncf, 0, 1)</code>. Target NCF is required and is <code>0.3</code> in this run.</p>
+<div class="meta"><div class="metric"><span>Cases</span><strong>8</strong></div><div class="metric"><span>Method</span><strong>9.2 direct</strong></div><div class="metric"><span>Generated</span><strong>2026-07-01 02:52:14</strong></div></div>
+</header>
+<section>
+<h2>Summary</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Case</th><th>Windows</th><th>Paused</th><th>Min OSI</th><th>Mean OSI</th><th>Min auth</th><th>Mean auth</th><th>Final auth</th></tr></thead>
+<tbody>
+<tr><td>20260617_1731_current_split_band</td><td>16435</td><td>0</td><td>0.0044</td><td>0.2708</td><td>0.0146</td><td>0.8938</td><td>0.9843</td></tr>
+<tr><td>20260617_1731_low_band</td><td>16435</td><td>0</td><td>0.0160</td><td>0.2137</td><td>0.0535</td><td>0.6791</td><td>1.0000</td></tr>
+<tr><td>20260617_1731_wide_band</td><td>16435</td><td>0</td><td>0.0046</td><td>0.2015</td><td>0.0153</td><td>0.6646</td><td>1.0000</td></tr>
+<tr><td>20260617_1731_pause_resume</td><td>16435</td><td>702</td><td>0.0044</td><td>0.2714</td><td>0.0146</td><td>0.8957</td><td>0.9843</td></tr>
+<tr><td>20260617_1749_current_split_band</td><td>6075</td><td>0</td><td>0.0124</td><td>0.2891</td><td>0.0412</td><td>0.9324</td><td>1.0000</td></tr>
+<tr><td>20260617_1749_low_band</td><td>6075</td><td>0</td><td>0.0155</td><td>0.2347</td><td>0.0517</td><td>0.7273</td><td>1.0000</td></tr>
+<tr><td>20260617_1749_wide_band</td><td>6075</td><td>0</td><td>0.0068</td><td>0.2210</td><td>0.0227</td><td>0.7210</td><td>1.0000</td></tr>
+<tr><td>20260617_1749_pause_resume</td><td>6075</td><td>702</td><td>0.0124</td><td>0.2903</td><td>0.0412</td><td>0.9337</td><td>1.0000</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<section>
+<h2>Plots</h2>
+<div class="plots">
+<article class="plot"><div class="plot-head"><h3>20260617_1731_current_split_band</h3><span>PNG export</span></div><img src="figures/20260617_1731_current_split_band.png" alt="20260617_1731_current_split_band Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1731_low_band</h3><span>PNG export</span></div><img src="figures/20260617_1731_low_band.png" alt="20260617_1731_low_band Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1731_wide_band</h3><span>PNG export</span></div><img src="figures/20260617_1731_wide_band.png" alt="20260617_1731_wide_band Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1731_pause_resume</h3><span>PNG export</span></div><img src="figures/20260617_1731_pause_resume.png" alt="20260617_1731_pause_resume Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1749_current_split_band</h3><span>PNG export</span></div><img src="figures/20260617_1749_current_split_band.png" alt="20260617_1749_current_split_band Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1749_low_band</h3><span>PNG export</span></div><img src="figures/20260617_1749_low_band.png" alt="20260617_1749_low_band Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1749_wide_band</h3><span>PNG export</span></div><img src="figures/20260617_1749_wide_band.png" alt="20260617_1749_wide_band Method 9.2 plot"></article>
+<article class="plot"><div class="plot-head"><h3>20260617_1749_pause_resume</h3><span>PNG export</span></div><img src="figures/20260617_1749_pause_resume.png" alt="20260617_1749_pause_resume Method 9.2 plot"></article>
+</div>
+</section>
+</main>
+</body>
+</html>
