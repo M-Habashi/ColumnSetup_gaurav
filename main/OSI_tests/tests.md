@@ -1,5 +1,14 @@
 # OSI/Auth-Factor Plots
 
+For the redesigned indicator + authority law (Fable), see `fable/README.md`
+and `fable/fable_report.html`:
+
+```matlab
+addpath(fullfile(pwd, 'OSI_tests', 'fable'))
+checks  = run_fable_synthetic_checks;   % closed-loop ground-truth validation
+results = run_fable_osi_tests;          % 3-record replay vs current impl
+```
+
 This folder has one offline plot runner:
 
 ```matlab

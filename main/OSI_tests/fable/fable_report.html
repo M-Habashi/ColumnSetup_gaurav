@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fable OSI — online stability indicator &amp; adaptive authority</title>
+<style>
+  :root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --blue: #2a78d6;
+    --aqua: #1baf7a;
+    --violet: #4a3aa7;
+    --red: #e34948;
+    --yellow: #eda100;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --border: rgba(11,11,11,0.10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 28px 80px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 21px; margin: 48px 0 12px; padding-top: 18px; border-top: 1px solid var(--grid); }
+  h3 { font-size: 16.5px; margin: 26px 0 8px; }
+  p, li { color: var(--ink-2); }
+  strong { color: var(--ink); }
+  .sub { color: var(--muted); font-size: 13.5px; margin-bottom: 30px; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px; margin: 18px 0;
+  }
+  .verdict { border-left: 4px solid var(--aqua); }
+  .warn { border-left: 4px solid var(--yellow); }
+  code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 0.92em; }
+  code { background: #f0efec; border-radius: 4px; padding: 1px 5px; color: var(--ink); }
+  pre { background: #f0efec; border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  .math {
+    font-family: Georgia, "Times New Roman", serif; font-style: italic;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px; margin: 12px 0; color: var(--ink);
+    font-size: 16px; overflow-x: auto;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; background: var(--surface-1); font-size: 13.5px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .good { color: var(--good); font-weight: 600; }
+  .bad { color: var(--critical); font-weight: 600; }
+  .pass { color: var(--good); font-weight: 700; }
+  figure { margin: 22px 0; }
+  figure img { width: 100%; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.5; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600;
+          background:#eef4fc; color:var(--blue); margin-right:6px; }
+  .toc { columns: 2; font-size: 14px; }
+  .toc a { color: var(--blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .flag { font-size: 12.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Fable OSI — a redesigned online stability indicator and adaptive PID authority</h1>
+<div class="sub">OSI_tests/fable &nbsp;·&nbsp; 2026-07-01 &nbsp;·&nbsp; validated on a ground-truth closed-loop simulator and on the three experimental records
+<br>records: <span class="mono">20260617_1731</span>, <span class="mono">20260617_1749</span>, <span class="mono">20260630_1930</span></div>
+
+<div class="card verdict">
+<strong>Verdict.</strong> On healthy data the previous indicator read a near-constant ≈0.3 (its residual
+branch is statistically biased low) so its authority collapsed to the 0.08 floor within seconds of a test
+starting and rarely recovered — this is visible in the live <span class="mono">20260630_1930</span> test, where the
+deployed runtime pinned <code>osi_gain</code> at 0.08 for ~300&nbsp;s of a healthy experiment.
+The fable indicator has <strong>0% false-low time on all three records</strong>, matches an after-the-fact
+reference margin 6–15× more closely, flags the one genuine instability (1749, end of record)
+<strong>8.7&nbsp;s earlier</strong> than the current implementation, and its authority stays at 1.0 through
+every healthy phase while still shedding hard when the margin truly collapses.
+In the closed-loop simulator, where the true margin is computable, the estimate tracks truth to
+0.01–0.05 and the authority law returns the damaged loop's true margin to the target in every scenario.
+</div>
+
+<h2 id="toc">Contents</h2>
+<div class="toc">
+<a href="#problem">1. What was wrong</a><br>
+<a href="#margin">2. The margin being estimated</a><br>
+<a href="#indicator">3. The fable indicator</a><br>
+<a href="#authority">4. The fable authority law</a><br>
+<a href="#synthetic">5. Ground-truth validation</a><br>
+<a href="#records">6. The three experimental records</a><br>
+<a href="#scorecard">7. Scorecard</a><br>
+<a href="#limits">8. Limitations &amp; deployment notes</a><br>
+<a href="#files">9. Files &amp; how to run</a>
+</div>
+
+<h2 id="problem">1. What was wrong with the current OSI / authority update</h2>
+<p>The current runtime (<code>m91_adaptive_margin</code> + <code>auth_stability_gain</code>, replayed
+faithfully by <code>run_current_osi_auth_factor_cases</code>) fails in four structural ways, all visible
+in the comparison figures below:</p>
+<ol>
+<li><strong>The residual branch is biased low by construction.</strong> Every update it takes the
+<em>maximum</em> of ~40 noisy per-bin power ratios and compares it against a percentile-based
+calibration constant. The maximum of noisy ratios systematically exceeds the calibration, so the
+branch reports a low margin (≈0.3) on perfectly healthy data, forever. Since the reported margin is
+<code>min(ST,&nbsp;residual)</code>, the bias wins.</li>
+<li><strong>The baseline is calibrated during the worst possible seconds.</strong> It uses the first
+7.5&nbsp;s of the record — which contain the −14&nbsp;mm actuator homing ramp — and never revisits the
+choice, so the "healthy floor" is garbage in every one of these records.</li>
+<li><strong>Blind optimism when unobservable.</strong> When there is no coherent input, the ST branch
+reports the <em>cap</em> (0.70) rather than "don't know", so margin and authority decisions are made on
+fiction in the long command-off stretches of records 1731 and 1930.</li>
+<li><strong>The authority law can only creep back.</strong> Recovery is a fixed
+0.0015/update integrator with no model of what authority would actually be safe. Combined with the
+biased margin, the deployed test (<span class="mono">1930</span>) collapsed 0.3&nbsp;→&nbsp;0.08 at
+t≈90&nbsp;s and never recovered. The margin also carries ad-hoc shaping
+(<code>st_power</code> exponent, percentile games) with no physical meaning.</li>
+</ol>
+
+<h2 id="margin">2. The margin being estimated</h2>
+<p>Same quantity the project already standardizes on: the chordal (normalized-coprime-factor–style)
+distance of the loop's Nyquist locus to the critical point, evaluated per frequency and minimized
+over the band [2,&nbsp;100]&nbsp;Hz (58–62&nbsp;Hz line-rejected):</p>
+<div class="math">b(&omega;) = |1 + L(&omega;)| / &radic;(2(1 + |L(&omega;)|&sup2;)) = 1 / (&radic;2 · &radic;(|S(&omega;)|&sup2; + |T(&omega;)|&sup2;)) , &nbsp;&nbsp; b = min<sub>&omega;</sub> b(&omega;) &le; 1/&radic;2 &asymp; 0.707</div>
+<p>with T estimated from the measured <code>dd&nbsp;→&nbsp;dm</code> map and S&nbsp;=&nbsp;1&nbsp;−&nbsp;T.
+Since any strictly proper loop has |L|&nbsp;→&nbsp;0 somewhere in the band, 1/&radic;2 is the mathematical
+ceiling; the estimator caps there, and the cap carries the meaning
+<em>"no evidence of margin deficit"</em>, never "measured 0.707". For this rig the nominal
+(healthy plant <span class="mono">tf_sp1_7000</span>, PID P0.15/I20/D0.0015) margin is
+<strong>0.588 @ 35&nbsp;Hz</strong>; the degraded plant (<span class="mono">tf_sp1_5000</span>) gives
+<strong>0.345 @ 38&nbsp;Hz</strong>.</p>
+
+<h2 id="indicator">3. The fable indicator (<code>fable_osi.m</code>)</h2>
+
+<h3>3.1 Rolling-STFT architecture — 1 FFT per hop instead of 39 per update</h3>
+<p>Signals are processed in 1&nbsp;s Hann segments hopped every 0.25&nbsp;s; a 5&nbsp;s analysis window is
+the ring of the last 17 segment spectra. Each 0.25&nbsp;s step call does <strong>one</strong> new
+2048-point FFT and updates the ring — the previous runtime recomputed all 39 segment FFTs of its window
+at every update, then had to time-slice them across target ticks. Auto- and cross-spectra are aggregated
+by <strong>medians across segments</strong> (robust to one-segment transients), and coherence is
+bias-corrected using the effective number of independent averages
+k<sub>eff</sub> (computed from the Hann overlap correlations; k<sub>eff</sub>&nbsp;≈&nbsp;9.1 here).</p>
+
+<h3>3.2 Branch A — coherent (S,T) margin, debiased</h3>
+<p>A bin enters the ST branch only if it passes a <strong>null-calibrated coherence gate</strong> — the
+threshold where a truly unrelated bin would pass with probability &alpha;&nbsp;=&nbsp;1%:</p>
+<div class="math">P(&gamma;&#770;&sup2; &gt; z | H<sub>0</sub>) = (1 − z)<sup>k<sub>eff</sub>−1</sup> &nbsp;&rArr;&nbsp; &gamma;<sub>gate</sub> = 1 − &alpha;<sup>1/(k<sub>eff</sub>−1)</sup></div>
+<p><em>and</em> an input-power gate (within 35&nbsp;dB of the in-band peak). The power gate matters: a
+single false-coherence bin at an undriven frequency reads |T&#770;|&nbsp;=&nbsp;huge and would nuke the margin
+to zero — this exact failure appeared in testing and is why coherence alone is not enough.
+The margin is the minimum of the 3-bin-median-smoothed chordal curve over gated bins
+(≥5 required), with a 3-sample temporal median. No percentile shaping, no exponent — the estimate is
+left unbiased so that its <em>level</em> can be compared against the target honestly.</p>
+
+<h3>3.3 Branch B — residual growth at undriven frequencies, evidence-based</h3>
+<p>Instability that the command doesn't excite shows up as growing output power at quiet bins
+(dm&nbsp;=&nbsp;S·v under noise v). The branch watches only
+<strong>bins the command does not drive</strong>, inside the configured hazard band
+(default 28–100&nbsp;Hz — where this loop can actually go unstable; low-frequency harmonic distortion of a
+strong low-band command is deliberately outside it). Per update:</p>
+<ol>
+<li>residual PSD ratio vs a calibrated baseline, <strong>self-normalized by the cross-bin quiet
+median</strong> — broadband intensity changes cancel;</li>
+<li>robust z-score of the log ratio against the calibration spread (median/MAD);</li>
+<li>the branch <strong>engages only</strong> after z&nbsp;&gt;&nbsp;3.5 persists for 3 hops at the same
+frequency (±3&nbsp;Hz). Until then it reports the cap — <em>zero steady-state bias</em>, which is what
+the old max-of-ratios branch could not do;</li>
+<li>once engaged, the <em>full</em> growth is mapped to margin using the |L|&nbsp;≈&nbsp;1 relation near
+the critical point (output PSD ∝ |S|², b ∝ 1/|S|):</li>
+</ol>
+<div class="math">b<sub>res</sub> = b<sub>0</sub>(&omega;*) / &radic;(growth), &nbsp;&nbsp; growth = e<sup>z<sub>max</sub>·&sigma;<sub>0</sub></sup></div>
+<p>where b<sub>0</sub>(&omega;*) is the prior margin curve at the binding bin. Disengagement is
+hysteretic (z&nbsp;&lt;&nbsp;2).</p>
+
+<h3>3.4 Calibration that defends itself</h3>
+<ul>
+<li><strong>Outlier-rejecting collection:</strong> baseline windows must agree with the running
+reference within 6&nbsp;dB; if everything gets rejected the reference itself was the outlier
+(actuator homing) and collection restarts.</li>
+<li><strong>Excitation-regime rebaseline:</strong> the set of command-driven bins changing (a test
+phase starting/stopping) legitimately moves the quiet-bin floor — and it is an <em>exogenous, observable</em>
+event: instability grows quiet-bin power but cannot change which bins the <em>command</em> drives. On a
+sustained excited-set change the baseline is recollected; the ST branch keeps running throughout.
+This is what lets one calibration-free runtime survive record 1731 (command off for 620&nbsp;s, then
+broadband) and the phase-switching 1930 test without false alarms.</li>
+<li><strong>Gated slow adaptation:</strong> when z is quiet, the baseline tracks drift with a 100&nbsp;s
+time constant, hard-capped at ±3&nbsp;dB from calibration so degradation can never be "absorbed".</li>
+</ul>
+
+<h3>3.5 Fast guard and validity semantics</h3>
+<p>A cheap divergence trip: the newest segment's quiet-band power against the ring median
+(&gt;10× for 3 consecutive hops → trip), latency ~0.75&nbsp;s, independent of any calibration.
+And a strict honesty rule throughout: <strong>when nothing is measurable the margin is NaN</strong>
+(warm-up, no data) — never a fabricated "nominal"; when only the output floor is observable the margin is
+the cap with <code>st_valid=false</code>, and the authority law treats those states differently.</p>
+
+<h2 id="authority">4. The fable authority law (<code>fable_auth.m</code>)</h2>
+<p>Scalar-state supervisory law, updated once per OSI hop. Contract, in priority order:</p>
+<table>
+<tr><th>Situation</th><th>Action</th><th>Rationale</th></tr>
+<tr><td>Fast-guard trip</td><td>immediate ×0.6 drop + 5&nbsp;s cooldown</td><td>divergence outruns any window; act now</td></tr>
+<tr><td>Margin NaN</td><td>hold</td><td>no evidence ≠ evidence of danger; guards stay armed</td></tr>
+<tr><td>b &lt; 0.6·target (severe)</td><td>immediate power-law shed, 3.0/s rate</td><td>emergency belt, bypasses all floors</td></tr>
+<tr><td>b &lt; target confirmed (3 hops)</td><td>shed toward min(power-law, 0.9·a<sub>pred</sub>), 1.0/s</td><td>certainty-equivalent step, no slam-to-floor</td></tr>
+<tr><td>residual-driven deficit</td><td>compounding shed + recovery cooldown + <strong>latched ceiling</strong> (×1.15 of post-shed a, forgets over 200&nbsp;s)</td><td>the hazard band is invisible — don't re-probe known-bad territory</td></tr>
+<tr><td>b ≥ target+0.04 for 3&nbsp;s</td><td>recover at 0.02/s, capped at 0.9·a<sub>pred</sub></td><td>model-verified recovery, stops short of the boundary</td></tr>
+<tr><td>same, but no coherent input</td><td>recover at 0.007/s ("probe and verify")</td><td>silent records can still recover; residual branch + fast guard stand watch</td></tr>
+</table>
+
+<h3>4.1 The predicted-safe authority, done correctly</h3>
+<p>Because authority scales the loop linearly (L(a)&nbsp;=&nbsp;(a/a<sub>now</sub>)·L&#770;), the measured
+loop L&#770;&nbsp;=&nbsp;T&#770;/(1−T&#770;) at coherent bins yields a <em>predicted margin curve</em>
+b<sub>pred</sub>(&alpha;) over a 25-point gain grid. One subtlety is essential and easy to get wrong:</p>
+<div class="card warn">
+<strong>The chordal margin is not monotone in loop gain.</strong> At very large gain the locus is again
+"far" from −1 pointwise, so "the largest &alpha; whose predicted margin clears the target" can be
+&alpha;&nbsp;=&nbsp;20 — through an unstable pocket. Since authority moves <em>continuously</em>, only the
+<strong>contiguous safe interval around the current operating point</strong> is admissible: shedding walks
+down to the first safe &alpha; below 1; recovery expands upward only through connected safe values.
+(First drafts of this law froze or slammed on real data until this was fixed — it is the difference
+between a pointwise distance and a stability statement.)
+</div>
+<p>The prediction is a <em>bound and an accelerator, never a trust anchor</em>: it floors confirmed sheds
+(no pointless slam to a<sub>min</sub> while the 5&nbsp;s window flushes) and caps recovery at 90% of the
+predicted boundary (absorbing estimator lag and mild optimism instead of limit-cycling on it) — and it is
+only consulted when the binding frequency is inside the coherently observed band
+(<code>st_binding</code>); a residual-driven deficit is outside the model's sight, so there the shed
+compounds until the evidence clears.</p>
+
+<h2 id="synthetic">5. Ground-truth validation (closed loop, computable true margin)</h2>
+<p><code>run_fable_synthetic_checks.m</code> builds a sample-accurate closed loop — the project's discrete
+PID against the identified plants (<span class="mono">tf_sp1_7000</span> healthy /
+<span class="mono">tf_sp1_5000</span> damaged, both strictly proper, dual-state so the swap keeps states
+continuous), with the OSI and the authority law running in the loop at their real cadence, output noise, and
+the true chordal margin computed analytically at every update from the active plant and current authority.
+Target 0.50 (healthy true margin 0.588, damaged 0.345). <strong>All five scenarios pass:</strong></p>
+<table>
+<tr><th>Scenario</th><th>What it proves</th><th>Key numbers</th><th></th></tr>
+<tr><td>S1 healthy broadband</td><td>accuracy, no false adaptation</td><td class="num">median |b&#770;−b| = 0.014; false-low 0%; a ≥ 1.00</td><td class="pass">PASS</td></tr>
+<tr><td>S2 input ×5 mid-run</td><td>intensity robustness</td><td class="num">margin shift 0.017; no adaptation</td><td class="pass">PASS</td></tr>
+<tr><td>S3 damage, broadband</td><td>detect → shed → defend</td><td class="num">detect 3.25&nbsp;s; true margin defended; steady err 0.022</td><td class="pass">PASS</td></tr>
+<tr><td>S4 damage, low-band command</td><td>invisible-band damage via residual branch</td><td class="num">residual engaged 2.5&nbsp;s; detect 2.75&nbsp;s; defended; err 0.045</td><td class="pass">PASS</td></tr>
+<tr><td>S5 silence</td><td>no false alarms, no false sheds</td><td class="num">a never shed; zero alarms</td><td class="pass">PASS</td></tr>
+</table>
+
+<figure>
+<img src="figures/synthetic_S3_damage_broadband.png" alt="S3 damage broadband">
+<figcaption><strong>S3 — plant swap under broadband command.</strong> The estimate (blue) tracks the true
+margin (black) through the 0.588→0.345 collapse in ~3&nbsp;s; authority sheds, then recovers to the level
+the margin actually supports; the true margin is pinned back above the 0.50 target within seconds and held
+there (steady estimate error 0.022).</figcaption>
+</figure>
+<figure>
+<img src="figures/synthetic_S4_damage_lowband.png" alt="S4 damage lowband">
+<figcaption><strong>S4 — same damage, but the command has no power near the critical frequency.</strong>
+The ST branch is blind there by construction; the residual branch catches the quiet-band growth in
+2.5&nbsp;s (red dots), authority sheds, and the latched ceiling prevents an immediate re-probe of the
+invisible hazard. The estimate is optimistic between engagements (the price of an unobservable band) but
+the true margin stays defended throughout.</figcaption>
+</figure>
+
+<h2 id="records">6. The three experimental records</h2>
+<p class="flag">Replay caveat (applies equally to every offline runner in OSI_tests): the replayed
+authority did not act on the plant, so the authority traces show what each law <em>would have commanded</em>
+given the observed margins. Closed-loop behavior is what Section 5 validates. The black dots are an
+after-the-fact reference: 20&nbsp;s windows, 2&nbsp;s Welch segments, coherence&nbsp;&gt;&nbsp;0.5 —
+the best margin estimate hindsight can produce from dd→dm, where the input allows one.</p>
+
+<h3>6.1 &nbsp;20260617_1731 — command off for 620 s, then broadband; P-gain excursion to near-instability</h3>
+<figure>
+<img src="figures/20260617_1731_fable_vs_current.png" alt="1731 comparison">
+<figcaption><strong>Fable (blue/green) vs current (red).</strong> During the 620&nbsp;s command-off phase
+fable reports "no evidence of deficit" (cap) and holds full authority; the current margin jitters over
+0.3–0.7 on pure noise. When the broadband command starts, fable locks onto the reference (≈0.62) and then
+tracks the entire P-gain-driven decline 0.62→0.38 <em>on top of the reference dots</em> (median error
+0.021 vs 0.142). The margin stays above the 0.30 target until the final excursion — so the law correctly
+sheds only at the terminal collapse (~768&nbsp;s), fast. The current implementation "detects" in 0.04&nbsp;s
+only because its margin is already biased below target 20.6% of the healthy time — its early alarm is the
+same defect that destroys its healthy behavior.</figcaption>
+</figure>
+
+<h3>6.2 &nbsp;20260617_1749 — low-band command (2–7 Hz coherent); genuine instability at end of record</h3>
+<figure>
+<img src="figures/20260617_1749_fable_vs_current.png" alt="1749 comparison">
+<figcaption><strong>The one genuine unstable event in the dataset.</strong> Healthy phase: fable rides the
+reference at ≈0.67 with 0% false-low (the current implementation is chaotic but averages out). From
+~248&nbsp;s the residual z-statistic (bottom) explodes — quiet-band growth at ~30–45&nbsp;Hz, exactly the
+failure mode the residual branch exists for, invisible to a 2–7&nbsp;Hz command. Fable's margin crosses the
+target 6.0&nbsp;s after growth onset vs 14.7&nbsp;s for the current implementation (8.7&nbsp;s earlier), sheds
+to the floor through the oscillation (dm excursion at ~278&nbsp;s), and recovers deliberately slowly
+afterwards (residual-latch policy) — against the current law's immediate sprint back to full authority
+seconds after a violent event.</figcaption>
+</figure>
+<p>Note the harmonic-distortion lesson this record taught: a strong 2–7&nbsp;Hz command produces
+narrowband nonlinear products at 10–28&nbsp;Hz that track excitation level. A residual branch that scans
+the full band flags them forever (that draft read 0.22 healthy). Confining the watch to the hazard band
+where this loop can actually go unstable (28–100&nbsp;Hz; nominal binding 35–38&nbsp;Hz) removes the false
+alarm without giving up the protection that caught the real event.</p>
+
+<h3>6.3 &nbsp;20260630_1930 — el-centro EQ phases; the live OSI runtime was active</h3>
+<figure>
+<img src="figures/20260630_1930_fable_vs_current.png" alt="1930 comparison">
+<figcaption><strong>The deployed system's own test.</strong> The as-run <code>osi_gain</code> (dashed grey)
+shows what the current implementation did live: collapsed 0.3→0.08 at t≈90&nbsp;s of a healthy EQ test and
+sat at the floor for ~300&nbsp;s. The recomputed current margin (red) shows why: biased ≈0.3–0.4 with 18.1%
+false-low. Fable tracks the reference through the EQ phases (median error 0.023 vs 0.319), survives every
+excitation-phase change via regime rebaselining, and holds a&nbsp;=&nbsp;1.0 for the whole record. The
+~406&nbsp;s dm blip (shaded) coincides with the live runtime restoring its gain from the floor; it carries
+no loop-margin signature (no residual growth, no coherent-margin dip, reference undefined there) and fable
+correctly does not alarm on it.</figcaption>
+</figure>
+
+<h2 id="scorecard">7. Scorecard — fable vs current implementation, all three records</h2>
+<p class="flag">Healthy windows: 1731 [625,690]&nbsp;s (command on, pre-event), 1749 [40,210]&nbsp;s,
+1930 [80,395]&nbsp;s. Target margin 0.30 (project setting for these tests). "Full authority" means
+a ≥ 95% of the law's own initial value (fable a₀=1.0; current a₀=0.3).</p>
+<table>
+<tr><th>Metric</th><th class="num">1731 fable</th><th class="num">1731 cur.</th><th class="num">1749 fable</th><th class="num">1749 cur.</th><th class="num">1930 fable</th><th class="num">1930 cur.</th></tr>
+<tr><td>healthy margin, median</td><td class="num">0.607</td><td class="num">0.522</td><td class="num">0.673</td><td class="num">0.611</td><td class="num">0.707*</td><td class="num">0.372</td></tr>
+<tr><td>healthy margin, IQR</td><td class="num good">0.022</td><td class="num bad">0.244</td><td class="num">0.059</td><td class="num">0.060</td><td class="num good">0.065</td><td class="num bad">0.266</td></tr>
+<tr><td>false-low rate (b&lt;target while healthy)</td><td class="num good">0.0%</td><td class="num bad">20.6%</td><td class="num good">0.0%</td><td class="num good">0.0%</td><td class="num good">0.0%</td><td class="num bad">18.1%</td></tr>
+<tr><td>time at full authority, healthy</td><td class="num good">100%</td><td class="num bad">30%</td><td class="num good">100%</td><td class="num good">100%</td><td class="num good">100%</td><td class="num bad">60%</td></tr>
+<tr><td>median |error| vs offline reference</td><td class="num good">0.021</td><td class="num bad">0.142</td><td class="num good">0.013</td><td class="num">0.059</td><td class="num good">0.023</td><td class="num bad">0.319</td></tr>
+<tr><td>event: margin floor reached</td><td class="num">0.101</td><td class="num">0.005</td><td class="num">0.050</td><td class="num">0.180</td><td class="num">—†</td><td class="num">0.271</td></tr>
+<tr><td>event: detection after onset</td><td class="num">at true crossing</td><td class="num">(pre-biased)</td><td class="num good">6.0&nbsp;s</td><td class="num">14.7&nbsp;s</td><td class="num">—†</td><td class="num">0.3&nbsp;s†</td></tr>
+</table>
+<p class="flag">* cap = "no evidence of deficit": during 1930's step-and-hold phases the 5&nbsp;s window has
+no coherent bins and no quiet-band growth; the 20&nbsp;s reference still resolves ≈0.55–0.62 there.
+&nbsp;† the 1930 "event" is a 1–2&nbsp;s dm transient coincident with the live runtime restoring its gain
+from the floor; neither the offline reference nor any growth signature marks it as loop marginality — the
+current implementation's 0.3&nbsp;s "detection" there is its ordinary bias, not skill.</p>
+
+<h2 id="limits">8. Limitations &amp; deployment notes</h2>
+<ul>
+<li><strong>dd/dm only, Speedgoat-shaped.</strong> The estimator honors the existing runtime contract
+(no <code>fm</code>/<code>dc</code> required). Step mode is fixed-size per call (<code>hop_n</code> samples,
+one FFT); state is a fixed-size numeric struct, flattenable exactly like
+<code>prepare_osi_gain_runtime</code> flattens the M9.1 config today. The dd→dm map absorbs the phase
+lead G<sub>T</sub>; the margin is therefore the <em>outer</em> (transfer-system) margin — the same
+quantity the current tests target (<code>target_outer_ncf</code>).</li>
+<li><strong>Unobservable-band optimism.</strong> Where the command has no power and the output floor shows
+no growth, the margin reads the cap. That is a statement of evidence, not of the true global margin (1930's
+step phases read 0.707 while the 20&nbsp;s reference sees ≈0.6). The authority law compensates: recovery in
+that state is slow, and the residual latch remembers hazards the band cannot currently see.</li>
+<li><strong>Common-mode blind spot.</strong> The residual z-statistic is self-normalized across bins, so a
+perfectly flat broadband output rise is absorbed by design (that is what makes it immune to intensity
+changes). Broadband divergence is covered by the raw-power fast guard (10× / 0.75&nbsp;s) and, when any
+input is present, by the ST branch; a physically diverging loop also concentrates power at the unstable
+frequency within a couple of windows, which the z-statistic then sees.</li>
+<li><strong>Replay ≠ closed loop.</strong> On the records, authority did not feed back into the plant.
+The closed-loop claims rest on Section 5, where the whole chain (estimator → law → loop) runs sample-accurately
+against a computable truth.</li>
+<li><strong>Knobs that matter</strong>: <code>target</code> (0.30 here, 0.50 in the synthetic study —
+note the healthy margin of the degraded-plant loop is only 0.345, so a 0.30 target leaves little headroom
+by design); <code>residual_band_hz</code> (set from where <em>your</em> loop can go unstable);
+<code>window_s</code>/<code>hop_s</code> (latency vs variance); the authority rates
+(<code>down_rate</code>, <code>up_rate</code>, <code>up_rate_blind</code>, latch constants).</li>
+</ul>
+
+<h2 id="files">9. Files &amp; how to run</h2>
+<pre><code>addpath(fullfile(project_root, 'OSI_tests', 'fable'))
+checks  = run_fable_synthetic_checks;   % 5 closed-loop ground-truth scenarios
+results = run_fable_osi_tests;          % 3-record replay + current-impl comparison</code></pre>
+<table>
+<tr><th>File</th><th>Role</th></tr>
+<tr><td><code>fable_osi.m</code></td><td>estimator — <code>config / state / step / run</code>; rolling-STFT ring; ST + residual branches; fast guard; regime rebaseline; prediction curve for the law</td></tr>
+<tr><td><code>fable_auth.m</code></td><td>authority law — <code>params / state</code> + scalar-state step; prediction-bounded shed, contiguous-safe-interval recovery cap, residual latch, probe-and-verify</td></tr>
+<tr><td><code>run_fable_synthetic_checks.m</code></td><td>ground-truth closed-loop validation (Section 5); figures + PASS/FAIL + <code>figures/synthetic_checks.mat</code></td></tr>
+<tr><td><code>run_fable_osi_tests.m</code></td><td>record replays, current-impl replay, offline reference, metrics, figures; caches in <code>results/replay_*.mat</code></td></tr>
+<tr><td><code>figures/</code></td><td>all PNG/FIG outputs referenced by this report</td></tr>
+</table>
+
+<p class="flag" style="margin-top:36px">Fable OSI — OSI_tests/fable — generated 2026-07-01. All numbers in this report are
+reproducible from the two runner scripts; record replays are cached in <code>results/</code>.</p>
+
+</main>
+</body>
+</html>
