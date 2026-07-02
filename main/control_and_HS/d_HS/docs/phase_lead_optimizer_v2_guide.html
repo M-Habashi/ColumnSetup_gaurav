@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vHS Phase-Lead Optimizer v2 — User Guide</title>
+<style>
+  :root {
+    --ink: #1e2430;
+    --muted: #5b6472;
+    --line: #dde2ea;
+    --accent: #0c5a78;
+    --accent-soft: #eaf3f7;
+    --good: #1a7a3e;
+    --warn: #a05a12;
+    --code-bg: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #fbfcfd;
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #0c3d54, #0c5a78);
+    color: #fff;
+    padding: 34px 24px 26px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 650; }
+  header p { margin: 0; opacity: 0.85; max-width: 72ch; }
+  main { max-width: 960px; margin: 0 auto; padding: 26px 24px 80px; }
+  h2 {
+    font-size: 20px; margin: 44px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--line); color: var(--accent);
+  }
+  h3 { font-size: 16px; margin: 26px 0 8px; }
+  p, li { max-width: 84ch; }
+  code, pre {
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 13.5px;
+  }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; }
+  table {
+    border-collapse: collapse; width: 100%; margin: 14px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--line); padding: 7px 10px;
+    text-align: left; vertical-align: top;
+  }
+  th { background: var(--accent-soft); font-weight: 600; }
+  td code { white-space: nowrap; }
+  .note {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .warn {
+    background: #fdf3e7; border-left: 4px solid var(--warn);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .muted { color: var(--muted); }
+  img.figure {
+    max-width: 100%; border: 1px solid var(--line); border-radius: 8px;
+    margin: 10px 0;
+  }
+  .kbd {
+    display: inline-block; border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 5px; padding: 0 6px;
+    background: #fff; font-family: Consolas, monospace; font-size: 13px;
+  }
+  ol li, ul li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>vHS Phase-Lead Optimizer v2 — User Guide</h1>
+  <p>Finds the phase-lead prefilter G<sub>T</sub>(s) on the numerical
+  d<sub>d</sub> command that minimizes J4 while holding the
+  num·G<sub>T</sub>·PID·H<sub>dc,dm</sub>·exp NCF margin at or above your
+  target. Same inputs and same saved-file format as before — new engine
+  underneath.</p>
+</header>
+<main>
+
+<h2 id="quickstart">1. Quick start</h2>
+<p>Exactly like the old workflow:</p>
+<pre><code>% optional: set the NCF target (default 0.45)
+ncfmargin = 0.40;
+
+% then run the wrapper (same file pickers for specimen / exp_tf / FEM)
+run('control_and_HS\d_HS\optimize_vHS_phase_lead_min_ncf.m')</code></pre>
+<p>You will be asked to pick the specimen, exp_tf and FEM files the same
+way as before (unless you set the override variables below). The
+optimizer then runs four stages, prints live progress, saves the result
+under <code>saved_results\phase_lead\</code> and opens two figures.</p>
+
+<div class="note">
+<strong>The goal it optimizes:</strong> minimize J4 (first-floor response
+error vs the reference FEM) subject to
+<code>NumPhaseLeadExpNCFMargin &ge; ncfmargin</code> as a hard
+constraint. The constraint is almost always active at the optimum — the
+final NCF typically lands exactly on your target.</p>
+</div>
+
+<h2 id="overrides">2. Workspace overrides (same interface as before)</h2>
+<p>Set any of these variables before running the wrapper; all are
+optional.</p>
+<table>
+<tr><th>Variable</th><th>Meaning</th></tr>
+<tr><td><code>ncfmargin</code> / <code>ncf_margin</code></td>
+    <td>Target NCF margin (default 0.45).</td></tr>
+<tr><td><code>specimen_file_override</code> /
+        <code>exp_specimen_file_override</code></td>
+    <td>Full path to a <code>saved_results\specimens</code> MAT file
+        (skips the picker).</td></tr>
+<tr><td><code>h_dc_dm_model_file_override</code></td>
+    <td>Full path to a <code>saved_results\exp_tf</code> file containing
+        <code>H_dc_dm</code>.</td></tr>
+<tr><td><code>fem_file_override</code></td>
+    <td>Full path to a <code>saved_results\fem</code> file.</td></tr>
+<tr><td><code>pid_gain_override</code></td>
+    <td><code>[P I D N]</code> vector or struct (default
+        <code>[0.15 20 0.0015 512]</code>).</td></tr>
+<tr><td><code>phase_lead_file_name_override</code></td>
+    <td>Output MAT name under <code>saved_results\phase_lead</code>
+        (default <code>pl_7000_ncf4</code>).</td></tr>
+<tr><td><code>phase_lead_optimizer_config</code></td>
+    <td>Struct of engine options merged on top of the defaults
+        (see below).</td></tr>
+</table>
+
+<h2 id="config">3. Engine options</h2>
+<p>Everything lives in one config struct. The full list with defaults is
+in <code>defaultConfigV2()</code> inside
+<code>utils_HS\optimize_vHS_phase_lead_v2.m</code>; the ones you will
+actually touch:</p>
+<table>
+<tr><th>Option</th><th>Default</th><th>What it does</th></tr>
+<tr><td><code>target_ncf_margin</code></td><td>0.45</td>
+    <td>The hard NCF constraint (also settable via
+    <code>ncfmargin</code>).</td></tr>
+<tr><td><code>phase_lead_section_count</code></td><td>1</td>
+    <td>Number of cascaded lead sections. 1 keeps the classic
+    (zero, pole) pair; 2 gives a 2z/2p filter.</td></tr>
+<tr><td><code>center_frequency_bounds_hz</code></td><td>[0.5&nbsp;80]</td>
+    <td>Search box for the section center frequency
+    &radic;(z&middot;p).</td></tr>
+<tr><td><code>ratio_bounds</code></td><td>[1.01&nbsp;25]</td>
+    <td>Search box for the total pole/zero ratio (more ratio = more
+    lead).</td></tr>
+<tr><td><code>optimization_record_fraction</code></td><td>1.0</td>
+    <td>Fraction of the earthquake record used during the search
+    (the fast simulator makes the full record affordable).</td></tr>
+<tr><td><code>map_center_count</code> &times;
+        <code>map_ratio_count</code></td><td>96 &times; 72</td>
+    <td>Resolution of the analytic NCF feasibility map (stage 1, no
+    simulations — takes ~2 s).</td></tr>
+<tr><td><code>explore_budget</code> / <code>boundary_budget</code></td>
+    <td>90 / 45</td>
+    <td>Number of simulated candidates inside the feasible region and on
+    the NCF boundary (stage 2).</td></tr>
+<tr><td><code>zoom_seed_count</code>, <code>zoom_iterations</code>,
+        <code>zoom_grid_size</code></td><td>3, 5, 5</td>
+    <td>Adaptive local zoom refinement (stage 3).</td></tr>
+<tr><td><code>use_fmincon_polish</code>,
+        <code>polish_max_evaluations</code></td><td>true, 150</td>
+    <td>Final SQP polish with the NCF target as a nonlinear constraint
+    (stage 4).</td></tr>
+<tr><td><code>save_results</code>, <code>plot_results</code></td>
+    <td>true, true</td><td>Save the phase-lead MAT / show figures.</td></tr>
+<tr><td><code>save_best_checkpoint</code>,
+        <code>best_checkpoint_file</code></td>
+    <td>true, <span class="muted">auto</span></td>
+    <td>Periodically saves the best-so-far to
+    <code>vHS_phase_lead_v2_best_checkpoint.mat</code> so a long run can
+    be interrupted safely.</td></tr>
+</table>
+<p>Example — 2-section lead with a tighter frequency box:</p>
+<pre><code>phase_lead_optimizer_config = struct( ...
+    'phase_lead_section_count', 2, ...
+    'center_frequency_bounds_hz', [1 40], ...
+    'ratio_bounds', [1.05 16]);
+ncfmargin = 0.40;
+run('control_and_HS\d_HS\optimize_vHS_phase_lead_min_ncf.m')</code></pre>
+
+<h2 id="goals">4. Adding goals to the objective</h2>
+<p>The score minimized among feasible candidates is</p>
+<pre><code>objective = J4_raw + sum(extra penalties) + custom term</code></pre>
+<p>Two extension hooks, both configured without touching the engine:</p>
+
+<h3>4.1 Penalize any metric: <code>extra_penalties</code></h3>
+<pre><code>% each entry: weight * max(0, metric - threshold)^power
+phase_lead_optimizer_config.extra_penalties = [ ...
+    struct('metric', 'max_dc_dm_ratio',      'weight', 2.0, ...
+           'threshold', 1.5, 'power', 2), ...   % keep dc/dm below ~1.5
+    struct('metric', 'peak_command_ratio',   'weight', 0.5, ...
+           'threshold', 1.2, 'power', 1)];      % limit command growth</code></pre>
+<p>Any field of the metrics struct can be named:
+<code>j4_raw_percent</code>, <code>tracking_nrmse_percent</code>,
+<code>lead_change_percent</code>, <code>peak_command_ratio</code>,
+<code>max_dc_dm_ratio</code>, <code>max_dd_lead_dc_ratio</code>,
+<code>stability_margin</code>, <code>num_phase_lead_exp_gm_db</code>,
+<code>num_phase_lead_exp_pm_deg</code>,
+<code>num_phase_lead_exp_ncf_margin</code>, <code>max_abs_pole</code>,
+&hellip; The legacy knobs <code>max_dc_dm_penalty_weight</code> and
+<code>max_dd_lead_dc_penalty_weight</code> still work and are converted
+to penalty entries automatically.</p>
+
+<h3>4.2 Arbitrary terms: <code>custom_objective_fcn</code></h3>
+<pre><code>% full access to metrics, simulated signals and the candidate filter
+phase_lead_optimizer_config.custom_objective_fcn = ...
+    @(metrics, signals, phase_lead) ...
+        0.1*phase_lead.max_phase_lead_deg ...      % prefer gentle leads
+      + 5*max(0, max(abs(signals.dc_sample)) - 40); % cap dc at 40 mm</code></pre>
+<div class="note">Keep custom terms in the same order of magnitude as J4
+(tens of percent) so they trade off sensibly, and keep them smooth if you
+can — the final polish differentiates the objective.</div>
+
+<h2 id="output">5. What you get</h2>
+<h3>5.1 Terminal</h3>
+<pre><code>[1/4] Feasibility map: 96 x 72 = 6912 candidates (analytic NCF)
+      done in 1.8 s | feasible 40/6912 (0.6%) | NCF range [0.0003, 0.417] | boundary points 22
+[2/4] J4 exploration: 40 interior + 22 boundary simulations
+  * new best [explore 17/62]: J4 = 31.31 %, NCF = 0.408801, feasible = 1 | z 2.14 Hz, p 11.53 Hz, k 5.377
+  explore 45/62 (73%) | elapsed 00:00:02 | ETA 00:00:01 | best J4 29.54 % (NCF 0.4) ...
+[3/4] Local zoom refinement: 3 seed(s) x 5 iterations
+[4/4] fmincon polish (NCF &gt;= 0.4 as nonlinear constraint), 2 start(s)</code></pre>
+<ul>
+<li><span class="kbd">* new best</span> lines fire on every improvement
+    (parameters included, so you can stop anytime and use them).</li>
+<li>Progress lines show <em>evaluated/planned</em>, elapsed time and ETA
+    roughly every 2 s (<code>progress_interval_seconds</code>).</li>
+<li>The run ends with a full-record summary, the top-10 candidate table,
+    a copy-pastable <code>phase_lead = struct(...)</code> literal, the
+    J1&ndash;J7 validation table and the stability table.</li>
+</ul>
+
+<h3>5.2 Saved file (vHS-compatible)</h3>
+<p>The result MAT keeps the legacy format
+(<code>phase_lead_tf</code>, <code>phase_lead</code>,
+<code>metrics</code>, <code>config</code>, result tables, &hellip;), so
+<code>vHS.m</code> loads it with no changes. A best-so-far checkpoint is
+also saved during the run.</p>
+
+<h3>5.3 Figures</h3>
+<p><strong>NCF feasibility map</strong> — the search space at a glance:
+color is the NCF margin, the black contour is your target, dots are the
+simulated candidates (green = feasible), the star is the returned
+optimum. If the star does not sit on the black contour, the constraint
+was not active and more lead did not help.</p>
+<img class="figure" src="img/v2_phase_lead_ncf_feasibility_map.png"
+     alt="NCF feasibility map">
+<p><strong>Control check</strong> — the classic time-domain overlay
+(d_n, lead-shaped d_n, d_r, dc, dm and the measured force) for the
+selected candidate on the full record.</p>
+<img class="figure" src="img/v2_phase_lead_v2_control_check.png"
+     alt="Control check">
+
+<h2 id="behavior">6. Behavior worth knowing</h2>
+<ul>
+<li><strong>Unreachable targets are detected, not chased.</strong> If no
+    point in the search box reaches the target NCF, stage 1 says so
+    immediately (with the maximum achievable value) and the search
+    returns the candidate that gets closest with the lowest J4. Example:
+    with the sp1_7000 setup, target 0.45 is impossible for one section —
+    the map proves it in ~2 s (max 0.4167).</li>
+<li><strong>Deterministic.</strong> No random restarts: the same inputs
+    reproduce the same answer.</li>
+<li><strong>Repeated candidates are cached</strong>, so the polish stage
+    can finite-difference freely without re-simulating.</li>
+<li><strong>J4 rounding.</strong> The official J4 metric rounds to
+    0.01 %. The optimizer internally minimizes the unrounded value
+    (<code>j4_raw_percent</code>) and reports both.</li>
+</ul>
+<div class="warn"><strong>Watch the safety metrics.</strong> The
+optimizer only enforces the NCF and stability constraints. If the best
+candidate shows a large <code>MaxDCDMRatio</code> or an aggressive
+<code>MaxPhaseLead_deg</code>, add a penalty (Section 4) rather than
+hand-picking a milder candidate from the table.</div>
+
+<h2 id="api">7. Calling the engine directly (scripting)</h2>
+<pre><code>addpath('control_and_HS\d_HS\utils_HS');
+cfg = struct( ...
+    'specimen_file',      'saved_results\specimens\sp1_7000.mat', ...
+    'h_dc_dm_model_file', 'saved_results\exp_tf\tf_sp1_7000_20260627_210411.mat', ...
+    'fem_file',           'saved_results\fem\fem_sp1_7000.mat', ...
+    'target_ncf_margin',  0.40, ...
+    'phase_lead_file_name', 'pl_7000_ncf40_v2.mat');
+result = optimize_vHS_phase_lead_v2(cfg);
+result.best_phase_lead          % the winning filter
+result.best_metrics             % full-record metrics
+result.optimization_result_table% every simulated candidate, ranked
+result.map                      % the NCF feasibility map (centers, ratios, ncf)</code></pre>
+<p>For tests and tooling,
+<code>optimize_vHS_phase_lead_v2('helpers')</code> returns handles to the
+internal building blocks (problem preparation, the fast evaluator, the
+analytic NCF).</p>
+
+<p class="muted" style="margin-top:48px">See
+<a href="phase_lead_optimizer_v2_algorithm.html">the algorithm document</a>
+for how the engine works and measured comparisons against the legacy
+optimizer.</p>
+</main>
+</body>
+</html>

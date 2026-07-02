@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vHS Phase-Lead Optimizer v2 — Algorithm &amp; Old-vs-New Comparison</title>
+<style>
+  :root {
+    --ink: #1e2430;
+    --muted: #5b6472;
+    --line: #dde2ea;
+    --accent: #0c5a78;
+    --accent-soft: #eaf3f7;
+    --good: #1a7a3e;
+    --bad: #9d2b19;
+    --warn: #a05a12;
+    --code-bg: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #fbfcfd;
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #0c3d54, #0c5a78);
+    color: #fff; padding: 34px 24px 26px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 650; }
+  header p { margin: 0; opacity: 0.85; max-width: 76ch; }
+  main { max-width: 980px; margin: 0 auto; padding: 26px 24px 80px; }
+  h2 {
+    font-size: 20px; margin: 44px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--line); color: var(--accent);
+  }
+  h3 { font-size: 16px; margin: 26px 0 8px; }
+  p, li { max-width: 88ch; }
+  code, pre { font-family: Consolas, "Cascadia Code", monospace; font-size: 13.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto; line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .good { color: var(--good); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  .note {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .muted { color: var(--muted); }
+  img.figure { max-width: 100%; border: 1px solid var(--line); border-radius: 8px; margin: 10px 0; }
+  .pipeline { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+  .stage {
+    flex: 1 1 200px; border: 1px solid var(--line); border-top: 4px solid var(--accent);
+    border-radius: 8px; padding: 12px 14px; background: #fff;
+  }
+  .stage b { display: block; margin-bottom: 4px; }
+  .stage .cost { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+  ol li, ul li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Phase-Lead Optimizer v2 — Algorithm and Comparison</h1>
+  <p>Why the legacy optimizer missed good solutions, how the rebuilt
+  engine works, and measured results on the sp1_7000 setup (specimen
+  <code>sp1_7000</code>, exp_tf <code>tf_sp1_7000_20260627_210411</code>,
+  FEM <code>fem_sp1_7000</code>, El Centro at 2048&nbsp;Hz,
+  84,338 steps).</p>
+</header>
+<main>
+
+<h2 id="problem">1. The problem</h2>
+<p>The phase lead G<sub>T</sub>(s) = k<sub>T</sub>(s+z)/(s+p), p &gt; z,
+sits between the numerical substructure command d<sub>d</sub> and the
+actuator tracking loop. More lead compensates the actuator lag and
+improves the hybrid response (lower J4), but it also raises loop gain at
+high frequency and erodes the NCF robustness margin of the
+num&middot;G<sub>T</sub>&middot;PID&middot;H<sub>dc,dm</sub>&middot;exp
+loop. The task:</p>
+<pre><code>minimize   J4(zero_hz, pole_hz, gain)
+subject to NCF_margin(zero_hz, pole_hz, gain) >= target      (hard)
+           coupled closed loop stable                        (hard)</code></pre>
+<p>The parameterization is (center&nbsp;c&nbsp;=&nbsp;&radic;(z&middot;p),
+ratio&nbsp;r&nbsp;=&nbsp;p/z) per section, searched in log space. The
+optimum almost always sits <em>on</em> the NCF constraint boundary: J4
+keeps improving with lead until robustness gives out.</p>
+
+<h2 id="why-old-failed">2. Why the legacy optimizer missed solutions</h2>
+<table>
+<tr><th>Flaw</th><th>Consequence</th></tr>
+<tr>
+<td><b>NCF as a 10<sup>8</sup>&middot;shortfall&sup2; penalty.</b>
+The constraint was folded into the objective with a huge weight.</td>
+<td>The score surface is a canyon with near-vertical walls: SQP steps
+either see a flat J4 valley or a 10<sup>5</sup>-high wall. fmincon
+stalls at the first wall contact instead of sliding along the boundary
+— exactly where the optimum lives.</td>
+</tr>
+<tr>
+<td><b>Rounded objective.</b> The official J4 metric rounds to 0.01&nbsp;%
+(<code>round(10000*std(...)/std(...))/100</code>).</td>
+<td>The objective is a staircase: finite differences return exactly zero
+gradient between 0.01&nbsp;% steps, so SQP frequently declared
+convergence at its start point.</td>
+</tr>
+<tr>
+<td><b>Coarse fixed grid, full simulation everywhere.</b> 14&times;13 =
+182 candidates, each requiring a full per-sample time simulation
+(~0.5&ndash;1&nbsp;s each), whether or not it could possibly meet the
+NCF target.</td>
+<td>Most of the budget was burned on infeasible or hopeless points; grid
+spacing (~1.5&times; in frequency) is far coarser than the width of the
+good-J4 valley.</td>
+</tr>
+<tr>
+<td><b>No feasibility knowledge.</b> Nothing told the user whether the
+target was reachable at all.</td>
+<td>The shipped result <code>pl_7000_ncf4.mat</code> was saved from a
+grid checkpoint with NCF&nbsp;=&nbsp;0.402 against a 0.45 requirement —
+an infeasible answer, with no warning that 0.45 is impossible for one
+section (the true maximum is 0.4167).</td>
+</tr>
+</table>
+
+<h2 id="ideas">3. The three ideas behind v2</h2>
+
+<h3>3.1 Simulate the closed loop as one LTI system (~10&times; per candidate)</h3>
+<p>The legacy evaluator ran a MATLAB <code>for</code> loop over all
+84k samples, updating three filter structs per step. But the whole
+candidate loop — numerical substructure &rarr; lead &rarr; actuator
+&rarr; force feedback — is linear and time-invariant. v2 assembles the
+exact closed-loop state-space (solving the same algebraic feedthrough
+loop the old code solved per-sample) once per candidate:</p>
+<pre><code>x = [x_num; x_lead; x_act]
+x(k+1) = A_cl x(k) + B_cl ag(k)
+[dd; dd_lead; dm; force; floors](k) = C x(k) + D ag(k)</code></pre>
+<p>and propagates it with <code>ltitr</code> (the compiled kernel inside
+<code>lsim</code>). Same recursion, same numbers (Section&nbsp;5), about
+10&times; faster — and the closed-loop poles needed for the stability
+check are <code>eig(A_cl)</code> of the same matrix.</p>
+
+<h3>3.2 Analytic NCF margin (microseconds per candidate)</h3>
+<p>The NCF margin only needs the candidate lead's frequency response
+multiplied by the <em>precomputed</em> base open-loop response. Because
+the lead is discretized with Tustin, its discrete response is available
+in closed form — no <code>tf</code>, <code>c2d</code> or
+<code>freqresp</code> objects:</p>
+<pre><code>G_T(e^{jwT}) = gain * (s_eq + z_rad)/(s_eq + p_rad),
+s_eq = j*(2/T)*tan(wT/2)          % exact Tustin identity
+NCF  = min over w of |1 + L| / sqrt(2(1 + |L|^2)),  L = L_base .* G_T</code></pre>
+<p>This makes the NCF constraint essentially free: v2 maps
+96&times;72&nbsp;=&nbsp;6,912 candidates in ~1.8&nbsp;s, before a single
+simulation, and knows exactly where the feasible region and its boundary
+are. It matches the legacy <code>freqresp</code> computation to
+8&times;10<sup>-15</sup>.</p>
+
+<h3>3.3 Treat the target as a constraint and hunt the boundary</h3>
+<p>Feasible candidates are ranked purely by J4 (+ optional penalties);
+infeasible ones can never beat a feasible one. The NCF boundary — where
+the optimum lives — is sampled explicitly (bisected to the feasible
+side), and the final fmincon polish gets the target as a cheap
+<em>nonlinear constraint</em>, so SQP can slide along the boundary
+instead of bouncing off a penalty wall. The polish also minimizes the
+<em>unrounded</em> J4, fixing the staircase-gradient problem.</p>
+
+<h2 id="pipeline">4. The four stages</h2>
+<div class="pipeline">
+  <div class="stage"><b>1 &mdash; Feasibility map</b>
+    Analytic NCF on a dense log grid over (center, ratio). Finds the
+    feasible region, extracts + bisects the target contour, warns
+    immediately if the target is unreachable (and by how much).
+    <div class="cost">6,912 candidates &middot; ~2 s &middot; 0 simulations</div>
+  </div>
+  <div class="stage"><b>2 &mdash; Exploration</b>
+    Fast LTI simulation of a spread subsample of the feasible interior
+    plus the boundary points; feasible-first ranking by J4.
+    <div class="cost">~62 simulations &middot; ~4 s</div>
+  </div>
+  <div class="stage"><b>3 &mdash; Adaptive zoom</b>
+    5&times;5 local grids around the top 3 seeds, halving the span each
+    of 5 iterations; every point is NCF-prescreened analytically so only
+    near-feasible cells get simulated. Duplicates are cached.
+    <div class="cost">~300 simulations &middot; ~18 s</div>
+  </div>
+  <div class="stage"><b>4 &mdash; fmincon polish</b>
+    SQP on log-parameters, unrounded J4 objective, NCF &ge; target and
+    stability margin as nonlinear constraints (both cheap — no
+    simulation needed inside the constraint).
+    <div class="cost">~190 simulations &middot; ~14 s</div>
+  </div>
+</div>
+<p>Everything is deterministic; a best-so-far checkpoint file is updated
+throughout, and every improvement is printed with its parameters so a
+run can be aborted at any time without losing the answer.</p>
+
+<h2 id="equivalence">5. Verification: the fast evaluator is the old evaluator</h2>
+<p>The v2 evaluator was compared against the legacy per-sample loop
+(copied verbatim into the test) on the full 84,338-step record:</p>
+<table>
+<tr><th>Candidate (c, r)</th><th class="num">J4 legacy</th>
+<th class="num">J4 v2</th><th class="num">|&Delta;NCF|</th>
+<th class="num">t legacy</th><th class="num">t v2</th></tr>
+<tr><td>baseline (no lead)</td><td class="num">88.34 %</td><td class="num">88.34 %</td><td class="num">0</td><td class="num">1.00 s</td><td class="num">0.095 s</td></tr>
+<tr><td>c=2, r=2</td><td class="num">58.63 %</td><td class="num">58.63 %</td><td class="num">8.3e-15</td><td class="num">0.83 s</td><td class="num">0.114 s</td></tr>
+<tr><td>c=4, r=3</td><td class="num">44.87 %</td><td class="num">44.87 %</td><td class="num">7.4e-15</td><td class="num">0.60 s</td><td class="num">0.054 s</td></tr>
+<tr><td>c=8, r=5</td><td class="num">47.23 %</td><td class="num">47.23 %</td><td class="num">3.3e-15</td><td class="num">0.53 s</td><td class="num">0.052 s</td></tr>
+<tr><td>c=32, r=12</td><td class="num">65.75 %</td><td class="num">65.75 %</td><td class="num">1.7e-16</td><td class="num">0.50 s</td><td class="num">0.083 s</td></tr>
+<tr><td>c=60, r=20</td><td class="num">71.37 %</td><td class="num">71.37 %</td><td class="num">1.7e-16</td><td class="num">0.47 s</td><td class="num">0.049 s</td></tr>
+</table>
+<p>Max deviations across all candidates: &Delta;J4 = 0 (identical after
+the metric's 0.01&nbsp;% rounding; raw values agree to ~10<sup>-7</sup>&nbsp;%
+from floating-point reordering), &Delta;NCF &le; 8.6&times;10<sup>-15</sup>,
+&Delta;max|pole| = 0. Median speedup <b>~10&times;</b> per candidate —
+and the analytic NCF prescreen removes the need to simulate at all for
+the thousands of map candidates (<b>&asymp;10&sup3;&ndash;10&#8308;&times;</b>
+cheaper than a legacy grid point for feasibility questions).</p>
+
+<h2 id="results">6. End-to-end comparison (same inputs, target NCF 0.40)</h2>
+<p>Both engines were run on the same machine, serial, with identical
+inputs, at target NCF 0.40 (the legacy engine with the exact settings of
+its old wrapper). Identical baseline for both: J4 = 88.34 %,
+NCF = 0.2558.</p>
+<table>
+<tr><th></th><th>Legacy optimizer (measured rerun)</th><th>v2 optimizer</th></tr>
+<tr><td>Best J4 (full record)</td>
+    <td class="num bad">35.12 %</td>
+    <td class="num good">28.76 %</td></tr>
+<tr><td>NCF margin at best</td>
+    <td class="num">0.4112 <span class="muted">(0.011 of usable margin
+        left on the table)</span></td>
+    <td class="num">0.4000 (constraint exactly active)</td></tr>
+<tr><td>Best filter</td>
+    <td>z = 2.401 Hz, p = 12.49 Hz, k = 5.205</td>
+    <td>z = 2.021 Hz, p = 11.50 Hz, k = 5.689</td></tr>
+<tr><td>Closed-loop simulations</td>
+    <td class="num">796 (182 grid + 614 fmincon)</td>
+    <td class="num">551</td></tr>
+<tr><td>Wall time</td>
+    <td class="num">359 s</td>
+    <td class="num">38 s (<b>9.4&times; faster</b>)</td></tr>
+<tr><td>Feasibility knowledge</td>
+    <td>none</td>
+    <td>full NCF map + boundary in 1.8 s</td></tr>
+</table>
+<p>v2 lands 6.4 J4-points lower (<b>18 % better response accuracy</b>)
+in a tenth of the time, by riding the NCF boundary to its J4-optimal
+point. The legacy engine stalls at NCF 0.4112 because its penalty
+formulation cannot approach the boundary: its own log shows the failure
+modes directly —</p>
+<ul>
+<li>fmincon start 1 (seeded at the best grid node) declared convergence
+    after <b>3 evaluations</b>: the rounded J4 staircase returned zero
+    gradient (flaw&nbsp;#2);</li>
+<li>starts 4, 7 and 10 terminated at fval &asymp; 35,208 — five orders
+    of magnitude above the true objective — wedged on the
+    10<sup>8</sup>&middot;shortfall&sup2; penalty wall (flaw&nbsp;#1).</li>
+</ul>
+<p>The gap grows with search difficulty: the v2 advantage comes from
+sampling the constraint boundary itself, which no amount of legacy grid
+refinement reaches efficiently. (Even a 50-simulation, 5-second v2 run
+already reaches J4 = 28.81 %.)</p>
+
+<h3>6.1 The unreachable-target case (target 0.45)</h3>
+<p>The file the legacy optimizer shipped for this setup
+(<code>pl_7000_ncf4.mat</code>) was asked for NCF &ge; 0.45 and silently
+returned NCF = 0.402 (J4 = 38.95 %) — saved from a grid checkpoint,
+constraint failed, score dominated by the 10<sup>8</sup> penalty
+(229,255). Running v2 at the same target:</p>
+<ul>
+<li>Stage 1 proves in <b>1.8 s</b> that 0.45 is unreachable for one
+    section in the search box (maximum achievable NCF = 0.4167) and says
+    so in the terminal.</li>
+<li>The search then minimizes the shortfall and returns
+    J4 = 32.55 % at NCF = 0.4175 — <b>better on both axes</b> than the
+    legacy answer, with an explicit note recommending a lower target,
+    wider bounds or more sections.</li>
+</ul>
+
+<h3>6.2 The map that explains it</h3>
+<p>Color = NCF margin over the (center, ratio) box, black contour =
+target, green dots = feasible simulated candidates, star = optimum. The
+legacy 14&times;13 grid put at most a handful of points anywhere near
+the black contour; v2 samples the contour itself.</p>
+<img class="figure" src="img/v2_phase_lead_ncf_feasibility_map.png"
+     alt="NCF feasibility map with simulated candidates and optimum">
+<img class="figure" src="img/v2_phase_lead_v2_control_check.png"
+     alt="Time-domain control check of the v2 optimum">
+
+<h2 id="files">7. Code layout</h2>
+<table>
+<tr><th>File</th><th>Role</th></tr>
+<tr><td><code>d_HS\optimize_vHS_phase_lead_min_ncf.m</code></td>
+    <td>Rebuilt wrapper — same override interface as before, now calls
+    the v2 engine.</td></tr>
+<tr><td><code>d_HS\utils_HS\optimize_vHS_phase_lead_v2.m</code></td>
+    <td>The new engine (single function file: problem prep, fast
+    evaluator, four stages, reporting, saving, plots).
+    <code>optimize_vHS_phase_lead_v2('helpers')</code> exposes internals
+    for tests.</td></tr>
+<tr><td><code>d_HS\utils_HS\optimize_vHS_phase_lead.m</code></td>
+    <td>Legacy engine, untouched (still used by
+    <code>optimize_vHS_phase_lead_2z2p_ncf04_fem3.m</code> and kept for
+    reference).</td></tr>
+</table>
+
+<p class="muted" style="margin-top:48px">Usage details:
+<a href="phase_lead_optimizer_v2_guide.html">user guide</a>.</p>
+</main>
+</body>
+</html>
