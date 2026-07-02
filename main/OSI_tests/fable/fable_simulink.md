@@ -40,27 +40,23 @@ does its work in 256-sample (0.125 s) internal steps.
 
 ---
 
-## 2. New files to create (MATLAB side)
+## 2. Runtime files (MATLAB side) — **CREATED and validated 2026-07-02**
 
-### 2.1 `control_and_HS/OSI/prepare_fable_runtime.m`
+### 2.1 `control_and_HS/OSI/prepare_fable_runtime.m` ✔ exists
 
 Mirror of `prepare_osi_gain_runtime`: builds the fable config from the
-`hs` struct + exp_tf file and `assignin`s fixed-size arrays for the block.
-
-```matlab
-function setup = prepare_fable_runtime(projectFolder, dt, hs)
-% 1. load exp_tf -> H_dc_dm (c2d/d2d to dt), pid_values -> C
-% 2. cfg  = fable_osi('config', dt, C*H, override);   % see mapping below
-% 3. st0  = fable_osi('state', cfg);
-% 4. prm  = fable_auth('params', auth_override);
-% 5. flatten and assignin('caller', ...) — see the flattening table
-```
+`hs` struct + exp_tf file and `assignin`s fixed-size parameter arrays
+(`fbls, fblw, fblbins, fblfw, fblfbins, fblag, fbla` — index maps are
+documented inside the file). Extra `hs` fields: `fable_osi_override`,
+`fable_auth_override` (tuning structs, see the TUNING GUIDE headers of
+`fable_osi.m` / `fable_auth.m`) and `fable_pred_enable` (set 0 as a TET
+reduction).
 
 Knob mapping from the existing `hs` fields:
 
 | `hs` field (today) | fable destination |
 |---|---|
-| `target_outer_ncf` | `cfg.threshold` AND `prm.target` |
+| `target_outer_ncf` | `cfg.threshold` AND `prm.target` (default **0.55**: the law regulates the margin onto this level) |
 | `osi_gain_min` | `prm.a_min` |
 | `osi_gain_initial` | `prm.a_init` (recommend 1.0 for fable — the law defends the margin; starting detuned is no longer needed) |
 | `osi_st_branch_hz`, `osi_residual_branch_hz`, `osi_branch_split_hz` | **delete** — replaced by `cfg.residual_band_hz` (default [28 100]) and the automatic excited/quiet classification |
@@ -77,40 +73,37 @@ Flattening (everything the block needs, all fixed-size):
 | `fblag` | 25-pt alpha grid |
 | `fauth` | authority-law parameter vector (target, up_db, sev_frac, confirm, a_min/max/init, rates, hold, power law, pred guard/floor, latch constants, trip constants, filt alpha) |
 
-### 2.2 `control_and_HS/OSI/fable_osi_runtime.m`
+### 2.2 `control_and_HS/OSI/fable_osi_runtime.m` ✔ exists
 
 The Simulink MATLAB Function body (`%#codegen`). Same calling convention
 as `osi_gain_runtime` — **called once per base-rate sample**:
 
 ```matlab
-function [auth, b, b_fast, trip_reason, valid, decision] = ...
-    fable_osi_runtime(dd, dm, en, fbls, fblf, ..., fauth)
-%#codegen
-persistent ... % raw 2048-sample rings for dd/dm, sample counter,
-               % slow spectra ring (99x17 x3), fast ring (25x3 x3),
-               % calibration buffers, baseline/mu/sigma stats,
-               % regime mask/counters, CUSUMs, margin history,
-               % auth-law scalars (a, b_filt, counters, latch, trip mem)
+function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, decision] = ...
+    fable_osi_runtime(dd, dm, en, fbls, fblw, fblbins, fblfw, fblfbins, ...
+    fblag, fbla)
 ```
 
-Per call: shift in one sample of dd/dm; every **256th** sample execute one
-fable step (fast segment FFT + fast statistics + every 2nd step the slow
-segment FFT + slow branches) and then one `fable_auth` step; hold outputs
-between steps.
+Per call: one sample into circular raw rings (no per-tick buffer copy,
+unlike the m91 runtime); every **256th** sample one fable step (fast
+segment FFT + fast statistics + every 2nd step the slow segment FFT +
+slow branches) and one authority-law step; outputs held between steps.
+All estimator state is fixed-size persistents; the authority state is a
+set of scalar persistents. The header contains the **TET/overload
+playbook** (what to change if the target overruns, in order of
+preference).
 
-Port the code from `fable_osi.m stepHop/slowHop/fastPath/residualBranch/
-finalizeCalibration` and `fable_auth.m`. Codegen checklist:
+Implementation notes (already handled — kept here for future edits):
 
-- `movmedian(x, n, 'omitnan')` and `movmax` support code generation in
-  R2020b+; if the target toolchain complains, replace with the existing
-  codegen-safe `osi_moving_median` (OSI_utils) and a 3-tap max.
-- Keep every array fixed-size; replace logical-indexing assignments with
-  masked arithmetic where the coder demands bounded sizes.
-- `detrendLinear` (X\x on 2048×2) is codegen-fine; alternatively reuse
-  `osi_detrend_linear`.
-- No structs across the block boundary: state lives in persistents; the
-  auth-law state struct becomes individual persistent scalars (the same
-  flattening `osi_gain_runtime` already does for `auth_stability_gain`).
+- `movmedian`/`median` even-count averaging is replicated exactly
+  (`medianWindowRt`/`medianFirstN` — the two builtins use DIFFERENT
+  rounding rules; established by fuzzing, do not "simplify").
+- Masked medians use fixed-size scratch buffers + `sort` (no
+  variable-size arrays); `movmax` is a hand-coded shrink-endpoint loop.
+- The fast FRF-change statistic is armed only while the applied
+  authority has been steady for one full analysis window (the runtime
+  feeds its own committed `auth` into the estimator's `a_cmd` contract),
+  so the law cannot trip on its own moves.
 
 **Enable/pause contract (keep identical to today):**
 
@@ -122,12 +115,14 @@ finalizeCalibration` and `fable_auth.m`. Codegen checklist:
   `auth = a_init` — shadow mode.
 - `en == 1`: publish the law's authority.
 
-### 2.3 Equivalence test `OSI_tests/fable/test_fable_runtime_equivalence.m`
+### 2.3 Equivalence test `OSI_tests/fable/test_fable_runtime_equivalence.m` ✔ exists, PASSING
 
-Feeds a saved record through `fable_osi_runtime` sample-by-sample and
-through `fable_osi('run', ...)` + `fable_auth` loop, asserts the margin
-and authority traces are identical to machine precision (same code path →
-must match exactly; any mismatch is a porting bug).
+Feeds the same dd/dm stream through `fable_osi_runtime` sample-by-sample
+and through the `fable_osi` + `fable_auth` desktop loop, asserts the
+margin, branch, trip and authority traces match. **Status: bitwise
+(`max|diff| = 0`) on all three records + a synthetic path-coverage
+stream (2026-07-02).** Stage A of §5 is therefore complete; rerun the
+test after ANY change to the three runtime/desktop files.
 
 ---
 
@@ -149,17 +144,18 @@ must match exactly; any mismatch is a porting bug).
    `dd` (same `From`), `dm` (`From dm for M9.1`), `en` (`OSI Runtime
    Mode`). **Do not change `OSI Runtime Mode`, `dd_pause_enable`, or the
    `osi_gain_enable_initial` mechanism.**
-6. Outputs:
+6. Outputs (block emits `auth, b_osi, b_st, b_res, b_fast, trip_reason,
+   valid, decision`):
    - `auth` → the same wire `osi_gain_out` used: to `Apply OSI gain`
      input 2, to `OSI Gain Scope`, and to the `Mux_5` input that becomes
      File-Log column 13.
-   - `b` (margin) → the `ncf_m91` mux input (column 11).
+   - `b_osi` (selected margin) → the `ncf_m91` mux input (column 11).
    - `b_fast` → the `ncf_filtered` mux input (column 12) — repurposed;
      update the column comment in `main_ColumnSetup.m`.
-   - **Grow `Mux_5` by three** and log `trip_reason`, `valid`,
-     `decision` as columns 14–16 (update the Mux size, the File Log
-     signal, and the save section of `main_ColumnSetup.m`, lines 288–301,
-     to read them).
+   - **Grow `Mux_5` by five** and log `b_st`, `b_res`, `trip_reason`,
+     `valid`, `decision` as columns 14–18 (update the Mux size, the File
+     Log signal, and the save section of `main_ColumnSetup.m`, lines
+     288–301, to read them). Terminate any output you choose not to log.
 7. **Verify the authority application point is untouched**: `dc` →
    `Apply OSI gain` → saturation → `Command to MTS`. Column 2 of the log
    stays the post-product dc (true plant input) — the offline analyses

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fable specimen k / m / c estimator — method comparison</title>
+<style>
+  :root {
+    --surface-1:#fcfcfb; --page:#f9f9f7; --card:#ffffff;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --fable:#2a78d6; --asflown:#eb6834; --wtls:#1baf7a; --wlse:#4a3aa7;
+    --good:#0ca30c; --warn:#eda100; --bad:#d03b3b;
+    --band:rgba(42,120,214,0.16);
+    --code-bg:#f2f2ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-force]) {
+      --surface-1:#1a1a19; --page:#0d0d0d; --card:#161615;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+      --fable:#3987e5; --asflown:#d95926; --wtls:#199e70; --wlse:#9085e9;
+      --good:#0ca30c; --warn:#eda100; --bad:#e66767;
+      --band:rgba(57,135,229,0.20); --code-bg:#222220;
+    }
+  }
+  :root[data-force="dark"] {
+    --surface-1:#1a1a19; --page:#0d0d0d; --card:#161615;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --fable:#3987e5; --asflown:#d95926; --wtls:#199e70; --wlse:#9085e9;
+    --good:#0ca30c; --warn:#eda100; --bad:#e66767;
+    --band:rgba(57,135,229,0.20); --code-bg:#222220;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    margin:0; background:var(--page); color:var(--ink);
+    font:15px/1.62 system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px 96px; }
+  header.top {
+    max-width:1080px; margin:0 auto; padding:56px 24px 20px;
+  }
+  .eyebrow { color:var(--muted); font-size:12.5px; letter-spacing:.09em; text-transform:uppercase; font-weight:600; }
+  h1 { font-size:33px; line-height:1.16; margin:.32em 0 .18em; letter-spacing:-.012em; font-weight:680; }
+  h2 { font-size:22px; margin:2.6em 0 .5em; letter-spacing:-.01em; font-weight:660; scroll-margin-top:16px; }
+  h3 { font-size:16.5px; margin:1.8em 0 .4em; font-weight:640; }
+  p { margin:.7em 0; color:var(--ink); max-width:74ch; }
+  .lede { font-size:17.5px; color:var(--ink-2); max-width:72ch; }
+  a { color:var(--fable); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code, .mono { font-family:"SFMono-Regular",ui-monospace,Consolas,monospace; font-size:.88em;
+    background:var(--code-bg); padding:.1em .38em; border-radius:4px; }
+  .eq { background:var(--code-bg); border:1px solid var(--border); border-radius:10px;
+    padding:14px 18px; margin:14px 0; font-family:ui-monospace,Consolas,monospace; font-size:14px;
+    color:var(--ink); overflow-x:auto; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:20px 22px; margin:18px 0; }
+  .fignote { color:var(--ink-2); font-size:13px; margin:.5em 0 0; max-width:78ch; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:13.5px; }
+  th, td { text-align:right; padding:7px 12px; border-bottom:1px solid var(--grid); font-variant-numeric:tabular-nums; }
+  th:first-child, td:first-child { text-align:left; font-variant-numeric:normal; }
+  thead th { color:var(--ink-2); font-weight:600; border-bottom:1.5px solid var(--axis); white-space:nowrap; }
+  tbody tr:hover { background:color-mix(in srgb, var(--fable) 6%, transparent); }
+  .win { color:var(--good); font-weight:640; }
+  .bad { color:var(--bad); font-weight:640; }
+  .swatch { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:baseline; margin-right:5px; }
+  .keyline { display:inline-block; width:15px; height:3px; border-radius:2px; vertical-align:middle; margin-right:6px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 20px; margin:6px 0 10px; font-size:13px; color:var(--ink-2); }
+  .legend span.item { display:inline-flex; align-items:center; }
+  .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0 6px; }
+  .seg { display:inline-flex; border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+  .seg button { border:0; background:transparent; color:var(--ink-2); padding:6px 13px; font:inherit; font-size:13px; cursor:pointer; }
+  .seg button.on { background:var(--fable); color:#fff; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin:22px 0 8px; }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:16px 18px; }
+  .kpi .lbl { color:var(--ink-2); font-size:12.5px; margin-bottom:6px; }
+  .kpi .val { font-size:30px; font-weight:680; letter-spacing:-.02em; line-height:1; }
+  .kpi .sub { color:var(--muted); font-size:12.5px; margin-top:7px; }
+  .kpi .val.good { color:var(--good); }
+  svg text { fill:var(--ink-2); }
+  .axis-line { stroke:var(--axis); stroke-width:1; }
+  .grid-line { stroke:var(--grid); stroke-width:1; }
+  .crosshair { stroke:var(--muted); stroke-width:1; stroke-dasharray:3 3; opacity:0; }
+  .tip { position:fixed; pointer-events:none; z-index:40; background:var(--card); color:var(--ink);
+    border:1px solid var(--border); border-radius:9px; padding:9px 11px; font-size:12.5px;
+    box-shadow:0 6px 22px rgba(0,0,0,.16); opacity:0; transition:opacity .08s; min-width:150px; }
+  .tip .tt { color:var(--muted); font-size:11.5px; margin-bottom:5px; }
+  .tip .row { display:flex; justify-content:space-between; gap:14px; }
+  .tip .row b { font-variant-numeric:tabular-nums; }
+  details { margin:10px 0 4px; }
+  summary { cursor:pointer; color:var(--ink-2); font-size:13px; }
+  .toc { columns:2; column-gap:34px; font-size:14px; margin:8px 0 4px; }
+  .toc a { display:block; padding:2px 0; color:var(--ink-2); }
+  .toggle { position:fixed; top:14px; right:14px; z-index:50; background:var(--card); border:1px solid var(--border);
+    color:var(--ink-2); border-radius:8px; padding:6px 11px; font:inherit; font-size:12.5px; cursor:pointer; }
+  .pill { display:inline-block; font-size:11.5px; padding:1.5px 8px; border-radius:999px; border:1px solid var(--border); color:var(--ink-2); }
+  ul.tight li { margin:.28em 0; }
+  .foot { color:var(--muted); font-size:12.5px; margin-top:40px; border-top:1px solid var(--grid); padding-top:16px; }
+  @media (max-width:720px){ .toc{columns:1;} h1{font-size:27px;} }
+</style>
+</head>
+<body>
+<button class="toggle" id="themeBtn">◐ theme</button>
+
+<header class="top">
+  <div class="eyebrow">RTHS specimen identification · research/fable/stiffness</div>
+  <h1>A smoother, more reliable way to estimate specimen stiffness — and finally its mass and damping</h1>
+  <p class="lede">The current online estimator fits <span class="mono">F = m·a + c·v + k·x</span> by total least squares on
+  time-domain signals. It tracks stiffness passably but jitters, and in the field it does not really recover mass or
+  damping at all. This note proposes <b>fable_kmc</b>, a causal frequency-domain errors-in-variables tracker, and
+  measures both against nonparametric references on four recorded runs.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="kpis" id="kpis"></div>
+
+  <h2 id="toc">What's here</h2>
+  <nav class="toc">
+    <a href="#current">1 · How stiffness is estimated today</a>
+    <a href="#weak">2 · Where the current method breaks</a>
+    <a href="#method">3 · The proposed method (fable_kmc)</a>
+    <a href="#frf">4 · Why the frequency domain — and why h₀</a>
+    <a href="#params">5 · Parameter guide (what to turn)</a>
+    <a href="#tracks">6 · Results: the k / m / c tracks</a>
+    <a href="#metrics">7 · Results: the numbers</a>
+    <a href="#stress">8 · Stress test: changing excitation</a>
+    <a href="#honest">9 · Honest limits &amp; the k-ambiguity</a>
+    <a href="#files">10 · Files &amp; how to run</a>
+  </nav>
+
+  <h2 id="current">1 · How stiffness is estimated today</h2>
+  <p>The specimen is modelled as a single-degree-of-freedom oscillator</p>
+  <div class="eq">F(t) = m·a(t) + c·v(t) + k·x(t)</div>
+  <p>where <span class="mono">x</span> is the measured displacement <span class="mono">dm</span> (in metres),
+  <span class="mono">F</span> is the measured force <span class="mono">fm</span>, and
+  <span class="mono">v</span>, <span class="mono">a</span> are its first and second time derivatives. The current
+  online estimator (<span class="mono">estimate_tse.m</span>) stacks
+  <span class="mono">[a v x 1 F]</span> and takes the smallest right singular vector — a total-least-squares (TLS)
+  fit that treats every column as noisy. The pending Simulink replacement
+  (<span class="mono">windowed_noise_whitened_tls.m</span>) is the same fit on short causal windows, noise-whitened and
+  smoothed by a small Kalman filter. Both share one structural choice: <b>they work in the time domain, and they build
+  <span class="mono">v</span> and <span class="mono">a</span> by differentiating the displacement.</b></p>
+
+  <h2 id="weak">2 · Where the current method breaks</h2>
+  <p>Three problems show up directly in the recorded data.</p>
+
+  <h3>2.1 · Mass and damping are not actually recovered</h3>
+  <p>Differentiating a 30&nbsp;Hz-filtered displacement twice to get acceleration destroys most of the high-frequency
+  content that carries the mass term <span class="mono">m·a</span>. The offline TLS/LSE batch fits land near
+  <b>26–28&nbsp;kg</b> against a specimen mass of <b>44.1&nbsp;kg</b> — roughly 36% low. Worse, the estimates logged by
+  the live rig (<span class="mono">m_hat</span>, <span class="mono">c_hat</span>) sit pinned at their floor —
+  about <b>0.45&nbsp;kg</b> and <b>0.24&nbsp;N·s/m</b> — meaning the field system is really only tracking
+  <span class="mono">k</span> and reporting placeholder mass and damping.</p>
+  <div class="card" style="max-width:640px">
+    <table id="massTbl"><thead><tr><th>quantity</th><th>official (specimen ID)</th><th>batch TSE</th><th>batch LSE</th><th>as-flown log</th><th>fable</th></tr></thead><tbody></tbody></table>
+    <p class="fignote">Trim window of record 1708. "Official" is the stored specimen value from the whitened-TLS
+    identification. Only fable recovers a physical mass and a positive damping.</p>
+  </div>
+
+  <h3>2.2 · A pure viscous model forces damping negative</h3>
+  <p>This rig has appreciable <em>hysteretic</em> (structural) damping — a quadrature term that is roughly flat in
+  frequency rather than proportional to it. Forcing the two-parameter viscous form
+  <span class="mono">c·v</span> to absorb it drives <span class="mono">c</span> <b>negative</b>
+  (fable with the h₀ term disabled returns c ≈ −1.9×10³&nbsp;N·s/m). A negative damping estimate is not just cosmetic;
+  it is unusable for any downstream stability or energy argument.</p>
+
+  <h3>2.3 · The track jitters</h3>
+  <p>Because each short window is fit independently and then lightly smoothed, the stiffness track wanders. Measured as
+  the 95th-percentile step-to-step change (per 0.25&nbsp;s), the current and pending methods move
+  <b>6–45%</b> of the stiffness level; the windowed LSE reaches <b>74%</b> on the stress record. That jitter is the
+  reason a Kalman filter was bolted on — it treats a smoothing problem as a filtering problem, after the fact.</p>
+
+  <h2 id="method">3 · The proposed method (fable_kmc)</h2>
+  <p>fable_kmc keeps the same physical model but estimates it where differentiation is exact and noise is separable:
+  the frequency domain. The frequency-response function from displacement to force,
+  <span class="mono">H(ω) = F(ω)/X(ω)</span>, of an SDOF specimen is</p>
+  <div class="eq">H(ω) = k − m·ω²  +  j·( h₀ + c·ω )</div>
+  <p>Every term is linear in the parameters, and the derivative operators became exact multiplications
+  (<span class="mono">v→jωX</span>, <span class="mono">a→−ω²X</span>) — no finite differencing, no differentiation
+  noise. The pipeline, run causally every <span class="mono">hop_s</span> seconds:</p>
+  <ul class="tight">
+    <li><b>Rolling cross-spectra.</b> One Hann-windowed FFT of the newest <span class="mono">seg_s</span> segment
+      updates exponentially-forgotten averages of <span class="mono">S<sub>xx</sub>, S<sub>ff</sub>, S<sub>xf</sub></span>
+      with memory <span class="mono">mem_s</span>. Smoothing happens here, on the sufficient statistics — the right place
+      for it — not on the parameters after the fact.</li>
+    <li><b>Noise-debiased FRF.</b> <span class="mono">H = S<sub>xf</sub> / (S<sub>xx</sub> − N<sub>xx</sub>)</span>, where
+      <span class="mono">N<sub>xx</sub></span> is the per-bin displacement noise floor measured from the quiet start.
+      Subtracting it removes the errors-in-variables bias that otherwise pulls any regression of F on x
+      <em>toward zero stiffness</em>.</li>
+    <li><b>Informative-bin selection.</b> Bins are kept only inside the fit band and only where coherence, displacement
+      SNR, and a resonance guard all pass. Band-limited excitation therefore shrinks the working band automatically
+      instead of poisoning the fit.</li>
+    <li><b>Robust, information-weighted fit.</b> The four parameters
+      <span class="mono">[m, c, k, h₀]</span> are fit by weighted least squares, each bin weighted by the inverse
+      variance of its own FRF estimate (a function of coherence), then re-weighted by a Huber pass so local resonances
+      or harmonic distortion cannot dominate. Relative ridge priors gently hold the weakly-observable parameters toward
+      their previous value when the excitation stops informing them — without damping the data-driven
+      <span class="mono">k</span>.</li>
+    <li><b>Fast adaptation on genuine change.</b> A short-memory spectra set watches the FRF <em>shape</em>. When the
+      newest data disagrees with the slow average beyond its own noise (a real plant change, not merely a change in
+      drive level), the slow statistics are discounted once so the tracker re-converges in a fraction of
+      <span class="mono">mem_s</span>.</li>
+  </ul>
+  <p>Each estimate carries a 1-σ covariance from the fit and a status flag (acquiring / tracking / hold), plus a
+  model-free low-band diagnostic <span class="mono">k_direct = median&nbsp;Re&nbsp;H</span> for a sanity cross-check.</p>
+
+  <h2 id="frf">4 · Why the frequency domain — and why h₀</h2>
+  <p>The chart below is the measured FRF of record 1708 over its trim window, with fable's fitted model on top. The
+  real part carries <span class="mono">k</span> (its low-frequency value) and <span class="mono">m</span> (its downward
+  curvature). The imaginary part is the tell for the damping model: the data sits near a <em>flat</em> ≈4×10⁵&nbsp;N/m,
+  the signature of hysteretic damping. A purely viscous term <span class="mono">c·ω</span> with the small
+  <span class="mono">c</span> the specimen actually has would be nearly zero here (lower line) — which is exactly why
+  forcing the viscous-only model makes the fit throw <span class="mono">c</span> negative to compensate.</p>
+  <div class="card">
+    <div class="legend" id="frfLegend"></div>
+    <div id="frfChart"></div>
+    <p class="fignote" id="frfNote"></p>
+    <details><summary>Show FRF values (table view)</summary><div id="frfTable"></div></details>
+  </div>
+
+  <h2 id="params">5 · Parameter guide (what to turn)</h2>
+  <p>Every knob lives in <span class="mono">fable_kmc_config.m</span> and can be swept live in
+  <span class="mono">run_fable_kmc.m</span> (a slider-style UI with a box per parameter and a Calculate button). The two
+  that matter most are marked ★.</p>
+  <div class="card">
+  <table id="paramTbl">
+    <thead><tr><th>parameter</th><th>default</th><th>what it does · when to change it</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+
+  <h2 id="tracks">6 · Results: the k / m / c tracks</h2>
+  <p>Pick a record and a parameter. Every method sees only displacement and force. Fable (blue) is drawn on top; its
+  shaded band is the 95% confidence interval, grey dots are the model-free <span class="mono">k_direct</span> check.</p>
+  <div class="controls">
+    <span style="color:var(--ink-2);font-size:13px">Record:</span>
+    <span class="seg" id="recSeg"></span>
+    <span style="color:var(--ink-2);font-size:13px;margin-left:12px">Parameter:</span>
+    <span class="seg" id="parSeg"></span>
+  </div>
+  <div class="card">
+    <div class="legend" id="trackLegend"></div>
+    <div id="trackChart"></div>
+    <p class="fignote" id="trackNote"></p>
+    <details><summary>Show track summary (table view)</summary><div id="trackTable"></div></details>
+  </div>
+
+  <h2 id="metrics">7 · Results: the numbers</h2>
+  <p>For each record the parameter track is put on a common 4&nbsp;Hz grid over the trim window and scored on four axes.
+  Lower is better on all four. <b>Accuracy</b> is distance from the low-band FRF anchor (see §9 on why that reference is
+  itself only one of several defensible "true" stiffnesses). <b>Smoothness</b> and <b>excursion</b> are the honest wins;
+  <b>mass error</b> is the decisive one.</p>
+  <div class="controls">
+    <span style="color:var(--ink-2);font-size:13px">Record:</span>
+    <span class="seg" id="metSeg"></span>
+  </div>
+  <div class="card">
+    <table id="metTbl">
+      <thead><tr>
+        <th>method</th><th>k median (MN/m)</th><th>|k−anchor| %</th>
+        <th>smoothness p95 %</th><th>max excursion %</th><th>m median (kg)</th><th>c median (N·s/m)</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="fignote" id="metNote"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:4px">Smoothness across all records</h3>
+    <div class="legend" id="barLegend"></div>
+    <div id="barChart"></div>
+    <p class="fignote">95th-percentile step-to-step change in the stiffness track, as a percent of the stiffness level
+    (per 0.25&nbsp;s). Fable is one to two orders of magnitude steadier because smoothing is applied to the spectra, not
+    to the output.</p>
+  </div>
+
+  <h2 id="stress">8 · Stress test: changing excitation</h2>
+  <p>The <span class="mono">play</span> record splices one physical run into five 32-second blocks and scales the force
+  channel by <span class="mono">[1, 0.5, 1, 0.25, noise]</span> with a drifting offset — a deliberately corrupted signal.
+  The specimen never changes, so the "right" answer is a constant k; but with the force channel scaled, every method
+  reads the apparent secant stiffness of the block. The point is not accuracy here — it is how gracefully each method
+  moves and recovers. Fable's fast-adaptation marks (dashed red on the track) fire at the two largest transitions.</p>
+  <div class="card">
+    <table id="blockTbl">
+      <thead><tr><th>method</th><th>block 1<br>(×1.0)</th><th>block 2<br>(×0.5)</th><th>block 3<br>(×1.0)</th><th>block 4<br>(×0.25)</th><th>block 5<br>(noise)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="fignote">Last valid stiffness in each block (MN/m). All methods follow the forced amplitude down and back;
+    fable does it with the least jitter and re-converges within a few seconds of each step.</p>
+  </div>
+
+  <h2 id="honest">9 · Honest limits &amp; the k-ambiguity</h2>
+  <ul class="tight">
+    <li><b>"True" stiffness is band- and model-dependent at the ~7% level.</b> On record 1708 the low-band FRF reads
+      6.71&nbsp;MN/m, fable reads 7.09&nbsp;MN/m, and the official specimen-ID value is 7.20&nbsp;MN/m. These disagree
+      because a real column is not a perfect SDOF: the measured <span class="mono">Re&nbsp;H</span> is not flat at low
+      frequency, so the intercept you call "k" depends on the band and the curvature model. Debiasing the noise moves
+      the low-band anchor only 0.7% (the low-band SNR is high), so that is <em>not</em> the explanation — the spread is
+      physical. Fable agrees with the whitened-TLS specimen value to 1.5% and recovers mass to under 1%, which is the
+      strongest available cross-check; but no method here is "5% wrong" in an absolute sense, and the report scores
+      accuracy against the low-band anchor only because it is model-free.</li>
+    <li><b>Observability is honest, not free.</b> Mass needs high-frequency excitation; damping needs the mid-band.
+      When the command stops driving part of the band, those parameters are held by their priors rather than invented.
+      Under genuinely band-limited or corrupted excitation (the low-force play blocks) the stiffness follows the secant
+      the data actually supports — as it must.</li>
+    <li><b>Not yet code-generation-ready.</b> The pending Simulink path targets the whitened-TLS estimator, which is
+      already fixed-size and codegen-safe. fable_kmc uses per-hop FFTs and an eigen/solve step; porting it to the
+      Speedgoat would need fixed buffers and a fixed bin count, following the same staged verification the OSI work
+      used. This note establishes the offline case first.</li>
+  </ul>
+
+  <h2 id="files">10 · Files &amp; how to run</h2>
+  <ul class="tight">
+    <li><span class="mono">fable_kmc.m</span> — the estimator. <span class="mono">out = fable_kmc(x, F, fs, cfg)</span>,
+      x in metres, F in newtons.</li>
+    <li><span class="mono">fable_kmc_config.m</span> — every tunable parameter, documented inline.</li>
+    <li><span class="mono">run_fable_kmc.m</span> — interactive tuner: load a record, edit any knob, Calculate,
+      watch the k/m/c tracks and confidence bands update.</li>
+    <li><span class="mono">compare_stiffness_methods.m</span> — the harness behind this page; writes
+      <span class="mono">results/compare_results.mat</span> and the <span class="mono">.js</span> this report reads.</li>
+  </ul>
+  <p class="fignote">All work is confined to <span class="mono">research/fable/stiffness/</span>. Regenerate the data by
+  running the harness in MATLAB, then reload this page.</p>
+
+  <div class="foot" id="foot">Loading results…</div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script src="results/compare_results.js"></script>
+<script src="results/frf_diag.js"></script>
+<script>
+"use strict";
+const SENT = -1e30;
+const clean = v => (v===null || v===undefined || v<=SENT/2 || !isFinite(v)) ? null : v;
+const cleanArr = a => (a||[]).map(clean);
+const fmt = (v,d=2) => v===null||!isFinite(v) ? "—" : v.toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+const fmtMN = v => v===null ? "—" : (v/1e6).toFixed(2);
+const el = (t,c,txt)=>{const e=document.createElement(t); if(c)e.className=c; if(txt!=null)e.textContent=txt; return e;};
+
+const COL = {
+  fable:  {v:"--fable",  name:"fable spectral EIV (new)"},
+  asflown:{v:"--asflown",name:"Current online TSE (as flown)"},
+  wtls:   {v:"--wtls",   name:"Whitened TLS + KF (pending)"},
+  wlse:   {v:"--wlse",   name:"Windowed LSE"}
+};
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const ORDER = ["fable","asflown","wtls","wlse"];
+
+const R = (window.FABLE_STIFFNESS_RESULTS && window.FABLE_STIFFNESS_RESULTS.records) || [];
+const FRF = window.FABLE_FRF_DIAG || null;
+
+/* ---------- theme toggle ---------- */
+document.getElementById("themeBtn").onclick = ()=>{
+  const r=document.documentElement;
+  const cur=r.getAttribute("data-force");
+  const dark=cur? cur==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.setAttribute("data-force", dark?"light":"dark");
+  rebuildAll();
+};
+
+/* ---------- tooltip ---------- */
+const tip=document.getElementById("tip");
+function showTip(html,x,y){ tip.innerHTML=html; tip.style.opacity=1;
+  const w=tip.offsetWidth,h=tip.offsetHeight;
+  tip.style.left=Math.min(x+14, innerWidth-w-8)+"px";
+  tip.style.top=Math.max(8, y-h-12)+"px"; }
+function hideTip(){ tip.style.opacity=0; }
+
+/* ---------- generic SVG line chart with crosshair ---------- */
+function lineChart(host, cfg){
+  host.innerHTML="";
+  const W=host.clientWidth||900, H=cfg.height||360;
+  const m={l:64,r:118,t:14,b:40};
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("width","100%"); svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  svg.style.display="block";
+  const NS="http://www.w3.org/2000/svg";
+  const mk=(t,a)=>{const e=document.createElementNS(NS,t); for(const k in a)e.setAttribute(k,a[k]); return e;};
+  const xr=cfg.xrange, yr=cfg.yrange;
+  const px=v=>m.l+(v-xr[0])/(xr[1]-xr[0])*(W-m.l-m.r);
+  const py=v=>H-m.b-(v-yr[0])/(yr[1]-yr[0])*(H-m.t-m.b);
+
+  // gridlines + y ticks
+  const yticks=niceTicks(yr[0],yr[1],5);
+  yticks.forEach(v=>{
+    svg.appendChild(mk("line",{x1:m.l,y1:py(v),x2:W-m.r,y2:py(v),class:"grid-line"}));
+    const tx=mk("text",{x:m.l-9,y:py(v)+4,"text-anchor":"end","font-size":11}); tx.textContent=cfg.yfmt(v); svg.appendChild(tx);
+  });
+  const xticks=niceTicks(xr[0],xr[1],6);
+  xticks.forEach(v=>{
+    svg.appendChild(mk("line",{x1:px(v),y1:m.t,x2:px(v),y2:H-m.b,class:"grid-line"}));
+    const tx=mk("text",{x:px(v),y:H-m.b+18,"text-anchor":"middle","font-size":11}); tx.textContent=v.toLocaleString(); svg.appendChild(tx);
+  });
+  svg.appendChild(mk("line",{x1:m.l,y1:H-m.b,x2:W-m.r,y2:H-m.b,class:"axis-line"}));
+  svg.appendChild(mk("line",{x1:m.l,y1:m.t,x2:m.l,y2:H-m.b,class:"axis-line"}));
+  if(cfg.xlabel){const t=mk("text",{x:(m.l+W-m.r)/2,y:H-4,"text-anchor":"middle","font-size":12}); t.textContent=cfg.xlabel; svg.appendChild(t);}
+  if(cfg.ylabel){const t=mk("text",{x:16,y:(m.t+H-m.b)/2,"text-anchor":"middle","font-size":12,transform:`rotate(-90 16 ${(m.t+H-m.b)/2})`}); t.textContent=cfg.ylabel; svg.appendChild(t);}
+
+  // confidence band (optional)
+  if(cfg.band){
+    const b=cfg.band, pts=[];
+    for(let i=0;i<b.t.length;i++){ if(b.lo[i]!=null&&b.t[i]>=xr[0]&&b.t[i]<=xr[1]) pts.push([px(b.t[i]),py(clampY(b.lo[i],yr))]); }
+    for(let i=b.t.length-1;i>=0;i--){ if(b.hi[i]!=null&&b.t[i]>=xr[0]&&b.t[i]<=xr[1]) pts.push([px(b.t[i]),py(clampY(b.hi[i],yr))]); }
+    if(pts.length>2) svg.appendChild(mk("polygon",{points:pts.map(p=>p.join(",")).join(" "),fill:"var(--band)",stroke:"none"}));
+  }
+  // vertical event markers
+  (cfg.vlines||[]).forEach(v=>{ if(v>=xr[0]&&v<=xr[1]) svg.appendChild(mk("line",{x1:px(v),y1:m.t,x2:px(v),y2:H-m.b,stroke:cssv("--bad"),"stroke-width":1.3,"stroke-dasharray":"4 3",opacity:.8})); });
+
+  // scatter (k_direct diagnostic)
+  if(cfg.dots){
+    const d=cfg.dots;
+    for(let i=0;i<d.t.length;i++){ const y=d.v[i]; if(y!=null&&d.t[i]>=xr[0]&&d.t[i]<=xr[1]&&y>=yr[0]&&y<=yr[1])
+      svg.appendChild(mk("circle",{cx:px(d.t[i]),cy:py(y),r:1.7,fill:"var(--muted)",opacity:.55})); }
+  }
+
+  // series lines
+  cfg.series.forEach(s=>{
+    let d="",pen=false;
+    for(let i=0;i<s.t.length;i++){
+      const yv=s.v[i];
+      if(yv==null||s.t[i]<xr[0]||s.t[i]>xr[1]){pen=false;continue;}
+      const X=px(s.t[i]),Y=py(clampY(yv,yr));
+      d+=(pen?"L":"M")+X.toFixed(1)+" "+Y.toFixed(1)+" "; pen=true;
+    }
+    svg.appendChild(mk("path",{d,fill:"none",stroke:cssv(s.color),"stroke-width":s.emph?2.4:1.6,
+      "stroke-linejoin":"round","stroke-linecap":"round",opacity:s.emph?1:.92}));
+    // end label
+    for(let i=s.t.length-1;i>=0;i--){ const yv=s.v[i];
+      if(yv!=null&&s.t[i]>=xr[0]&&s.t[i]<=xr[1]&&yv>=yr[0]&&yv<=yr[1]){
+        const t=mk("text",{x:px(s.t[i])+7,y:py(clampY(yv,yr))+4,"font-size":11,"font-weight":600,fill:cssv(s.color)});
+        t.textContent=s.short; svg.appendChild(t); break; } }
+  });
+
+  // crosshair + hit layer
+  const ch=mk("line",{class:"crosshair",y1:m.t,y2:H-m.b}); svg.appendChild(ch);
+  const hit=mk("rect",{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:"transparent"});
+  svg.appendChild(hit);
+  hit.addEventListener("pointermove",ev=>{
+    const rect=svg.getBoundingClientRect(); const sx=(ev.clientX-rect.left)*(W/rect.width);
+    const xv=xr[0]+(sx-m.l)/(W-m.l-m.r)*(xr[1]-xr[0]);
+    ch.setAttribute("x1",px(xv)); ch.setAttribute("x2",px(xv)); ch.style.opacity=1;
+    let rows="";
+    cfg.series.forEach(s=>{ const yv=nearest(s.t,s.v,xv);
+      rows+=`<div class="row"><span><span class="keyline" style="background:${cssv(s.color)}"></span>${s.short}</span><b>${yv==null?"—":cfg.yfmt(yv)}</b></div>`; });
+    showTip(`<div class="tt">${cfg.xlabel||"x"} = ${xv.toFixed(1)}</div>${rows}`,ev.clientX,ev.clientY);
+  });
+  hit.addEventListener("pointerleave",()=>{ch.style.opacity=0;hideTip();});
+  host.appendChild(svg);
+}
+function clampY(v,yr){return Math.max(yr[0],Math.min(yr[1],v));}
+function nearest(ts,vs,x){let bi=-1,bd=1e18; for(let i=0;i<ts.length;i++){if(vs[i]==null)continue;const d=Math.abs(ts[i]-x);if(d<bd){bd=d;bi=i;}} return bi<0?null:vs[bi];}
+function niceTicks(lo,hi,n){ if(!isFinite(lo)||!isFinite(hi)||lo===hi)return[lo]; const span=hi-lo,step0=span/n,mag=Math.pow(10,Math.floor(Math.log10(step0)));
+  const norm=step0/mag,step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag; const out=[]; for(let v=Math.ceil(lo/step)*step;v<=hi+1e-9;v+=step)out.push(+v.toFixed(6)); return out; }
+function robustRange(arrs){ let xs=[]; arrs.forEach(a=>a.forEach(v=>{if(v!=null&&isFinite(v))xs.push(v);})); if(!xs.length)return[0,1];
+  xs.sort((a,b)=>a-b); const q=p=>xs[Math.min(xs.length-1,Math.max(0,Math.round(p*(xs.length-1))))];
+  let lo=q(0.01),hi=q(0.99); if(lo===hi){lo-=Math.abs(lo)*.1+1;hi+=Math.abs(hi)*.1+1;} const pad=(hi-lo)*.10; return[lo-pad,hi+pad]; }
+
+/* ---------- KPIs ---------- */
+function buildKPIs(){
+  const rec=R[0]; if(!rec)return;
+  const met=id=>rec.metrics.find(m=>m.id===id);
+  const fb=met("fable");
+  const worstSmooth=Math.max(...R.flatMap(r=>r.metrics.filter(m=>m.id!=="fable"&&m.id!=="asflown").map(m=>m.smooth_p95_pct)));
+  const k=[
+    {lbl:"Fable stiffness track smoothness",val:fb.smooth_p95_pct.toFixed(2)+"%",sub:"95th-pct step (rec 1708) vs 6–74% for the others",good:true},
+    {lbl:"Fable mass error vs specimen ID",val:(100*Math.abs(fb.m_med-44.1356)/44.1356).toFixed(1)+"%",sub:"time-domain fits miss by ~36%; field log ~99%",good:true},
+    {lbl:"Fable k vs official specimen value",val:(100*Math.abs(fb.k_med-7.2006e6)/7.2006e6).toFixed(1)+"%",sub:"agrees with whitened-TLS ID to 1.5%",good:true},
+    {lbl:"Records evaluated",val:String(R.length),sub:"2 healthy · 1 damaged · 1 corrupted-signal stress test"}
+  ];
+  const host=document.getElementById("kpis"); host.innerHTML="";
+  k.forEach(o=>{ const c=el("div","kpi"); c.appendChild(el("div","lbl",o.lbl));
+    const v=el("div","val"+(o.good?" good":""),o.val); c.appendChild(v); c.appendChild(el("div","sub",o.sub)); host.appendChild(c); });
+}
+
+/* ---------- mass table (§2.1) ---------- */
+function buildMassTable(){
+  const rec=R[0]; if(!rec)return; const b=rec.batch;
+  const fb=rec.metrics.find(m=>m.id==="fable"); const af=rec.metrics.find(m=>m.id==="asflown");
+  const rows=[
+    ["mass m (kg)", "44.14", fmt(b.tse.m,1), fmt(b.lse.m,1), af?fmt(af.m_med,2):"—", `<b class="win">${fmt(fb.m_med,1)}</b>`],
+    ["damping c (N·s/m)", "34.3", fmt(b.tse.c,0), fmt(b.lse.c,0), af?fmt(af.c_med,2):"—", `<b class="win">${fmt(fb.c_med,0)}</b>`],
+    ["stiffness k (MN/m)", "7.20", fmtMN(b.tse.k), fmtMN(b.lse.k), af?fmtMN(af.k_med):"—", `<b>${fmtMN(fb.k_med)}</b>`]
+  ];
+  const tb=document.querySelector("#massTbl tbody"); tb.innerHTML="";
+  rows.forEach(r=>{ const tr=document.createElement("tr"); r.forEach((c,i)=>{ const td=document.createElement("td"); if(i===0)td.textContent=c; else td.innerHTML=c; tr.appendChild(td);}); tb.appendChild(tr); });
+}
+
+/* ---------- parameter guide ---------- */
+const PARAMS=[
+  ["mem_s ★","10 s","Exponential memory of the spectra — the master smoothness ↔ tracking trade-off. Larger = smoother and more accurate on stationary data; smaller = reacts faster to real stiffness change."],
+  ["prior_rel ★","[0.5 2 0.02 0.5]","Relative ridge strength for [m c k h₀] — how hard each parameter is pulled toward its previous value, relative to the data information about it. k is kept near 0 (data-driven); m, c, h₀ are held smooth when their band goes quiet. Raise a value to steady a noisy parameter; lower it to make that parameter more responsive."],
+  ["seg_s","2 s","FFT segment length → frequency resolution 1/seg_s. Longer resolves the band more finely but responds slower."],
+  ["hop_s","0.25 s","Update cadence. Denser track, more compute; does not change smoothing."],
+  ["band_hz","[2 50] Hz","Fit band. Low end excludes drift; high end bounds how much mass curvature is used. Widen the top for more mass information if coherence allows."],
+  ["coh_min / snr_min_db","0.85 / 10 dB","Per-bin coherence and displacement-SNR gates. Bins the command doesn't excite are dropped, so band-limited excitation shrinks the band instead of corrupting the fit."],
+  ["guard_frac","0.3","Resonance guard: drop bins where |H| falls below this fraction of the median |H| (near resonance the model blows up). Per-hop, so it still follows sudden k drops."],
+  ["huber_k / irls_iters","2.5 / 2","Robustness: residuals beyond huber_k sigmas get bounded weight; irls_iters reweighting passes. Lower huber_k to reject outliers harder."],
+  ["fit_h0","true","Include the hysteretic quadrature h₀ (loss factor η = h₀/k). Turn off only to reproduce the pure-viscous model — expect c to go negative."],
+  ["adapt_ratio / adapt_discount","3 / 0.25","Fast-adaptation trigger and strength. adapt_ratio is the fast-vs-slow FRF distance that counts as a real change (healthy ≈0.2, change ≈3+); adapt_discount is how much old data is thrown away on trigger (0.25 ≈ 4× faster re-converge)."],
+  ["mem_fast_s","3 s","Memory of the change-detection spectra. Small multiple of seg_s."],
+  ["noise_s","2 s","Quiet lead-in used for the noise floors. Set 0 for records with no quiet start (uses a plain floor)."],
+  ["smooth_s","0","Optional cosmetic output smoothing. Leave 0 — smoothing already happens on the spectra."]
+];
+function buildParamTable(){
+  const tb=document.querySelector("#paramTbl tbody"); tb.innerHTML="";
+  PARAMS.forEach(p=>{ const tr=document.createElement("tr");
+    const a=el("td"); a.innerHTML=`<span class="mono">${p[0].replace(" ★","")}</span>${p[0].includes("★")?' <span class="pill">key</span>':''}`;
+    const b=el("td"); b.style.whiteSpace="nowrap"; b.textContent=p[1];
+    const c=el("td"); c.style.textAlign="left"; c.textContent=p[2];
+    tr.append(a,b,c); tb.appendChild(tr); });
+}
+
+/* ---------- FRF chart (§4) ---------- */
+function buildFRF(){
+  if(!FRF){document.getElementById("frfNote").textContent="FRF diagnostic data not found.";return;}
+  const host=document.getElementById("frfChart"); host.innerHTML="";
+  const f=FRF.f, reH=FRF.ReH.map(v=>v/1e6), reM=FRF.ReModel.map(v=>v/1e6);
+  const imH=FRF.ImH.map(v=>v/1e5), imM=FRF.ImModel.map(v=>v/1e5), visc=FRF.visc34.map(v=>v/1e5);
+  const wrap=el("div"); wrap.style.display="grid"; wrap.style.gridTemplateColumns="1fr 1fr"; wrap.style.gap="14px";
+  const left=el("div"), right=el("div"); wrap.append(left,right); host.appendChild(wrap);
+  const xr=[0,70];
+  lineChart(left,{height:320,xrange:xr,yrange:robustRange([reH,reM]),xlabel:"frequency (Hz)",ylabel:"Re H (MN/m)",
+    yfmt:v=>v.toFixed(1),
+    series:[{t:f,v:reH,color:"--asflown",short:"data",emph:false},{t:f,v:reM,color:"--fable",short:"model",emph:true}]});
+  lineChart(right,{height:320,xrange:xr,yrange:robustRange([imH,imM,visc]),xlabel:"frequency (Hz)",ylabel:"Im H (×10⁵ N/m)",
+    yfmt:v=>v.toFixed(1),
+    series:[{t:f,v:imH,color:"--asflown",short:"data",emph:false},{t:f,v:imM,color:"--fable",short:"h₀+ωc",emph:true},{t:f,v:visc,color:"--wtls",short:"viscous",emph:false}]});
+  document.getElementById("frfLegend").innerHTML=legendHTML([["--asflown","measured H"],["--fable","fable model"],["--wtls","viscous-only c"]]);
+  const p=FRF.params;
+  document.getElementById("frfNote").textContent=`Left: real part gives k (intercept) and m (curvature). Right: the imaginary part sits near a flat 4×10⁵ N/m — hysteretic damping — which the h₀+ωc model captures and a viscous-only term (c ≈ 34 N·s/m) cannot. Fitted: k=${(p.k/1e6).toFixed(2)} MN/m, m=${p.m.toFixed(1)} kg, c=${p.c.toFixed(0)} N·s/m, h₀=${(p.h0/1e5).toFixed(2)}×10⁵ N/m (η=${(p.h0/p.k).toFixed(3)}).`;
+  // table
+  const rows=[["Re H, low band (2–8 Hz)","6.5–6.8 MN/m"],["Im H, 5–40 Hz","≈ 4.1×10⁵ N/m (flat → hysteretic)"],["viscous ωc at 40 Hz","≈ 0.09×10⁵ N/m (negligible)"]];
+  let h="<table><thead><tr><th>feature</th><th>value</th></tr></thead><tbody>";
+  rows.forEach(r=>h+=`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`); h+="</tbody></table>";
+  document.getElementById("frfTable").innerHTML=h;
+}
+function legendHTML(items){ return items.map(i=>`<span class="item"><span class="keyline" style="background:${cssv(i[0])}"></span>${i[1]}</span>`).join(""); }
+
+/* ---------- k/m/c tracks (§6) ---------- */
+let recSel=0, parSel=2; // 0=m,1=c,2=k
+const PARINFO=[{i:0,key:"m",label:"m (kg)",fmt:v=>v.toFixed(0)},{i:1,key:"c",label:"c (N·s/m)",fmt:v=>v.toFixed(0)},{i:2,key:"k",label:"k (MN/m)",fmt:v=>(v/1e6).toFixed(2)}];
+function seg(host,items,sel,cb){ host.innerHTML=""; items.forEach((it,i)=>{ const b=el("button",i===sel?"on":null,it); b.onclick=()=>cb(i); host.appendChild(b); }); }
+function buildTrackControls(){
+  seg(document.getElementById("recSeg"),R.map(r=>r.name.split(" ")[0]),recSel,i=>{recSel=i;drawTracks();buildTrackControls();});
+  seg(document.getElementById("parSeg"),["mass","damping","stiffness"],[0,1,2].indexOf(parSel),i=>{parSel=[0,1,2][i];drawTracks();buildTrackControls();});
+}
+function drawTracks(){
+  const rec=R[recSel]; if(!rec)return; const P=PARINFO.find(p=>p.i===parSel);
+  const key=P.key; const scale=key==="k"?1:1;
+  const series=[]; const rangeArrs=[];
+  ORDER.forEach(id=>{ const s=rec.series[id]; if(!s)return;
+    const t=cleanArr(s.t), v=cleanArr(s[key]);
+    const vv=key==="k"?v.map(x=>x==null?null:x/1e6):v;
+    rangeArrs.push(vv);
+    series.push({t,v:vv,color:COL[id].v,short:id==="fable"?"fable":id,emph:id==="fable"}); });
+  // fable band + dots (k only)
+  let band=null,dots=null,vlines=[];
+  const fb=rec.series.fable;
+  if(fb){
+    const t=cleanArr(fb.t);
+    if(key==="k"){
+      const kv=cleanArr(fb.k), sk=cleanArr(fb.sigma_k);
+      band={t,lo:kv.map((x,i)=>x==null||sk[i]==null?null:(x-1.96*sk[i])/1e6),hi:kv.map((x,i)=>x==null||sk[i]==null?null:(x+1.96*sk[i])/1e6)};
+      if(fb.k_direct){const kd=cleanArr(fb.k_direct); dots={t,v:kd.map(x=>x==null?null:x/1e6)}; rangeArrs.push(dots.v);}
+    }
+    if(fb.adapted_t) vlines=cleanArr(fb.adapted_t).filter(x=>x!=null);
+  }
+  const tmax=Math.max(...series.flatMap(s=>s.t.filter(x=>x!=null)));
+  const xr=[0, isFinite(tmax)?tmax:1];
+  const yr=robustRange(rangeArrs);
+  lineChart(document.getElementById("trackChart"),{height:380,xrange:xr,yrange:yr,xlabel:"time (s)",ylabel:P.label,
+    yfmt:key==="k"?(v=>v.toFixed(2)):(v=>v.toFixed(0)),series,band,dots,vlines});
+  document.getElementById("trackLegend").innerHTML=
+    legendHTML(ORDER.filter(id=>rec.series[id]).map(id=>[COL[id].v,COL[id].name]))+
+    (key==="k"?` &nbsp;<span class="item"><span class="swatch" style="background:var(--band)"></span>fable 95% CI</span><span class="item"><span class="swatch" style="background:var(--muted);border-radius:50%"></span>k_direct (model-free)</span>`:"");
+  const tw=rec.trim;
+  document.getElementById("trackNote").textContent=
+    `Record "${rec.name}". Trim window for scoring: ${tw[0]}–${tw[1]} s. `+
+    (vlines.length?`Fast-adaptation fired at ${vlines.map(x=>x.toFixed(0)).join(", ")} s (dashed). `:"")+
+    `Anchor k = ${(rec.k_anchor/1e6).toFixed(2)} MN/m; official specimen k = ${(rec.official_k/1e6).toFixed(2)} MN/m.`;
+  // table view
+  let h="<table><thead><tr><th>method</th><th>median</th><th>smoothness p95 %</th><th>valid %</th></tr></thead><tbody>";
+  rec.metrics.forEach(m=>{ const val=key==="k"?(m.k_med/1e6).toFixed(2)+" MN/m":key==="m"?m.m_med.toFixed(1)+" kg":m.c_med.toFixed(0);
+    h+=`<tr><td>${m.label}</td><td>${val}</td><td>${key==="k"?m.smooth_p95_pct.toFixed(2):"—"}</td><td>${m.valid_pct.toFixed(0)}</td></tr>`; });
+  h+="</tbody></table>"; document.getElementById("trackTable").innerHTML=h;
+}
+
+/* ---------- metrics table (§7) ---------- */
+let metSel=0;
+function buildMetControls(){ seg(document.getElementById("metSeg"),R.map(r=>r.name.split(" ")[0]),metSel,i=>{metSel=i;drawMetrics();buildMetControls();}); }
+function bestArrow(rows,field,lowerBetter=true){ let best=Infinity,bestId=null; rows.forEach(r=>{const v=r[field]; if(v!=null&&isFinite(v)&&(lowerBetter?v<best:false)){best=v;bestId=r.id;}}); return bestId; }
+function drawMetrics(){
+  const rec=R[metSel]; const tb=document.querySelector("#metTbl tbody"); tb.innerHTML="";
+  const bestSmooth=bestArrow(rec.metrics,"smooth_p95_pct"); const bestExc=bestArrow(rec.metrics,"exc_pct");
+  rec.metrics.forEach(m=>{
+    const tr=document.createElement("tr");
+    const cells=[
+      m.label,
+      (m.k_med/1e6).toFixed(2),
+      m.acc_pct.toFixed(2),
+      {v:m.smooth_p95_pct.toFixed(2),win:m.id===bestSmooth},
+      {v:m.exc_pct.toFixed(1),win:m.id===bestExc},
+      isFinite(m.m_med)?m.m_med.toFixed(1):"—",
+      isFinite(m.c_med)?m.c_med.toFixed(0):"—"
+    ];
+    cells.forEach((c,i)=>{ const td=document.createElement("td");
+      if(typeof c==="object"){ td.textContent=c.v; if(c.win)td.className="win"; } else td.textContent=c;
+      if(i===0 && m.id==="fable")td.innerHTML=`<b>${c}</b>`;
+      tr.appendChild(td); });
+    tb.appendChild(tr);
+  });
+  document.getElementById("metNote").textContent=
+    `Record "${rec.name}". Anchor (low-band FRF) = ${(rec.k_anchor/1e6).toFixed(2)} MN/m, official specimen k = ${(rec.official_k/1e6).toFixed(2)} MN/m. Green marks the best method on that column.`;
+}
+
+/* ---------- smoothness bar chart (§7) ---------- */
+function buildBars(){
+  const host=document.getElementById("barChart"); host.innerHTML="";
+  const W=host.clientWidth||900,H=300,m={l:64,r:20,t:12,b:60};
+  const NS="http://www.w3.org/2000/svg"; const mk=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=document.createElementNS(NS,"svg"); svg.setAttribute("width","100%"); svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.style.display="block";
+  const groups=R.map(r=>({name:r.name.split(" ")[0],rows:r.metrics}));
+  let maxv=0; groups.forEach(g=>g.rows.forEach(m=>{if(isFinite(m.smooth_p95_pct))maxv=Math.max(maxv,m.smooth_p95_pct);}));
+  const yr=[0,maxv*1.08]; const py=v=>H-m.b-(v-yr[0])/(yr[1]-yr[0])*(H-m.t-m.b);
+  niceTicks(0,yr[1],5).forEach(v=>{ svg.appendChild(mk("line",{x1:m.l,y1:py(v),x2:W-m.r,y2:py(v),class:"grid-line"}));
+    const t=mk("text",{x:m.l-9,y:py(v)+4,"text-anchor":"end","font-size":11}); t.textContent=v.toFixed(0)+"%"; svg.appendChild(t); });
+  svg.appendChild(mk("line",{x1:m.l,y1:H-m.b,x2:W-m.r,y2:H-m.b,class:"axis-line"}));
+  const gw=(W-m.l-m.r)/groups.length;
+  groups.forEach((g,gi)=>{
+    const ids=g.rows.map(r=>r.id); const n=ids.length; const bw=Math.min(26,(gw-24)/n);
+    g.rows.forEach((mrow,bi)=>{
+      const x=m.l+gi*gw+(gw-n*bw)/2+bi*bw; const v=isFinite(mrow.smooth_p95_pct)?mrow.smooth_p95_pct:0;
+      const y=py(v),h=H-m.b-y;
+      const rect=mk("rect",{x:x+1,y,width:bw-2,height:Math.max(0,h),rx:3,fill:cssv(COL[mrow.id].v),opacity:mrow.id==="fable"?1:.9});
+      rect.addEventListener("pointermove",ev=>showTip(`<div class="tt">${g.name} · ${COL[mrow.id].name}</div><div class="row"><span>smoothness p95</span><b>${v.toFixed(2)}%</b></div>`,ev.clientX,ev.clientY));
+      rect.addEventListener("pointerleave",hideTip); svg.appendChild(rect);
+    });
+    const t=mk("text",{x:m.l+gi*gw+gw/2,y:H-m.b+20,"text-anchor":"middle","font-size":12}); t.textContent=g.name; svg.appendChild(t);
+  });
+  host.appendChild(svg);
+  document.getElementById("barLegend").innerHTML=legendHTML(ORDER.map(id=>[COL[id].v,COL[id].name]));
+}
+
+/* ---------- block table (§8) ---------- */
+function buildBlocks(){
+  const rec=R.find(r=>r.blocks && r.blocks.rows); if(!rec){return;}
+  const tb=document.querySelector("#blockTbl tbody"); tb.innerHTML="";
+  rec.blocks.rows.forEach(row=>{
+    const tr=document.createElement("tr"); tr.appendChild(el("td",null,COL[row.id]?COL[row.id].name:row.label));
+    row.k_last.forEach(v=>{ tr.appendChild(el("td",null, v<=SENT/2?"—":(v/1e6).toFixed(2))); });
+    tb.appendChild(tr);
+  });
+}
+
+/* ---------- build / rebuild ---------- */
+function rebuildAll(){
+  buildKPIs(); buildMassTable(); buildParamTable(); buildFRF();
+  buildTrackControls(); drawTracks(); buildMetControls(); drawMetrics(); buildBars(); buildBlocks();
+  const rec=R[0];
+  document.getElementById("foot").innerHTML= R.length
+    ? `Generated from <span class="mono">results/compare_results.js</span> · ${R.length} records · fable_kmc spectral EIV estimator. All figures render client-side from the harness output.`
+    : "No results found — run compare_stiffness_methods.m in MATLAB, then reload.";
+}
+window.addEventListener("resize",()=>{ clearTimeout(window._rz); window._rz=setTimeout(rebuildAll,180); });
+rebuildAll();
+</script>
+</body>
+</html>

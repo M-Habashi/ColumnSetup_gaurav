@@ -37,6 +37,95 @@ function [out, state, info] = fable_osi(varargin)
 %
 % All step-mode state is fixed-size numeric, so the step path can be moved
 % to a MATLAB Function block / codegen with the usual flattening.
+% (control_and_HS/OSI/fable_osi_runtime.m IS that flattening - keep the
+% two in sync; test_fable_runtime_equivalence.m asserts they match.)
+%
+% ------------------------------------------------------------------------
+% PER-BRANCH TUNING GUIDE - smoother <-> more aggressive, per branch.
+% All knobs live in the config override (3rd/4th argument). Defaults are
+% the validated values for the RTHS column rig.
+%
+%   SLOW ST BRANCH (the accurate margin level)
+%     window_s / hop_s     Analysis span and refresh. Longer window =
+%                          smoother, laggier margin; shorter = jumpier but
+%                          faster to move. hop_s is the refresh cadence.
+%     margin_filter_n      Temporal median over this many DISTINCT slow
+%                          updates. Bigger = smoother/more constant
+%                          selected OSI, adds (n-1)*hop_s/2 of lag.
+%     freq_medfilt_n       Median smoothing across neighboring frequency
+%                          bins before taking the min. Bigger = fewer
+%                          single-bin dips counted as the margin.
+%     slow_filt_alpha      EMA weight of the slow-margin tracker used by
+%                          the fast path's direction gate. Lower =
+%                          steadier reference, slower to follow a level
+%                          change.
+%     gamma_alpha          False-pass probability of the coherence gate.
+%                          Smaller = stricter gate (fewer bins accepted,
+%                          less noise in the margin, more "no evidence").
+%     input_power_range_db Bins more than this below the in-band input
+%                          peak are "unexcited". Smaller (e.g. 30) =
+%                          stricter, margin computed on fewer, stronger
+%                          bins.
+%
+%   RESIDUAL BRANCH (quiet-band growth watcher)
+%     residual_band_hz     The hazard band it guards. Keep it where the
+%                          loop can actually go unstable; widening it into
+%                          harmonic-distortion territory causes false
+%                          engagement on strong narrowband commands.
+%     z_on / z_off         Engage/disengage z thresholds. Raise z_on to
+%                          make engagement rarer (fewer false alarms,
+%                          later detection); z_off sets the hysteresis.
+%     res_on_n             Consecutive hops above z_on to engage. More =
+%                          smoother (needs sustained evidence), slower.
+%     res_min_growth_db    Minimum absolute growth to engage. Raise to
+%                          ignore small quiet-band changes entirely.
+%     res_hold_s           How long an unconfirmed engagement may persist
+%                          in the hysteresis zone before it expires.
+%     sigma0_floor         Floor of the calibrated ln-ratio spread. Raise
+%                          to desensitize the z-score globally.
+%
+%   FAST ST GUARD (FRF-change CUSUM, catches sudden plant changes)
+%     fast_st_nu / fast_st_h   CUSUM drift and trip level. The pair sets
+%                          speed vs false-alarm rate: LOWER nu or LOWER h
+%                          = more aggressive (faster trips, more risk);
+%                          raise either to calm it down. h is the main
+%                          knob: each unit of h adds roughly one extra
+%                          0.125 s step of sustained evidence.
+%     fast_babs_offset     A trip also needs b_fast < threshold + offset.
+%                          Raise to allow trips further above the target
+%                          (more protective), lower toward 0 to trip only
+%                          when the fast margin is already at the target.
+%     fast_amove_frac      The FRF-change statistic watches the TOTAL
+%                          loop, which includes the authority factor. In
+%                          closed loop the caller writes the currently
+%                          applied authority into state.a_cmd before each
+%                          step; the statistic then arms only after the
+%                          authority has been steady (moves smaller than
+%                          fast_amove_frac relative) for one full analysis
+%                          window, so the law's own moves can never read
+%                          as plant changes. Replays where the authority
+%                          did not act on the plant leave a_cmd = NaN,
+%                          which keeps the detector always armed.
+%
+%   FAST BURST GUARD (quiet-band divergence CUSUM)
+%     fast_burst_nu / fast_burst_h   Same speed-vs-false-alarm trade as
+%                          the ST CUSUM. A diverging loop produces huge z,
+%                          so h can sit high and still trip in ~0.4 s.
+%     fast_burst_bands     The guarded sub-bands (rows of [lo hi] Hz).
+%                          Fewer rows = cheaper and less sensitive.
+%     fast_sig_floor       Floor of the calibrated burst spread. Raise to
+%                          desensitize all burst bands.
+%
+%   REGIME / CALIBRATION (rarely need touching)
+%     regime_hops          Sustained excited-set-change hops before a
+%                          rebaseline. Larger = more tolerant of slowly
+%                          wandering excitation, slower to re-adapt.
+%     cal_windows / cal_min_windows / cal_skip_s   Calibration length,
+%                          minimum acceptable length, and startup blackout.
+%     bl_adapt_tau_s / bl_adapt_max_db   Baseline drift tracking speed and
+%                          its hard cap (never raise the cap so far that
+%                          real degradation could be absorbed).
+% ------------------------------------------------------------------------
 
 if ischar(varargin{1})
     switch lower(varargin{1})
@@ -92,6 +181,8 @@ cfg = struct( ...
     'min_bins', 5, ...
     'freq_medfilt_n', 3, ...
     'margin_filter_n', 3, ...
+    'slow_filt_alpha', 0.2, ...    % EMA weight of the slow-margin tracker
+    ...                            % (fast-path direction-gate reference)
     'cap', 1/sqrt(2), ...
     'threshold', 0.30, ...         % detection / fast-trip margin level
     'residual_floor', 0.03, ...
@@ -132,6 +223,9 @@ cfg = struct( ...
     ...                            % ring-down after a command step gains ~4;
     ...                            % sustained growth crosses in 3-6 steps)
     'fast_babs_offset', 0.10, ...  % FRF trip also needs b_fast < threshold+this
+    'fast_amove_frac', 0.02, ...   % authority moves above this (relative)
+    ...                            % disarm the FRF-change statistic for one
+    ...                            % analysis window (see state.a_cmd)
     'fast_pin_lo', 0.25, ...       % newest-segment input power must stay
     'fast_pin_hi', 4.0, ...        % within [lo,hi] x its ~3 s EMA: a fading
     ...                            % or bursting COMMAND mimics change evidence
@@ -241,6 +335,10 @@ end
 cfg.res_hold_hops = max(1, round(cfg.res_hold_s/cfg.hop_s));
 cfg.bl_alpha = cfg.hop_s/cfg.bl_adapt_tau_s;
 cfg.n_alpha = numel(cfg.alpha_grid);
+% steps of steady authority required before the FRF-change statistic is
+% armed (one full slow analysis window: everything the slow reference and
+% the ring remember must have been produced at the current authority)
+cfg.amove_hold = round(cfg.window_s/cfg.step_s);
 end
 
 % ----------------------------------------------------------------- state
@@ -303,7 +401,12 @@ state = struct( ...
     'fring_pos', 0, ...
     'p_in_ema', NaN, ...
     'cus_st', 0, ...
-    'cus_burst', zeros(cfg.n_burst_bands, 1));
+    'cus_burst', zeros(cfg.n_burst_bands, 1), ...
+    ... % externally applied authority (closed loop: caller writes a_cmd
+    ... % before each step; NaN = authority does not act on the plant)
+    'a_cmd', NaN, ...
+    'a_prev_cmd', NaN, ...
+    'a_stable_steps', 1e6);
 state.sb_pred = NaN(cfg.n_alpha, 1);
 state.sb_excited = false(cfg.nf, 1);
 state.sb_quiet = false(cfg.nf, 1);
@@ -324,6 +427,18 @@ state.xdd = [state.xdd(cfg.step_n+1:end); dd_step];
 state.xdm = [state.xdm(cfg.step_n+1:end); dm_step];
 state.samples_in = state.samples_in + cfg.step_n;
 state.step_count = state.step_count + 1;
+
+% track the stability of the externally applied authority (see the
+% fast_amove_frac note in the tuning guide): the FRF-change statistic is
+% only armed after a_cmd has been steady for a full analysis window
+if ~isnan(state.a_cmd) && ~isnan(state.a_prev_cmd) ...
+        && abs(state.a_cmd - state.a_prev_cmd) ...
+        > cfg.fast_amove_frac*max(state.a_prev_cmd, 0.01)
+    state.a_stable_steps = 0;
+else
+    state.a_stable_steps = min(state.a_stable_steps + 1, 1e6);
+end
+state.a_prev_cmd = state.a_cmd;
 
 b = NaN;
 if state.samples_in < cfg.fast_segment_n
@@ -596,7 +711,8 @@ if ~isnan(b_slow)
     if isnan(state.b_slow_filt)
         state.b_slow_filt = b_slow;
     else
-        state.b_slow_filt = 0.8*state.b_slow_filt + 0.2*b_slow;
+        state.b_slow_filt = (1 - cfg.slow_filt_alpha)*state.b_slow_filt ...
+            + cfg.slow_filt_alpha*b_slow;
     end
 end
 end
@@ -667,7 +783,7 @@ if state.sb_stvalid
                 + cfg.fast_pin_alpha*p_in_new;
         end
     end
-    if pin_ok
+    if pin_ok && state.a_stable_steps >= cfg.amove_hold
         Suy1 = state.fSuy(:, state.fring_pos);
         tiny1 = max(max(Suu1), 1)*1e-14;
         pf1 = max(Suu1(cfg.fast_keep))*10^(-cfg.input_power_range_db/10);

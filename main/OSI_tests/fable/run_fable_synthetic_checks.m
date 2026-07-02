@@ -162,6 +162,7 @@ for k = 1:N
     if hop_i == hopN
         hop_i = 0;
         ku = ku + 1;
+        ost.a_cmd = a;    % authority applied during this step's samples
         [b, ost, oi] = fable_osi(dd_hop, dm_hop, cfg, ost);
         if scn.adapt
             [a, ast, dcode] = fable_auth(b, oi.st_valid, ...

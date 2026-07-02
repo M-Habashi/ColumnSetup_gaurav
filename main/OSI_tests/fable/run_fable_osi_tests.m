@@ -37,7 +37,7 @@ if nargin < 1 || isempty(which_records)
     which_records = 1:numel(records);
 end
 
-target = 0.30;
+target = 0.50;
 
 % prior loop model (same file the current implementation uses)
 E = load(fullfile(projectFolder, 'saved_results', 'exp_tf', ...
@@ -56,32 +56,39 @@ for k = which_records(:)'
     rec = records(k);
     fprintf('\n===== %s =====\n', rec.name);
     cacheFile = fullfile(resDir, ['replay_' rec.name '.mat']);
+    S = struct();
     if isfile(cacheFile)
         fprintf('  using cached replay %s\n', cacheFile);
         S = load(cacheFile);
-    else
-        S = struct();
+    end
+    % the fable replay depends on the target; current/reference do not
+    fable_ok = isfield(S, 'fable') && isfield(S, 'target') ...
+        && abs(S.target - target) < 1e-12;
+    if ~isfield(S, 'current') || ~fable_ok
         data = loadRecord(rec.file);
-        S.data_t = data.t(:);
-        S.data_dm = data.dm(:);
-        S.asrun_t = [];
-        S.asrun_a = [];
-        if isfield(data, 'osi_gain')   % rec 1930 ran with the OSI live
-            S.asrun_t = data.t(1:64:end);
-            S.asrun_a = data.osi_gain(1:64:end);
+        if ~isfield(S, 'current')
+            S.data_t = data.t(:);
+            S.data_dm = data.dm(:);
+            S.asrun_t = [];
+            S.asrun_a = [];
+            if isfield(data, 'osi_gain')   % rec 1930 ran with OSI live
+                S.asrun_t = data.t(1:64:end);
+                S.asrun_a = data.osi_gain(1:64:end);
+            end
+
+            fprintf('  current-implementation replay ...\n'); tic
+            S.current = currentReplay(projectFolder, data);
+            fprintf('    %.1f s\n', toc);
+
+            fprintf('  offline reference margin ...\n'); tic
+            S.ref = referenceMargin(data);
+            fprintf('    %.1f s\n', toc);
         end
 
-        fprintf('  fable replay ...\n'); tic
+        fprintf('  fable replay (target %.2f) ...\n', target); tic
         S.fable = fableReplay(data, L0, target);
         fprintf('    %.1f s\n', toc);
-
-        fprintf('  current-implementation replay ...\n'); tic
-        S.current = currentReplay(projectFolder, data);
-        fprintf('    %.1f s\n', toc);
-
-        fprintf('  offline reference margin ...\n'); tic
-        S.ref = referenceMargin(data);
-        fprintf('    %.1f s\n', toc);
+        S.target = target;
         save(cacheFile, '-struct', 'S', '-v7.3');
     end
 
