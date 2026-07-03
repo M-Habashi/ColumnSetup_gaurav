@@ -2,7 +2,16 @@ function phase_lead = normalizePhaseLeadConfig(phase_lead_override, ...
         section_count)
 %NORMALIZEPHASELEADCONFIG Return a validated phase_lead configuration.
 % The continuous phase_lead is gain*prod(s + zi)/prod(s + pi), with
-% zeros and poles entered in Hz for easier tuning.
+% zeros and poles entered in Hz for easier tuning. Sections with
+% pole_hz > zero_hz are leads; pole_hz < zero_hz gives a lag section
+% (used by the robust optimizer to cap high-frequency gain).
+%
+% An optional field notch_sections ([n x 3] rows of
+% [frequency_hz, zeta_zero, zeta_pole]) appends second-order notch
+% sections (s^2 + 2*zeta_zero*w*s + w^2)/(s^2 + 2*zeta_pole*w*s + w^2)
+% with unity DC and high-frequency gain; zeta_zero < zeta_pole cuts the
+% band around frequency_hz (used by the robust optimizer to suppress
+% the damaged actuator resonance without a wide lag).
 
 if nargin < 1
     phase_lead_override = [];
@@ -24,6 +33,7 @@ phase_lead = struct( ...
     'center_frequency_hz', NaN(1, section_count), ...
     'section_ratio', NaN(1, section_count), ...
     'section_max_phase_lead_deg', NaN(1, section_count), ...
+    'notch_sections', zeros(0, 3), ...
     'max_phase_lead_deg', 0.0, ...
     'max_phase_lead_frequency_hz', NaN);
 
@@ -47,7 +57,7 @@ if isnumeric(phase_lead_override)
         phase_lead.pole_hz = phase_lead_override(2+section_count:end);
     end
 elseif isstruct(phase_lead_override)
-    fields = {'enabled', 'gain', 'zero_hz', 'pole_hz'};
+    fields = {'enabled', 'gain', 'zero_hz', 'pole_hz', 'notch_sections'};
     for field_id = 1:numel(fields)
         field = fields{field_id};
         if isfield(phase_lead_override, field)
@@ -80,9 +90,17 @@ if numel(phase_lead.zero_hz) ~= section_count ...
     error('normalizePhaseLeadConfig:InvalidSectionCount', ...
         'zero_hz and pole_hz must each have %d value(s).', section_count)
 end
-if any(phase_lead.pole_hz <= phase_lead.zero_hz)
+if any(phase_lead.pole_hz == phase_lead.zero_hz)
     error('normalizePhaseLeadConfig:InvalidLead', ...
-        'For each phase_lead section, pole_hz must be greater than zero_hz.')
+        ['For each phase_lead section, pole_hz must differ from ' ...
+        'zero_hz (pole > zero: lead, pole < zero: lag).'])
+end
+if isempty(phase_lead.notch_sections)
+    phase_lead.notch_sections = zeros(0, 3);
+else
+    validateattributes(phase_lead.notch_sections, {'numeric'}, ...
+        {'2d', 'ncols', 3, 'real', 'finite', 'positive'}, mfilename, ...
+        'phase_lead.notch_sections');
 end
 
 phase_lead.zero_rad_s = 2*pi*phase_lead.zero_hz;
@@ -132,8 +150,10 @@ end
 
 function [max_lead_deg, max_lead_frequency_hz] = ...
         combinedPhaseLeadMaximum(phase_lead)
-lower_hz = max(min(phase_lead.zero_hz)/10, eps);
-upper_hz = max(phase_lead.pole_hz)*10;
+corner_hz = [phase_lead.zero_hz, phase_lead.pole_hz, ...
+    phase_lead.notch_sections(:, 1).'];
+lower_hz = max(min(corner_hz)/10, eps);
+upper_hz = max(corner_hz)*10;
 freq_hz = logspace(log10(lower_hz), log10(upper_hz), 1000);
 s = 1i*2*pi*freq_hz;
 response = phase_lead.gain*ones(size(s));
@@ -141,6 +161,14 @@ for section_id = 1:phase_lead.section_count
     response = response ...
         .* (s + phase_lead.zero_rad_s(section_id)) ...
         ./ (s + phase_lead.pole_rad_s(section_id));
+end
+for notch_id = 1:size(phase_lead.notch_sections, 1)
+    w = 2*pi*phase_lead.notch_sections(notch_id, 1);
+    zeta_zero = phase_lead.notch_sections(notch_id, 2);
+    zeta_pole = phase_lead.notch_sections(notch_id, 3);
+    response = response ...
+        .* (s.^2 + 2*zeta_zero*w*s + w^2) ...
+        ./ (s.^2 + 2*zeta_pole*w*s + w^2);
 end
 phase_deg = unwrap(angle(response))*180/pi;
 [max_lead_deg, max_id] = max(phase_deg);

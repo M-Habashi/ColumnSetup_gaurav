@@ -267,6 +267,12 @@ end
 config.fem_file = fem_file;
 hs.fem_file = fem_file;
 
+if config.save_results
+    phase_lead_dir = fullfile(project_root, 'saved_results', 'phase_lead');
+    config.phase_lead_file_name = promptPhaseLeadFileNameV2( ...
+        phase_lead_dir, '');
+end
+
 fprintf('Specimen file: %s\n', specimen_file)
 fprintf('Actuator model file: %s\n', h_dc_dm_model_file)
 fprintf('FEM file: %s\n', fem_file)

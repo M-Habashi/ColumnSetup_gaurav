@@ -70,7 +70,7 @@ if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
     [fem, fem_file, ~] = loadFemDefinition(project_root, false, ...
         fem_file_override);
 else
-    [fem, fem_file, ~] = loadFemDefinition(project_root, false);
+    [fem, fem_file, ~] = loadFemDefinition(project_root, true);
 end
 
 % phase_lead used on the Hybrid Simulation numerical dd command.

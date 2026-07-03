@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Damage-Robust Phase Lead — Guide &amp; Comparison</title>
+<style>
+  :root {
+    --ink: #1e2430;
+    --muted: #5b6472;
+    --line: #dde2ea;
+    --accent: #0c5a78;
+    --accent-soft: #eaf3f7;
+    --good: #1a7a3e;
+    --warn: #a05a12;
+    --bad: #8f1d00;
+    --code-bg: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #fbfcfd;
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #4a2a0c, #a05a12);
+    color: #fff;
+    padding: 34px 24px 26px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 650; }
+  header p { margin: 0; opacity: 0.9; max-width: 78ch; }
+  main { max-width: 980px; margin: 0 auto; padding: 26px 24px 80px; }
+  h2 {
+    font-size: 20px; margin: 44px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--line); color: var(--accent);
+  }
+  h3 { font-size: 16px; margin: 26px 0 8px; }
+  p, li { max-width: 88ch; }
+  code, pre {
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 13.5px;
+  }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    line-height: 1.45;
+  }
+  pre code { background: none; padding: 0; }
+  table {
+    border-collapse: collapse; width: 100%; margin: 14px 0;
+    font-size: 13.5px;
+  }
+  th, td {
+    border: 1px solid var(--line); padding: 7px 10px;
+    text-align: left; vertical-align: top;
+  }
+  th { background: var(--accent-soft); font-weight: 600; }
+  td code { white-space: nowrap; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.good { color: var(--good); font-weight: 600; }
+  td.bad { color: var(--bad); font-weight: 600; }
+  .note {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .warn {
+    background: #fdf3e7; border-left: 4px solid var(--warn);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .danger {
+    background: #fbeae5; border-left: 4px solid var(--bad);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .muted { color: var(--muted); }
+  img.figure {
+    max-width: 100%; border: 1px solid var(--line); border-radius: 8px;
+    margin: 10px 0;
+  }
+  figcaption { font-size: 13px; color: var(--muted); margin: 2px 0 8px; }
+  ol li, ul li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Damage-Robust Phase Lead — Guide &amp; Comparison</h1>
+  <p>Why the first-order phase lead loses (and can lose stability) when the
+  specimen degrades during the RTHS test, and how the new
+  <code>optimize_vHS_phase_lead_robust</code> designs prefilters that hold
+  their NCF margin along the whole measured damage path: a
+  lead&#8239;+&#8239;lag variant (<code>pl_7000_robust</code>) and a
+  lead&#8239;+&#8239;notch variant (<code>pl_7000_robust_notch</code>, the
+  current recommendation). The engine takes an ordered <em>list</em> of
+  identified damage states, so future 3k/1k identifications drop straight in.
+  Data: sp1 healthy state
+  (<code>sp1_7000</code> + <code>tf_sp1_7000_20260627_210411</code>) and
+  damaged state (<code>sp1_5000</code> + <code>tf_sp1_5000_20260627_233333</code>),
+  both with <code>fem_sp1_7000</code>, PID and phase lead fixed during the test.</p>
+</header>
+<main>
+
+<h2>1. The problem: a good initial NCF does not survive damage</h2>
+<p>The current optimizers pick the 1-pole/1-zero lead that minimizes J4 subject
+to the NCF margin of the healthy loop
+<code>num·G_T·PID·H_dc_dm·k</code>. That constraint only sees the
+<em>initial</em> plant. When the specimen degrades (sp1: k drops from
+7201&#8239;N/mm to 5381&#8239;N/mm, 74.7&#8239;%), two things change at once:</p>
+<ol>
+  <li>the force-feedback gain <code>fm = k·dm</code> scales down with k — the
+  small, benign part; and</li>
+  <li>the identified actuator plant <code>H_dc_dm</code> (servo + specimen)
+  changes shape: with the softer specimen its gain <b>rises everywhere</b>,
+  up to <b>3.9× at 40&#8239;Hz</b> (the oil-column/specimen resonance drops in
+  frequency and grows in peak). This is the dominant effect and it is
+  <em>not</em> captured by scaling k.</li>
+</ol>
+
+<div class="danger">
+<b>Measured on the sp1 pair (closed-loop simulation with the identified
+damaged model):</b> both shipped first-order leads make the damaged hybrid
+loop <b>unstable</b> — <code>pl_7000_ncf40_v2</code> (healthy NCF 0.400)
+reaches max&#8209;|pole| = 1.0051 and <code>pl_7000_ncf3</code> (healthy NCF
+0.300, J4 15.0&#8239;%) reaches 1.0114. The baseline with <em>no</em> lead
+stays stable and its NCF actually <em>improves</em> from 0.256 to 0.375.
+The aggressive lead is what damage exploits.</div>
+
+<h3>Why exactly the 1p1z lead fails</h3>
+<p>A first-order lead with section ratio r = p/z buys
+asin((r−1)/(r+1)) degrees of phase at its center — but it also multiplies the
+loop by r at high frequency. <code>pl_7000_ncf40_v2</code> (z&#8239;2.02&#8239;Hz,
+p&#8239;11.5&#8239;Hz, r&#8239;≈&#8239;5.7) needs that ratio to lift the margin at
+the 2.4&#8239;Hz structural critical point, and as a side effect its healthy NCF
+minimum moves to <b>37.6&#8239;Hz</b> — a point that only stays safe because the
+healthy actuator gain is small there. Damage raises exactly that gain by ~4×,
+and the 38–45&#8239;Hz region walks into the −1 point. <b>In a 1p1z lead the
+low-frequency phase and the high-frequency gain are the same knob</b>; you
+cannot have the phase without arming the high-frequency trap.</p>
+
+<p>Note also that a simple "scale k" robustness check is misleading here: it
+predicts NCF&#8239;≈&#8239;0.45 for the old lead at the damaged state while the
+identified damaged model gives 0.125 — and the true loop is unstable despite
+the positive distance to −1 (the Nyquist winding number changes; the NCF
+margin alone is not a stability certificate).</p>
+
+<h2>2. The robust design</h2>
+
+<h3>2.1 The damage path, not just the endpoint</h3>
+<p>Both states of sp1 are identified, so the plant change is measured:
+<b>Δ(ω) = L<sub>damaged</sub>(ω) / L<sub>healthy</sub>(ω)</b>. The specimen
+does not jump between the two states — it degrades progressively — so the
+optimizer constrains the whole path</p>
+<pre><code>L(λ, ω) = L_healthy(ω) · Δ(ω)^λ ,   λ ∈ {0.35, 0.7, 1.0, 1.15}</code></pre>
+<p>(complex power via log-magnitude and unwrapped phase; λ&#8239;=&#8239;1 is
+<em>exactly</em> the identified damaged loop, λ&#8239;=&#8239;1.15 adds headroom
+beyond it). With several identified states the path becomes piecewise —
+healthy&#8239;→&#8239;5k&#8239;→&#8239;3k&#8239;→&#8239;1k — anchored exactly at
+every identified loop (see §5). Because a real identification also has
+placement error, <code>template_warp_scenarios = [0.9 1.1]</code> re-checks
+the whole path with every template feature (in particular the damaged
+actuator resonance) moved ±10&#8239;% in frequency. Two hard constraints
+replace the single one:</p>
+<pre><code>NCF( L_healthy · G_T )      ≥ target_ncf_margin    (nominal, default 0.40)
+min over λ NCF( L(λ) · G_T ) ≥ robust_ncf_target    (damage path, default 0.25)</code></pre>
+<div class="note"><b>Stability by continuity:</b> requiring the loop to keep a
+finite distance from −1 at every λ on the path means the Nyquist winding
+number cannot change between healthy and damaged — so the path constraint is
+also a stability certificate for every intermediate damage state, which the
+single-point NCF of the old optimizer is not. The λ-grid plus the final
+closed-loop simulation of the identified damaged model (reported as
+<code>Stable_damaged</code>/<code>J4_damaged</code>) close that gap.</div>
+
+<h3>2.2 The filter: leads, lags, and complex-zero notches</h3>
+<p>The prefilter is <code>G_T(s) = k_T·∏(s+z_i)/∏(s+p_i)</code> times optional
+second-order sections, in the legacy format (vHS.m consumes the saved
+<code>phase_lead_tf</code> unchanged). Each first-order section may be a
+<b>lead</b> (p&#8239;&gt;&#8239;z) or a <b>lag</b> (p&#8239;&lt;&#8239;z); each
+optional second-order section is a <b>notch</b></p>
+<pre><code>(s² + 2·ζ_z·ω_n·s + ω_n²) / (s² + 2·ζ_p·ω_n·s + ω_n²),   ζ_z &lt; ζ_p</code></pre>
+<p>with unity DC and high-frequency gain. k_T keeps the total DC gain at 1.
+The idea: a lead supplies phase at the structural band; against the damaged
+actuator resonance you then have two tools — a <b>lag</b> pulls the gain down
+across a whole decade (blunt, forgiving, costs J4 broadband), a <b>notch</b>
+cuts only the resonance band (surgical, nearly free in J4, but must be made
+wide enough to survive template placement error — that is exactly what the
+warp scenarios enforce). <code>normalizePhaseLeadConfig</code> and
+<code>buildPhaseLeadFilter</code> were extended for lag and
+<code>notch_sections</code>; legacy files are unaffected.</p>
+
+<h3>2.3 Which structure is justified? (all at nominal 0.40 / robust 0.25)</h3>
+<table>
+<tr><th>Structure</th><th>Best found</th><th>Verdict</th></tr>
+<tr><td>1 first-order section</td><td class="num">J4 = 66.4&#8239;%</td>
+<td>One section cannot hold both constraints and performance: the optimizer
+degenerates to a pure lag that buys margin by throwing away tracking.</td></tr>
+<tr><td>2 first-order (lag + lead) — <code>pl_7000_robust</code></td>
+<td class="num">J4 = 44.9&#8239;%</td>
+<td>Low-frequency lag (z&#8239;1.02&#8239;→&#8239;p&#8239;0.24&#8239;Hz) +
+mid-band lead (z&#8239;0.56&#8239;→&#8239;p&#8239;4.37&#8239;Hz), HF gain 1.86.
+Blunt but very forgiving: nearly insensitive to ±15&#8239;% template warp.
+The conservative choice.</td></tr>
+<tr><td>3 first-order</td><td class="num">J4 = 50.3&#8239;%</td>
+<td>No better than 2 (6-D search finds worse basins; the extra first-order
+section is not needed).</td></tr>
+<tr><td><b>1 lead + 1 notch — <code>pl_7000_robust_notch</code></b></td>
+<td class="num"><b>J4 = 36.3&#8239;%</b></td>
+<td><b>The winner.</b> Lead z&#8239;2.59&#8239;→&#8239;p&#8239;22.9&#8239;Hz
+(nearly the old 1p1z's phase shape) + notch at 39.7&#8239;Hz
+(ζ_z&#8239;0.087&#8239;/&#8239;ζ_p&#8239;0.561) that removes exactly the band
+the damaged plant amplifies. Feasible including ±10&#8239;% warp scenarios.
+See §4.</td></tr>
+</table>
+
+<h2>3. Results on the sp1 pair</h2>
+<p>Final runs at nominal target 0.40 / robust target 0.25, damage path
+scenarios at λ ∈ {0.35, 0.7, 1.0, 1.15} × template warps {0.9, 1, 1.1}
+(12 scenarios). Saved artifacts:
+<code>saved_results/phase_lead/pl_7000_robust.mat</code> (lead+lag) and
+<code>pl_7000_robust_notch.mat</code> (lead+notch, recommended).</p>
+
+<table>
+<tr><th>Design</th><th class="num">J4 healthy</th><th class="num">NCF healthy</th>
+<th class="num">worst NCF (warped damage path)</th><th class="num">NCF at 5k (identified)</th>
+<th class="num">J4 at 5k</th><th>Stable at 5k</th><th class="num">HF gain</th></tr>
+<tr><td>baseline (no lead)</td><td class="num">88.34&#8239;%</td><td class="num">0.256</td>
+<td class="num">0.289</td><td class="num">0.375</td><td class="num">47.96&#8239;%</td>
+<td class="good">yes</td><td class="num">1.00</td></tr>
+<tr><td><b>pl_7000_robust_notch (lead+notch)</b></td><td class="num"><b>36.30&#8239;%</b></td>
+<td class="num"><b>0.411</b></td><td class="num"><b>0.250</b></td>
+<td class="num"><b>0.366</b></td><td class="num"><b>9.42&#8239;%</b></td>
+<td class="good">yes</td><td class="num">8.82</td></tr>
+<tr><td>pl_7000_robust (lead+lag)</td><td class="num">44.91&#8239;%</td>
+<td class="num">0.445</td><td class="num">0.250</td>
+<td class="num">0.329</td><td class="num">22.70&#8239;%</td>
+<td class="good">yes</td><td class="num">1.86</td></tr>
+<tr><td>pl_7000_ncf40_v2 (old 1p1z)</td><td class="num">28.76&#8239;%</td><td class="num">0.400</td>
+<td class="num">0.046</td><td class="num">0.125</td><td class="num">∞ (diverges)</td>
+<td class="bad">NO</td><td class="num">5.69</td></tr>
+<tr><td>pl_7000_ncf3 (old 1p1z)</td><td class="num">15.02&#8239;%</td><td class="num">0.300</td>
+<td class="num">0.089</td><td class="num">0.246</td><td class="num">∞ (diverges)</td>
+<td class="bad">NO</td><td class="num">7.45</td></tr>
+</table>
+
+<p>Against the three goals (lead+notch vs the old 1p1z):</p>
+<ul>
+<li><b>Higher initial NCF</b> — yes: 0.411 vs 0.400 (lead+lag even reaches
+0.445). The nominal constraint is barely active; the damage-path constraint
+does the work.</li>
+<li><b>Slower NCF reduction</b> — yes, dramatically: the old lead falls
+0.400&#8239;→&#8239;0.125 (with a dip to 0.013 at λ&#8239;≈&#8239;0.78, i.e.
+instability mid-test); the lead+notch goes 0.411&#8239;→&#8239;0.366 —
+essentially flat until λ&#8239;≈&#8239;0.85 — and never drops below 0.25 on
+the whole ±10&#8239;%-warped path. J4 at the damaged state is 9.4&#8239;%
+where the old lead diverges.</li>
+<li><b>Higher initial J4 performance</b> — the remaining price is now small:
+36.3&#8239;% vs 28.8&#8239;%, down from 44.9&#8239;% for the lead+lag. On this
+plant initial J4 and damage robustness genuinely conflict — the old lead's J4
+is bought with high-frequency gain that destabilizes the damaged loop — but
+the notch shrinks the cost of resolving that conflict to ~7.5 J4 points.
+The <code>robust_ncf_target</code> knob still trades further (sweep
+below).</li>
+</ul>
+
+<h3>3.1 Why the notch wins — and how it was made safe</h3>
+<p>The lead+lag pays J4 broadband: its low-frequency lag distorts the command
+exactly where the earthquake has energy. The notch instead cuts only the
+38–45&#8239;Hz band where the damaged actuator resonance lives — the filter
+plot below shows the lead+notch (copper) tracking the old 1p1z's phase almost
+exactly through the structural band, then carving a −12&#8239;dB slot at
+40&#8239;Hz. The record has almost no command energy there, so the healthy J4
+barely notices (peak command amplification only 1.30×).</p>
+<p>The catch, found by a fragility study: an unconstrained notch design tuned
+to the raw template collapsed from NCF 0.385 to 0.235 when the template's
+resonance was shifted −15&#8239;% in frequency, while the lead+lag barely
+moved (0.317–0.382 over ±15&#8239;%). A narrow notch is a precision
+instrument; it must not be trusted at its exact measured frequency. Hence
+<code>template_warp_scenarios</code>: the constraint set is replicated with
+the template frequency-warped (default recommendation ±10&#8239;%), which
+forces the optimizer to widen the notch (ζ_p 0.50&#8239;→&#8239;0.56 with a
+deeper cut) until the design holds everywhere. The shipped
+<code>pl_7000_robust_notch</code> satisfies all 12 warped-path scenarios.</p>
+<div class="warn"><b>Remaining caveat:</b> the lead+notch keeps the lead's
+high-frequency gain (8.8× above ~60&#8239;Hz, like the old 1p1z's 5.7×). The
+NCF grid checks to 80&#8239;Hz and the closed-loop simulations are stable, but
+unmodeled dynamics above the identification band would see that gain. If that
+worries you for a given rig, add <code>hf_gain_scenarios</code> rows (e.g.
+<code>[2 60]</code>) or lower <code>center_frequency_bounds_hz(2)</code>; the
+blunt lead+lag (HF gain 1.86) remains the conservative fallback.</div>
+
+<figure>
+<img class="figure" src="img/robust_phase_lead_ncf_vs_damage_fraction.png"
+ alt="NCF margin along the measured damage path">
+<figcaption><b>Headline plot — NCF along the damage path.</b> The old 1p1z
+(purple) dives to 0.013 mid-path; the lead+notch ("best", copper) stays
+essentially flat near 0.41 until λ&#8239;≈&#8239;0.85 and never leaves the
+safe zone; the lead+lag (green) is similar but starts costing more J4; the
+baseline (blue) rises because damage softens the un-led loop. The vertical
+line marks the identified 5k state — future 3k/1k states appear as additional
+integer markers.</figcaption>
+</figure>
+
+<figure>
+<img class="figure" src="img/robust_phase_lead_filter_response.png"
+ alt="Prefilter frequency responses">
+<figcaption><b>The filters.</b> The lead+notch (copper) follows the old
+1p1z's magnitude and phase almost exactly through the structural band — that
+is where its J4 advantage comes from — then cuts a −12&#8239;dB notch at
+40&#8239;Hz, exactly where the damaged actuator gains 4×. The lead+lag
+(green) instead dips −4&#8239;dB around 0.7&#8239;Hz and caps the whole high
+end at +5.4&#8239;dB: forgiving, but the in-band dip is what costs it 8 J4
+points.</figcaption>
+</figure>
+
+<figure>
+<img class="figure" src="img/robust_phase_lead_ncf_distance_vs_frequency.png"
+ alt="NCF distance to the critical point vs frequency">
+<figcaption><b>Where the margin lives.</b> Three dips matter: 2.4&#8239;Hz
+(structure), 8.6&#8239;Hz, and 38–45&#8239;Hz (actuator resonance). On the
+damaged plant (bottom) the old 1p1z digs the 40&#8239;Hz dip to ≈0.13 with a
+changed winding number; both robust designs keep it safe — the notch by
+removing the band, the lag by never amplifying it.</figcaption>
+</figure>
+
+<figure>
+<img class="figure" src="img/robust_phase_lead_target_sweep_pareto.png"
+ alt="J4 versus robust NCF target sweep">
+<figcaption><b>The knob</b> (measured on the lead+lag structure before the
+warp scenarios were added). Sweeping <code>robust_ncf_target</code>
+0.15&#8239;→&#8239;0.40 costs J4 (healthy) 37.5&#8239;→&#8239;54.1&#8239;% and buys
+damaged-state NCF 0.23&#8239;→&#8239;0.45. All points are stable through the
+whole damage path — pick by how much damage you expect. The lead+notch shifts
+this whole frontier down by ~8 J4 points.</figcaption>
+</figure>
+
+<figure>
+<img class="figure" src="img/robust_phase_lead_j4_vs_worst_case_ncf.png"
+ alt="Simulated candidates: J4 vs worst-case NCF">
+<figcaption>Search diagnostics: simulated candidates, feasible in green, best
+as the star.</figcaption>
+</figure>
+
+<h2>4. How to run it</h2>
+<h3>Quick start (sp1 defaults)</h3>
+<pre><code>&gt;&gt; optimize_vHS_phase_lead_robust_ncf   % in control_and_HS/d_HS</code></pre>
+<p>Runs healthy = sp1_7000 with the damage-state list {5k}, the recommended
+structure (1 lead + 1 notch, template warps ±10&#8239;%), targets 0.40/0.25,
+warm-started from the previous artifact, compares against
+<code>pl_7000_robust</code> and <code>pl_7000_ncf40_v2</code>, and saves
+<code>pl_7000_robust_notch.mat</code> (legacy format — select it in vHS.m as
+usual; the saved <code>phase_lead_tf</code> already contains the notch).
+Runtime ≈ 1–2 minutes. Workspace overrides, same pattern as the other
+wrappers:</p>
+<pre><code>robust_ncf_target = 0.30;                 % ask for more damaged margin
+section_count_override = 2;               % lead+lag instead of lead+notch:
+notch_count_override = 0;                 %   2 first-order sections, 0 notches
+phase_lead_file_name_override = 'pl_7000_robust_r30';
+optimize_vHS_phase_lead_robust_ncf</code></pre>
+
+<h3>Engine call and key options</h3>
+<pre><code>config = struct( ...
+    'specimen_file', '...sp1_7000.mat', ...          % healthy state
+    'h_dc_dm_model_file', '...tf_sp1_7000_...mat', ...
+    'fem_file', '...fem_sp1_7000.mat', ...
+    'damage_states', struct( ...                     % ordered, least -> most damaged
+        'label', {'5k'}, ...
+        'specimen_file', {'...sp1_5000.mat'}, ...
+        'h_dc_dm_model_file', {'...tf_sp1_5000_...mat'}), ...
+    'target_ncf_margin', 0.40, ...     % healthy NCF floor
+    'robust_ncf_target', 0.25, ...     % floor along the (warped) damage path
+    'template_warp_scenarios', [0.9 1.1], ...
+    'phase_lead_section_count', 1, ...
+    'notch_section_count', 1);
+result = optimize_vHS_phase_lead_robust(config);</code></pre>
+
+<h3>Adding the future damage states (3k, 1k) when they are identified</h3>
+<p>The damage model is an ordered <b>list</b>, not a single pair. When a new
+state has been identified (specimen k,m,c from <code>a_specimen_id</code>,
+actuator model from <code>sys_id.m</code>), append one entry — nothing else
+changes:</p>
+<pre><code>'damage_states', struct( ...
+    'label', {'5k', '3k', '1k'}, ...
+    'specimen_file', {'...sp1_5000.mat', '...sp1_3000.mat', '...sp1_1000.mat'}, ...
+    'h_dc_dm_model_file', {'...tf_sp1_5000_...mat', ...
+                           '...tf_sp1_3000_...mat', ...
+                           '...tf_sp1_1000_...mat'}), ...
+'seed_phase_leads', {{'pl_7000_robust_notch.mat'}}, ...  % warm start from
+                                                         % the current design</code></pre>
+<p>What happens internally: the damage path becomes piecewise —
+healthy&#8239;→&#8239;5k&#8239;→&#8239;3k&#8239;→&#8239;1k — anchored
+<em>exactly</em> at every identified loop (path coordinate λ = 1, 2, 3 …),
+with <code>template_lambda_grid</code> fractions checked inside every segment,
+the &gt;1 entries extrapolating beyond the last state, and the warp factors
+applied to the whole path. The report table gains
+<code>NCF_3k / J4_3k / Stable_3k</code> (and 1k) columns, and the degradation
+plot gains an integer marker per state. Because the previous design is passed
+in <code>seed_phase_leads</code>, the optimizer first re-checks it against the
+extended path (the polish restores feasibility from a near-miss before
+minimizing J4), so successive re-runs refine rather than restart. The same
+list mechanism accepts damage states from <em>other</em> specimens too — the
+constraint then reads "survive every damage trajectory measured on this
+rig".</p>
+
+<table>
+<tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+<tr><td><code>target_ncf_margin</code></td><td>0.40</td><td>Hard NCF floor on the
+healthy loop.</td></tr>
+<tr><td><code>robust_ncf_target</code></td><td>0.25</td><td>Hard NCF floor on
+every damage scenario. <b>This is the main knob</b> (see the sweep figure).</td></tr>
+<tr><td><code>damage_states</code></td><td>empty</td><td>Ordered struct list of
+identified damage states (label, specimen_file, h_dc_dm_model_file); the
+damage path passes through all of them. The legacy single-state
+<code>damaged_specimen_file</code>/<code>damaged_h_dc_dm_model_file</code>
+options still work and become entry #1.</td></tr>
+<tr><td><code>template_lambda_grid</code></td><td>[0.35 0.7 1.0 1.15]</td>
+<td>Entries ≤ 1: fractions checked inside <em>every</em> path segment;
+entries &gt; 1: overshoot beyond the last identified state (1.15 → λ =
+n_states + 0.15).</td></tr>
+<tr><td><code>template_warp_scenarios</code></td><td>[] (use [0.9 1.1])</td>
+<td>Frequency-warp factors: the whole path is re-checked with every template
+feature moved by these factors. <b>Mandatory in spirit when notches are
+enabled</b> — it is what keeps a narrow notch honest about resonance
+placement error.</td></tr>
+<tr><td><code>phase_lead_section_count</code></td><td>2</td><td>First-order
+sections; each may come out lead or lag.</td></tr>
+<tr><td><code>notch_section_count</code></td><td>0</td><td>Second-order
+notch sections (searched over frequency 5–80&#8239;Hz, depth
+ζ_z/ζ_p ∈ [0.03, 1], width ζ_p ∈ [0.2, 2]; bounds configurable via
+<code>notch_*_bounds</code>).</td></tr>
+<tr><td><code>section_ratio_bounds</code></td><td>[1/25 25]</td><td>Ratio
+p/z per section; values &lt; 1 allow lag sections.</td></tr>
+<tr><td><code>seed_phase_leads</code></td><td>{}</td><td>Warm starts: phase_lead
+structs or saved MAT names, simulated before the screened candidates and
+offered to the polish. Infeasible seeds are first pulled to feasibility by a
+phase-1 fmincon on the analytic shortfall (no simulations), then J4 is
+minimized — without this an infeasible seed gets dragged deeper into
+infeasibility by the J4 gradient.</td></tr>
+<tr><td><code>template_healthy_*</code></td><td>''</td><td>Reference-pair
+healthy files for designing a NEW specimen: the path shape comes from the
+reference pair, applied to the new specimen's nominal loop.</td></tr>
+<tr><td><code>k_scale_scenarios</code>, <code>extra_delay_scenarios_s</code>,
+<code>hf_gain_scenarios</code></td><td>auto</td><td>Generic scenario family,
+used automatically when no damage state is configured
+(k×{0.85,0.7,0.55}, delays {0.5,1}&#8239;ms, HF gain shelves ×2/×4); can also
+be added on top of the measured path.</td></tr>
+<tr><td><code>compare_phase_lead_files</code></td><td>{}</td><td>Saved leads to
+include in the report table and every plot.</td></tr>
+<tr><td><code>screen_sample_count</code> / <code>sim_budget</code> /
+<code>polish_*</code></td><td>30000 / 140 / 3×200</td><td>Stage budgets:
+analytic screen → shortlisted simulations → two-phase fmincon (analytic
+feasibility restore, then simulated-J4 objective with analytic NCF
+constraints).</td></tr>
+<tr><td><code>plot_export_dir</code></td><td>''</td><td>Export the figures as
+PNG (used to build this page: <code>docs/img</code>).</td></tr>
+</table>
+
+<h3>Designing for a NEW specimen (only the healthy state identified)</h3>
+<p>The damage template is the transferable knowledge from sp1: "this is how
+this class of specimen + actuator changes when it degrades". For a new
+specimen sp2 where only the healthy identification exists:</p>
+<pre><code>config.specimen_file        = '...sp2_healthy.mat';      % new nominal
+config.h_dc_dm_model_file   = '...tf_sp2_healthy...mat';
+% reference damage physics measured on sp1 (all its identified states):
+config.damage_states = struct( ...
+    'label', {'5k'}, ...                      % + 3k, 1k when identified
+    'specimen_file', {'...sp1_5000.mat'}, ...
+    'h_dc_dm_model_file', {'...tf_sp1_5000...mat'});
+config.template_healthy_specimen_file      = '...sp1_7000.mat';
+config.template_healthy_h_dc_dm_model_file = '...tf_sp1_7000...mat';</code></pre>
+<p>With <code>template_healthy_*</code> set, the template becomes
+Δ = L<sub>sp1,damaged</sub>/L<sub>sp1,healthy</sub> (pure damage physics)
+applied to sp2's own healthy loop — the nominal state is sp2, the damage
+<em>direction</em> is sp1's. Since the damage amount and the shifted
+instability frequency of sp2 are unknown, keep λ up to 1.15 (or higher) and
+consider adding the generic scenarios on top
+(<code>k_scale_scenarios</code>/<code>extra_delay_scenarios_s</code>) for
+extra insurance. As more specimen pairs get tested, their templates can be
+added as additional scenarios — the constraint is "survive every template we
+have ever measured".</p>
+
+<div class="warn"><b>Honest limitation:</b> with one measured pair, the
+template is one sample of "damage physics". The λ-sweep and the 1.15 headroom
+hedge the <em>amount</em> of damage, not a qualitatively different
+<em>shape</em> of change. Re-run the comparison whenever a new damaged
+identification exists, and treat <code>Stable_damaged = false</code> for any
+candidate lead as a hard veto.</div>
+
+<h2>5. New optimizer vs old first-order optimizer</h2>
+<table>
+<tr><th></th><th>optimize_vHS_phase_lead_v2 (1p1z)</th>
+<th>optimize_vHS_phase_lead_robust (new)</th></tr>
+<tr><td>Filter</td><td>N identical lead sections (equal split of one
+center/ratio), lead only</td><td>N independent sections, each lead
+<b>or lag</b>, plus optional second-order <b>notches</b>, unity DC
+gain</td></tr>
+<tr><td>Constraint</td><td>NCF of the healthy loop only</td>
+<td>NCF of the healthy loop <b>and</b> of every damage scenario: the
+piecewise measured path through all identified states, optionally
+frequency-warped, or the generic family</td></tr>
+<tr><td>Stability under damage</td><td>Not checked — shipped optima are
+unstable on the identified damaged plant</td><td>Path constraint (winding
+argument) + explicit closed-loop simulation of the damaged model in the
+report</td></tr>
+<tr><td>Objective</td><td>min unrounded J4 (healthy)</td><td>same</td></tr>
+<tr><td>Search</td><td>2-D map → boundary → zoom → fmincon</td>
+<td>(2N+3M)-D quasi-random analytic screen (~seconds for 40k candidates)
+→ warm-start seeds + J4-proxy-ranked simulations → multi-start two-phase
+fmincon (feasibility restore, then J4)</td></tr>
+<tr><td>Evaluation core</td><td colspan="2" style="text-align:center">shared —
+the robust engine reuses the v2 assembled-LTI simulator and tustin-exact
+analytic NCF via <code>optimize_vHS_phase_lead_v2('helpers')</code></td></tr>
+<tr><td>Output format</td><td colspan="2" style="text-align:center">identical
+legacy MAT (<code>phase_lead</code>, <code>phase_lead_tf</code>, …) — vHS.m
+loads either</td></tr>
+<tr><td>Typical runtime</td><td>~40&#8239;s</td><td>~80&#8239;s</td></tr>
+<tr><td>When to use</td><td>Specimen guaranteed not to change during the
+test</td><td>Specimen expected to damage (this project)</td></tr>
+</table>
+
+<h2>6. Beyond the phase lead — other levers for the same three goals</h2>
+<ol>
+<li><b>Robust PID co-design.</b> The PID ([0.15 20 0.0015 512]) is chosen
+before the test and inherited by every design. The exact same scenario
+machinery can wrap a (P,&#8239;D) grid or a joint PID+lead fmincon — the inner
+loop shapes <code>H_dc_dm</code> itself, so a small PID retune may buy damaged
+margin far more cheaply in J4 than the prefilter can.</li>
+<li><b>Second-order (complex) sections — DONE.</b> Implemented as
+<code>notch_section_count</code> and it delivered exactly as hoped:
+J4 44.9&#8239;→&#8239;36.3&#8239;% at identical robustness targets
+(<code>pl_7000_robust_notch</code>, §3.1). The warp scenarios were the
+missing safety ingredient discovered on the way.</li>
+<li><b>Design at a detuned nominal.</b> A one-line hedge with the existing v2
+optimizer: set <code>k_exp_r &lt; 1</code> (e.g. 0.85) so the "nominal" plant
+sits mid-way along the expected damage path. Much weaker than the path
+constraint, but free.</li>
+<li><b>Multi-record J4.</b> J4 is currently El Centro-specific; making the
+objective the worst J4 over 2–3 records (config hook
+<code>earthquake_type</code>) avoids overfitting the lag placement to one
+spectrum.</li>
+<li><b>Online λ estimate → scheduled lead (future, currently out of scope).</b>
+The spectral stiffness estimator already tracks k during the test; mapping
+k̂ to λ and morphing between two saved robust leads (or scheduling the lag
+corner) would recover most of the J4 price while keeping the margin — this is
+the natural meeting point with the OSI/authority work once it is back in
+scope.</li>
+<li><b>Grow the template library.</b> Each tested specimen adds one measured
+Δ(ω); constraining against all of them turns "robust to sp1's damage" into
+"robust to every damage mode this rig has ever produced". The config already
+accepts any number of scenarios.</li>
+</ol>
+
+<p class="muted">Files: engine
+<code>control_and_HS/d_HS/utils_HS/optimize_vHS_phase_lead_robust.m</code>,
+wrapper <code>control_and_HS/d_HS/optimize_vHS_phase_lead_robust_ncf.m</code>,
+results <code>saved_results/phase_lead/pl_7000_robust_notch.mat</code>
+(recommended) and <code>pl_7000_robust.mat</code> (lead+lag fallback).
+Generated 2026-07-02 with the sp1 7k/5k identification pair; regenerate the
+figures by re-running the wrapper with <code>plot_export_dir</code> set to
+<code>docs/img</code>.</p>
+
+</main>
+</body>
+</html>

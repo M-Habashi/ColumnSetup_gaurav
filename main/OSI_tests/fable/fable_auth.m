@@ -536,7 +536,7 @@ prm = struct( ...
     ...                        % fast-ST trip to be honored (anti self-trip)
     'self_move_frac', 0.02, ...% relative move that counts as "not steady"
     'latch_relax', 1.15, ...   % latched ceiling relative to post-shed a
-    'latch_decay_tau_s', 200); % forgetting time of the latched ceiling
+    'latch_decay_tau_s', 1);   % was 200; forgetting time of the latched ceiling
 names = fieldnames(override);
 for i = 1:numel(names)
     if ~isfield(prm, names{i})
