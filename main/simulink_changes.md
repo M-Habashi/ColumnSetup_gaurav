@@ -1,5 +1,49 @@
 # Simulink Changes
 
+## Change 2 (2026-07-03): Speedgoat overloading fix
+
+Reproduced and fixed the CPU overload that stopped the target when the
+pause switch was flipped to resume (`Overload limit (0) exceeded in
+0.000488281s (tid=0)`, TETMax 780 us against the 488 us base-rate budget).
+The overload fired ~5 s after resume, when the 5 s slow-spectral ring first
+fills and the whole OSI slow pipeline (2048-pt FFTs, ring medians,
+prediction grid) landed in a single base-rate tick.
+
+Model + runtime changes:
+
+1. **Time-sliced OSI runtime** (`control_and_HS/OSI/fable_osi_runtime.m`).
+   Same arithmetic (bitwise-equal per `test_fable_runtime_equivalence` on
+   the synthetic stream and all three saved records); the per-step work is
+   now spread over one bounded phase per tick and published at a fixed
+   56-tick (27 ms) latency after each 0.125 s step. The heaviest rare
+   event, the calibration-finalize pooled-MAD median (nf x cal_windows
+   sort), is split into 16 chunk sorts + 4 merge passes. Measured on
+   target over the full 145 s verification protocol: TETMax 278 us (57%
+   of budget; 275-278 across three runs), worst tick = the single 2048-pt
+   slow FFT; the calibration finalize no longer peaks (was 780 us
+   overload).
+2. **OSI enable wiring**: the `Fable OSI + Auth` block's `en` input now
+   comes straight from `osi_gain_enable_switch value`. The old
+   `OSI Runtime Mode` Sum (deleted, along with `OSI Pause Code Gain` and
+   `dd_pause_enable1`) computed `en = 2*dd_pause_enable -
+   osi_gain_enable` (the enable was subtracted - a sign bug), and pausing
+   dd also paused the indicator. **The indicator now always runs**; the
+   pause switch only pauses the command signal.
+3. **Online TSE Estimator** decimated: `update_samples` 64 -> 256 (8 Hz
+   stiffness updates) and the first update offset to tick 128 of the
+   256-sample OSI step, so the 4x4 SVD + 3x3 pinv never share a tick with
+   an OSI pipeline phase. Estimates converge ~4x slower; accuracy per
+   update unchanged.
+4. **`OSI Margins Scope`** added next to the fable block, showing
+   `b_st` (slow), `b_fast` (fast) and `b_osi` (selected). These are also
+   logged in File-Log columns 13, 15, 12 as before.
+
+Regression tooling: `OSI_tests/overloadin_test/run_overloading_test.m`
+predicts target fit from a host benchmark (calibrated against the measured
+780 us overload; pre-fix host measurement 793 us, k = 0.91) - run it before
+any target run after changing `fable_osi_runtime.m`. Comparison report:
+`OSI_tests/overloadin_test/report.html`.
+
 ## Change 1: OSI Authority Immediate-Drop Threshold
 
 The OSI authority gain law now sets the severe/immediate-drop threshold as:

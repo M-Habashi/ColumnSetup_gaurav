@@ -113,7 +113,8 @@ step_n = setup.cfg.step_n;
 
 % ---- replay through the runtime (the exact Speedgoat code path) ----------
 N = floor(min(numel(dd), numel(dm))/step_n)*step_n;
-nU = N/step_n;
+half = round(step_n/2);   % sampling offset > the runtime's 56-tick publish
+nU = floor((N - half)/step_n);
 tc = NaN(nU, 1); b = NaN(nU, 1); bst = NaN(nU, 1); bres = NaN(nU, 1);
 bfa = NaN(nU, 1); trip = zeros(nU, 1); a = NaN(nU, 1);
 dec = zeros(nU, 1); vld = false(nU, 1);
@@ -128,9 +129,9 @@ for i = 1:N
     [ai, bi, bsti, bresi, bfi, tri, vi, di] = fable_osi_runtime( ...
         dd(i), dm(i), 1, fbls, fblw, fblbins, fblfw, fblfbins, ...
         fblag, fbla);
-    if mod(i, step_n) == 0
+    if i > half && mod(i - half, step_n) == 0 && k < nU
         k = k + 1;
-        tc(k) = t(i);
+        tc(k) = t(i - half);   % the step this published value belongs to
         b(k) = bi; bst(k) = bsti; bres(k) = bresi; bfa(k) = bfi;
         trip(k) = tri; a(k) = ai; dec(k) = di; vld(k) = vi ~= 0;
     end

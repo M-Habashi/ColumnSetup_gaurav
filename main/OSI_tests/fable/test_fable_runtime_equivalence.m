@@ -10,6 +10,12 @@ function results = test_fable_runtime_equivalence(record_idx)
 % and asserts the margin, branch, trip and authority traces are identical
 % (same arithmetic -> must match bitwise; any mismatch is a porting bug).
 %
+% The runtime time-slices each step's work across base-rate ticks and
+% publishes at a FIXED 56-tick latency after the step boundary (the
+% Speedgoat CPU-overload fix), so the runtime trace is sampled mid-step
+% (tick T0 + step_n/2 > 56) where the published values for that step are
+% guaranteed stable. Values still match the desktop stream bitwise.
+%
 % The synthetic stream is designed to exercise every code path:
 % calibration + finalize, excited/quiet classification, ST branch, fast
 % FRF-change trip (mid-record plant-gain step), quiet-band burst +
@@ -58,13 +64,13 @@ results(end+1) = runCase('synthetic', projectFolder, dt, dd, dm); %#ok<AGROW>
 
 % ---- case B: optional record replay ---------------------------------------
 if nargin >= 1 && ~isempty(record_idx)
-    base = fullfile(projectFolder, 'saved_results', 'tests', 'important');
+    base = fullfile(projectFolder, 'saved_results', 'tests');
     files = { ...
-        ['20260617_1731_sp1_ori_Pvar_I30_D0001_' ...
-         'Po_015_Io_20_Do_00015.mat'], ...
-        ['20260617_1749_sp1_ori_Pvar_I30_D0001_' ...
-         'Po_015_Io_20_Do_00015.mat'], ...
-        '20260630_1930_testing_OSI.mat'};
+        fullfile('20260617', ['20260617_1731_sp_1_ori_Pvar_I30_D0001_' ...
+         'Po_015_Io_20_Do_00015.mat']), ...
+        fullfile('20260617', ['20260617_1749_sp_1_ori_Pvar_I30_D0001_' ...
+         'Po_015_Io_20_Do_00015.mat']), ...
+        fullfile('20260630', '20260630_1930_testing_OSI.mat')};
     fp = fullfile(base, files{record_idx});
     L = load(fp);
     if isfield(L, 'result'), data = L.result; else, data = L; end
@@ -126,12 +132,20 @@ fprintf('  runtime replay ...'); tic
 clear fable_osi_runtime          % reset persistents
 B = allocTr(n_step);
 k = 0;
-for i = 1:n_step*cfg.step_n
+half = round(cfg.step_n/2);      % sampling offset: > publish latency (34)
+for i = 1:n_step*cfg.step_n + half
+    if i <= numel(dd)
+        du = dd(i);
+        yu = dm(i);
+    else
+        du = 0;                  % tail padding only feeds the raw rings;
+        yu = 0;                  % the last step's publish uses its T0
+    end                          % snapshot, so outputs are unaffected
     [auth, b_osi, b_st, b_res, b_fast, trip, ~, dec] = ...
-        fable_osi_runtime(dd(i), dm(i), 1, fbls, fblw, fblbins, ...
+        fable_osi_runtime(du, yu, 1, fbls, fblw, fblbins, ...
         fblfw, fblfbins, fblag, fbla);
-    if mod(i, cfg.step_n) == 0
-        k = k + 1;
+    if i > half && mod(i, cfg.step_n) == half
+        k = k + 1;               % reads step k = (i - half)/step_n
         B.b(k) = b_osi;
         B.b_st(k) = b_st;
         B.b_res(k) = b_res;

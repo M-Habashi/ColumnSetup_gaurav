@@ -11,3 +11,6 @@ step_1_calibration_and_identificationn/
 main/control_and_HS/system_id/datafiles/gg_03_BLWN2.mat
 main/control_and_HS/system_id/models/fit/gg_03_BLWN2_fit.mat
 main/control_and_HS/system_id/models/paarametric/gg_03_BLWN2.mat
+.codex/
+main/OSI_tests/overloadin_test/mex_build/
+*.slx.autosave

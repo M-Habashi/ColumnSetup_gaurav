@@ -105,15 +105,29 @@ Implementation notes (already handled — kept here for future edits):
   feeds its own committed `auth` into the estimator's `a_cmd` contract),
   so the law cannot trip on its own moves.
 
-**Enable/pause contract (keep identical to today):**
+**Enable contract (UPDATED 2026-07-03 — indicator is always on):**
 
-- `en >= 2` (pause): reset the raw rings, spectra rings, CUSUMs and margin
-  history; **keep** the calibrated baseline/µ/σ and the auth state (this is
-  what `osi_gain_runtime` does). On resume the regime detector re-checks
-  the input support anyway.
 - `en == 0`: keep estimating (publish `b` etc.) but output
   `auth = a_init` — shadow mode.
 - `en == 1`: publish the law's authority.
+- `en >= 2` (pause) still exists in the runtime for contract compatibility
+  (rings reset, calibration/authority kept) but the model no longer wires
+  the pause switch into `en`: the old `OSI Runtime Mode` Sum computed
+  `en = 2*dd_pause_enable - osi_gain_enable` (sign bug) and paused the
+  indicator with the command. Now `en` comes straight from
+  `osi_gain_enable_switch value`, so **the indicator keeps evaluating
+  while dd is paused**; a resume just looks like an excitation-regime
+  change and triggers the automatic rebaseline.
+
+**Real-time scheduling (UPDATED 2026-07-03 — CPU-overload fix):** the
+runtime time-slices each 0.125 s step across base-rate ticks (one bounded
+phase per tick, publish at a fixed 56-tick / 27 ms latency; calibration
+finalize spread over ~39 ticks). Measured on target: TETMax 278 µs over
+the full verification protocol (budget 488 µs) — the pre-fix burst design
+measured 780 µs and stopped the target with a CPU overload as soon as the
+indicator started evaluating. Run
+`OSI_tests/overloadin_test/run_overloading_test.m` before any target run
+after touching the runtime.
 
 ### 2.3 Equivalence test `OSI_tests/fable/test_fable_runtime_equivalence.m` ✔ exists, PASSING
 
