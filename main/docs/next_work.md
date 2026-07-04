@@ -7,6 +7,13 @@
 
 
 # NOW
+- first what are the wierd question of robust optimizer?
+- optimize both rths and outer loops ncf with different targets (optimizing outer can be simply optimizing the auth factor)
+- understand the notch opt code can we make it more stable?
+- how does it consider robust damaged ncf
+- organize rths ibnputs in the main script
+- in the reminder report only file names and show intensity and time scale
+- add the osi switch to the procedure
 - compare the results based on a selectd window and show error indicators
 - button in simulink to flag specific times (maybe just constant logged to b chaged)
 - HS (find the scale automatically to achieve desired max displacement, change time scale, load from earthquakes, final accelerations to be sent is zero)
