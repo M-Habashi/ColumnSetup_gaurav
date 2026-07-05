@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fable OSI &mdash; Speedgoat Runtime Parameter Reference</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1d21; --muted:#5b6470; --faint:#8a94a0;
+    --card:#f6f8fa; --card2:#eef1f5; --border:#dde3ea;
+    --code-bg:#f0f3f7; --code-fg:#0b3d63;
+    --accent:#1b6ec2; --accent2:#0f8a6a; --warn:#b5641b; --danger:#b3261e;
+    --eq-bg:#f4f8fc; --eq-border:#cfe0f0;
+    --th:#e7edf4;
+    --slow:#1b6ec2; --resid:#0f8a6a; --fast:#b5641b; --regime:#7a4fb0; --auth:#b3261e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1216; --fg:#e6eaef; --muted:#9aa4b0; --faint:#6b7480;
+      --card:#171b21; --card2:#1d222a; --border:#2a313b;
+      --code-bg:#141a22; --code-fg:#8fc6f0;
+      --accent:#4ea3e6; --accent2:#3fc79a; --warn:#e0954a; --danger:#e8695f;
+      --eq-bg:#141b24; --eq-border:#26374a;
+      --th:#20272f;
+      --slow:#4ea3e6; --resid:#3fc79a; --fast:#e0954a; --regime:#b18fe0; --auth:#e8695f;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#ffffff; --fg:#1a1d21; --muted:#5b6470; --faint:#8a94a0;
+    --card:#f6f8fa; --card2:#eef1f5; --border:#dde3ea;
+    --code-bg:#f0f3f7; --code-fg:#0b3d63;
+    --accent:#1b6ec2; --accent2:#0f8a6a; --warn:#b5641b; --danger:#b3261e;
+    --eq-bg:#f4f8fc; --eq-border:#cfe0f0; --th:#e7edf4;
+    --slow:#1b6ec2; --resid:#0f8a6a; --fast:#b5641b; --regime:#7a4fb0; --auth:#b3261e;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1216; --fg:#e6eaef; --muted:#9aa4b0; --faint:#6b7480;
+    --card:#171b21; --card2:#1d222a; --border:#2a313b;
+    --code-bg:#141a22; --code-fg:#8fc6f0;
+    --accent:#4ea3e6; --accent2:#3fc79a; --warn:#e0954a; --danger:#e8695f;
+    --eq-bg:#141b24; --eq-border:#26374a; --th:#20272f;
+    --slow:#4ea3e6; --resid:#3fc79a; --fast:#e0954a; --regime:#b18fe0; --auth:#e8695f;
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.62; margin:0; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:2.4rem 1.4rem 6rem;}
+  code,kbd,.mono{
+    font-family:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
+    font-size:0.86em;
+  }
+  code{background:var(--code-bg); color:var(--code-fg); padding:0.1em 0.36em; border-radius:4px;}
+  h1{font-size:2.0rem; line-height:1.2; margin:0 0 0.3rem; letter-spacing:-0.01em;}
+  h2{font-size:1.42rem; margin:3.0rem 0 0.6rem; padding-top:0.8rem; border-top:2px solid var(--border); letter-spacing:-0.01em;}
+  h3{font-size:1.12rem; margin:1.8rem 0 0.4rem;}
+  h4{font-size:0.98rem; margin:1.2rem 0 0.3rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;}
+  p{margin:0.6rem 0;}
+  a{color:var(--accent); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  .lede{font-size:1.06rem; color:var(--muted); margin:0.4rem 0 1.2rem;}
+  .tag{display:inline-block; font-size:0.72rem; font-weight:600; text-transform:uppercase;
+       letter-spacing:0.05em; padding:0.12em 0.55em; border-radius:20px; vertical-align:middle;}
+  .tag-slow{background:color-mix(in srgb,var(--slow) 18%,transparent); color:var(--slow);}
+  .tag-resid{background:color-mix(in srgb,var(--resid) 18%,transparent); color:var(--resid);}
+  .tag-fast{background:color-mix(in srgb,var(--fast) 18%,transparent); color:var(--fast);}
+  .tag-regime{background:color-mix(in srgb,var(--regime) 18%,transparent); color:var(--regime);}
+  .tag-auth{background:color-mix(in srgb,var(--auth) 18%,transparent); color:var(--auth);}
+  .meta{color:var(--faint); font-size:0.85rem; margin-bottom:1.6rem;}
+  .toc{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1rem 1.3rem; margin:1.6rem 0;}
+  .toc ol{margin:0.3rem 0 0; padding-left:1.4rem;}
+  .toc li{margin:0.15rem 0;}
+  .callout{background:var(--card); border:1px solid var(--border); border-left:4px solid var(--accent);
+           border-radius:8px; padding:0.7rem 1rem; margin:1rem 0;}
+  .callout.warn{border-left-color:var(--warn);}
+  .callout.key{border-left-color:var(--accent2);}
+  .eq{background:var(--eq-bg); border:1px solid var(--eq-border); border-radius:8px;
+      padding:0.7rem 1rem; margin:0.9rem 0; overflow-x:auto; font-size:1.02rem;}
+  .eq .lbl{float:right; color:var(--faint); font-size:0.8rem; font-style:italic;}
+  .math{font-family:"SF Mono",ui-monospace,Consolas,monospace;}
+  .frac{display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; margin:0 0.25em;}
+  .frac .num{border-bottom:1px solid currentColor; padding:0 0.35em;}
+  .frac .den{padding:0 0.35em;}
+  sub,sup{font-size:0.72em;}
+  table{border-collapse:collapse; width:100%; margin:1rem 0; font-size:0.9rem;}
+  .scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  th,td{border:1px solid var(--border); padding:0.5rem 0.65rem; text-align:left; vertical-align:top;}
+  th{background:var(--th); font-weight:600; position:sticky; top:0;}
+  tbody tr:nth-child(even){background:var(--card);}
+  td.mono,th.mono{white-space:nowrap;}
+  .def{margin:0.9rem 0; padding:0.75rem 1rem; background:var(--card); border:1px solid var(--border); border-radius:8px;}
+  .def .name{font-weight:700;}
+  .def .idx{color:var(--faint); font-size:0.8rem; font-weight:400;}
+  .def .default{display:inline-block; margin-left:0.5rem; font-size:0.8rem; color:var(--accent2);}
+  .pill{display:inline-block; font-size:0.74rem; padding:0.05em 0.5em; border-radius:5px;
+        background:var(--card2); border:1px solid var(--border); color:var(--muted); margin-right:0.3rem;}
+  .arrow-up{color:var(--accent2); font-weight:700;}
+  .arrow-dn{color:var(--warn); font-weight:700;}
+  ul.tight{margin:0.4rem 0; padding-left:1.3rem;}
+  ul.tight li{margin:0.2rem 0;}
+  .sig{font-family:"SF Mono",ui-monospace,Consolas,monospace; font-size:0.82rem;
+       background:var(--code-bg); color:var(--code-fg); border:1px solid var(--border);
+       border-radius:8px; padding:0.8rem 1rem; overflow-x:auto; white-space:pre; display:block;}
+  .legend{display:flex; flex-wrap:wrap; gap:0.5rem 1rem; margin:0.8rem 0;}
+  .legend span{font-size:0.85rem;}
+  .dot{display:inline-block; width:0.7em; height:0.7em; border-radius:50%; margin-right:0.35em; vertical-align:middle;}
+  hr{border:none; border-top:1px solid var(--border); margin:2rem 0;}
+  .small{font-size:0.85rem; color:var(--muted);}
+  .flowbox{background:var(--card); border:1px solid var(--border); border-radius:8px; padding:0.55rem 0.8rem; font-size:0.85rem;}
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem; margin:1rem 0;}
+  .flow .ar{color:var(--faint);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Fable&nbsp;OSI &mdash; Speedgoat Runtime Parameter Reference</h1>
+<p class="lede">A complete, plain-language field guide to every argument and tunable parameter of the
+real-time Online Stability Indicator (<code>fable_osi_runtime.m</code>) and its authority law,
+as deployed on the Speedgoat target.</p>
+<p class="meta">
+Source of truth: <code>control_and_HS/OSI/fable_osi_runtime.m</code> (estimator + authority law, flattened),
+<code>control_and_HS/OSI/prepare_fable_runtime.m</code> (builds the parameter arrays),
+<code>OSI_tests/fable/fable_osi.m</code> and <code>OSI_tests/fable/fable_auth.m</code> (the desktop originals the runtime is bit-for-bit equivalent to).
+All notation on this page is copied verbatim from those files.
+</p>
+
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+  <li><a href="#what">What the OSI is and what it produces</a></li>
+  <li><a href="#io">The runtime interface &mdash; every input and output argument</a></li>
+  <li><a href="#arch">Architecture &mdash; two time scales, five branches</a></li>
+  <li><a href="#math">The core quantities and equations</a></li>
+  <li><a href="#slow">Branch 1 &mdash; Slow ST (the accurate margin level)</a></li>
+  <li><a href="#resid">Branch 2 &mdash; Residual (quiet-band growth watcher)</a></li>
+  <li><a href="#fast">Branch 3 &mdash; Fast path / &ldquo;quick dip&rdquo; guards</a></li>
+  <li><a href="#regime">Branch 4 &mdash; Regime &amp; calibration</a></li>
+  <li><a href="#auth">Branch 5 &mdash; The authority law (<code>fable_auth</code>)</a></li>
+  <li><a href="#table"><strong>Master table &mdash; categorized tunable parameters</strong></a></li>
+</ol>
+</div>
+
+<!-- ==================================================================== -->
+<h2 id="what">1&nbsp;&middot;&nbsp;What the OSI is and what it produces</h2>
+
+<p>The <strong>OSI (Online Stability Indicator)</strong> watches the servo-hydraulic control loop
+in real time and answers one question every <strong>0.125&nbsp;s</strong>:
+<em>how close is the loop to going unstable right now?</em> It answers with a single number, the
+<strong>margin</strong> <code>b</code> &mdash; large means safe, small means near the edge.</p>
+
+<p>It does not just observe. It also <em>acts</em>: an <strong>authority law</strong> turns the margin into a
+gain factor <code>auth</code> (called <code>a</code> internally, range <code>a_min</code>&hellip;<code>a_max</code>)
+that multiplies the command going to the actuator. When the loop is healthy the OSI runs the loop at
+<strong>full authority</strong> (<code>auth = 1</code>); when the margin drops toward the target it
+<strong>sheds</strong> authority to pull the loop back from the edge, then recovers it once the margin returns.</p>
+
+<div class="callout key">
+<strong>The one setpoint that governs everything:</strong> <code>target</code> (default <code>0.55</code>).
+The law regulates the margin <code>b</code> onto this value. A healthy loop sits above it and runs at full authority;
+a degrading loop is held right at it. <code>target</code> is also reused as the detection
+<code>threshold</code>. Change this one number and the whole system's conservatism moves with it.
+</div>
+
+<!-- ==================================================================== -->
+<h2 id="io">2&nbsp;&middot;&nbsp;The runtime interface &mdash; every input and output argument</h2>
+
+<p>The Simulink / Speedgoat block calls one function <strong>once per base-rate sample</strong>
+(the base rate is <code>fs</code>&nbsp;=&nbsp;2048&nbsp;Hz, so every <code>dt</code>&nbsp;=&nbsp;1/2048&nbsp;s):</p>
+
+<span class="sig">[auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, decision] = ...
+    fable_osi_runtime(dd, dm, en, fbls, fblw, fblbins, fblfw, fblfbins, fblag, fbla)</span>
+
+<h3>Inputs</h3>
+
+<div class="def"><span class="name mono">dd</span> <span class="idx">&mdash; scalar, one sample</span>
+<p>The <strong>loop command</strong> (drive) signal, in&nbsp;mm. This is the input <em>u</em> of the plant. In the
+spectral estimates it produces the auto-spectrum <code>Suu</code>.</p></div>
+
+<div class="def"><span class="name mono">dm</span> <span class="idx">&mdash; scalar, one sample</span>
+<p>The <strong>measured displacement</strong> (response) signal, in&nbsp;mm. This is the output <em>y</em> of the
+plant. It produces <code>Syy</code> and, together with <code>dd</code>, the cross-spectrum <code>Suy</code>.</p></div>
+
+<div class="def"><span class="name mono">en</span> <span class="idx">&mdash; scalar enable code</span>
+<p>The mode switch. It combines a base mode with an optional <code>+2</code> pause bit:</p>
+<ul class="tight">
+  <li><code>en = 0</code> &mdash; <strong>shadow</strong>: the estimator runs and logs, but the published authority is forced to <code>a_init</code> (the loop does not feel the OSI). Counters and latches still evolve.</li>
+  <li><code>en = 1</code> &mdash; <strong>active</strong>: the authority the law computes is published to the &ldquo;Apply OSI gain&rdquo; product.</li>
+  <li><code>+2</code> (i.e. <code>2</code> or <code>3</code>) &mdash; <strong>pause</strong>: the raw data rings and transient statistics reset, but the calibrated baseline, regime memory and authority state are kept. Same contract as <code>osi_gain_runtime</code>.</li>
+</ul></div>
+
+<p>The remaining six inputs are <strong>compile-time constant arrays</strong> built once by
+<code>prepare_fable_runtime.m</code>. They carry <em>all</em> configuration &mdash; the block never takes a live
+parameter. They are the subject of most of this document.</p>
+
+<div class="scroll"><table>
+<thead><tr><th class="mono">Argument</th><th>Shape</th><th>What it carries</th></tr></thead>
+<tbody>
+<tr><td class="mono">fbls</td><td>57&times;1</td><td>Scalar OSI config vector (segment sizes, gates, calibration, fast-path knobs). Index map in §5&ndash;§8 and the master table.</td></tr>
+<tr><td class="mono">fblw</td><td><code>segment_n</code>&times;1</td><td>The slow-path <strong>Hann window</strong> (2048 points) applied to each 1&nbsp;s segment before its FFT.</td></tr>
+<tr><td class="mono">fblbins</td><td><code>nf</code>&times;5</td><td>Per-slow-bin table: <code>[freq_hz, fft_bin, keep, res_keep, nominal_curve]</code> &mdash; which FFT bins are analysed, which survive line-rejection, which are in the residual hazard band, and the prior-model margin curve.</td></tr>
+<tr><td class="mono">fblfw</td><td><code>fast_segment_n</code>&times;1</td><td>The fast-path <strong>Hann window</strong> (512 points) for the 0.25&nbsp;s fast segments.</td></tr>
+<tr><td class="mono">fblfbins</td><td><code>nf_fast</code>&times;6</td><td>Per-fast-bin table: <code>[freq_hz, fft_bin, keep, cell_lo, cell_hi, band_id]</code> &mdash; the fast grid plus the map that projects slow bins onto fast bins and the burst sub-band id of each bin.</td></tr>
+<tr><td class="mono">fblag</td><td><code>n_alpha</code>&times;1</td><td>The <strong>authority-prediction gain grid</strong> <code>alpha_grid</code> (25 log-spaced loop-gain multipliers, 0.05&ndash;20). Used to predict the margin at other authority levels.</td></tr>
+<tr><td class="mono">fbla</td><td>31&times;1</td><td>The <strong>authority-law parameter vector</strong> (target, rates, gates, trip response). Index map in §8 and the master table.</td></tr>
+</tbody></table></div>
+
+<h3>Outputs</h3>
+<p>All outputs are <strong>held constant</strong> between the internal 0.125&nbsp;s steps (they refresh once per step, published on tick&nbsp;T0+56).</p>
+
+<div class="scroll"><table>
+<thead><tr><th class="mono">Output</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td class="mono">auth</td><td>The <strong>authority factor</strong> <code>a</code> for the &ldquo;Apply OSI gain&rdquo; product. In shadow mode (<code>en_act=0</code>) it is pinned to <code>a_init</code>.</td></tr>
+<tr><td class="mono">b_osi</td><td>The <strong>selected margin</strong> (the headline number). <code>NaN</code> = no evidence yet / warm-up (never a fabricated value).</td></tr>
+<tr><td class="mono">b_st</td><td>The slow <strong>coherent-branch</strong> margin (<code>NaN</code> when the band is unobservable).</td></tr>
+<tr><td class="mono">b_res</td><td>The <strong>residual-branch</strong> margin (equals the cap <code>1/&radic;2</code> when the branch is not engaged).</td></tr>
+<tr><td class="mono">b_fast</td><td>The <strong>fast short-memory</strong> margin (<code>NaN</code> when unavailable).</td></tr>
+<tr><td class="mono">trip_reason</td><td><code>0</code> none, <code>1</code> quiet-band burst trip, <code>2</code> fast FRF-collapse trip.</td></tr>
+<tr><td class="mono">valid</td><td><code>1</code> when <code>b_osi</code> is real evidence (post warm-up, non-<code>NaN</code>).</td></tr>
+<tr><td class="mono">decision</td><td>Authority-law action this step: <code>0</code> hold, <code>1</code> down, <code>2</code> severe down, <code>3</code> up, <code>4</code> fast trip.</td></tr>
+</tbody></table></div>
+
+<!-- ==================================================================== -->
+<h2 id="arch">3&nbsp;&middot;&nbsp;Architecture &mdash; two time scales, five branches</h2>
+
+<p>The indicator runs on two clocks so it can be both <em>accurate</em> and <em>fast</em>:</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Scale</th><th>Cadence</th><th>Segment</th><th>Memory</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>SLOW</strong> path</td><td><code>hop_s</code> = 0.25&nbsp;s</td><td>1&nbsp;s Hann (<code>segment_s</code>)</td><td>5&nbsp;s ring, 17 segments (<code>window_s</code>)</td><td>Accurate margin <em>level</em> and the recovery authority. It can only be trusted slowly because good spectra need averaging.</td></tr>
+<tr><td><strong>FAST</strong> path (&ldquo;quick dip&rdquo;)</td><td><code>step_s</code> = 0.125&nbsp;s</td><td>0.25&nbsp;s Hann (<code>fast_segment_s</code>)</td><td>~0.6&nbsp;s ring, 3 segments (<code>fast_ring_n</code>)</td><td>Catches a sudden collapse in &le;&nbsp;0.5&nbsp;s. Fast trips may only ever <em>reduce</em> authority; increases always require the slow, accurate margin.</td></tr>
+</tbody></table></div>
+
+<p>Five detection/decision <strong>branches</strong> run on top of those two clocks. They are the organizing
+principle for every parameter in this document:</p>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--slow)"></span><strong>Slow ST</strong> &mdash; the accurate margin level (slow)</span>
+  <span><span class="dot" style="background:var(--resid)"></span><strong>Residual</strong> &mdash; quiet-band growth watcher (slow)</span>
+  <span><span class="dot" style="background:var(--fast)"></span><strong>Fast guards</strong> &mdash; quick-dip ST + burst trips (fast)</span>
+  <span><span class="dot" style="background:var(--regime)"></span><strong>Regime / calibration</strong> &mdash; baseline management (both)</span>
+  <span><span class="dot" style="background:var(--auth)"></span><strong>Authority law</strong> &mdash; margin &rarr; gain decision</span>
+</div>
+
+<h3>The signal chain (one slow hop)</h3>
+<div class="flow">
+  <span class="flowbox"><code>dd, dm</code> rings</span><span class="ar">&rarr;</span>
+  <span class="flowbox">detrend + Hann + FFT</span><span class="ar">&rarr;</span>
+  <span class="flowbox"><code>Suu, Syy, Suy</code> (median over ring)</span><span class="ar">&rarr;</span>
+  <span class="flowbox">FRF <code>M</code>, coherence <code>g2</code>, residual <code>res</code></span><span class="ar">&rarr;</span>
+  <span class="flowbox">excited / quiet gates</span><span class="ar">&rarr;</span>
+  <span class="flowbox">ST + residual margins</span><span class="ar">&rarr;</span>
+  <span class="flowbox">combine &rarr; <code>b</code></span><span class="ar">&rarr;</span>
+  <span class="flowbox">authority law &rarr; <code>auth</code></span>
+</div>
+<p class="small">The runtime <em>time-slices</em> this pipeline across 56 base-rate ticks (one bounded phase per tick) so the
+Speedgoat never does the whole burst in a single 488&nbsp;&micro;s slot &mdash; but the arithmetic is bit-identical to
+doing it all at once. That scheduling is an implementation detail; it does not change any parameter's meaning.</p>
+
+<!-- ==================================================================== -->
+<h2 id="math">4&nbsp;&middot;&nbsp;The core quantities and equations</h2>
+
+<p>These are the quantities the branches are built from. Understanding them makes the parameters obvious.</p>
+
+<h3>Spectra and the frequency response</h3>
+<p>From the windowed FFTs <code>U</code> (of <code>dd</code>) and <code>Y</code> (of <code>dm</code>), aggregated by
+<strong>median</strong> across the ring of segments:</p>
+<div class="eq"><span class="lbl">auto- and cross-spectra</span>
+<span class="math">Suu = median|U|&sup2; &nbsp;&nbsp; Syy = median|Y|&sup2; &nbsp;&nbsp; Suy = median( Y&middot;conj(U) )</span></div>
+
+<p>The empirical <strong>frequency response</strong> (FRF, the transfer from command to response at each bin):</p>
+<div class="eq"><span class="lbl">FRF estimate <code>M</code></span>
+<span class="math">M =</span> <span class="frac"><span class="num">Suy</span><span class="den">Suu</span></span>
+</div>
+
+<h3>Coherence &mdash; how much to trust each bin</h3>
+<p>The raw magnitude-squared <strong>coherence</strong> measures how linearly related <code>dm</code> is to
+<code>dd</code> at a bin (1&nbsp;=&nbsp;perfectly driven, 0&nbsp;=&nbsp;noise). It is <em>bias-corrected</em>
+using the effective number of independent averages <code>k_eff</code>:</p>
+<div class="eq"><span class="lbl">raw and debiased coherence</span>
+<span class="math">g2raw = min&#40;</span> <span class="frac"><span class="num">|Suy|&sup2;</span><span class="den">Suu&middot;Syy</span></span> <span class="math">, 1&#41; &nbsp;&nbsp;&nbsp; g2 = max&#40;0,</span> <span class="frac"><span class="num">k_eff&middot;g2raw &minus; 1</span><span class="den">k_eff &minus; 1</span></span> <span class="math">&#41;</span></div>
+
+<p><code>k_eff</code> and the coherence gate <code>gamma_gate</code> are <em>derived</em> from the window overlap, not tuned directly:</p>
+<div class="eq"><span class="lbl">effective averages &amp; null-calibrated gate</span>
+<span class="math">k_eff =</span> <span class="frac"><span class="num">K</span><span class="den">1 + 2&Sigma;<sub>m</sub>(1&minus;m/K)&rho;<sub>m</sub>&sup2;</span></span>
+<span class="math">&nbsp;&nbsp;&nbsp; gamma_gate = 1 &minus; gamma_alpha<sup>&nbsp;1/(k_eff&minus;1)</sup></span></div>
+<p class="small">Here <code>K</code> = <code>n_segment</code> (17), <code>&rho;<sub>m</sub></code> is the window's overlap correlation at lag <code>m&middot;hop</code>.
+The gate formula comes from the null hypothesis &ldquo;no true relation&rdquo;, under which
+<code>P(&gamma;&sup2; &gt; z) = (1&minus;z)<sup>k&minus;1</sup></code>. So <code>gamma_alpha</code> (§7) is a false-pass <em>probability</em>, not a raw coherence value.</p>
+
+<h3>The margin itself &mdash; the number the whole system defends</h3>
+<p>The project&rsquo;s stability margin is the <strong>chordal / NCF-style distance</strong> of the Nyquist locus from the
+critical point. With the sensitivity <code>S</code> and complementary sensitivity <code>T</code>:</p>
+<div class="eq"><span class="lbl">margin definition</span>
+<span class="math">b(&omega;) =</span> <span class="frac"><span class="num">|1 + L(&omega;)|</span><span class="den">&radic;( 2&#40;1 + |L(&omega;)|&sup2;&#41; )</span></span>
+<span class="math">&nbsp;=&nbsp;</span>
+<span class="frac"><span class="num">1</span><span class="den">&radic;2 &middot; &radic;( |S|&sup2; + |T|&sup2; )</span></span>
+</div>
+<p>In the estimator, <code>L</code> is not known directly; instead the chordal margin is computed from the FRF
+<code>M</code> via the intermediate <code>st</code>, and capped at the mathematical ceiling <code>cap</code>&nbsp;=&nbsp;<code>1/&radic;2</code>&nbsp;&asymp;&nbsp;0.7071:</p>
+<div class="eq"><span class="lbl">chordal margin from the FRF</span>
+<span class="math">st = &radic;( |1 &minus; M|&sup2; + |M|&sup2; ) &nbsp;&nbsp;&nbsp; chord =</span>
+<span class="frac"><span class="num">1</span><span class="den">&radic;2 &middot; st</span></span>
+<span class="math">&nbsp;&nbsp;&nbsp; b_st = min( cap, min<sub>excited bins</sub> chord )</span></div>
+<p class="small">The min is taken over the <em>excited</em> bins only (bins the command actually drives), after a
+frequency-median smoothing of width <code>freq_medfilt_n</code>. The reported <code>b</code> is the temporal
+median of the two slow branches, <code>min(b_st, b_res)</code>, over <code>margin_filter_n</code> hops.</p>
+
+<h3>The residual &mdash; energy the model does not explain</h3>
+<div class="eq"><span class="lbl">unexplained (residual) power</span>
+<span class="math">res = Syy &middot; max&#40; 1 &minus; g2, residual_floor &#41;</span></div>
+<p>A bin with high coherence (<code>g2&rarr;1</code>) has almost no residual; a bin whose energy is <em>not</em> explained
+by the command (an emerging self-excitation) keeps a large residual. The residual branch (§6) watches this in the
+undriven &ldquo;quiet&rdquo; bins.</p>
+
+<h3>Two gates that decide which bins count</h3>
+<div class="eq"><span class="lbl">input-power gate (is this bin actually driven?)</span>
+<span class="math">has_input = Suu &gt; peak(Suu) &middot; 10<sup>&minus;input_power_range_db/10</sup></span></div>
+<div class="eq"><span class="lbl">sidelobe gate (is this bin just window leakage?)</span>
+<span class="math">not_leak = Suu &gt; movmax(Suu, 7) &middot; 10<sup>&minus;sidelobe_db/10</sup></span></div>
+<p>A bin is <strong>excited</strong> (used by the ST branch) if it passes line-rejection (<code>keep</code>), the coherence
+gate (<code>g2raw &gt; gamma_gate</code>), the input-power gate <em>and</em> the sidelobe gate. A bin is
+<strong>quiet</strong> (used by the residual branch) if it is in the residual band, has <em>no</em> input, and has low
+coherence (<code>g2raw &lt; gamma_quiet</code>).</p>
+
+<h3>CUSUM &mdash; the quickest-change detector behind the fast trips</h3>
+<p>The fast guards do not threshold a single reading; they accumulate evidence with a
+one-sided <strong>CUSUM</strong> (cumulative sum) so that sustained moderate shifts trip within a few steps while
+isolated spikes decay:</p>
+<div class="eq"><span class="lbl">CUSUM recursion &amp; trip test</span>
+<span class="math">S<sub>cus</sub> &larr; max&#40; 0, S<sub>cus</sub> + z &minus; &nu; &#41; &nbsp;&nbsp;&nbsp; trip when S<sub>cus</sub> &gt; h</span></div>
+<p>where <code>z</code> is a calibrated log z-score, <code>&nu;</code> (<code>nu</code>) is the <em>drift</em> the accumulator ignores,
+and <code>h</code> is the <em>trip level</em>. Each branch has its own <code>nu</code>/<code>h</code> pair (§7).</p>
+
+<h3>The authority prediction &mdash; &ldquo;what would the margin be at a different gain?&rdquo;</h3>
+<p>To size sheds and cap recovery, the OSI predicts the margin at other loop-gain multipliers <code>alpha</code>
+(the <code>alpha_grid</code>). Freezing the plant FRF and scaling the open loop by <code>alpha</code>:</p>
+<div class="eq"><span class="lbl">predicted margin vs loop-gain multiplier</span>
+<span class="math">L<sub>b</sub> =</span> <span class="frac"><span class="num">M</span><span class="den">1 &minus; M</span></span>
+<span class="math">&nbsp;&nbsp; L<sub>&alpha;</sub> = &alpha; &middot; L<sub>b</sub> &nbsp;&nbsp; c(&alpha;) =</span>
+<span class="frac"><span class="num">|1 + L<sub>&alpha;</sub>|</span><span class="den">&radic;( 2&#40;1 + |L<sub>&alpha;</sub>|&sup2;&#41; )</span></span>
+<span class="math">&nbsp;&nbsp; pred_margin(&alpha;) = min<sub>excited</sub> c(&alpha;)</span></div>
+<p class="small">The loop running at multiplier <code>alpha</code> has authority <code>alpha&middot;a</code>. The authority law walks the
+<em>contiguous safe interval</em> of this curve around <code>alpha = 1</code> to floor a shed and cap a recovery.</p>
+
+<!-- ==================================================================== -->
+<h2 id="slow">5&nbsp;&middot;&nbsp;Branch&nbsp;1 &mdash; Slow ST <span class="tag tag-slow">slow</span></h2>
+<p>This is the branch that produces the <strong>accurate margin level</strong> <code>b_st</code> and the recovery
+authority. It runs every <code>hop_s</code> = 0.25&nbsp;s on the 5&nbsp;s ring. Its parameters trade smoothness/lag against
+reactivity.</p>
+
+<div class="def"><span class="name mono">segment_s</span> <span class="idx">fbls&mdash;(via segment_n)</span> <span class="default">1.0&nbsp;s</span>
+<p>Length of one analysis segment (the FFT window). Sets frequency resolution: 1&nbsp;s &rarr; 1&nbsp;Hz bins.
+Derived count <code>segment_n = round(segment_s&middot;fs)</code> = 2048. <span class="pill">do not go below 1&nbsp;s</span> shorter kills the 1&nbsp;Hz resolution the margins need.</p></div>
+
+<div class="def"><span class="name mono">window_s</span> <span class="idx">fbls (via n_segment)</span> <span class="default">5.0&nbsp;s</span>
+<p>Total span averaged. Longer&nbsp;<span class="arrow-up">&uarr;</span> = smoother, laggier margin; shorter = jumpier, faster to move.
+Derived: <code>n_segment = round((window_s&minus;segment_s)/hop_s)+1</code> = 17 (the ring depth).</p></div>
+
+<div class="def"><span class="name mono">hop_s</span> <span class="idx">fbls[52]</span> <span class="default">0.25&nbsp;s</span>
+<p>The slow refresh cadence &mdash; one new segment FFT per hop. Must be an integer multiple of <code>step_s</code>
+(<code>steps_per_hop = 2</code>). It is the time unit for every &ldquo;per hop&rdquo; counter below.</p></div>
+
+<div class="def"><span class="name mono">margin_filter_n</span> <span class="idx">fbls[14]</span> <span class="default">3</span>
+<p>Temporal median over this many <em>distinct</em> slow updates before <code>b</code> is reported. Bigger&nbsp;<span class="arrow-up">&uarr;</span> =
+smoother, more constant selected OSI, but adds <code>(n&minus;1)&middot;hop_s/2</code> of lag.</p></div>
+
+<div class="def"><span class="name mono">freq_medfilt_n</span> <span class="idx">fbls[13]</span> <span class="default">3</span>
+<p>Median smoothing across neighboring frequency bins before the min is taken. Bigger&nbsp;<span class="arrow-up">&uarr;</span> = fewer
+single-bin dips counted as the margin. <span class="pill">must be odd</span> the runtime's hand-coded median filters
+assume odd, centered windows.</p></div>
+
+<div class="def"><span class="name mono">slow_filt_alpha</span> <span class="idx">fbls[15]</span> <span class="default">0.2</span>
+<p>EMA weight of the slow-margin tracker <code>b_slow_filt</code> that the fast path uses as its direction reference.
+Lower&nbsp;<span class="arrow-dn">&darr;</span> = steadier reference, slower to follow a real level change.
+<code>b_slow_filt &larr; (1&minus;&alpha;)&middot;b_slow_filt + &alpha;&middot;b_slow</code>.</p></div>
+
+<div class="def"><span class="name mono">gamma_alpha</span> <span class="idx">fbls (folds into gamma_gate)</span> <span class="default">0.01</span>
+<p>False-pass <em>probability</em> of the coherence gate (see §4). Smaller&nbsp;<span class="arrow-dn">&darr;</span> = stricter gate,
+fewer bins accepted, less noise in the margin but more &ldquo;no evidence&rdquo;. Enters the runtime already baked into
+<code>gamma_gate</code> (<code>fbls[8]</code>).</p></div>
+
+<div class="def"><span class="name mono">gamma_quiet</span> <span class="idx">fbls[9]</span> <span class="default">0.15</span>
+<p>Coherence ceiling for a bin to count as &ldquo;quiet&rdquo; (undriven). Bins above this are related to the command and
+are excluded from the residual branch.</p></div>
+
+<div class="def"><span class="name mono">input_power_range_db</span> <span class="idx">fbls[10]</span> <span class="default">35&nbsp;dB</span>
+<p>Bins more than this far below the in-band input peak are treated as <em>unexcited</em>. Smaller (e.g. 30)&nbsp;<span class="arrow-dn">&darr;</span> =
+stricter, margin computed on fewer, stronger bins. Feeds the <code>has_input</code> gate (§4).</p></div>
+
+<div class="def"><span class="name mono">sidelobe_db</span> <span class="idx">fbls[11]</span> <span class="default">25&nbsp;dB</span>
+<p>Bins more than this far below a &plusmn;3&nbsp;Hz neighbor are window <em>leakage</em>, not real excitation, and are
+excluded. The Hann first sidelobe is &minus;31&nbsp;dB and leaks <em>coherently</em>, so without this gate a low-band margin can
+read 0.45 instead of the true 0.7.</p></div>
+
+<div class="def"><span class="name mono">min_bins</span> <span class="idx">fbls[12]</span> <span class="default">5</span>
+<p>Minimum number of excited bins for the slow ST margin to be considered observable. Below it, <code>b_st = NaN</code>
+(reported as no evidence rather than a guess).</p></div>
+
+<div class="def"><span class="name mono">cap</span> <span class="idx">fbls[16]</span> <span class="default">1/&radic;2 &asymp; 0.7071</span>
+<p>The mathematical ceiling of the margin. Every branch caps its output here; it is a constant, not really a tuning knob.</p></div>
+
+<div class="def"><span class="name mono">threshold</span> <span class="idx">fbls[17]</span> <span class="default">= target (0.55)</span>
+<p>Detection / fast-trip margin level. <code>fable_osi.m</code>'s own default is 0.30, but
+<code>prepare_fable_runtime</code> <strong>overrides it to <code>target_outer_ncf</code></strong> (0.55) so detection and
+regulation share one level. Used by the fast-ST trip (<code>b_fast &lt; threshold + fast_babs_offset</code>).</p></div>
+
+<div class="def"><span class="name mono">warm_updates</span> <span class="idx">fbls[35]</span> <span class="default">4</span>
+<p>Slow updates that must pass before any margin is reported (fills the ring first). During warm-up <code>b_osi = NaN</code>.</p></div>
+
+<!-- ==================================================================== -->
+<h2 id="resid">6&nbsp;&middot;&nbsp;Branch&nbsp;2 &mdash; Residual <span class="tag tag-resid">slow</span></h2>
+<p>The ST branch only sees frequencies the command drives. A loop can go unstable at a frequency the command is
+<em>not</em> exciting &mdash; a growing self-oscillation. The residual branch watches the <strong>undriven (quiet) bins</strong>
+inside a hazard band for energy growth that the model cannot explain (§4, <code>res</code>). It engages with hysteresis
+and persistence so it does not false-alarm on harmonic distortion.</p>
+
+<p>The detection statistic is a per-bin log z-score of the self-normalized residual ratio against its calibrated
+baseline:</p>
+<div class="eq"><span class="lbl">residual z-score</span>
+<span class="math">z =</span> <span class="frac"><span class="num">log( res/baseline / q_med ) &minus; &mu;0</span><span class="den">&sigma;0</span></span>
+<span class="math">&nbsp;&nbsp; growth = exp( max(z,0)&middot;&sigma;0 ) &nbsp;&nbsp; b_res =</span>
+<span class="frac"><span class="num">anchor</span><span class="den">&radic;( max(growth,1) )</span></span>
+</div>
+
+<div class="def"><span class="name mono">residual_band_hz</span> <span class="idx">fblbins (res_keep)</span> <span class="default">[28 100] Hz</span>
+<p>The hazard band the branch guards. Keep it where the loop can actually go unstable; widening it down into
+harmonic-distortion territory (2&ndash;28&nbsp;Hz distortion of a strong 2&ndash;7&nbsp;Hz command) causes false engagement.
+Enters as the <code>res_keep</code> column of <code>fblbins</code>.</p></div>
+
+<div class="def"><span class="name mono">z_on</span> <span class="idx">fbls[25]</span> <span class="default">4.0</span>
+<p>The z threshold to <em>engage</em> the branch. Raise&nbsp;<span class="arrow-up">&uarr;</span> to make engagement rarer (fewer false
+alarms, later detection).</p></div>
+
+<div class="def"><span class="name mono">z_off</span> <span class="idx">fbls[26]</span> <span class="default">2.0</span>
+<p>The z threshold to <em>disengage</em>. The gap <code>z_on &minus; z_off</code> is the hysteresis band that stops the
+branch chattering on/off.</p></div>
+
+<div class="def"><span class="name mono">res_on_n</span> <span class="idx">fbls[27]</span> <span class="default">4</span>
+<p>Consecutive slow hops above <code>z_on</code> (at the same frequency) required to engage. More&nbsp;<span class="arrow-up">&uarr;</span> =
+needs more sustained evidence, smoother but slower.</p></div>
+
+<div class="def"><span class="name mono">res_hold_s</span> <span class="idx">fbls[28] (res_hold_hops)</span> <span class="default">5&nbsp;s</span>
+<p>How long an <em>unconfirmed</em> engagement may persist inside the hysteresis zone before it expires. Prevents a
+stale engagement from depressing the margin forever. Stored as <code>res_hold_hops = round(res_hold_s/hop_s)</code> = 20.</p></div>
+
+<div class="def"><span class="name mono">res_min_growth_db</span> <span class="idx">fbls[29]</span> <span class="default">3&nbsp;dB</span>
+<p>Minimum <em>absolute</em> growth (on top of the z threshold) needed to engage. Raise&nbsp;<span class="arrow-up">&uarr;</span> to ignore
+small quiet-band changes entirely. This is what makes the defendable quiet-band level absolute (~0.40), not target-relative.</p></div>
+
+<div class="def"><span class="name mono">res_match_hz</span> <span class="idx">fbls[30]</span> <span class="default">3&nbsp;Hz</span>
+<p>Same-frequency persistence tolerance: successive exceedances must be within this many Hz to count as the same event.</p></div>
+
+<div class="def"><span class="name mono">sigma0_floor</span> <span class="idx">fbls[31]</span> <span class="default">0.15</span>
+<p>Floor of the calibrated ln-ratio spread <code>&sigma;0</code>. Raise&nbsp;<span class="arrow-up">&uarr;</span> to desensitize the z-score
+globally (a large <code>&sigma;0</code> shrinks every z).</p></div>
+
+<div class="def"><span class="name mono">residual_floor</span> <span class="idx">fbls[18]</span> <span class="default">0.03</span>
+<p>Lower clamp on <code>1 &minus; g2</code> when forming <code>res</code>, so a perfectly-coherent bin still carries a tiny,
+well-defined residual instead of exactly zero.</p></div>
+
+<!-- ==================================================================== -->
+<h2 id="fast">7&nbsp;&middot;&nbsp;Branch&nbsp;3 &mdash; Fast path / &ldquo;quick dip&rdquo; guards <span class="tag tag-fast">fast</span></h2>
+<p>The fast path runs <strong>every step</strong> (0.125&nbsp;s) on a short ~0.6&nbsp;s ring of 0.25&nbsp;s segments. It exists to
+catch a <strong>sudden dip</strong> in the margin within 0.25&ndash;0.5&nbsp;s &mdash; far faster than the 5&nbsp;s slow ring could react.
+It contains two CUSUM detectors (§4) that can only ever <em>reduce</em> authority:</p>
+<ul class="tight">
+  <li><strong>Fast ST guard</strong> &mdash; a CUSUM on the pooled FRF-<em>change</em> statistic (the plant response suddenly differs from the slow reference). Produces <code>trip_reason = 2</code>.</li>
+  <li><strong>Fast burst guard</strong> &mdash; a CUSUM on per-sub-band quiet-band power (divergence-like energy growth). Produces <code>trip_reason = 1</code>.</li>
+</ul>
+
+<h4>Fast grid &amp; memory</h4>
+<div class="def"><span class="name mono">fast_segment_s</span> <span class="idx">fbls[36] (fast_segment_n)</span> <span class="default">0.25&nbsp;s</span>
+<p>Fast segment length &rarr; 4&nbsp;Hz bins (<code>fast_segment_n = 512</code>). Short so it reacts quickly; too short to resolve fine structure, which is why it only <em>trips</em>, never sets the level.</p></div>
+<div class="def"><span class="name mono">fast_ring_n</span> <span class="idx">fbls[37]</span> <span class="default">3</span>
+<p>Number of fast segments aggregated (~0.5&nbsp;s memory). The fast margin uses the median over this ring.</p></div>
+<div class="def"><span class="name mono">fast_min_bins</span> <span class="idx">fbls[38]</span> <span class="default">3</span>
+<p>Minimum excited fast bins for a fast statistic to be computed at all.</p></div>
+
+<h4>Fast ST guard (FRF-change CUSUM)</h4>
+<div class="def"><span class="name mono">fast_st_nu</span> <span class="idx">fbls[39]</span> <span class="default">1.25</span>
+<p>CUSUM drift <code>&nu;</code> for the FRF-change z. Higher&nbsp;<span class="arrow-up">&uarr;</span> = calmer (more evidence ignored per step).</p></div>
+<div class="def"><span class="name mono">fast_st_h</span> <span class="idx">fbls[40]</span> <span class="default">4.5</span>
+<p>CUSUM trip level <code>h</code>. The main speed-vs-false-alarm knob: each unit of <code>h</code> adds roughly one extra
+0.125&nbsp;s step of sustained evidence before a trip. Lower&nbsp;<span class="arrow-dn">&darr;</span> = faster, riskier trips.</p></div>
+<div class="def"><span class="name mono">fast_babs_offset</span> <span class="idx">fbls[43]</span> <span class="default">0.10</span>
+<p>A fast-ST trip <em>also</em> requires <code>b_fast &lt; threshold + fast_babs_offset</code>. Raise&nbsp;<span class="arrow-up">&uarr;</span> to allow
+trips further above target (more protective); toward 0 = trip only once the fast margin is already at target.</p></div>
+<div class="def"><span class="name mono">fast_amove_frac</span> <span class="idx">fbls[56] (with amove_hold[57])</span> <span class="default">0.02</span>
+<p>The FRF-change statistic watches the <em>total</em> loop, which includes the authority factor. If the committed
+authority moves more than this (relative) the statistic is <strong>disarmed for one full analysis window</strong>
+(<code>amove_hold = round(window_s/step_s)</code> = 40 steps) so the law's own moves never read as a plant change. In
+replays where authority does not act on the plant, <code>a_cmd = NaN</code> leaves the detector always armed.</p></div>
+<div class="def"><span class="name mono">fast_d_sig_floor</span> <span class="idx">fbls[48]</span> <span class="default">0.30</span>
+<p>Floor of the calibrated ln FRF-change spread <code>&sigma;_d</code>. Raise to desensitize the fast-ST z-score. With too few
+calibration samples <code>&sigma;_d</code> is set to 1e6 &mdash; the guard <em>disarms</em> itself rather than false-trip.</p></div>
+
+<h4>Fast burst guard (quiet-band divergence CUSUM)</h4>
+<div class="def"><span class="name mono">fast_burst_nu</span> <span class="idx">fbls[41]</span> <span class="default">1.0</span>
+<p>CUSUM drift for the burst z. Same trade as <code>fast_st_nu</code>.</p></div>
+<div class="def"><span class="name mono">fast_burst_h</span> <span class="idx">fbls[42]</span> <span class="default">6.0</span>
+<p>Burst CUSUM trip level. Can sit high because a diverging loop produces a huge z: a 1&ndash;2 segment ring-down after a
+command step gains ~4, but sustained growth still crosses in 3&ndash;6 steps.</p></div>
+<div class="def"><span class="name mono">fast_burst_bands</span> <span class="idx">fblfbins (band_id) &rarr; n_burst_bands[49]</span> <span class="default">[28 44; 44 60; 62 78; 78 94; 94 100]</span>
+<p>The guarded quiet sub-bands (rows of <code>[lo hi]</code>&nbsp;Hz), 5 bands by default. Each is a separate CUSUM. Fewer
+rows = cheaper and less sensitive. Enters as per-bin <code>band_id</code> in <code>fblfbins</code>.</p></div>
+<div class="def"><span class="name mono">fast_sig_floor</span> <span class="idx">fbls[47]</span> <span class="default">0.20</span>
+<p>Floor of the calibrated ln burst-power spread. Raise to desensitize all burst bands. Bands with &lt;8 calibration
+samples get <code>&sigma; = 1e6</code> and are disarmed.</p></div>
+
+<h4>Fast input-power sanity gate (shared)</h4>
+<div class="def"><span class="name mono">fast_pin_lo</span> / <span class="name mono">fast_pin_hi</span> <span class="idx">fbls[44] / fbls[45]</span> <span class="default">0.25 / 4.0</span>
+<p>The newest fast segment's input power must stay within <code>[lo, hi]&times;</code> its ~3&nbsp;s EMA for the FRF-change
+statistic to be trusted. A fading or bursting <em>command</em> mimics a plant change; this window rejects that artifact.</p></div>
+<div class="def"><span class="name mono">fast_pin_alpha</span> <span class="idx">fbls[46]</span> <span class="default">0.04</span>
+<p>EMA update rate (per 0.125&nbsp;s step) of that input-power reference <code>p_in_ema</code>.</p></div>
+
+<!-- ==================================================================== -->
+<h2 id="regime">8&nbsp;&middot;&nbsp;Branch&nbsp;4 &mdash; Regime &amp; calibration <span class="tag tag-regime">both</span></h2>
+<p>Every statistic above is measured <em>against a calibrated healthy baseline</em>. This branch builds that baseline at
+startup and <strong>rebuilds it</strong> whenever the excitation regime changes (a new test phase drives a different set of
+frequencies) &mdash; because baselines do not transfer across excitation regimes, and the excited-set change is the one
+exogenous signal that an instability <em>cannot</em> fake. These rarely need touching.</p>
+
+<div class="def"><span class="name mono">regime_hops</span> <span class="idx">fbls[34]</span> <span class="default">8</span>
+<p>Sustained hops of excited-set change before a rebaseline is triggered. Larger&nbsp;<span class="arrow-up">&uarr;</span> = more tolerant of
+slowly wandering excitation, slower to re-adapt. A change is declared when <code>ndiff &gt; max(6, 0.5&middot;nref)</code> bins differ.</p></div>
+<div class="def"><span class="name mono">cal_skip_s</span> <span class="idx">fbls[19]</span> <span class="default">10&nbsp;s</span>
+<p>Startup blackout &mdash; ignore this much data before collecting calibration windows (lets transients settle).</p></div>
+<div class="def"><span class="name mono">cal_windows</span> <span class="idx">fbls[20]</span> <span class="default">80</span>
+<p>Number of accepted calibration windows (slow hops) that define a full baseline.</p></div>
+<div class="def"><span class="name mono">cal_min_windows</span> <span class="idx">fbls[24]</span> <span class="default">24</span>
+<p>Minimum acceptable calibration length if the timeout is hit before <code>cal_windows</code> accumulate.</p></div>
+<div class="def"><span class="name mono">cal_timeout_hops</span> <span class="idx">fbls[23]</span> <span class="default">600</span>
+<p>Give up waiting for a full calibration after this many hops and finalize with what is accepted (&ge; <code>cal_min_windows</code>).</p></div>
+<div class="def"><span class="name mono">cal_reject_factor</span> <span class="idx">fbls[21]</span> <span class="default">4</span>
+<p>Reject a candidate window if its broadband residual differs from the running reference by more than this factor
+(guards against calibrating on a transient).</p></div>
+<div class="def"><span class="name mono">cal_restart_rejects</span> <span class="idx">fbls[22]</span> <span class="default">12</span>
+<p>This many consecutive rejects means the reference itself was bad &mdash; discard and restart calibration collection.</p></div>
+<div class="def"><span class="name mono">bl_adapt_tau_s</span> <span class="idx">fbls (folds into bl_alpha[32])</span> <span class="default">100&nbsp;s</span>
+<p>Time constant of the gated, ultra-slow baseline drift tracking (only while healthy). Enters the runtime as
+<code>bl_alpha = hop_s/bl_adapt_tau_s</code> = 0.0025.</p></div>
+<div class="def"><span class="name mono">bl_adapt_max_db</span> <span class="idx">fbls[33]</span> <span class="default">3&nbsp;dB</span>
+<p>Hard cap on how far baseline drift may move from the original calibration. <span class="pill">never raise this far</span> a large
+cap lets real, slow degradation be absorbed into the baseline and go undetected.</p></div>
+
+<p class="small">Also in <code>fbls</code> and derived, not user-tuned: <code>k_eff</code>&nbsp;[7]&nbsp;(&asymp;9.1), <code>gamma_gate</code>&nbsp;[8],
+<code>n_alpha</code>&nbsp;[50]&nbsp;(=25), <code>pred_denom_floor</code>&nbsp;[51]&nbsp;(1e-3, numerical guard on <code>1&minus;M</code>),
+<code>nf</code>&nbsp;[53], <code>nf_fast</code>&nbsp;[54], <code>pred_enable</code>&nbsp;[55] (see §9), and the sizes
+<code>dt</code>&nbsp;[1], <code>fs</code>&nbsp;[2], <code>step_n</code>&nbsp;[3], <code>steps_per_hop</code>&nbsp;[4], <code>segment_n</code>&nbsp;[5], <code>n_segment</code>&nbsp;[6].</p>
+
+<!-- ==================================================================== -->
+<h2 id="auth">9&nbsp;&middot;&nbsp;Branch&nbsp;5 &mdash; The authority law <code>fable_auth</code> <span class="tag tag-auth">decision</span></h2>
+<p>This is the actuator. Every 0.125&nbsp;s it turns the margin <code>b</code> (and the fast trips) into the published
+authority <code>auth</code>. Its parameters live in <code>fbla</code> (index in brackets). The contract:</p>
+<ul class="tight">
+  <li><code>b &ge; target</code> &rarr; authority recovers toward <code>a_max</code> and stays there (healthy loop = full authority).</li>
+  <li><code>b &lt; target</code> &rarr; authority <strong>sheds</strong> multiplicatively <code>a &larr; a&middot;(b/target)<sup>down_power</sup></code>, rate-limited.</li>
+  <li><code>b &lt;&lt; target</code> (severe) &rarr; immediate shed, no confirmation, no commit gate.</li>
+  <li>fast-guard trip &rarr; act within one step.</li>
+</ul>
+
+<h4>Regulation setpoint &amp; smoothness</h4>
+<div class="def"><span class="name mono">target</span> <span class="idx">fbla[1]</span> <span class="default">0.55</span>
+<p>The OSI level to defend/track. Raising&nbsp;<span class="arrow-up">&uarr;</span> makes the system more conservative (sheds earlier).
+<span class="pill">must stay below the healthy-loop margin at full authority</span> or the law permanently detunes chasing an
+unreachable margin. Shared with the detection <code>threshold</code>.</p></div>
+<div class="def"><span class="name mono">b_filt_tau_s</span> <span class="idx">fbla[6] (as filt_alpha)</span> <span class="default">0.4&nbsp;s</span>
+<p>EMA time constant applied to <code>b</code> before it sizes sheds and gates recovery. Larger&nbsp;<span class="arrow-up">&uarr;</span> = smoother,
+more constant authority; 0 disables it. Severe-drop detection always <em>also</em> watches raw <code>b</code>, so smoothing never
+delays catching a genuine collapse by more than <code>down_confirm_n</code> updates. Stored as
+<code>filt_alpha = 1 &minus; exp(&minus;dt_update/b_filt_tau_s)</code>.</p></div>
+
+<h4>Drop / shed behavior</h4>
+<div class="def"><span class="name mono">down_deadband</span> <span class="idx">fbla[7]</span> <span class="default">0.01</span>
+<p>Margin must fall below <code>target &minus; down_deadband</code> to count as a deficit. Widen to ignore tiny grazes (less flicker).</p></div>
+<div class="def"><span class="name mono">down_confirm_n</span> <span class="idx">fbla[8]</span> <span class="default">2</span>
+<p>Consecutive low updates before a (non-severe) shed starts. More&nbsp;<span class="arrow-up">&uarr;</span> = fewer false sheds on noise,
+but adds <code>n&middot;dt_update</code> of reaction delay.</p></div>
+<div class="def"><span class="name mono">down_power</span> <span class="idx">fbla[9]</span> <span class="default">1.5</span>
+<p>Exponent of the multiplicative shed <code>a&middot;(b/target)<sup>down_power</sup></code>. Higher&nbsp;<span class="arrow-up">&uarr;</span> = deeper
+correction per update; 1 = proportional.</p></div>
+<div class="def"><span class="name mono">down_rate</span> <span class="idx">fbla[10]</span> <span class="default">2.0 /s</span>
+<p>Max shed speed (authority units/s) for a confirmed deficit. The main &ldquo;catch drops fast&rdquo; knob.</p></div>
+<div class="def"><span class="name mono">down_settle_s</span> <span class="idx">fbla[28]</span> <span class="default">1.25&nbsp;s</span>
+<p><strong>The key anti-compounding knob.</strong> The margin estimate lags the loop by its analysis-window flush, so each
+shed is <em>sized once</em> and then held for <code>down_settle_s</code> before being re-sized. Without this, re-deriving a
+multiplicative shed from the same stale reading every step compounds one dip into a slam to the floor. Higher (toward the
+OSI window length) = gentler, staircase-like sheds.</p></div>
+<div class="def"><span class="name mono">re_shed_delta</span> <span class="idx">fbla[29]</span> <span class="default">0.02</span>
+<p>A margin reading this much <em>below</em> the one that sized the active shed re-sizes it immediately (fresh evidence of
+continued decline bypasses the settle hold). Lower&nbsp;<span class="arrow-dn">&darr;</span> = more reactive to genuine decline.</p></div>
+<div class="def"><span class="name mono">sev_frac</span> <span class="idx">fbla[11]</span> <span class="default">0.60</span>
+<p>Raw <code>b &lt; sev_frac&middot;target</code> is treated as <strong>severe</strong>: immediate shed, bypassing confirmation, the
+commit gate, and the ordinary rate limit.</p></div>
+<div class="def"><span class="name mono">sev_down_rate</span> <span class="idx">fbla[12]</span> <span class="default">8.0 /s</span>
+<p>Shed speed for severe deficits (units/s). The emergency path &mdash; keep high.</p></div>
+
+<h4>Recovery behavior</h4>
+<div class="def"><span class="name mono">up_deadband</span> <span class="idx">fbla[13]</span> <span class="default">0.02</span>
+<p>Margin must exceed <code>target + up_deadband</code> before recovery is considered (hysteresis). Widen to kill
+target-hugging oscillation; narrow for faster reclaim.</p></div>
+<div class="def"><span class="name mono">up_hold_s</span> <span class="idx">fbla[14]</span> <span class="default">1.5&nbsp;s</span>
+<p>The margin must hold above the recovery threshold this long before authority moves up. Longer&nbsp;<span class="arrow-up">&uarr;</span> =
+more constant authority, later recovery.</p></div>
+<div class="def"><span class="name mono">up_rate</span> <span class="idx">fbla[15]</span> <span class="default">0.08 /s</span>
+<p>Base recovery speed (units/s) when the margin is <em>model-verified</em> (coherent input present, <code>valid_up</code> true).</p></div>
+<div class="def"><span class="name mono">up_rate_blind</span> <span class="idx">fbla[16]</span> <span class="default">0.02 /s</span>
+<p>Recovery speed with <em>no</em> coherent input (&ldquo;probe and verify&rdquo;): the loop feels its way up while the burst guard
+and residual branch stand watch. Kept several times slower than <code>up_rate</code>.</p></div>
+<div class="def"><span class="name mono">up_prop</span> <span class="idx">fbla[17]</span> <span class="default">3.0</span>
+<p>Surplus-proportional recovery boost: effective rate = <code>up_rate&middot;(1 + up_prop&middot;(b_filt &minus; target &minus; up_deadband)/target)</code>.
+0 = constant rate; higher = sprint back when the margin is comfortably high, creep when barely above target.</p></div>
+
+<h4>Anti-flicker commit gate</h4>
+<div class="def"><span class="name mono">min_step</span> <span class="idx">fbla[18]</span> <span class="default">0.02</span>
+<p>The <em>committed</em> authority (what the loop sees) only moves when the internally-regulated value has drifted at
+least this far. Bigger&nbsp;<span class="arrow-up">&uarr;</span> = steppier, more constant authority (fewer, larger moves); 0 = continuous.
+Severe sheds and fast trips bypass it. The internal value keeps integrating, so the gate never deadlocks recovery &mdash; it
+just quantizes it into <code>min_step</code>-sized steps.</p></div>
+
+<h4>Model-predicted safe authority</h4>
+<div class="def"><span class="name mono">use_pred</span> <span class="idx">fbla[19]</span> <span class="default">1</span>
+<p><code>1</code> = use the prediction curve (§4) to floor sheds and cap recovery; <code>0</code> = pure power-law regulation
+(cheaper, more shed overshoot). Tie to <code>pred_enable</code> (below).</p></div>
+<div class="def"><span class="name mono">pred_guard</span> <span class="idx">fbla[20]</span> <span class="default">0.03</span>
+<p>Predicted margin must clear <code>target + pred_guard</code> to count as safe. This is also the recovery standoff:
+authority may climb up to (not past) the interpolated boundary where the predicted margin crosses that level. Widen if the
+prediction proves optimistic on your rig.</p></div>
+<div class="def"><span class="name mono">pred_floor_frac</span> <span class="idx">fbla[21]</span> <span class="default">0.90</span>
+<p>Shed floor as a fraction of the predicted-safe authority (0.90 = a confirmed shed stops 10% below the predicted-safe
+point instead of slamming to the power-law floor). DOWN path only.</p></div>
+<div class="def"><span class="name mono">pred_enable</span> <span class="idx">fbls[55] (OSI side)</span> <span class="default">1</span>
+<p>OSI-side switch that actually computes the prediction grid. Set to 0 (via <code>hs.fable_pred_enable</code>) to drop that
+pipeline phase for CPU relief; the law then regulates by power law alone. Should be turned off <em>together with</em>
+<code>use_pred</code>.</p></div>
+
+<h4>Fast-trip response</h4>
+<div class="def"><span class="name mono">trip_drop</span> <span class="idx">fbla[22]</span> <span class="default">0.60</span>
+<p>Multiplicative drop on a trip (0.60 = shed 40% instantly). Burst trips (<code>trip_reason = 1</code>) compound this every
+step while the divergence evidence persists.</p></div>
+<div class="def"><span class="name mono">trip_power</span> <span class="idx">fbla[23]</span> <span class="default">1.5</span>
+<p>A fast-ST trip (<code>trip_reason = 2</code>) is sized <code>a&middot;(b_fast/target)<sup>trip_power</sup></code>, never milder than
+<code>trip_drop</code> allows. Higher&nbsp;<span class="arrow-up">&uarr;</span> = deeper drop for a given fast-margin reading.</p></div>
+<div class="def"><span class="name mono">trip_cool_s</span> <span class="idx">fbla[24]</span> <span class="default">5.0&nbsp;s</span>
+<p>Cooldown after a trip during which recovery is blocked and the trip re-arms.</p></div>
+<div class="def"><span class="name mono">trip_undo_s</span> <span class="idx">fbla[25]</span> <span class="default">2.5&nbsp;s</span>
+<p>A trip followed within this window by a confirmed excitation-regime recalibration is <em>undone</em> &mdash; the &ldquo;trip&rdquo;
+was the test phase changing, not the plant.</p></div>
+<div class="def"><span class="name mono">self_move_gate_s</span> / <span class="name mono">self_move_frac</span> <span class="idx">fbla[30] / fbla[31]</span> <span class="default">1.5&nbsp;s / 0.02</span>
+<p>A fast-ST trip is honored only when the committed authority has been steady &mdash; moved less than
+<code>self_move_frac</code> (relative) per update &mdash; for the last <code>self_move_gate_s</code>. The estimator watches the
+total loop <em>including</em> the authority, so the law's own moves would otherwise self-trip. Real damage arrives while
+<code>a</code> is static, so the gate costs nothing there; burst trips are never gated.</p></div>
+
+<h4>Post-event caution (latched ceiling)</h4>
+<div class="def"><span class="name mono">latch_relax</span> <span class="idx">fbla[26]</span> <span class="default">1.15</span>
+<p>After a trip or a residual-driven (invisible-band) shed, recovery is capped at <code>latch_relax&times;</code> the post-shed
+authority: hard evidence of a plant change is not re-probed immediately.</p></div>
+<div class="def"><span class="name mono">latch_decay_tau_s</span> <span class="idx">fbla[27]</span> <span class="default">1&nbsp;s</span>
+<p>How slowly that latched ceiling is forgotten (seconds). Raise&nbsp;<span class="arrow-up">&uarr;</span> for more caution after events; lower
+to let a healed plant recover sooner. (Was 200&nbsp;s in an earlier draft; the current tracking law uses 1&nbsp;s.)</p></div>
+
+<h4>Bounds &amp; cadence</h4>
+<div class="def"><span class="name mono">a_min</span> <span class="idx">fbla[2]</span> <span class="default">0.08</span>
+<p>Authority floor. The most detuned the loop can get.</p></div>
+<div class="def"><span class="name mono">a_max</span> <span class="idx">fbla[3]</span> <span class="default">1.00</span>
+<p>Authority ceiling &mdash; also the value held whenever <code>b &ge; target</code> and nothing is latched.</p></div>
+<div class="def"><span class="name mono">a_init</span> <span class="idx">fbla[4]</span> <span class="default">1.00</span>
+<p>Startup authority and the shadow-mode pin. Recommended 1.0: the law defends the margin, so starting detuned is not needed.</p></div>
+<div class="def"><span class="name mono">dt_update</span> <span class="idx">fbla[5]</span> <span class="default">= step_s (0.125&nbsp;s)</span>
+<p>Seconds between law calls (the OSI step cadence). Every &ldquo;/s&rdquo; rate and &ldquo;_s&rdquo; time above is converted to
+update counts with this.</p></div>
+
+<!-- ==================================================================== -->
+<h2 id="table">10&nbsp;&middot;&nbsp;Master table &mdash; categorized tunable parameters</h2>
+<p>The knobs that <strong>control OSI behavior</strong>, grouped by the branch they belong to. Derived / structural
+constants (sizes, <code>k_eff</code>, <code>gamma_gate</code>, indices) are omitted &mdash; they are computed, not chosen.
+Columns: the exact code name, where it lands in the runtime arrays, its default, and which way to turn it.</p>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--slow)"></span>Slow ST</span>
+  <span><span class="dot" style="background:var(--resid)"></span>Residual</span>
+  <span><span class="dot" style="background:var(--fast)"></span>Fast / quick-dip</span>
+  <span><span class="dot" style="background:var(--regime)"></span>Regime / calibration</span>
+  <span><span class="dot" style="background:var(--auth)"></span>Authority law</span>
+</div>
+
+<h3><span class="tag tag-slow">Category A</span> &nbsp;Slow ST branch &mdash; the accurate margin level</h3>
+<div class="scroll"><table>
+<thead><tr><th class="mono">Parameter</th><th class="mono">Array&nbsp;idx</th><th>Default</th><th>Effect &mdash; turn up (&uarr;)</th></tr></thead>
+<tbody>
+<tr><td class="mono">window_s</td><td class="mono">fbls&rarr;n_segment</td><td>5.0 s</td><td>Smoother, laggier margin; more averaging.</td></tr>
+<tr><td class="mono">hop_s</td><td class="mono">fbls[52]</td><td>0.25 s</td><td>Slower slow-refresh; coarser cadence for all &ldquo;per hop&rdquo; counters.</td></tr>
+<tr><td class="mono">segment_s</td><td class="mono">fbls&rarr;segment_n</td><td>1.0 s</td><td>Finer frequency resolution (do not drop below 1 s).</td></tr>
+<tr><td class="mono">margin_filter_n</td><td class="mono">fbls[14]</td><td>3</td><td>Smoother selected OSI, adds lag.</td></tr>
+<tr><td class="mono">freq_medfilt_n</td><td class="mono">fbls[13]</td><td>3 (odd)</td><td>Fewer single-bin dips counted; smoother across frequency.</td></tr>
+<tr><td class="mono">slow_filt_alpha</td><td class="mono">fbls[15]</td><td>0.2</td><td>(&darr;) steadier fast-path reference, slower to follow level change.</td></tr>
+<tr><td class="mono">gamma_alpha</td><td class="mono">fbls&rarr;gamma_gate[8]</td><td>0.01</td><td>(&darr;) stricter coherence gate, fewer bins, more &ldquo;no evidence&rdquo;.</td></tr>
+<tr><td class="mono">gamma_quiet</td><td class="mono">fbls[9]</td><td>0.15</td><td>More bins allowed into &ldquo;quiet&rdquo; set for the residual branch.</td></tr>
+<tr><td class="mono">input_power_range_db</td><td class="mono">fbls[10]</td><td>35 dB</td><td>(&darr;) stricter; margin on fewer, stronger bins.</td></tr>
+<tr><td class="mono">sidelobe_db</td><td class="mono">fbls[11]</td><td>25 dB</td><td>Stricter leakage rejection.</td></tr>
+<tr><td class="mono">min_bins</td><td class="mono">fbls[12]</td><td>5</td><td>Needs more excited bins before reporting a margin.</td></tr>
+<tr><td class="mono">threshold</td><td class="mono">fbls[17]</td><td>=target 0.55</td><td>Higher detection/fast-trip level (more protective).</td></tr>
+<tr><td class="mono">warm_updates</td><td class="mono">fbls[35]</td><td>4</td><td>Longer warm-up before any margin is published.</td></tr>
+<tr><td class="mono">residual_floor</td><td class="mono">fbls[18]</td><td>0.03</td><td>Higher floor on 1&minus;g2 in the residual.</td></tr>
+</tbody></table></div>
+
+<h3><span class="tag tag-resid">Category B</span> &nbsp;Residual branch &mdash; quiet-band growth watcher</h3>
+<div class="scroll"><table>
+<thead><tr><th class="mono">Parameter</th><th class="mono">Array&nbsp;idx</th><th>Default</th><th>Effect &mdash; turn up (&uarr;)</th></tr></thead>
+<tbody>
+<tr><td class="mono">residual_band_hz</td><td class="mono">fblbins(res_keep)</td><td>[28 100] Hz</td><td>Wider hazard band watched (risk of harmonic-distortion false alarms if widened down).</td></tr>
+<tr><td class="mono">z_on</td><td class="mono">fbls[25]</td><td>4.0</td><td>Rarer engagement (fewer false alarms, later detection).</td></tr>
+<tr><td class="mono">z_off</td><td class="mono">fbls[26]</td><td>2.0</td><td>Narrower hysteresis (disengages sooner).</td></tr>
+<tr><td class="mono">res_on_n</td><td class="mono">fbls[27]</td><td>4</td><td>More sustained evidence to engage; smoother, slower.</td></tr>
+<tr><td class="mono">res_hold_s</td><td class="mono">fbls[28]</td><td>5 s</td><td>Unconfirmed engagement persists longer before expiring.</td></tr>
+<tr><td class="mono">res_min_growth_db</td><td class="mono">fbls[29]</td><td>3 dB</td><td>Ignores larger quiet-band changes (higher absolute defend level).</td></tr>
+<tr><td class="mono">res_match_hz</td><td class="mono">fbls[30]</td><td>3 Hz</td><td>Looser same-frequency persistence tolerance.</td></tr>
+<tr><td class="mono">sigma0_floor</td><td class="mono">fbls[31]</td><td>0.15</td><td>Globally desensitizes the residual z-score.</td></tr>
+</tbody></table></div>
+
+<h3><span class="tag tag-fast">Category C</span> &nbsp;Fast path / &ldquo;quick dip&rdquo; guards</h3>
+<div class="scroll"><table>
+<thead><tr><th class="mono">Parameter</th><th class="mono">Array&nbsp;idx</th><th>Default</th><th>Effect &mdash; turn up (&uarr;)</th></tr></thead>
+<tbody>
+<tr><td class="mono">fast_segment_s</td><td class="mono">fbls&rarr;fast_segment_n[36]</td><td>0.25 s</td><td>Coarser fast bins; slightly slower reaction.</td></tr>
+<tr><td class="mono">fast_ring_n</td><td class="mono">fbls[37]</td><td>3</td><td>Longer fast memory (~more smoothing, more lag).</td></tr>
+<tr><td class="mono">fast_min_bins</td><td class="mono">fbls[38]</td><td>3</td><td>Needs more excited fast bins to compute a statistic.</td></tr>
+<tr><td class="mono">fast_st_nu</td><td class="mono">fbls[39]</td><td>1.25</td><td>Calmer FRF-change CUSUM (ignores more per step).</td></tr>
+<tr><td class="mono">fast_st_h</td><td class="mono">fbls[40]</td><td>4.5</td><td>Later FRF-change trip (~+1 step/unit); fewer false trips.</td></tr>
+<tr><td class="mono">fast_babs_offset</td><td class="mono">fbls[43]</td><td>0.10</td><td>Allows fast-ST trips further above target (more protective).</td></tr>
+<tr><td class="mono">fast_amove_frac</td><td class="mono">fbls[56]</td><td>0.02</td><td>Tolerates larger authority moves before disarming the FRF-change stat.</td></tr>
+<tr><td class="mono">fast_d_sig_floor</td><td class="mono">fbls[48]</td><td>0.30</td><td>Desensitizes the fast-ST z-score.</td></tr>
+<tr><td class="mono">fast_burst_nu</td><td class="mono">fbls[41]</td><td>1.0</td><td>Calmer burst CUSUM.</td></tr>
+<tr><td class="mono">fast_burst_h</td><td class="mono">fbls[42]</td><td>6.0</td><td>Later burst trip; fewer false trips.</td></tr>
+<tr><td class="mono">fast_burst_bands</td><td class="mono">fblfbins(band_id)</td><td>5 bands</td><td>More/other guarded sub-bands (cost &amp; sensitivity).</td></tr>
+<tr><td class="mono">fast_sig_floor</td><td class="mono">fbls[47]</td><td>0.20</td><td>Desensitizes all burst bands.</td></tr>
+<tr><td class="mono">fast_pin_lo / _hi</td><td class="mono">fbls[44]/[45]</td><td>0.25 / 4.0</td><td>Widen the accepted input-power window (fewer artifacts rejected).</td></tr>
+<tr><td class="mono">fast_pin_alpha</td><td class="mono">fbls[46]</td><td>0.04</td><td>Faster input-power reference tracking.</td></tr>
+</tbody></table></div>
+
+<h3><span class="tag tag-regime">Category D</span> &nbsp;Regime &amp; calibration</h3>
+<div class="scroll"><table>
+<thead><tr><th class="mono">Parameter</th><th class="mono">Array&nbsp;idx</th><th>Default</th><th>Effect &mdash; turn up (&uarr;)</th></tr></thead>
+<tbody>
+<tr><td class="mono">regime_hops</td><td class="mono">fbls[34]</td><td>8</td><td>More tolerant of wandering excitation; slower rebaseline.</td></tr>
+<tr><td class="mono">cal_skip_s</td><td class="mono">fbls[19]</td><td>10 s</td><td>Longer startup blackout before calibrating.</td></tr>
+<tr><td class="mono">cal_windows</td><td class="mono">fbls[20]</td><td>80</td><td>Longer, more robust baseline; slower first-ready.</td></tr>
+<tr><td class="mono">cal_min_windows</td><td class="mono">fbls[24]</td><td>24</td><td>Requires more windows on the timeout path.</td></tr>
+<tr><td class="mono">cal_timeout_hops</td><td class="mono">fbls[23]</td><td>600</td><td>Waits longer for a full calibration.</td></tr>
+<tr><td class="mono">cal_reject_factor</td><td class="mono">fbls[21]</td><td>4</td><td>More permissive window acceptance.</td></tr>
+<tr><td class="mono">cal_restart_rejects</td><td class="mono">fbls[22]</td><td>12</td><td>Slower to abandon a bad reference.</td></tr>
+<tr><td class="mono">bl_adapt_tau_s</td><td class="mono">fbls&rarr;bl_alpha[32]</td><td>100 s</td><td>Slower healthy-baseline drift tracking.</td></tr>
+<tr><td class="mono">bl_adapt_max_db</td><td class="mono">fbls[33]</td><td>3 dB</td><td>Larger drift cap (danger: can absorb real degradation).</td></tr>
+</tbody></table></div>
+
+<h3><span class="tag tag-auth">Category E</span> &nbsp;Authority law (<code>fable_auth</code> &rarr; <code>fbla</code>)</h3>
+<p class="small">Sub-grouped by role. This is the branch that turns the margin into the published gain <code>auth</code>.</p>
+<div class="scroll"><table>
+<thead><tr><th>Role</th><th class="mono">Parameter</th><th class="mono">fbla&nbsp;idx</th><th>Default</th><th>Effect &mdash; turn up (&uarr;)</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">Setpoint / smoothing</td><td class="mono">target</td><td class="mono">[1]</td><td>0.55</td><td>More conservative (sheds earlier). Must stay below healthy margin.</td></tr>
+<tr><td class="mono">b_filt_tau_s</td><td class="mono">[6]</td><td>0.4 s</td><td>Smoother, more constant authority.</td></tr>
+
+<tr><td rowspan="7">Drop / shed</td><td class="mono">down_deadband</td><td class="mono">[7]</td><td>0.01</td><td>Ignores tinier target grazes (less flicker).</td></tr>
+<tr><td class="mono">down_confirm_n</td><td class="mono">[8]</td><td>2</td><td>Fewer false sheds; more reaction delay.</td></tr>
+<tr><td class="mono">down_power</td><td class="mono">[9]</td><td>1.5</td><td>Deeper shed per update.</td></tr>
+<tr><td class="mono">down_rate</td><td class="mono">[10]</td><td>2.0 /s</td><td>Sheds faster (main &ldquo;catch drops&rdquo; knob).</td></tr>
+<tr><td class="mono">down_settle_s</td><td class="mono">[28]</td><td>1.25 s</td><td>Gentler, staircase sheds (anti-compounding).</td></tr>
+<tr><td class="mono">re_shed_delta</td><td class="mono">[29]</td><td>0.02</td><td>Less reactive to continued decline (&darr; for more reactive).</td></tr>
+<tr><td class="mono">sev_frac</td><td class="mono">[11]</td><td>0.60</td><td>Severe path triggers at a higher margin (more emergencies).</td></tr>
+
+<tr><td rowspan="1">Severe</td><td class="mono">sev_down_rate</td><td class="mono">[12]</td><td>8.0 /s</td><td>Faster emergency shed.</td></tr>
+
+<tr><td rowspan="5">Recovery</td><td class="mono">up_deadband</td><td class="mono">[13]</td><td>0.02</td><td>More cautious recovery; kills target-hugging oscillation.</td></tr>
+<tr><td class="mono">up_hold_s</td><td class="mono">[14]</td><td>1.5 s</td><td>Later recovery; more constant authority.</td></tr>
+<tr><td class="mono">up_rate</td><td class="mono">[15]</td><td>0.08 /s</td><td>Faster model-verified recovery.</td></tr>
+<tr><td class="mono">up_rate_blind</td><td class="mono">[16]</td><td>0.02 /s</td><td>Faster blind (probe) recovery (keep &lt; up_rate).</td></tr>
+<tr><td class="mono">up_prop</td><td class="mono">[17]</td><td>3.0</td><td>Sprints back harder when margin is comfortably high.</td></tr>
+
+<tr><td rowspan="1">Anti-flicker</td><td class="mono">min_step</td><td class="mono">[18]</td><td>0.02</td><td>Steppier, more constant authority (fewer, larger moves).</td></tr>
+
+<tr><td rowspan="3">Prediction</td><td class="mono">use_pred</td><td class="mono">[19]</td><td>1</td><td>On = floor sheds / cap recovery with the model (with pred_enable).</td></tr>
+<tr><td class="mono">pred_guard</td><td class="mono">[20]</td><td>0.03</td><td>Larger safety standoff on the predicted-safe boundary.</td></tr>
+<tr><td class="mono">pred_floor_frac</td><td class="mono">[21]</td><td>0.90</td><td>Shed stops closer to predicted-safe (less overshoot).</td></tr>
+
+<tr><td rowspan="5">Fast-trip response</td><td class="mono">trip_drop</td><td class="mono">[22]</td><td>0.60</td><td>Milder instant drop on a trip (&darr; for deeper).</td></tr>
+<tr><td class="mono">trip_power</td><td class="mono">[23]</td><td>1.5</td><td>Deeper fast-ST drop for a given b_fast.</td></tr>
+<tr><td class="mono">trip_cool_s</td><td class="mono">[24]</td><td>5.0 s</td><td>Longer post-trip recovery lockout.</td></tr>
+<tr><td class="mono">trip_undo_s</td><td class="mono">[25]</td><td>2.5 s</td><td>Wider window to undo a trip on a regime recal.</td></tr>
+<tr><td class="mono">self_move_gate_s / _frac</td><td class="mono">[30]/[31]</td><td>1.5 s / 0.02</td><td>Requires authority steadier/longer before honoring a fast-ST trip.</td></tr>
+
+<tr><td rowspan="2">Post-event latch</td><td class="mono">latch_relax</td><td class="mono">[26]</td><td>1.15</td><td>Higher recovery ceiling right after an event (less caution).</td></tr>
+<tr><td class="mono">latch_decay_tau_s</td><td class="mono">[27]</td><td>1 s</td><td>Slower forgetting of the latched ceiling (more caution).</td></tr>
+
+<tr><td rowspan="4">Bounds / cadence</td><td class="mono">a_min</td><td class="mono">[2]</td><td>0.08</td><td>Higher authority floor (less detuning allowed).</td></tr>
+<tr><td class="mono">a_max</td><td class="mono">[3]</td><td>1.00</td><td>Higher ceiling (rarely changed).</td></tr>
+<tr><td class="mono">a_init</td><td class="mono">[4]</td><td>1.00</td><td>Higher startup / shadow-pin authority.</td></tr>
+<tr><td class="mono">dt_update</td><td class="mono">[5]</td><td>0.125 s</td><td>Slower law cadence (tied to step_s).</td></tr>
+</tbody></table></div>
+
+<hr>
+<p class="small">
+<strong>How to change these in practice.</strong> You do not edit <code>fbls</code>/<code>fbla</code> by hand. You pass an
+override struct through the <code>hs</code> config that <code>prepare_fable_runtime</code> reads:
+<code>hs.fable_osi_override</code> for Categories A&ndash;D (fields = the <code>fable_osi</code> config names above) and
+<code>hs.fable_auth_override</code> for Category E (fields = the <code>fable_auth</code> param names). Top-level shortcuts
+<code>hs.target_outer_ncf</code>, <code>hs.osi_gain_min</code>, <code>hs.osi_gain_initial</code> and
+<code>hs.fable_pred_enable</code> set <code>target</code>/<code>threshold</code>, <code>a_min</code>, <code>a_init</code> and
+<code>pred_enable</code> directly. After any change, re-run
+<code>OSI_tests/fable/test_fable_runtime_equivalence.m</code> to confirm the runtime still matches the desktop model.
+</p>
+<p class="small" style="color:var(--faint)">
+Generated from a read of the runtime source on the current branch. Notation matches the code exactly; defaults are the
+validated RTHS-column values from <code>makeConfig</code> / <code>makeParams</code>.
+</p>
+
+</div>
+</body>
+</html>

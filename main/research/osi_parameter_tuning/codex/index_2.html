@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Online Stability Indicator Tuning Guide</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --panel-2: #1b1b1b;
+      --ink: #eeeeee;
+      --muted: #b4b4b4;
+      --line: #343434;
+      --code: #f2e7c9;
+      --accent: #d7b46a;
+      --green: #39bf5e;
+      --copper: #ac6420;
+      --blue: #007ca8;
+      --red: #901500;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.55 "Segoe UI", Arial, sans-serif;
+    }
+    main {
+      width: min(1200px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    h1 { font-size: 30px; }
+    h2 {
+      font-size: 22px;
+      margin-top: 28px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    h3 { font-size: 17px; margin-top: 20px; }
+    p { margin: 10px 0; color: #dddddd; }
+    code {
+      font-family: Consolas, "Cascadia Mono", monospace;
+      color: var(--code);
+      background: #202020;
+      border: 1px solid #353535;
+      padding: 1px 4px;
+    }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .nav a {
+      border: 1px solid var(--line);
+      background: #161616;
+      color: var(--ink);
+      padding: 6px 8px;
+      text-decoration: none;
+    }
+    .block {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 12px;
+      margin: 12px 0;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      margin: 12px 0;
+    }
+    .flow div {
+      background: var(--panel);
+      padding: 10px;
+      min-width: 0;
+    }
+    .flow b {
+      display: block;
+      margin-bottom: 4px;
+      color: #f5f5f5;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--panel-2);
+      color: #f5f5f5;
+      font-weight: 650;
+    }
+    td { color: #dddddd; }
+    .param { white-space: nowrap; }
+    .small { color: var(--muted); font-size: 13px; }
+    .equation {
+      background: #101010;
+      border-left: 3px solid var(--accent);
+      padding: 10px 12px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      background: #202020;
+      color: var(--muted);
+      padding: 1px 6px;
+      margin: 2px 4px 2px 0;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .green { color: var(--green); }
+    .copper { color: var(--copper); }
+    .blue { color: #9fd8ee; }
+    .red { color: #f3b2aa; }
+    @media (max-width: 900px) {
+      main { width: min(100vw - 24px, 1200px); padding-top: 18px; }
+      h1 { font-size: 25px; }
+      .flow { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Online Stability Indicator Tuning Guide</h1>
+    <p>
+      The Online Stability Indicator, abbreviated as OSI, is the part of the
+      hybrid-simulation controller that watches whether the actuator and
+      specimen loop is getting close to instability. The current design is
+      called Fable in the repository. It reads command displacement and
+      measured displacement, estimates a stability margin, and then adjusts
+      one scalar authority factor that multiplies the command sent to the MTS.
+    </p>
+    <p>
+      This guide defines every signal before using it, explains why each
+      branch is needed, gives the equations used by the implementation, and
+      ends with the parameters most useful for tuning OSI behavior.
+    </p>
+    <nav class="nav">
+      <a href="#story">System Story</a>
+      <a href="#dictionary">Signal Dictionary</a>
+      <a href="#branches">Branches</a>
+      <a href="#equations">Equations</a>
+      <a href="#parameters">Parameters</a>
+      <a href="#speedgoat">Speedgoat</a>
+      <a href="#summary">Tuning Table</a>
+    </nav>
+  </header>
+
+  <section id="story">
+    <h2>System Story</h2>
+    <p>
+      The real-time hybrid simulation sends a displacement command to the
+      actuator. The actuator, controller, and physical specimen return a
+      measured displacement. If the specimen degrades or the actuator loop
+      changes, the same command can produce a more dangerous measured response.
+      OSI detects that change online.
+    </p>
+    <div class="flow">
+      <div><b>1. Command</b>The numerical substructure produces command displacement.</div>
+      <div><b>2. Plant</b>The command passes through the controller, actuator, and specimen.</div>
+      <div><b>3. Measurement</b>The actuator displacement is measured and logged.</div>
+      <div><b>4. OSI</b>Fable estimates a stability margin from recent command and measurement windows.</div>
+      <div><b>5. Authority</b>The authority factor scales the command path when margin is low.</div>
+    </div>
+    <div class="block">
+      <b>Why one authority factor?</b>
+      The PID gains and phase-lead parameters are not monotone safety knobs:
+      changing one can improve one condition and hurt another. The authority
+      factor is intended to be simpler for online protection. Lower authority
+      means the controller command sent to the plant is reduced, so the loop is
+      pulled away from the risky operating point.
+    </div>
+  </section>
+
+  <section id="dictionary">
+    <h2>Signal Dictionary</h2>
+    <p>
+      The table below defines the notation used everywhere else on this page.
+      These names match the MATLAB and Simulink code.
+    </p>
+    <table>
+      <thead><tr><th>Name</th><th>Meaning</th><th>Why it is needed</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>dd</code></td><td>Command displacement from the numerical hybrid-simulation model, in mm.</td><td>OSI uses this as the input signal when estimating how the plant responds.</td></tr>
+        <tr><td class="param"><code>dm</code></td><td>Measured actuator displacement, in mm.</td><td>OSI compares this response against <code>dd</code> to see whether loop dynamics changed.</td></tr>
+        <tr><td class="param"><code>dc</code></td><td>Command displacement sent toward the MTS after the controller and authority scaling.</td><td>This is the signal affected by the authority factor.</td></tr>
+        <tr><td class="param"><code>auth</code></td><td>Authority factor applied at the Simulink block named <code>Apply OSI gain</code>.</td><td><code>auth = 1</code> means full authority. Smaller values reduce the command sent to the actuator.</td></tr>
+        <tr><td class="param"><code>b_osi</code></td><td>Selected OSI stability margin used by the authority law.</td><td>If this margin is below the target, authority should drop. If it is safely above target, authority may recover.</td></tr>
+        <tr><td class="param"><code>b_st</code></td><td>Slow coherent branch margin. It is computed where the command clearly excites the measured response.</td><td>This is the most reliable branch for normal margin level and recovery decisions.</td></tr>
+        <tr><td class="param"><code>b_res</code></td><td>Residual branch margin. It is computed from uncommanded output power in quiet hazard bands.</td><td>This branch catches dangerous growth when the command is not exciting the risky frequency band.</td></tr>
+        <tr><td class="param"><code>b_fast</code></td><td>Fast short-memory margin from 0.25 s windows.</td><td>This branch catches quick dips and sudden plant changes faster than the slow branch.</td></tr>
+        <tr><td class="param"><code>target</code></td><td>Margin level defended by the authority law. In the main setup this comes from <code>hs.target_outer_ncf</code>.</td><td>Higher target is more conservative because authority starts shedding earlier.</td></tr>
+        <tr><td class="param"><code>trip_reason</code></td><td>Fast-trip code: 0 none, 1 quiet-band burst, 2 fast transfer-change collapse.</td><td>Explains why the authority law made an immediate trip-style drop.</td></tr>
+        <tr><td class="param"><code>decision</code></td><td>Authority-law code: 0 hold, 1 down, 2 severe down, 3 up, 4 fast trip.</td><td>Shows what the authority law decided at the current update.</td></tr>
+        <tr><td class="param"><code>valid</code></td><td>Boolean flag that says whether <code>b_osi</code> is real post-warm-up evidence.</td><td>Warm-up or missing evidence should not be interpreted as a trustworthy margin.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="branches">
+    <h2>Why Three OSI Branches Are Needed</h2>
+    <table>
+      <thead><tr><th>Branch</th><th>What it watches</th><th>Why it exists</th><th>Main output</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag green">Slow ST branch</span></td>
+          <td>Command-driven frequency bins where <code>dd</code> and <code>dm</code> are coherent.</td>
+          <td>When the command excites a frequency, this branch can estimate the closed-loop transfer and compute the best margin estimate.</td>
+          <td><code>b_st</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag copper">Residual branch</span></td>
+          <td>Output power in hazard frequencies that are quiet in the command.</td>
+          <td>Instability can grow in a frequency band that the command is not directly exciting. This branch catches that by watching unexplained measured motion.</td>
+          <td><code>b_res</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag red">Fast quick-dip branch</span></td>
+          <td>Short-memory transfer changes and quiet-band bursts.</td>
+          <td>The slow branch is accurate but delayed. The fast branch exists to shed authority quickly during sudden changes.</td>
+          <td><code>b_fast</code> and <code>trip_reason</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      The selected margin <code>b_osi</code> is normally the lower of the
+      slow coherent branch and the residual branch. During a fast transfer
+      collapse, the runtime can also expose the fast dip so the authority law
+      responds immediately.
+    </p>
+  </section>
+
+  <section id="equations">
+    <h2>Equations With Definitions</h2>
+    <p>
+      First define the spectra. The command signal is <code>dd</code>, the
+      measured signal is <code>dm</code>, and a Hann-windowed Fast Fourier
+      Transform is taken over recent samples. The implementation stores:
+      <code>Suu</code> for command autospectrum, <code>Syy</code> for measured
+      autospectrum, and <code>Suy</code> for cross spectrum from command to
+      measurement.
+    </p>
+    <div class="equation">
+      <code>M = Suy / Suu</code><br>
+      <span class="small">Here <code>M</code> is the estimated closed-loop transfer from command displacement to measured displacement.</span>
+    </div>
+    <p>
+      The coherence value tells whether a frequency bin is actually explained
+      by the command. Fable uses it to decide whether a bin belongs to the
+      slow coherent branch or the residual quiet branch.
+    </p>
+    <div class="equation">
+      <code>g2raw = abs(Suy)^2 / max(Suu*Syy, tiny^2)</code><br>
+      <code>gamma2 = max(0, (k_eff*g2raw - 1)/(k_eff - 1))</code>
+    </div>
+    <p>
+      The stability margin is computed from the sensitivity-like term
+      <code>S = 1 - M</code> and the transfer-like term <code>T = M</code>.
+      A smaller margin means the loop is closer to instability.
+    </p>
+    <div class="equation">
+      <code>b(w) = 1 / (sqrt(2)*sqrt(abs(1 - M)^2 + abs(M)^2))</code><br>
+      <code>b_st = min over accepted coherent bins of b(w)</code>
+    </div>
+    <p>
+      The residual branch removes the part of output power explained by the
+      command. It compares the remaining power with a calibrated healthy
+      baseline. If unexplained power grows, the residual margin is reduced.
+    </p>
+    <div class="equation">
+      <code>res = Syy * max(1 - gamma2, residual_floor)</code><br>
+      <code>ratio = res / baseline</code><br>
+      <code>z = (log(ratio normalized by quiet-bin median) - mu0) / sigma0</code><br>
+      <code>b_res = anchor / sqrt(growth)</code>
+    </div>
+    <p>
+      The authority law lowers <code>auth</code> when the selected margin is
+      below target. The main drop shape is multiplicative: a lower margin
+      produces a deeper authority target.
+    </p>
+    <div class="equation">
+      <code>a_pl = a_cont * (max(b_size, 0.02)/target)^down_power</code><br>
+      <code>auth moves toward a_pl at no more than down_rate per second</code>
+    </div>
+  </section>
+
+  <section id="parameters">
+    <h2>Parameter Details</h2>
+    <h3>Setup Parameters</h3>
+    <table>
+      <thead><tr><th>Parameter</th><th>Definition</th><th>Effect on OSI</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>hs.target_outer_ncf</code></td><td>Main target margin passed into Fable as <code>target</code> and threshold.</td><td>Higher values shed authority earlier and recover later. It should stay below the healthy full-authority margin.</td></tr>
+        <tr><td class="param"><code>hs.osi_gain_min</code></td><td>Minimum allowed authority factor.</td><td>Lower values allow stronger safety action. Higher values preserve more command authority but reduce emergency headroom.</td></tr>
+        <tr><td class="param"><code>hs.osi_gain_initial</code></td><td>Authority used at startup and in shadow mode.</td><td>Usually 1.0 for Fable because the law is designed to defend the margin online.</td></tr>
+        <tr><td class="param"><code>hs.fable_osi_override</code></td><td>Struct used to override estimator parameters.</td><td>Use this for branch behavior such as slow-window length, residual band, and fast-trip sensitivity.</td></tr>
+        <tr><td class="param"><code>hs.fable_auth_override</code></td><td>Struct used to override authority-law parameters.</td><td>Use this for drop speed, recovery speed, trip response, and latch behavior.</td></tr>
+        <tr><td class="param"><code>hs.fable_pred_enable</code></td><td>Enables or disables the prediction grid.</td><td>Set to 0 if Speedgoat timing is tight. This reduces computation but removes prediction-aided shed and recovery bounds.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Slow ST Branch Parameters</h3>
+    <table>
+      <thead><tr><th>Parameter</th><th>Definition</th><th>Effect on OSI</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>band_hz</code></td><td>Overall frequency band watched by OSI.</td><td>Narrowing reduces runtime cost and avoids irrelevant modes. Widening watches more possible instability frequencies.</td></tr>
+        <tr><td class="param"><code>segment_s</code></td><td>Length of each slow spectral segment.</td><td>Longer improves frequency resolution. Do not reduce below 1 s unless accepting weaker frequency resolution.</td></tr>
+        <tr><td class="param"><code>window_s</code></td><td>Total slow history used for median spectra.</td><td>Longer is smoother and slower. Shorter reacts faster and is noisier.</td></tr>
+        <tr><td class="param"><code>hop_s</code></td><td>Slow branch update cadence.</td><td>Larger lowers CPU cost and slows updates. Smaller updates faster and costs more.</td></tr>
+        <tr><td class="param"><code>gamma_alpha</code></td><td>False-pass probability used to form the coherence gate.</td><td>Lower is stricter and accepts fewer coherent bins. Higher is more permissive.</td></tr>
+        <tr><td class="param"><code>input_power_range_db</code></td><td>Input-power cutoff below the in-band input peak.</td><td>Lower values require stronger command excitation before a bin is trusted.</td></tr>
+        <tr><td class="param"><code>min_bins</code></td><td>Minimum accepted bins needed before <code>b_st</code> is valid.</td><td>Higher rejects sparse evidence. Lower lets the branch work with narrow excitation.</td></tr>
+        <tr><td class="param"><code>freq_medfilt_n</code></td><td>Median filter width across frequency bins.</td><td>Higher ignores isolated single-bin dips. Must stay odd.</td></tr>
+        <tr><td class="param"><code>margin_filter_n</code></td><td>Temporal median over recent slow margin updates.</td><td>Higher smooths <code>b_osi</code> but adds delay.</td></tr>
+        <tr><td class="param"><code>slow_filt_alpha</code></td><td>EMA weight for the slow reference used by fast direction gating.</td><td>Lower makes the fast-trip reference steadier. Higher follows slow margin changes faster.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Residual Branch Parameters</h3>
+    <table>
+      <thead><tr><th>Parameter</th><th>Definition</th><th>Effect on OSI</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>residual_band_hz</code></td><td>Hazard band watched for unexplained measured motion.</td><td>This is the main residual branch-band knob. Put it around real instability modes and away from harmless command harmonics.</td></tr>
+        <tr><td class="param"><code>gamma_quiet</code></td><td>Maximum coherence allowed for a bin to count as quiet.</td><td>Lower makes quiet-bin selection stricter. Higher gives the branch more bins.</td></tr>
+        <tr><td class="param"><code>residual_floor</code></td><td>Minimum unexplained-power fraction in residual power calculation.</td><td>Prevents the residual estimate from becoming unrealistically zero.</td></tr>
+        <tr><td class="param"><code>cal_skip_s</code></td><td>Startup time ignored before residual calibration.</td><td>Raise if startup motion contaminates the baseline.</td></tr>
+        <tr><td class="param"><code>cal_windows</code></td><td>Accepted windows used to build the residual baseline.</td><td>More windows give a better baseline but delay readiness.</td></tr>
+        <tr><td class="param"><code>z_on</code></td><td>Z-score required to engage the residual branch.</td><td>Lower detects earlier. Higher reduces false residual engagement.</td></tr>
+        <tr><td class="param"><code>z_off</code></td><td>Z-score below which residual engagement decays.</td><td>Lower holds caution longer. Higher releases sooner.</td></tr>
+        <tr><td class="param"><code>res_on_n</code></td><td>Consecutive slow hops above <code>z_on</code> needed for engagement.</td><td>Lower reacts faster. Higher requires sustained evidence.</td></tr>
+        <tr><td class="param"><code>res_min_growth_db</code></td><td>Minimum absolute residual growth required.</td><td>Raise to ignore small quiet-band changes.</td></tr>
+        <tr><td class="param"><code>sigma0_floor</code></td><td>Floor on calibrated log-ratio spread.</td><td>Raise to desensitize the residual branch globally.</td></tr>
+        <tr><td class="param"><code>regime_hops</code></td><td>Sustained input-pattern changes before rebaseline.</td><td>Lower rebaselines faster when the test phase changes. Higher avoids unnecessary recalibration.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Fast Quick-Dip Parameters</h3>
+    <table>
+      <thead><tr><th>Parameter</th><th>Definition</th><th>Effect on OSI</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>fast_segment_s</code></td><td>Short window length for fast spectra.</td><td>Shorter gives faster detection but noisier spectra.</td></tr>
+        <tr><td class="param"><code>fast_ring_n</code></td><td>Number of fast segments medianed together.</td><td>Higher smooths <code>b_fast</code>. Lower reacts faster.</td></tr>
+        <tr><td class="param"><code>fast_st_nu</code></td><td>CUSUM drift for fast transfer-change detection.</td><td>Lower accumulates evidence faster. Higher reduces false trips.</td></tr>
+        <tr><td class="param"><code>fast_st_h</code></td><td>CUSUM threshold for fast transfer-change trip.</td><td>Main fast ST sensitivity knob. Lower trips earlier.</td></tr>
+        <tr><td class="param"><code>fast_babs_offset</code></td><td>Extra margin above target where fast ST trips are allowed.</td><td>Higher lets the fast path trip before margin reaches the target.</td></tr>
+        <tr><td class="param"><code>fast_burst_bands</code></td><td>Quiet sub-bands watched for sudden output bursts.</td><td>Adjust to the actual unstable modes; remove bands that create false trips.</td></tr>
+        <tr><td class="param"><code>fast_burst_nu</code></td><td>CUSUM drift for quiet-band burst detection.</td><td>Lower detects burst growth faster.</td></tr>
+        <tr><td class="param"><code>fast_burst_h</code></td><td>CUSUM threshold for quiet-band burst trip.</td><td>Lower trips earlier. Higher needs stronger sustained evidence.</td></tr>
+        <tr><td class="param"><code>fast_sig_floor</code></td><td>Minimum calibrated spread for burst z-scores.</td><td>Raise to make burst detection less sensitive.</td></tr>
+        <tr><td class="param"><code>fast_d_sig_floor</code></td><td>Minimum calibrated spread for transfer-change z-scores.</td><td>Raise to make fast transfer-change detection less sensitive.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Authority Parameters</h3>
+    <table>
+      <thead><tr><th>Parameter</th><th>Definition</th><th>Effect on OSI behavior</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>down_deadband</code></td><td>Margin gap below target before a deficit is counted.</td><td>Wider deadband reduces flicker. Narrower deadband regulates more tightly.</td></tr>
+        <tr><td class="param"><code>down_confirm_n</code></td><td>Number of low updates before ordinary shed begins.</td><td>Lower reacts faster. Higher ignores one-update dips.</td></tr>
+        <tr><td class="param"><code>down_power</code></td><td>Exponent in the multiplicative shed equation.</td><td>Higher makes each shed deeper for the same margin deficit.</td></tr>
+        <tr><td class="param"><code>down_rate</code></td><td>Maximum ordinary shed speed.</td><td>Raise to drop authority faster after confirmed margin loss.</td></tr>
+        <tr><td class="param"><code>down_settle_s</code></td><td>Hold time before resizing a shed from similar evidence.</td><td>Prevents repeatedly compounding a stale delayed margin reading.</td></tr>
+        <tr><td class="param"><code>sev_frac</code></td><td>Severe threshold as a fraction of target.</td><td>Raise if more low-margin events should bypass confirmation and rate limits.</td></tr>
+        <tr><td class="param"><code>sev_down_rate</code></td><td>Emergency shed speed.</td><td>Keep high when crash-catching matters more than smooth authority.</td></tr>
+        <tr><td class="param"><code>up_deadband</code></td><td>Margin surplus above target required before recovery.</td><td>Raise to avoid target-hugging oscillation. Lower to recover sooner.</td></tr>
+        <tr><td class="param"><code>up_hold_s</code></td><td>Healthy dwell time before recovery begins.</td><td>Raise for cautious recovery. Lower to restore performance faster.</td></tr>
+        <tr><td class="param"><code>up_rate</code></td><td>Recovery speed when coherent evidence exists.</td><td>Raise for faster full-authority recovery after measured stability is restored.</td></tr>
+        <tr><td class="param"><code>up_rate_blind</code></td><td>Recovery speed without coherent evidence.</td><td>Keep slower than <code>up_rate</code>; this is probe-and-verify recovery.</td></tr>
+        <tr><td class="param"><code>trip_drop</code></td><td>Immediate multiplicative authority drop on fast trips.</td><td>Lower values are more protective and more abrupt.</td></tr>
+        <tr><td class="param"><code>trip_cool_s</code></td><td>Cooldown after a fast trip.</td><td>Raise to block recovery longer after a hard event.</td></tr>
+        <tr><td class="param"><code>latch_relax</code></td><td>Post-event recovery ceiling relative to post-shed authority.</td><td>Lower keeps authority more restricted after hard evidence of change.</td></tr>
+        <tr><td class="param"><code>latch_decay_tau_s</code></td><td>Time constant for forgetting the post-event ceiling.</td><td>Raise for slower post-event recovery.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="speedgoat">
+    <h2>Speedgoat Implementation Notes</h2>
+    <p>
+      The Speedgoat runtime is <code>control_and_HS/OSI/fable_osi_runtime.m</code>.
+      It is called once per 2048 Hz base-rate sample. It does not compute the
+      whole OSI update in one tick. Instead it spreads the work across bounded
+      phases and publishes outputs after 56 ticks, about 27 ms.
+    </p>
+    <table>
+      <thead><tr><th>Runtime item</th><th>Meaning</th><th>When to tune it</th></tr></thead>
+      <tbody>
+        <tr><td class="param"><code>fable_pred_enable</code></td><td>Turns the authority prediction grid on or off.</td><td>First thing to disable if timing is tight.</td></tr>
+        <tr><td class="param"><code>step_s</code></td><td>Fast path and authority update cadence.</td><td>Increase from 0.125 to 0.25 if CPU load is too high.</td></tr>
+        <tr><td class="param"><code>hop_s</code></td><td>Slow branch update cadence.</td><td>Increase from 0.25 to 0.5 if slow-pipeline load is too high.</td></tr>
+        <tr><td class="param"><code>band_hz</code></td><td>Frequency range kept in the OSI grids.</td><td>Narrow it if unused high-frequency bins cost too much.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="summary">
+    <h2>Final Tuning Table</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Parameters to tune</th>
+          <th>Behavior controlled</th>
+          <th>For faster or more protective action</th>
+          <th>For smoother or fewer false actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag green">Slow ST branch</span></td>
+          <td><code>window_s</code>, <code>hop_s</code>, <code>margin_filter_n</code>, <code>freq_medfilt_n</code>, <code>gamma_alpha</code>, <code>min_bins</code></td>
+          <td>Normal accurate margin level, <code>b_st</code>.</td>
+          <td>Shorter window, faster hop, fewer filters, more permissive bin gates.</td>
+          <td>Longer window, higher median filters, stricter coherence, more required bins.</td>
+        </tr>
+        <tr>
+          <td><span class="tag copper">Residual branch</span></td>
+          <td><code>residual_band_hz</code>, <code>z_on</code>, <code>z_off</code>, <code>res_on_n</code>, <code>sigma0_floor</code>, <code>regime_hops</code></td>
+          <td>Uncommanded quiet-band growth, <code>b_res</code>.</td>
+          <td>Lower <code>z_on</code>, lower <code>res_on_n</code>, lower growth threshold.</td>
+          <td>Raise thresholds, raise spread floor, narrow the hazard band.</td>
+        </tr>
+        <tr>
+          <td><span class="tag red">Fast quick-dip</span></td>
+          <td><code>fast_st_h</code>, <code>fast_st_nu</code>, <code>fast_burst_h</code>, <code>fast_burst_nu</code>, <code>fast_babs_offset</code>, <code>trip_drop</code></td>
+          <td>Immediate trip response to sudden dips.</td>
+          <td>Lower CUSUM thresholds, lower drift terms, raise offset, lower trip drop.</td>
+          <td>Raise thresholds, raise spread floors, use fewer burst bands.</td>
+        </tr>
+        <tr>
+          <td><span class="tag blue">Authority drop</span></td>
+          <td><code>target</code>, <code>down_power</code>, <code>down_rate</code>, <code>down_confirm_n</code>, <code>sev_frac</code>, <code>sev_down_rate</code></td>
+          <td>How quickly <code>auth</code> falls when margin is unsafe.</td>
+          <td>Higher target, higher drop rates, higher severe fraction, lower confirmation count.</td>
+          <td>Lower target, wider deadband, higher confirmation count, longer settle time.</td>
+        </tr>
+        <tr>
+          <td><span class="tag green">Authority recovery</span></td>
+          <td><code>up_deadband</code>, <code>up_hold_s</code>, <code>up_rate</code>, <code>up_rate_blind</code>, <code>latch_relax</code>, <code>latch_decay_tau_s</code></td>
+          <td>How quickly <code>auth</code> returns after the loop looks safe.</td>
+          <td>Lower hold time, lower recovery deadband, higher recovery rates.</td>
+          <td>Higher hold time, higher deadband, lower rates, stronger latch.</td>
+        </tr>
+        <tr>
+          <td><span class="tag blue">Speedgoat fit</span></td>
+          <td><code>fable_pred_enable</code>, <code>step_s</code>, <code>hop_s</code>, <code>band_hz</code></td>
+          <td>Real-time CPU load and latency.</td>
+          <td>Keep defaults if timing margin is good.</td>
+          <td>Disable prediction, slow update cadence, or narrow frequency band.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>
