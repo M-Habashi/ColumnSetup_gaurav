@@ -2,6 +2,21 @@ function out = plot_habashi_osi_parameter_comparison(data, data_file, ...
         new_params, current_params)
 %PLOT_HABASHI_OSI_PARAMETER_COMPARISON Replay and plot fable OSI tuning.
 
+if nargin == 0
+    script_root = fileparts(mfilename('fullpath'));
+    projectFolder = fileparts(fileparts(fileparts(script_root)));
+    addpath(projectFolder)
+    addpath(genpath(fullfile(projectFolder, 'helpers')))
+    addpath(genpath(fullfile(projectFolder, 'control_and_HS', 'OSI')))
+    addpath(fullfile(projectFolder, 'OSI_tests', 'fable'))
+
+    [new_params, current_params] = habashi_osi_parameter_sets(projectFolder);
+    [data, data_file] = load_saved_result_file(projectFolder, 'tests');
+elseif nargin < 4
+    error(['plot_habashi_osi_parameter_comparison requires either no ', ...
+        'inputs, or data, data_file, new_params, and current_params.'])
+end
+
 projectFolder = new_params.projectFolder;
 addpath(projectFolder)
 addpath(genpath(fullfile(projectFolder, 'helpers')))
@@ -187,8 +202,12 @@ red = [144 21 0]/255;
 purple = [116 5 138]/255;
 black = [0 0 0];
 gray = [0.45 0.45 0.45];
+trip_new_color = red;
+trip_current_color = black;
 
 [~, record_name] = fileparts(data_file);
+n_fast_new = nnz(new_replay.trip_reason ~= 0);
+n_fast_current = nnz(current_replay.trip_reason ~= 0);
 fig = figure('Color', 'w', 'Position', [80 80 1200 820], ...
     'Name', ['Habashi OSI tuning - ' record_name], ...
     'NumberTitle', 'off');
@@ -200,7 +219,8 @@ plot(ax1, record.t(1:stride:end), record.dm(1:stride:end), ...
     'Color', blue, 'LineWidth', 1)
 grid(ax1, 'on')
 ylabel(ax1, 'dm (mm)', 'Interpreter', 'none')
-title(ax1, record_name, 'Interpreter', 'none')
+title(ax1, sprintf('%s | fast trips new/current: %d/%d', ...
+    record_name, n_fast_new, n_fast_current), 'Interpreter', 'none')
 
 ax2 = nexttile;
 hold(ax2, 'on')
@@ -212,6 +232,9 @@ localPlotPair(ax2, new_replay.tc, new_replay.b_res, ...
     current_replay.tc, current_replay.b_res, 'b_res', red, false)
 localPlotPair(ax2, new_replay.tc, new_replay.b_fast, ...
     current_replay.tc, current_replay.b_fast, 'b_fast', copper, false)
+localPlotFastTripLines(ax2, new_replay, 'new', '-', trip_new_color)
+localPlotFastTripLines(ax2, current_replay, 'current', '--', ...
+    trip_current_color)
 grid(ax2, 'on')
 ylabel(ax2, 'OSI margin', 'Interpreter', 'none')
 legend2 = legend(ax2, 'Location', 'best', 'Interpreter', 'none');
@@ -222,6 +245,11 @@ hold(ax3, 'on')
 localPlotPair(ax3, new_replay.tc, new_replay.auth, ...
     current_replay.tc, current_replay.auth, 'authority factor', ...
     purple, true)
+localPlotFastTripLines(ax3, new_replay, 'new', '-', trip_new_color)
+localPlotFastTripLines(ax3, current_replay, 'current', '--', ...
+    trip_current_color)
+localPlotFastTrips(ax3, new_replay, 'new', 'v', trip_new_color)
+localPlotFastTrips(ax3, current_replay, 'current', 'x', trip_current_color)
 if ~isempty(record.command_gain)
     plot(ax3, record.t, record.command_gain, ':', 'Color', gray, ...
         'LineWidth', 1.4, 'DisplayName', 'command gain (logged)')
@@ -242,7 +270,91 @@ fprintf('  new target/current target: %.6g / %.6g\n', ...
 fprintf('  new min authority/current min authority: %.6g / %.6g\n', ...
     min(new_replay.auth, [], 'omitnan'), ...
     min(current_replay.auth, [], 'omitnan'))
+fprintf('  new fast trips/current fast trips: %d / %d\n', ...
+    n_fast_new, n_fast_current)
 fprintf('  command gain logged: %d\n', ~isempty(record.command_gain))
+localPrintDropAnalysis('new', new_replay, new_params)
+localPrintDropAnalysis('current', current_replay, current_params)
+end
+
+function localPrintDropAnalysis(label, replay, params)
+auth = replay.auth(:);
+da = [NaN; diff(auth)];
+idx = find(isfinite(da) & da <= -0.05, 1);
+if isempty(idx)
+    fprintf('  %s first drop: none >= 0.05 authority units\n', label)
+    return
+end
+
+target = params.target_outer_ncf;
+sev_frac = 0.60;
+if isfield(params.auth_override, 'sev_frac') ...
+        && ~isempty(params.auth_override.sev_frac)
+    sev_frac = params.auth_override.sev_frac;
+end
+sev_limit = sev_frac*target;
+decision = replay.decision(idx);
+trip_reason = replay.trip_reason(idx);
+b = replay.b_osi(idx);
+
+if decision == 4 || trip_reason ~= 0
+    cause = sprintf('fast trip, trip_reason=%g', trip_reason);
+elseif decision == 2
+    cause = sprintf('severe margin shed: b_osi %.3g < %.3g', ...
+        b, sev_limit);
+elseif decision == 1
+    cause = sprintf('confirmed low-margin shed: b_osi %.3g < target %.3g', ...
+        b, target);
+elseif decision == 3
+    cause = 'recovery step';
+else
+    cause = sprintf('decision %g', decision);
+end
+
+fprintf(['  %s first drop: t=%.3f s, auth %.3g -> %.3g, ', ...
+    'decision=%g, %s\n'], label, replay.tc(idx), auth(idx-1), ...
+    auth(idx), decision, cause)
+fprintf(['    margins at drop: b_osi=%.3g, b_st=%.3g, ', ...
+    'b_res=%.3g, b_fast=%.3g\n'], replay.b_osi(idx), ...
+    replay.b_st(idx), replay.b_res(idx), replay.b_fast(idx))
+end
+
+function localPlotFastTripLines(ax, replay, label, line_style, color)
+t_trip = replay.tc(replay.trip_reason ~= 0 & isfinite(replay.tc));
+if isempty(t_trip)
+    return
+end
+t_trip = unique(t_trip(:)');
+yl = ylim(ax);
+for i = 1:numel(t_trip)
+    if i == 1
+        display_name = ['fast trip line ' label];
+        handle_visibility = 'on';
+    else
+        display_name = '';
+        handle_visibility = 'off';
+    end
+    plot(ax, [t_trip(i) t_trip(i)], yl, line_style, ...
+        'Color', color, ...
+        'LineWidth', 1.4, ...
+        'DisplayName', display_name, ...
+        'HandleVisibility', handle_visibility)
+end
+ylim(ax, yl)
+end
+
+function localPlotFastTrips(ax, replay, label, marker, color)
+idx = replay.trip_reason ~= 0 & isfinite(replay.tc) & isfinite(replay.auth);
+if ~any(idx)
+    return
+end
+plot(ax, replay.tc(idx), replay.auth(idx), marker, ...
+    'Color', color, ...
+    'MarkerFaceColor', color, ...
+    'LineStyle', 'none', ...
+    'MarkerSize', 9, ...
+    'LineWidth', 1.8, ...
+    'DisplayName', ['fast trip ' label])
 end
 
 function localPlotPair(ax, t_new, y_new, t_current, y_current, ...

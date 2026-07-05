@@ -62,7 +62,7 @@ if nargin >= 1 && ischar(varargin{1})
     end
 end
 opt = struct('scenarios', [], 'method', 'fable', 'target', 0.55, ...
-    'osi_override', struct(), 'auth_override', struct());
+    'osi_override', struct(), 'auth_override', struct(), 'plot', true);
 for i = 1:2:numel(varargin)
     opt.(lower(varargin{i})) = varargin{i+1};
 end
@@ -123,7 +123,9 @@ for i = opt.scenarios(:)'
     fprintf('\n=== %2d %s (%s) ===\n', i, scn(i).name, method.name);
     sim = simulateScenario(scn(i), cm, method);
     [pass, detail] = evaluateScenario(scn(i), sim, cm);
-    plotScenario(scn(i), sim, cm, figDir, method.name);
+    if opt.plot
+        plotScenario(scn(i), sim, cm, figDir, method.name);
+    end
     suite.cases(end+1) = struct('name', scn(i).name, 'pass', pass, ...
         'detail', detail, 'sim', keepLight(sim));
     fprintf('%s\n', detail);
@@ -321,6 +323,8 @@ blkN = method.block_n;
 nU = floor(N/blkN);
 tc = NaN(nU, 1); bE = NaN(nU, 1); bT = NaN(nU, 1); aU = NaN(nU, 1);
 trp = zeros(nU, 1);
+bSt = NaN(nU, 1); bRes = NaN(nU, 1); bFast = NaN(nU, 1);
+dec = zeros(nU, 1);
 
 dm = zeros(N, 1);
 a = 1;
@@ -344,19 +348,29 @@ for k = 1:N
     if blk_i == blkN
         blk_i = 0;
         ku = ku + 1;
-        [ctx, b, a, tr] = method.step(ctx, dd_blk, dm_blk);
+        if nargout(method.step) >= 5
+            [ctx, b, a, tr, extra] = method.step(ctx, dd_blk, dm_blk);
+        else
+            [ctx, b, a, tr] = method.step(ctx, dd_blk, dm_blk);
+            extra = struct();
+        end
         a = min(max(a, 0), 1);
         tc(ku) = t(k);
         bE(ku) = b;
         aU(ku) = a;
         trp(ku) = tr;
+        if isfield(extra, 'b_st'), bSt(ku) = extra.b_st; end
+        if isfield(extra, 'b_res'), bRes(ku) = extra.b_res; end
+        if isfield(extra, 'b_fast'), bFast(ku) = extra.b_fast; end
+        if isfield(extra, 'decision'), dec(ku) = extra.decision; end
         La = a*((1 - lam)*cm.L7 + lam*cm.L5);
         bT(ku) = min(abs(1 + La)./sqrt(2*(1 + abs(La).^2)));
     end
 end
 
 sim = struct('t', t, 'dm', dm, 'tc', tc, 'b_est', bE, 'b_true', bT, ...
-    'a', aU, 'trip', trp);
+    'a', aU, 'trip', trp, 'b_st', bSt, 'b_res', bRes, ...
+    'b_fast', bFast, 'decision', dec);
 end
 
 function x = bandNoise(N, fs, band)
