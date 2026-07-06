@@ -42,6 +42,8 @@ information limit, rig interlocks are the backstop there.
 | File | Purpose |
 |---|---|
 | `rths_echo_report.html` | The report (open this). |
+| `fix_rths_echo_plan.md` | Speedgoat implementation plan: echo-free OSI tap (active ONLY when the signal generator's multiport switch selects the RTHS port), evidence gate in the runtime (diffs, fbla 32-36), window_s analysis (keep 5.0 s), staged verification. |
+| `numerical_ncf_plan.md` | Outer-loop (numerical closed loop) NCF plan: vHS fixes (dynamic interface impedance Z=k+cs+ms^2, authority propagated to the outer loop) + online b_out by wrapping the estimator's per-bin T-hat with the known FEM/lead/k (publish-only stage first). |
 | `rths_echo_diagnosis.m` | 10-record pipeline: echo detector/classifier (zero-lag test), baseline + fixed replays of the unchanged fable OSI + authority law, metrics, per-record figures. |
 | `rths_echo_mechanism_figs.m` | Figs 1-3: zero-lag proof, spectral autopsy at t=95 s, complex-plane bias plot (RTHS_02). |
 | `fable_evidence_gate.m` | Excitation-evidence arming gate (params/state/step; codegen-friendly scalar state). |
