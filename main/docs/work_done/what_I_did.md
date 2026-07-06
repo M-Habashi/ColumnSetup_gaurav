@@ -4,7 +4,7 @@
    - Simulink features
    - Test Procedure
    - Inner and outer loops tuning (we can cite Edwin here)
-   - system identification added props
+   - system identification added props (revise)
       -- frequency inverse weighting
       -- forcing zero at the beginning
       -- regulization
@@ -30,8 +30,13 @@
 ## The damage of the specimen:
    - The damage of the specimen, is shown to be equivalent to increaing the outer loop gain, which confirms our finding in the previous paper t[wo tfs function to compare the 7000 and the 5000]
 
-## Online stability indicator to be tested [Claude M7] with uncertainty bounds
-## Addaptive authority gain in the outer loop to counter effect the specimen damage
+## OSI with branches and fast detection
+## the feedthrogh issue
+
+## Addaptive authority gain in the outer loop to counter effect the specimen damage (color plot of ncf marfing with p on hz and i on vl. two plots for healthy and dmgd)
+
+## notch phasee lead to enhance robustness against specimen degradation
+
 ## Recommendations for GM PM and NCF margin
 
 

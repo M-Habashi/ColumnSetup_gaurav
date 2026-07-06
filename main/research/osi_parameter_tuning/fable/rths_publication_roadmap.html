@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTHS publication roadmap — steel columns on concrete, two tracks</title>
+<style>
+  :root{
+    --paper:#FAFAF8; --card:#FFFFFF; --ink:#131311; --muted:#6E6C64;
+    --hairline:#E4E3DB; --ctrl:#0E8A6C; --struc:#B0532B; --bridge:#4A3AA7;
+    --chipbg:#F1F0EA; --warn:#B87A00;
+    --mono:'Cascadia Code','Consolas','SF Mono',ui-monospace,monospace;
+    --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#14161A; --card:#1C1F24; --ink:#E9E7E0; --muted:#9C9A92;
+      --hairline:#2D3037; --chipbg:#262930; --ctrl:#2FBF95; --struc:#D97A4C;
+      --bridge:#8B7FD4; --warn:#D99B33; }
+  }
+  :root[data-theme="light"]{ --paper:#FAFAF8; --card:#FFFFFF; --ink:#131311;
+    --muted:#6E6C64; --hairline:#E4E3DB; --ctrl:#0E8A6C; --struc:#B0532B;
+    --bridge:#4A3AA7; --chipbg:#F1F0EA; --warn:#B87A00; }
+  :root[data-theme="dark"]{ --paper:#14161A; --card:#1C1F24; --ink:#E9E7E0;
+    --muted:#9C9A92; --hairline:#2D3037; --chipbg:#262930; --ctrl:#2FBF95;
+    --struc:#D97A4C; --bridge:#8B7FD4; --warn:#D99B33; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:15.5px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px 120px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted)}
+  header{padding:60px 0 0}
+  h1{font-size:clamp(28px,4.4vw,44px);line-height:1.07;letter-spacing:-.02em;
+    font-weight:800;margin:14px 0 16px;max-width:24ch}
+  .lede{max-width:72ch;font-size:16.5px}
+  .lede b{font-weight:650}
+
+  .tracks{display:grid;grid-template-columns:1fr 1fr;gap:1px;
+    background:var(--hairline);border:1px solid var(--hairline);margin:30px 0 0}
+  @media(max-width:760px){.tracks{grid-template-columns:1fr}}
+  .trackhead{background:var(--card);padding:16px 20px}
+  .trackhead .t{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;font-weight:700}
+  .trackhead p{font-size:13.5px;color:var(--muted);margin:6px 0 0}
+  .t-ctrl{color:var(--ctrl)} .t-struc{color:var(--struc)}
+
+  section{margin-top:64px}
+  .sechead{display:flex;align-items:baseline;gap:12px;
+    border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px}
+  h2{font-size:23px;font-weight:750;letter-spacing:-.015em;margin:0}
+  .secnote{font-size:13px;color:var(--muted);margin:6px 0 22px;max-width:80ch}
+  h3{font-size:16.5px;font-weight:700;margin:26px 0 8px}
+  p{max-width:78ch;margin:10px 0}
+  ul{max-width:80ch;padding-left:20px;margin:8px 0}
+  li{margin:6px 0}
+  code,.mono{font-family:var(--mono);font-size:.88em;background:var(--chipbg);
+    padding:1px 5px;border-radius:3px}
+
+  /* paper cards */
+  .card{border:1px solid var(--hairline);background:var(--card);
+    margin:18px 0;padding:20px 22px 16px;border-left:4px solid var(--muted)}
+  .card.ctrl{border-left-color:var(--ctrl)}
+  .card.struc{border-left-color:var(--struc)}
+  .card.bridge{border-left-color:var(--bridge)}
+  .cardtop{display:flex;justify-content:space-between;gap:16px;
+    align-items:baseline;flex-wrap:wrap}
+  .cardid{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    color:var(--muted)}
+  .card h3{margin:6px 0 2px;font-size:17.5px}
+  .claim{font-size:14px;color:var(--muted);font-style:italic;
+    margin:2px 0 12px;max-width:90ch}
+  .cardgrid{display:grid;grid-template-columns:1.25fr 1fr;gap:8px 28px}
+  @media(max-width:820px){.cardgrid{grid-template-columns:1fr}}
+  .cardgrid .k{font-family:var(--mono);font-size:10px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--muted);margin:10px 0 3px}
+  .cardgrid ul{font-size:14px;margin:2px 0;padding-left:18px}
+  .cardgrid li{margin:4px 0}
+
+  /* readiness meter: what exists vs what's needed */
+  .ready{display:flex;gap:4px;align-items:center;margin-top:4px}
+  .ready .seg{width:34px;height:7px;background:var(--hairline)}
+  .ready .seg.on{background:var(--ctrl)}
+  .card.struc .ready .seg.on{background:var(--struc)}
+  .card.bridge .ready .seg.on{background:var(--bridge)}
+  .ready .lab{font-family:var(--mono);font-size:10px;color:var(--muted);
+    margin-left:6px;white-space:nowrap}
+  .venues{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    border-top:1px dashed var(--hairline);margin-top:14px;padding-top:9px}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;border:1px solid var(--hairline)}
+  table{border-collapse:collapse;width:100%;min-width:760px;
+    background:var(--card);font-size:13.5px}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--muted);text-align:left;
+    padding:10px 12px;border-bottom:2px solid var(--ink);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--hairline);
+    vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td.mono2{font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;
+    padding:1px 7px;border-radius:3px;margin:0 3px 3px 0;white-space:nowrap}
+  .tag.c{background:color-mix(in srgb,var(--ctrl) 14%,transparent);color:var(--ctrl)}
+  .tag.s{background:color-mix(in srgb,var(--struc) 14%,transparent);color:var(--struc)}
+  .tag.b{background:color-mix(in srgb,var(--bridge) 14%,transparent);color:var(--bridge)}
+
+  .note{border-left:3px solid var(--warn);background:var(--chipbg);
+    padding:12px 18px;max-width:76ch;font-size:14px;margin:18px 0}
+  .assets{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:1px;background:var(--hairline);border:1px solid var(--hairline)}
+  .asset{background:var(--card);padding:14px 16px}
+  .asset .a{font-weight:650;font-size:14px}
+  .asset .b{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .asset .p{font-family:var(--mono);font-size:10.5px;margin-top:8px}
+
+  footer{margin-top:80px;padding-top:14px;border-top:1px solid var(--hairline);
+    font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">rths lab &middot; publication roadmap &middot; steel columns anchored to concrete &middot; 2026-07</div>
+  <h1>You are sitting on two journals' worth of data — and one story that connects them</h1>
+  <p class="lede">The rig is more than an actuator and a column: it is a real-time hybrid loop with a
+  <b>validated online stability margin</b>, an <b>authority law that arrests instability</b>, a
+  <b>live stiffness tracker</b>, a <b>damage-robust compensator synthesis</b>, and — after this month —
+  a documented, fixed case of <b>closed-loop monitoring bias</b> that every RTHS lab in the world has and
+  almost none has noticed. The control papers are largely <i>harvesting</i> work. The structural papers need
+  instrumentation and campaigns, but they get a capability nobody else can claim honestly:
+  <b>margin-supervised testing lets you walk a real column toward instability and collapse-adjacent states
+  safely and repeatably</b> — which is exactly where structural data is scarce.</p>
+
+  <div class="tracks">
+    <div class="trackhead"><span class="t t-ctrl">■ control track</span>
+      <p>Methods for making RTHS itself trustworthy: online margins, bias-free monitoring, robust compensation, adaptive authority. Data mostly exists already.</p></div>
+    <div class="trackhead"><span class="t t-struc">■ structural track</span>
+      <p>What the real column-base assembly does that models miss: base fixity, deterioration under realistic histories, protocol validity, fragility. Needs instrumentation + campaigns.</p></div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2>What you already have (assets → papers)</h2></div>
+  <p class="secnote">Every card below cites these. Reviewers reward validated infrastructure — cite it as such.</p>
+  <div class="assets">
+    <div class="asset"><div class="a">Fable OSI + authority law</div>
+      <div class="b">Online NCF margin, two-scale fast/slow, bitwise Speedgoat runtime, 10-scenario + 10-record validation, evidence gate</div>
+      <div class="p"><span class="tag c">C1</span><span class="tag c">C2</span><span class="tag b">B1</span></div></div>
+    <div class="asset"><div class="a">The echo-bias finding</div>
+      <div class="b">FEM feedthrough echoes fm into dd zero-lag; biased margins; detector + structural fix + validation on 10 records — data in hand</div>
+      <div class="p"><span class="tag c">C1</span></div></div>
+    <div class="asset"><div class="a">Two identified plants (7k / 5k)</div>
+      <div class="b">H_dc_dm at two specimen stiffnesses = a controlled "healthy vs degraded" pair with full models</div>
+      <div class="p"><span class="tag c">C3</span><span class="tag s">S2</span></div></div>
+    <div class="asset"><div class="a">Real instability records</div>
+      <div class="b">Genuine RTHS divergences captured at 2048 Hz, inner loop healthy — evidence the OUTER loop binds (0.40 vs 0.59 margin)</div>
+      <div class="p"><span class="tag c">C2</span><span class="tag c">C4</span></div></div>
+    <div class="asset"><div class="a">Spectral k/m/c tracker</div>
+      <div class="b">Online EIV stiffness/mass/damping estimation, harness + report — a live damage meter during any test</div>
+      <div class="p"><span class="tag s">S2</span><span class="tag s">S4</span><span class="tag b">B1</span></div></div>
+    <div class="asset"><div class="a">NCF-constrained lead+notch optimizer</div>
+      <div class="b">Damage-robust delay compensation synthesized across damage states (pl_7000_robust_notch), analytic margin maps</div>
+      <div class="p"><span class="tag c">C3</span></div></div>
+    <div class="asset"><div class="a">Pvar marginality protocol</div>
+      <div class="b">Controller-gain ramps that emulate plant degradation on demand — repeatable "instability on tap" without sacrificing specimens</div>
+      <div class="p"><span class="tag c">C2</span><span class="tag c">C4</span></div></div>
+    <div class="asset"><div class="a">vHS + replay tooling</div>
+      <div class="b">Virtual twin of the whole loop, record replay pipelines, offline reference margins — the repeatability/prediction backbone</div>
+      <div class="p"><span class="tag s">S5</span><span class="tag c">all</span></div></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2 class="t-ctrl">Control track — four papers</h2></div>
+  <p class="secnote">Ordered by readiness. C1 is a submission problem, not a research problem.</p>
+
+  <div class="card ctrl">
+    <div class="cardtop">
+      <div><span class="cardid">C1 · READY — data exists</span>
+      <h3>The numerical substructure echoes the response into the command: feedthrough bias in RTHS monitoring, and its fix</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="lab">data ✓ · method ✓ · validation ✓ · rig confirm</span></div>
+    </div>
+    <p class="claim">Any condensed numerical substructure has a force→displacement feedthrough; it plants a zero-lag copy of the measured response inside the command at all frequencies. Every FRF, coherence, damage or stability estimate computed from (command, response) in closed-loop RTHS is biased toward the inverse numerical path — and passes every standard quality gate while being wrong.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments (mostly done)</div>
+        <ul>
+          <li>Same specimen, same estimator: injected broadband (unbiased) vs closed numerical loop (biased) — you have both record classes.</li>
+          <li>Bias vs exogenous-to-echo power ratio: intensity sweep 0.02–0.10 el-centro (1 day of runs).</li>
+          <li>Zero-lag detector as a classifier over the full record library (done, 10/10 correct).</li>
+          <li>Rig confirmation of the exact structural fix (the §1 wiring) — margin 0.29→0.66, authority restored.</li>
+        </ul>
+        <div class="k">results to report</div>
+        <ul>
+          <li>Closed-form bias limit (M → inverse feedback path), measured convergence to it.</li>
+          <li>Why coherence/power gates cannot save you (the anti-lesson for the SHM community).</li>
+          <li>Exogenous-tap correction + evidence gating; before/after on real runs incl. preserved detection of true instability.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>Generic: every RTHS with a condensed FEM interface has the term; online monitoring in hybrid testing is a growing subfield walking into this exact trap.</li>
+          <li>Complete arc: mechanism → theory → detector → fix → validation, all on hardware data.</li>
+        </ul>
+        <div class="k">reviewer risks</div>
+        <ul>
+          <li>"Just instrument-variable identification" — position it as the RTHS-specific instance with the D-term structure, the classifier, and the operational fix.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: Mech. Systems &amp; Signal Processing · Earthquake Engng &amp; Structural Dynamics · Struct. Control &amp; Health Monitoring</div>
+  </div>
+
+  <div class="card ctrl">
+    <div class="cardtop">
+      <div><span class="cardid">C2 · ONE CAMPAIGN AWAY</span>
+      <h3>Online normalized-coprime stability margin with target-tracking authority: supervised RTHS</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="lab">method ✓ · runtime ✓ · replays ✓ · live campaign</span></div>
+    </div>
+    <p class="claim">RTHS stability is traditionally certified a priori (delay margins, passivity, assumed models). This system measures the margin online from operating data and regulates loop authority onto a margin target — arresting incipient instability while preserving test fidelity, with validated false-alarm behavior.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>Healthy suite: N≥10 runs across intensities/records — authority stays 1.0, zero trips (false-alarm statistics).</li>
+          <li>Induced marginality (Pvar ramps): detection latency distribution vs onset speed; arrest vs the unsupervised baseline that diverges.</li>
+          <li>Recovery behavior: margin returns → authority recovers, latched after events.</li>
+          <li>Head-to-head vs the standard alternatives on identical runs: energy/passivity monitor and amplitude interlock — latency, false alarms, fidelity cost.</li>
+        </ul>
+        <div class="k">results to report</div>
+        <ul>
+          <li>Detection ≤0.5 s with coherent excitation (already shown in replay); quiet-band information limits stated honestly.</li>
+          <li>Fidelity metric while supervising: added tracking error / response distortion vs unsupervised — the cost of safety.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>First (to be verified in the lit review) online coprime-factor margin running on the actual test hardware with closed-loop authority — not a simulation study.</li>
+          <li>The bitwise desktop↔target equivalence + staged verification protocol is itself a methods contribution labs can copy.</li>
+        </ul>
+        <div class="k">depends on</div>
+        <ul><li>The echo fix wired in (fix_rths_echo_plan.md) — otherwise C1's bias eats this paper's credibility.</li></ul>
+      </div>
+    </div>
+    <div class="venues">venues: Earthquake Engng &amp; Structural Dynamics · IEEE Trans. Control Systems Technology · Engineering Structures</div>
+  </div>
+
+  <div class="card ctrl">
+    <div class="cardtop">
+      <div><span class="cardid">C3 · SYNTHESIS + A/B CAMPAIGN</span>
+      <h3>Damage-robust delay compensation: NCF-constrained lead+notch design across specimen degradation states</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="lab">optimizer ✓ · designs ✓ · A/B runs · degraded runs</span></div>
+    </div>
+    <p class="claim">Delay compensators are tuned for the healthy specimen, then the specimen degrades mid-test and the compensator that helped starts hurting (your 1p1z lead is provably unstable on the 5k plant). Synthesis against a family of damage states yields compensation that stays stable and synchronous through degradation.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>A/B/C on the same protocol: no compensation vs healthy-tuned lead vs robust lead+notch — synchronization (J2/J4/subspace plots), margins, at 7k AND 5k.</li>
+          <li>The money run: degradation <i>during</i> the record (Pvar or a specimen driven into softening) — healthy-tuned design destabilizes, robust design rides through.</li>
+          <li>Compare against an adaptive compensator from the literature (e.g. ATS) as the third arm.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>RTHS compensation literature optimizes tracking on the nominal plant; explicit robustness-across-damage synthesis with margin constraints is a clean gap.</li>
+          <li>Everything is already built: optimizer, analytic margin maps, both plants, the winner design.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: Engineering Structures · Mech. Systems &amp; Signal Processing · Smart Structures and Systems</div>
+  </div>
+
+  <div class="card ctrl">
+    <div class="cardtop">
+      <div><span class="cardid">C4 · SHORT PAPER / LETTER</span>
+      <h3>The loop that actually binds: inner vs outer stability margins in RTHS, and monitoring the one that matters</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="lab">finding ✓ · offline wrap ✓ · online b_out · demo run</span></div>
+    </div>
+    <p class="claim">The transfer-system loop everyone monitors had margin 0.59; the hybrid (numerical-closed) loop had 0.40 at 38 Hz — and your real divergences were outer-loop events the inner monitor is structurally blind to. Because the numerical side is exactly known software, the outer margin comes free by wrapping the already-estimated plant FRF.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>Implement numerical_ncf_plan.md WP-B (publish-only b_out); replay library first.</li>
+          <li>One controlled outer-loop instability (stiff FEM / raised k ratio) where b_out falls while inner margin stays healthy — the decisive figure.</li>
+          <li>Impedance upgrade: static-k wrap vs measured K̂(ω) wrap accuracy.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>Simple, sharp, and actionable for every RTHS lab: monitor the hybrid loop, not just the actuator loop; here is how, at zero identification cost.</li>
+          <li>Natural companion/sequel to C2 — or its strongest section if merged.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: Struct. Control &amp; Health Monitoring · Mechanics Research Communications (letter) · or fold into C2</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2 class="t-struc">Structural track — the column-base assembly is the story</h2></div>
+  <p class="secnote">A steel column anchored to a concrete base is not "a column": it is an <b>exposed base-plate connection</b> —
+  base plate, anchor rods, grout, concrete breakout cones. Design practice models it as fixed or pinned; reality is semi-rigid,
+  pinching, and degrading, and its behavior sets first-story drift, period, and collapse margin. Your physical substructure
+  contains the one component the profession models worst. That is the thesis of every card below.</p>
+
+  <div class="card struc">
+    <div class="cardtop">
+      <div><span class="cardid">S1 · FIRST STRUCTURAL PAPER</span>
+      <h3>How much fixity does a real anchored base have — and what does the building above feel?</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="lab">rig ✓ · instrumentation · campaign · analysis</span></div>
+    </div>
+    <p class="claim">Same ground motions, same numerical superstructure, three base conditions: the numerical model's fixed-base assumption, its pinned-base assumption, and the REAL connection in the loop. Quantify the rotational stiffness the connection actually delivers, how it degrades with demand, and the system-level consequences (drift concentration, period elongation, force redistribution) of both idealizations.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>Characterization: low-amplitude BLWN + moment-rotation loops → initial rotational stiffness, slip/gap thresholds (compare AISC Design Guide 1 / Eurocode component-method predictions).</li>
+          <li>Hybrid runs at 3 intensities × 3 records × {real base | numerical fixed | numerical pinned superstructure variants}.</li>
+          <li>Fixity evolution: rotational stiffness identified per window across each run (the k̂ tracker generalizes).</li>
+        </ul>
+        <div class="k">questions answered</div>
+        <ul>
+          <li>Where between pinned and fixed does a code-designed exposed base plate actually sit, dynamically?</li>
+          <li>At what demand does fixity start to drop, and is it recoverable (slip) or permanent (anchor yield/grout)?</li>
+          <li>Which idealization is conservative for drift, and by how much — does it flip with intensity?</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">instrumentation to add</div>
+        <ul>
+          <li>2× LVDT/laser at base plate edges → uplift + rotation.</li>
+          <li>Strain gauges on 2–4 anchor rods (axial force history).</li>
+          <li>Rosettes on base plate; crack mapping / camera on grout &amp; concrete.</li>
+        </ul>
+        <div class="k">reviewer risks</div>
+        <ul>
+          <li>Single column, no axial-load variation — scope the claim to shear-dominated exterior columns; state boundary conditions precisely.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: J. Structural Engineering (ASCE) · Engineering Structures · J. Constructional Steel Research</div>
+  </div>
+
+  <div class="card struc">
+    <div class="cardtop">
+      <div><span class="cardid">S2 · THE SIGNATURE COMBO</span>
+      <h3>Deterioration under realistic seismic histories: mainshock–aftershock sequences with a live stiffness meter</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="lab">tracker ✓ · protocol design · campaign · fragility fit</span></div>
+    </div>
+    <p class="claim">Run the same physical assembly through recorded sequences (mainshock, then real aftershocks) while the spectral k/m/c tracker logs stiffness continuously. Deliver degradation-vs-demand-history curves that no cyclic protocol can produce: does damage accumulate with peak demand, with dissipated energy, or with the ORDER of events? What residual capacity is left after a design-level mainshock?</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>Sequences: MS-only vs MS+AS1+AS2 (recorded pairs, e.g. Mainshock/aftershock sets from PEER), matched-intensity singles as controls.</li>
+          <li>Order swap: strong-then-weak vs weak-then-strong at equal cumulative energy — history dependence isolated.</li>
+          <li>Continuous k̂(t) + per-event moment-rotation autopsies + anchor strain ratchet.</li>
+        </ul>
+        <div class="k">results to report</div>
+        <ul>
+          <li>Stiffness-degradation curves vs cumulative measures (peak drift, dissipated energy, cycles above threshold) — which collapses the data best.</li>
+          <li>Residual-capacity statement per damage state — directly usable for post-earthquake tagging of columns.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>Aftershock capacity of steel base connections is a live code question with almost no component-level dynamic data.</li>
+          <li>The online tracker turns each run into a continuous measurement, not a before/after pair — that is the novelty multiplier.</li>
+        </ul>
+        <div class="k">consumables</div>
+        <ul><li>3–6 nominally identical specimens (anchor groups are the sacrificial part; the column can likely be reused early on).</li></ul>
+      </div>
+    </div>
+    <div class="venues">venues: Earthquake Engng &amp; Structural Dynamics · Bull. Earthquake Engineering · J. Structural Engineering</div>
+  </div>
+
+  <div class="card struc">
+    <div class="cardtop">
+      <div><span class="cardid">S3 · THE PRACTICE-FACING COMPARISON</span>
+      <h3>Do standard cyclic protocols predict what an earthquake actually does to this connection?</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="lab">rig ✓ · twin specimens · both protocols · comparison</span></div>
+    </div>
+    <p class="claim">Twin specimens: one tested under the standard quasi-static protocol (ATC-24 / AISC 341 loading), one under RTHS with real ground-motion demand at matched peak drift. Compare damage progression, dissipated energy, deterioration rates, and failure mode. If they differ materially, that is a finding about the protocol; if they match, that is a validation the profession also wants.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>2–3 twin pairs (repeatability!), matched peak rotation; document cycle counts, energy, k̂ trajectories, failure surfaces.</li>
+          <li>Secondary: rate effect isolation — replay the RTHS displacement history quasi-statically on a third twin (separates rate from sequence).</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>Protocol-vs-reality comparisons exist for beams and BRBs; base connections with real concrete anchorage are underrepresented, and this is exactly what RTHS is FOR.</li>
+          <li>Either outcome is a paper — rare and valuable property.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: J. Structural Engineering (ASCE) · Earthquake Spectra · Engineering Structures</div>
+  </div>
+
+  <div class="card struc">
+    <div class="cardtop">
+      <div><span class="cardid">S4 · THE CAPSTONE</span>
+      <h3>Hybrid incremental dynamic analysis: fragility of the anchored base from escalating real tests</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="lab">needs S1+S2 first · OSI safety net ✓</span></div>
+    </div>
+    <p class="claim">Escalate intensity run-over-run (hybrid IDA) until defined damage states — slip, anchor yield, stiffness −30%, loss of moment capacity — and fit fragility functions for the component from physical data. The OSI safety supervision (B1) is what makes running this close to failure repeatedly a controlled activity rather than a gamble.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>IM ladder per specimen (e.g. Sa scaled 0.5×→2.5× design) across ≥3 records; damage-state detection from k̂ thresholds + physical inspection.</li>
+          <li>Cross-check numerical: does a calibrated deteriorating spring model, fed the S1/S2 parameters, reproduce the fragilities?</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>Component fragilities for exposed base plates are mostly judgment + monotonic pushes today; dynamic, sequence-aware physical fragility data is a genuine contribution to performance-based assessment.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: Earthquake Spectra · Bull. Earthquake Engineering · Structural Safety</div>
+  </div>
+
+  <div class="card struc">
+    <div class="cardtop">
+      <div><span class="cardid">S5 · METHODS-ADJACENT</span>
+      <h3>How much does the hybrid answer depend on the numerical half?</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="lab">vHS twin ✓ · variants · runs</span></div>
+    </div>
+    <p class="claim">Same physical column, same record; vary only the numerical substructure: number of floors, damping model, condensation choices, feedthrough handling, time-scale. Quantify sensitivity of the physical demand and of the identified connection behavior to numerical modeling decisions — practical guidance for anyone designing an RTHS campaign.</p>
+    <div class="cardgrid">
+      <div>
+        <div class="k">experiments</div>
+        <ul>
+          <li>Numerical variant matrix (3 floors vs 8; Rayleigh vs modal damping 2–5%; with/without interface flexibility term) × 2 records, physical side untouched.</li>
+          <li>Report demand deltas (drift, rotation, energy into specimen) and margin/fidelity deltas.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">why it publishes</div>
+        <ul>
+          <li>Cheap (no consumables — stay below damage thresholds), fills a guidance gap, and doubles as your own uncertainty quantification for S1–S4.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="venues">venues: Struct. Control &amp; Health Monitoring · Engineering Structures (technical note)</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2 style="color:var(--bridge)">The bridge paper — where the two tracks meet</h2></div>
+  <div class="card bridge">
+    <div class="cardtop">
+      <div><span class="cardid">B1 · THE FLAGSHIP</span>
+      <h3>Margin-supervised hybrid testing: safely walking a real structure to the edge</h3></div>
+      <div class="ready"><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="lab">after C2 + S2</span></div>
+    </div>
+    <p class="claim">The reason near-collapse structural data is scarce is that nobody dares run the test: instability wrecks specimens, actuators, and schedules. Demonstrate that online margin supervision + authority regulation + live stiffness tracking converts near-limit testing from a gamble into a procedure — then USE it: take specimens through damage states no unsupervised protocol would risk, and report both the structural findings and the supervision performance as one system. Control methods as the enabling instrument for structural discovery — the narrative that justifies the whole program (and reads like a PhD thesis spine).</p>
+    <div class="venues">venues: Earthquake Engng &amp; Structural Dynamics (feature) · Nature-family engineering venues if the demo is strong · NEES/DesignSafe community visibility</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2>Campaign matrix — runs feed multiple papers</h2></div>
+  <p class="secnote">Design every campaign to feed at least two cards. Specimens are the scarce resource; data is not.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>campaign</th><th>runs / consumables</th><th>feeds</th><th>prerequisite</th></tr></thead>
+    <tbody>
+      <tr><td>Echo A/B + intensity sweep</td><td class="mono2">~15 runs · 0 specimens</td>
+        <td><span class="tag c">C1</span><span class="tag c">C2</span></td><td>echo tap wired (fix_rths_echo_plan)</td></tr>
+      <tr><td>Healthy supervision suite + Pvar marginality ladder</td><td class="mono2">~25 runs · 0 specimens</td>
+        <td><span class="tag c">C2</span><span class="tag c">C4</span></td><td>gate + shadow validation</td></tr>
+      <tr><td>Compensator A/B/C at 7k and 5k</td><td class="mono2">~18 runs · 0–1 specimens</td>
+        <td><span class="tag c">C3</span><span class="tag c">C2</span></td><td>—</td></tr>
+      <tr><td>Base characterization + fixity variants</td><td class="mono2">~20 runs · 1 specimen</td>
+        <td><span class="tag s">S1</span><span class="tag s">S5</span></td><td>base instrumentation installed</td></tr>
+      <tr><td>Numerical-variant matrix (low amplitude)</td><td class="mono2">~16 runs · 0 specimens</td>
+        <td><span class="tag s">S5</span><span class="tag c">C4</span></td><td>—</td></tr>
+      <tr><td>MS–AS sequences + order swaps</td><td class="mono2">~12 runs · 3–4 specimens</td>
+        <td><span class="tag s">S2</span><span class="tag b">B1</span><span class="tag s">S4</span></td><td>S1 characterization baseline</td></tr>
+      <tr><td>Twin protocol comparison</td><td class="mono2">~8 runs · 4–6 specimens</td>
+        <td><span class="tag s">S3</span></td><td>quasi-static fixture path</td></tr>
+      <tr><td>Hybrid IDA ladders</td><td class="mono2">~15 runs · 3–5 specimens</td>
+        <td><span class="tag s">S4</span><span class="tag b">B1</span></td><td>C2 supervision active; S2 damage states defined</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note"><b>Repeatability is your credibility budget.</b> Reserve twin runs early (same record, same intensity,
+  fresh vs same specimen) and report the scatter in every structural paper. RTHS skeptics' first question is always
+  "how repeatable is the loop?" — you have vHS + margins + tracking-error metrics to answer it quantitatively; make that
+  a standard figure in every paper.</div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2>What reviewers will attack — prepare now</h2></div>
+  <ul>
+    <li><b>Fidelity proof.</b> Every structural claim rests on "the loop applied realistic demand". Standard figure set for all papers: synchronization subspace plot, tracking error spectrum, margin trace, and the C1 correction note. The control track literally manufactures the credibility the structural track spends.</li>
+    <li><b>Boundary conditions.</b> One actuator, one interface DOF, likely no live axial load: claim shear-dominated exterior-column behavior, not "columns" in general. If a constant axial can be rigged (dead weight / post-tensioning), S1–S4 all strengthen materially — worth a hardware afternoon of thought.</li>
+    <li><b>Scale and detailing.</b> Anchor cone breakout does not scale linearly; state specimen scale, concrete strength, anchor embedment explicitly; frame conclusions per detailing class.</li>
+    <li><b>Numerical-substructure realism.</b> S5 is your pre-emptive answer; do it early and cite yourself.</li>
+    <li><b>"Is the supervision changing the physics?"</b> Report authority histories with every structural result: on healthy runs it is pinned at 1.0 (validated) — i.e., zero interference. That's the answer, and only you can currently give it with data.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="sechead"><h2>Suggested sequencing (12 months)</h2></div>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>quarter</th><th>lab</th><th>writing</th></tr></thead>
+    <tbody>
+      <tr><td class="mono2">Q1</td>
+        <td>Wire the echo fix + gate (plans exist); echo A/B + intensity sweep; base instrumentation ordered/installed</td>
+        <td><b>C1 submitted</b> (data in hand — add the rig-confirmation runs)</td></tr>
+      <tr><td class="mono2">Q2</td>
+        <td>Supervision suite + Pvar ladder; base characterization; numerical-variant matrix</td>
+        <td><b>C2 drafted</b>; S1 analysis started; C4 as spillover or C2 section</td></tr>
+      <tr><td class="mono2">Q3</td>
+        <td>MS–AS sequence campaign (first specimen set); compensator A/B/C</td>
+        <td><b>S1 submitted; C2 submitted</b>; C3 drafted</td></tr>
+      <tr><td class="mono2">Q4</td>
+        <td>Twin protocol pairs; first hybrid-IDA ladder under supervision</td>
+        <td><b>S2 submitted; C3 submitted</b>; B1 outlined from accumulated data</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="margin-top:16px">Rule of thumb baked into this plan: <b>every quarter ships one paper whose data already
+  exists</b> while the lab produces the next quarter's data. C1 starts the clock without any new hardware work beyond
+  the fix you were going to install anyway.</p>
+</section>
+
+<footer>
+  rths publication roadmap · generated 2026-07 · companion plans: fix_rths_echo_plan.md · numerical_ncf_plan.md ·
+  rths_echo_report.html — all under research/osi_parameter_tuning/fable
+</footer>
+
+</div>
+</body>
+</html>
