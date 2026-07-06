@@ -108,9 +108,9 @@ end
 
 function command_gain = localCommandGain(data, n)
 command_gain = [];
-direct_names = {'command_gain', 'commandGain', 'cmd_gain', ...
-    'cmdGain', 'cd_gain', 'cdGain', 'command_gain_log', ...
-    'commandGainLog'};
+direct_names = {'dc_gain', 'dcGain', 'dc_gain_log', 'dcGainLog', ...
+    'command_gain', 'commandGain', 'cmd_gain', 'cmdGain', ...
+    'command_gain_log', 'commandGainLog'};
 for i = 1:numel(direct_names)
     if isfield(data, direct_names{i}) && numel(data.(direct_names{i})) == n
         command_gain = data.(direct_names{i})(:);
@@ -123,11 +123,11 @@ if isfield(data, 'Results')
     if iscell(results)
         results = results{1};
     end
-    if size(results, 1) == n && size(results, 2) >= 19
-        command_gain = results(:, 19);
+    if size(results, 1) == n && size(results, 2) >= 21
+        command_gain = results(:, 21);
         return
-    elseif size(results, 2) == n && size(results, 1) >= 19
-        command_gain = results(19, :)';
+    elseif size(results, 2) == n && size(results, 1) >= 21
+        command_gain = results(21, :)';
         return
     end
 end
@@ -135,7 +135,9 @@ end
 if isfield(data, 'logsout')
     sig = data.logsout.FileLogSignals{1}.Values;
     names = localSignalNames(sig);
-    hit = strcmpi(names, 'cd_gain') ...
+    hit = strcmpi(names, 'dc_gain') ...
+        | strcmpi(names, 'dcGain') ...
+        | contains(lower(names), 'dc_gain') ...
         | (contains(lower(names), 'command') & contains(lower(names), 'gain'));
     if ~any(hit)
         hit = contains(lower(names), 'cmd') & contains(lower(names), 'gain');
@@ -224,6 +226,8 @@ trip_current_color = black;
 [~, record_name] = fileparts(data_file);
 n_fast_new = nnz(new_replay.trip_reason ~= 0);
 n_fast_current = nnz(current_replay.trip_reason ~= 0);
+n_emergency_new = localEmergencyDropCount(new_replay);
+n_emergency_current = localEmergencyDropCount(current_replay);
 fig = figure('Color', 'w', 'Position', [80 80 1200 820], ...
     'Name', ['Habashi OSI tuning - ' record_name], ...
     'NumberTitle', 'off');
@@ -235,8 +239,10 @@ plot(ax1, record.t(1:stride:end), record.dm(1:stride:end), ...
     'Color', blue, 'LineWidth', 1)
 grid(ax1, 'on')
 ylabel(ax1, 'dm (mm)', 'Interpreter', 'none')
-title(ax1, sprintf('%s | fast trips new/current: %d/%d', ...
-    record_name, n_fast_new, n_fast_current), 'Interpreter', 'none')
+title(ax1, sprintf(['%s | fast trips new/current: %d/%d | ', ...
+    'emergency drops new/current: %d/%d'], record_name, n_fast_new, ...
+    n_fast_current, n_emergency_new, n_emergency_current), ...
+    'Interpreter', 'none')
 
 ax2 = nexttile;
 hold(ax2, 'on')
@@ -251,6 +257,8 @@ localPlotPair(ax2, new_replay.tc, new_replay.b_fast, ...
 localPlotFastTripLines(ax2, new_replay, 'new', '-', trip_new_color)
 localPlotFastTripLines(ax2, current_replay, 'current', '--', ...
     trip_current_color)
+localPlotEmergencyDropLines(ax2, new_replay, 'new', '-', purple)
+localPlotEmergencyDropLines(ax2, current_replay, 'current', '--', gray)
 grid(ax2, 'on')
 ylabel(ax2, 'OSI margin', 'Interpreter', 'none')
 legend2 = legend(ax2, 'Location', 'best', 'Interpreter', 'none');
@@ -266,9 +274,11 @@ localPlotFastTripLines(ax3, current_replay, 'current', '--', ...
     trip_current_color)
 localPlotFastTrips(ax3, new_replay, 'new', 'v', trip_new_color)
 localPlotFastTrips(ax3, current_replay, 'current', 'x', trip_current_color)
+localPlotEmergencyDrops(ax3, new_replay, 'new', 's', purple)
+localPlotEmergencyDrops(ax3, current_replay, 'current', 'd', gray)
 if ~isempty(record.command_gain)
     plot(ax3, record.t, record.command_gain, ':', 'Color', gray, ...
-        'LineWidth', 1.4, 'DisplayName', 'command gain (logged)')
+        'LineWidth', 1.4, 'DisplayName', 'dc gain (logged)')
 end
 grid(ax3, 'on')
 ylabel(ax3, 'factor', 'Interpreter', 'none')
@@ -288,9 +298,26 @@ fprintf('  new min authority/current min authority: %.6g / %.6g\n', ...
     min(current_replay.auth, [], 'omitnan'))
 fprintf('  new fast trips/current fast trips: %d / %d\n', ...
     n_fast_new, n_fast_current)
-fprintf('  command gain logged: %d\n', ~isempty(record.command_gain))
+fprintf('  new emergency drops/current emergency drops: %d / %d\n', ...
+    n_emergency_new, n_emergency_current)
+fprintf('  dc gain logged: %d\n', ~isempty(record.command_gain))
 localPrintDropAnalysis('new', new_replay, new_params)
 localPrintDropAnalysis('current', current_replay, current_params)
+end
+
+function n = localEmergencyDropCount(replay)
+n = nnz(localEmergencyDropIndex(replay));
+end
+
+function idx = localEmergencyDropIndex(replay)
+emergency = replay.decision(:) == 2 ...
+    & isfinite(replay.tc(:)) ...
+    & isfinite(replay.auth(:));
+if isempty(emergency)
+    idx = emergency;
+    return
+end
+idx = emergency & ~[false; emergency(1:end-1)];
 end
 
 function localPrintDropAnalysis(label, replay, params)
@@ -371,6 +398,44 @@ plot(ax, replay.tc(idx), replay.auth(idx), marker, ...
     'MarkerSize', 9, ...
     'LineWidth', 1.8, ...
     'DisplayName', ['fast trip ' label])
+end
+
+function localPlotEmergencyDropLines(ax, replay, label, line_style, color)
+t_drop = replay.tc(localEmergencyDropIndex(replay));
+if isempty(t_drop)
+    return
+end
+t_drop = unique(t_drop(:)');
+yl = ylim(ax);
+for i = 1:numel(t_drop)
+    if i == 1
+        display_name = ['emergency drop line ' label];
+        handle_visibility = 'on';
+    else
+        display_name = '';
+        handle_visibility = 'off';
+    end
+    plot(ax, [t_drop(i) t_drop(i)], yl, line_style, ...
+        'Color', color, ...
+        'LineWidth', 1.4, ...
+        'DisplayName', display_name, ...
+        'HandleVisibility', handle_visibility)
+end
+ylim(ax, yl)
+end
+
+function localPlotEmergencyDrops(ax, replay, label, marker, color)
+idx = localEmergencyDropIndex(replay);
+if ~any(idx)
+    return
+end
+plot(ax, replay.tc(idx), replay.auth(idx), marker, ...
+    'Color', color, ...
+    'MarkerFaceColor', 'w', ...
+    'LineStyle', 'none', ...
+    'MarkerSize', 9, ...
+    'LineWidth', 1.8, ...
+    'DisplayName', ['emergency drop ' label])
 end
 
 function localPlotPair(ax, t_new, y_new, t_current, y_current, ...

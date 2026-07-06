@@ -220,23 +220,28 @@ aovr = cm.auth_override;
 aovr.target = target;
 aovr.dt_update = cfg.step_s;
 prm = fable_auth('params', aovr);
+gprm = fable_evidence_gate('params', struct('dt_step', cfg.step_s));
 ctx = struct('cfg', cfg, 'state', fable_osi('state', cfg), ...
-    'prm', prm, 'ast', fable_auth('state', prm), 'a_last', prm.a_init);
+    'prm', prm, 'ast', fable_auth('state', prm), ...
+    'gst', fable_evidence_gate('state', gprm), 'gprm', gprm, ...
+    'a_last', prm.a_init);
 end
 function [ctx, b, a, trip] = stepFable(ctx, dd_blk, dm_blk)
 ctx.state.a_cmd = ctx.a_last;   % authority applied during this block
 [b, ctx.state, oi] = fable_osi(dd_blk, dm_blk, ctx.cfg, ctx.state);
-[a, ctx.ast] = fable_auth(b, oi.st_valid, oi.trip_reason, oi.b_fast, ...
-    oi.pred_margin, oi.pred_valid, oi.alpha_grid, ctx.ast, ctx.prm, ...
-    oi.st_binding, oi.regime_recal);
+[b, valid_up, armed, ctx.gst] = fable_evidence_gate(dd_blk, b, ...
+    oi.st_valid, ctx.gprm, ctx.gst);
+[a, ctx.ast] = fable_auth(b, valid_up, oi.trip_reason, oi.b_fast, ...
+    oi.pred_margin, oi.pred_valid && armed, oi.alpha_grid, ctx.ast, ...
+    ctx.prm, oi.st_binding, oi.regime_recal);
 ctx.a_last = a;
 trip = oi.trip_reason;
 end
 
 function m = runtimeMethod()
 % the flattened Speedgoat wrapper (fable_osi_runtime) - what the target
-% actually executes; bitwise-identical to 'fable' by test_fable_runtime_
-% equivalence, so use 'fable' for speed and this for final confirmation
+% actually executes; equivalent to 'fable' by test_fable_runtime_equivalence,
+% so use 'fable' for speed and this for final confirmation
 m = struct('name', 'runtime', 'block_n', 256, ...
     'init', @initRuntime, 'step', @stepRuntime);
 end

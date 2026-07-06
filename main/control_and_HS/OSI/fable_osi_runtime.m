@@ -1,4 +1,4 @@
-function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, decision] = ...
+function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
     fable_osi_runtime(dd, dm, en, fbls, fblw, fblbins, fblfw, fblfbins, ...
     fblag, fbla)
 %FABLE_OSI_RUNTIME Simulink/Speedgoat runtime for the fable OSI + authority.
@@ -36,6 +36,8 @@ function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, decision] = ...
 %   valid       1 when b_osi is real evidence (post warm-up, non-NaN)
 %   decision    authority-law decision: 0 hold, 1 down, 2 severe down,
 %               3 up, 4 fast trip
+%   g_armed     1 when the evidence gate allows the slow margin into the
+%               authority law; fast trips are never gated
 %
 % ==========================================================================
 % REAL-TIME SCHEDULING (CPU-overload fix, 2026-07-03)
@@ -90,10 +92,11 @@ persistent c ...                 % unpacked config (constants)
     raw_dd raw_dm raw_pos sample_phase ...
     S ...                        % estimator state (fixed-size struct)
     W ...                        % pipeline work state (fixed-size struct)
-    out_b out_bst out_bres out_bfast out_trip out_valid out_dec ...
+    out_b out_bst out_bres out_bfast out_trip out_valid out_dec out_garmed ...
     au_a au_cont au_bfilt au_below au_above au_cool au_blind ...
     au_latch au_armed au_age au_pretrip ...
-    au_shedtgt au_bshedref au_settle au_movage
+    au_shedtgt au_bshedref au_settle au_movage ...
+    g_ms g_pos g_n g_acc g_cnt g_arm g_drop g_blank
 
 P_PUB = 56;   % publish phase (ticks after the step boundary)
 
@@ -106,7 +109,7 @@ if isempty(raw_pos)
     S = initState(c);
     W = initWork(c);
     out_b = NaN; out_bst = NaN; out_bres = NaN; out_bfast = NaN;
-    out_trip = 0; out_valid = 0; out_dec = 0;
+    out_trip = 0; out_valid = 0; out_dec = 0; out_garmed = 0;
     % authority-law state: scalar persistents (fable_auth 'state' fields)
     au_a = fbla(4);        % committed authority (what the loop sees)
     au_cont = fbla(4);     % internally regulated authority
@@ -123,6 +126,9 @@ if isempty(raw_pos)
     au_bshedref = NaN;     % margin reading that sized the active shed
     au_settle = 0;         % steps left before the shed may be re-sized
     au_movage = 1e6;       % steps since the committed authority moved
+    g_ms = zeros(48, 1);   % evidence gate: per-step mean squares
+    g_pos = 0; g_n = 0; g_acc = 0; g_cnt = 0;
+    g_arm = 0; g_drop = 0; g_blank = 0;
 end
 
 pause_enable = en >= 2;
@@ -141,6 +147,7 @@ if pause_enable
     raw_pos = 0;
     sample_phase = 0;
     W.phase = 0;                 % abort any in-flight pipeline
+    W.g_ms_k = 0;
     S.samples_in = 0;
     S.step_count = 0;
     S.hop_count = 0;
@@ -158,6 +165,9 @@ if pause_enable
     S.cus_st = 0;
     S.cus_burst(:) = 0;
     S.slow_hist(:) = NaN;
+    g_ms(:) = 0;
+    g_pos = 0; g_n = 0; g_acc = 0; g_cnt = 0;
+    g_arm = 0; g_drop = 0; g_blank = 0;
     if ~S.ready
         S.cal_count = 0;
         S.cal_tries = 0;
@@ -171,10 +181,13 @@ if pause_enable
     end
     b_osi = out_b; b_st = out_bst; b_res = out_bres; b_fast = out_bfast;
     trip_reason = out_trip; valid = out_valid; decision = out_dec;
+    g_armed = out_garmed;
     return
 end
 
 % ---- per-sample: write into the circular raw rings ------------------------
+g_acc = g_acc + dd*dd;          % dd inport == the cleaned tap after wiring
+g_cnt = g_cnt + 1;
 raw_pos = raw_pos + 1;
 if raw_pos > c.segment_n
     raw_pos = 1;
@@ -188,6 +201,9 @@ if sample_phase >= c.step_n
     % ============ step boundary (T0): snapshot + bookkeeping ==============
     sample_phase = 0;
     S.step_count = S.step_count + 1;
+    W.g_ms_k = g_acc/max(g_cnt, 1);
+    g_acc = 0;
+    g_cnt = 0;
 
     % the authority applied during the samples of this step is the law's
     % previous committed output au_a: the FRF-change statistic arms only
@@ -691,6 +707,46 @@ elseif W.phase > 0
             S.recal_pending = false;
         end
 
+        % ---- evidence gate: blank slow evidence while the tap is idle ----
+        g_pos = mod(g_pos, 48) + 1;
+        g_ms(g_pos) = W.g_ms_k;
+        g_n = min(g_n + 1, 48);
+        gate_armed = true;
+        gate_th = fbla(32);     % theta_mm; <=0 disables the gate
+        if gate_th > 0
+            s_pres = 0; s_short = 0;
+            for gi = 0:15
+                gj = mod(g_pos - gi - 1, 48) + 1;
+                s_pres = s_pres + g_ms(gj);
+                if gi < 8
+                    s_short = s_short + g_ms(gj);
+                end
+            end
+            exc_pres = sqrt(s_pres/min(16, g_n));
+            exc_short = sqrt(s_short/min(8, g_n));
+            exc_long = sqrt(sum(g_ms)/g_n);
+            if g_n >= 48 && exc_short < fbla(35)*exc_long ...
+                    && exc_long > gate_th
+                g_blank = fbla(36);
+            else
+                g_blank = max(0, g_blank - c.step_s);
+            end
+            if g_n >= 16 && exc_pres > gate_th
+                g_arm = g_arm + c.step_s;
+                g_drop = 0;
+            else
+                g_drop = g_drop + c.step_s;
+                if g_drop >= fbla(34)
+                    g_arm = 0;
+                    g_blank = 0;
+                end
+            end
+            gate_armed = g_arm >= fbla(33) && g_blank <= 0;
+            if ~gate_armed
+                b = NaN;
+            end
+        end
+
         valid_k = ~isnan(b);
         st_binding_k = S.sb_stvalid ...
             && (isnan(S.sb_res) || S.sb_st <= S.sb_res);
@@ -698,8 +754,8 @@ elseif W.phase > 0
         [au_a, au_cont, au_bfilt, au_below, au_above, au_cool, au_blind, ...
             au_latch, au_armed, au_age, au_pretrip, au_shedtgt, ...
             au_bshedref, au_settle, au_movage, dec_k] = fableAuthStep( ...
-            b, S.sb_stvalid, W.trip_k, W.bf_k, S.sb_pred, ...
-            S.sb_predvalid && c.pred_enable ~= 0, c.alpha_grid, ...
+            b, S.sb_stvalid && gate_armed, W.trip_k, W.bf_k, S.sb_pred, ...
+            S.sb_predvalid && c.pred_enable ~= 0 && gate_armed, c.alpha_grid, ...
             st_binding_k, recal_k, fbla, ...
             au_a, au_cont, au_bfilt, au_below, au_above, au_cool, ...
             au_blind, au_latch, au_armed, au_age, au_pretrip, ...
@@ -720,6 +776,7 @@ elseif W.phase > 0
         out_trip = W.trip_k;
         out_valid = double(valid_k);
         out_dec = dec_k;
+        out_garmed = double(gate_armed);
     end
 end
 
@@ -735,6 +792,7 @@ b_fast = out_bfast;
 trip_reason = out_trip;
 valid = out_valid;
 decision = out_dec;
+g_armed = out_garmed;
 end
 
 % ==========================================================================
@@ -743,6 +801,7 @@ end
 function c = unpackConfig(fbls, fblw, fblbins, fblfw, fblfbins, fblag)
 c = struct( ...
     'dt', fbls(1), 'fs', fbls(2), 'step_n', fbls(3), ...
+    'step_s', fbls(1)*fbls(3), ...
     'steps_per_hop', fbls(4), 'segment_n', fbls(5), 'n_segment', fbls(6), ...
     'k_eff', fbls(7), 'gamma_gate', fbls(8), 'gamma_quiet', fbls(9), ...
     'input_power_range_db', fbls(10), 'sidelobe_db', fbls(11), ...
@@ -843,7 +902,7 @@ W = struct( ...
     'sortbuf', zeros(ceil(nf*ncal/16), 1), 'devcnt', 0, ...
     'b_st_k', NaN, 'f_st', NaN, 'st_valid', false, 'n_exc', 0, ...
     'b_res_k', NaN, 'f_res', NaN, 'z_max', NaN, ...
-    'bf_k', NaN, 'trip_k', 0);
+    'bf_k', NaN, 'trip_k', 0, 'g_ms_k', 0);
 end
 
 % ==========================================================================
@@ -1114,6 +1173,8 @@ function [a_out, a_cont, b_filt, below_n, above_n, trip_cool, blind_hops, ...
 % 20 pred_guard  21 pred_floor_frac  22 trip_drop  23 trip_power
 % 24 trip_cool_s  25 trip_undo_s  26 latch_relax  27 latch_decay_tau_s
 % 28 down_settle_s  29 re_shed_delta  30 self_move_gate_s  31 self_move_frac
+% 32-36 evidence-gate params are consumed by fable_osi_runtime before this
+% law step; fableAuthStep intentionally uses only the authority params.
 target = pa(1); a_min = pa(2); a_max = pa(3);
 dt_up = pa(5); filt_alpha = pa(6);
 

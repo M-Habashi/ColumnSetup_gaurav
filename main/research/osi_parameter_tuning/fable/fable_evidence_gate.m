@@ -88,6 +88,12 @@ end
 % ---- per-step call --------------------------------------------------------
 [u_step, b, valid_up, prm, gst] = deal(varargin{1:5});
 
+if prm.theta_mm <= 0
+    gst.armed = true;
+    varargout = {b, valid_up, gst.armed, gst};
+    return
+end
+
 % trailing-window RMS from per-step mean squares (exact, O(1) memory).
 % The ring holds fade_long_s of per-step mean squares; the presence and
 % fade-short measures are sums over the newest n_pres / n_short entries.

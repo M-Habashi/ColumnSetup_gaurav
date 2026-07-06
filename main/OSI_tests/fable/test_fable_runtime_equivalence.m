@@ -5,7 +5,7 @@ function results = test_fable_runtime_equivalence(record_idx)
 %   results = test_fable_runtime_equivalence(2)     % + replay record #2
 %
 % Feeds the SAME dd/dm stream through
-%   (a) fable_osi('config'/'state'/step) + fable_auth   (desktop API), and
+%   (a) fable_osi('config'/'state'/step) + evidence gate + fable_auth
 %   (b) fable_osi_runtime sample-by-sample              (Speedgoat wrapper)
 % and asserts the margin, branch, trip and authority traces are identical
 % (same arithmetic -> must match bitwise; any mismatch is a porting bug).
@@ -98,6 +98,9 @@ hs = struct('exp_tf_file', fullfile(projectFolder, 'saved_results', ...
 setup = prepare_fable_runtime(projectFolder, dt, hs);
 cfg = setup.cfg;
 prm = setup.prm;
+gprm = setup.gate;
+gprm.dt_step = cfg.step_s;
+gprm = fable_evidence_gate('params', gprm);
 fbls = setup.fbls; fblw = setup.fblw; fblbins = setup.fblbins;
 fblfw = setup.fblfw; fblfbins = setup.fblfbins; fblag = setup.fblag;
 fbla = setup.fbla;
@@ -108,15 +111,18 @@ n_step = floor(numel(dd)/cfg.step_n);
 fprintf('  desktop replay ...'); tic
 st = fable_osi('state', cfg);
 ast = fable_auth('state', prm);
+gst = fable_evidence_gate('state', gprm);
 A = allocTr(n_step);
 ak = prm.a_init;
 for k = 1:n_step
     idx = (k-1)*cfg.step_n + (1:cfg.step_n);
     st.a_cmd = ak;      % authority applied during this step's samples
     [bk, st, ik] = fable_osi(dd(idx), dm(idx), cfg, st);
-    [ak, ast, dk] = fable_auth(bk, ik.st_valid, ik.trip_reason, ...
-        ik.b_fast, ik.pred_margin, ik.pred_valid, ik.alpha_grid, ...
-        ast, prm, ik.st_binding, ik.regime_recal);
+    [bk, valid_up, g_armed, gst] = fable_evidence_gate(dd(idx), bk, ...
+        ik.st_valid, gprm, gst);
+    [ak, ast, dk] = fable_auth(bk, valid_up, ik.trip_reason, ...
+        ik.b_fast, ik.pred_margin, ik.pred_valid && g_armed, ...
+        ik.alpha_grid, ast, prm, ik.st_binding, ik.regime_recal);
     A.b(k) = bk;
     A.b_st(k) = ik.ncf_st;
     A.b_res(k) = ik.ncf_res;
@@ -124,6 +130,7 @@ for k = 1:n_step
     A.trip(k) = ik.trip_reason;
     A.a(k) = ak;
     A.dec(k) = dk;
+    A.g_armed(k) = g_armed;
 end
 fprintf(' %.1f s\n', toc);
 
@@ -141,7 +148,7 @@ for i = 1:n_step*cfg.step_n + half
         du = 0;                  % tail padding only feeds the raw rings;
         yu = 0;                  % the last step's publish uses its T0
     end                          % snapshot, so outputs are unaffected
-    [auth, b_osi, b_st, b_res, b_fast, trip, ~, dec] = ...
+    [auth, b_osi, b_st, b_res, b_fast, trip, ~, dec, armed] = ...
         fable_osi_runtime(du, yu, 1, fbls, fblw, fblbins, ...
         fblfw, fblfbins, fblag, fbla);
     if i > half && mod(i, cfg.step_n) == half
@@ -153,6 +160,7 @@ for i = 1:n_step*cfg.step_n + half
         B.trip(k) = trip;
         B.a(k) = auth;
         B.dec(k) = dec;
+        B.g_armed(k) = armed;
     end
 end
 clear fable_osi_runtime
@@ -167,13 +175,14 @@ d = max(d, diffTr(A.b_fast, B.b_fast, 'b_fast'));
 d = max(d, diffTr(A.trip, B.trip, 'trip'));
 d = max(d, diffTr(A.a, B.a, 'a'));
 d = max(d, diffTr(A.dec, B.dec, 'decision'));
+d = max(d, diffTr(A.g_armed, B.g_armed, 'g_armed'));
 r = struct('name', name, 'pass', d == 0, 'max_diff', d);
 end
 
 function A = allocTr(n)
 A = struct('b', NaN(n,1), 'b_st', NaN(n,1), 'b_res', NaN(n,1), ...
     'b_fast', NaN(n,1), 'trip', zeros(n,1), 'a', NaN(n,1), ...
-    'dec', zeros(n,1));
+    'dec', zeros(n,1), 'g_armed', zeros(n,1));
 end
 
 function d = diffTr(x, y, name)

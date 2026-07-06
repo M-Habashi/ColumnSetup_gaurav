@@ -21,6 +21,7 @@ function setup = prepare_fable_runtime(projectFolder, dt, hs)
 %                        PER-BRANCH TUNING GUIDE in fable_osi.m)
 %   fable_auth_override  struct of fable_auth parameter overrides (see the
 %                        TUNING GUIDE in fable_auth.m)
+%   fable_gate_override  struct of excitation-evidence gate overrides
 %
 % Workspace arrays produced (all fixed-size doubles):
 %   fbls     scalar OSI config vector      (indices documented below)
@@ -102,6 +103,39 @@ if ~isfield(auth_override, 'dt_update')
 end
 prm = fable_auth('params', auth_override);
 
+gate = struct('theta_mm', 0.05, 'arm_s', 6.0, 'drop_s', 0.75, ...
+    'fade_frac', 0.5, 'fade_hold_s', 4.0);
+if isfield(hs, 'fable_gate_override') && ~isempty(hs.fable_gate_override)
+    fn = fieldnames(hs.fable_gate_override);
+    for i = 1:numel(fn)
+        gate.(fn{i}) = hs.fable_gate_override.(fn{i});
+    end
+end
+
+D_fm = 0;
+has_hs_dfm = isfield(hs, 'M') && isfield(hs, 'C') && isfield(hs, 'K') ...
+    && isfield(hs, 'force_to_floor') ...
+    && isfield(hs, 'interface_from_floor') ...
+    && isfield(hs, 'interface_from_force');
+if has_hs_dfm
+    force_sign = 1.0;
+    if isfield(hs, 'force_sign') && ~isempty(hs.force_sign)
+        force_sign = hs.force_sign;
+    end
+    n = size(hs.M, 1);
+    h = dt;
+    beta = 1/4;
+    gamma = 1/2;
+    a0 = 1/(beta*h^2);
+    a1 = gamma/(beta*h);
+    effective_stiffness = hs.K + a0*hs.M + a1*hs.C;
+    force_to_displacement = effective_stiffness\(hs.force_to_floor*force_sign);
+    assert(numel(force_to_displacement) == n, ...
+        'Computed force_to_displacement has the wrong size.')
+    D_fm = 1000*(hs.interface_from_floor*force_to_displacement ...
+        + hs.interface_from_force*force_sign);
+end
+
 % the runtime's hand-coded median filters assume odd, centered windows
 assert(mod(cfg.freq_medfilt_n, 2) == 1, ...
     'freq_medfilt_n must be odd for the runtime median filters.')
@@ -171,6 +205,8 @@ fblag = cfg.alpha_grid;
 % 21 pred_floor_frac 22 trip_drop     23 trip_power     24 trip_cool_s
 % 25 trip_undo_s    26 latch_relax    27 latch_decay_tau_s
 % 28 down_settle_s  29 re_shed_delta  30 self_move_gate_s 31 self_move_frac
+% 32 gate theta_mm  33 gate arm_s     34 gate drop_s
+% 35 gate fade_frac 36 gate fade_hold_s
 fbla = [prm.target; prm.a_min; prm.a_max; prm.a_init; ...
     prm.dt_update; prm.filt_alpha; prm.down_deadband; ...
     prm.down_confirm_n; prm.down_power; prm.down_rate; ...
@@ -179,7 +215,9 @@ fbla = [prm.target; prm.a_min; prm.a_max; prm.a_init; ...
     prm.use_pred; prm.pred_guard; prm.pred_floor_frac; prm.trip_drop; ...
     prm.trip_power; prm.trip_cool_s; prm.trip_undo_s; prm.latch_relax; ...
     prm.latch_decay_tau_s; prm.down_settle_s; prm.re_shed_delta; ...
-    prm.self_move_gate_s; prm.self_move_frac];
+    prm.self_move_gate_s; prm.self_move_frac; ...
+    gate.theta_mm; gate.arm_s; gate.drop_s; ...
+    gate.fade_frac; gate.fade_hold_s];
 
 assignin('caller', 'fbls', fbls);
 assignin('caller', 'fblw', fblw);
@@ -188,13 +226,15 @@ assignin('caller', 'fblfw', fblfw);
 assignin('caller', 'fblfbins', fblfbins);
 assignin('caller', 'fblag', fblag);
 assignin('caller', 'fbla', fbla);
+assignin('caller', 'fbl_dfm', D_fm);
+assignin('base', 'fbl_dfm', D_fm);
 
 setup = struct('exp_tf_file', exp_tf_file, ...
     'exp_tf_name', exp_tf_name, ...
-    'cfg', cfg, 'prm', prm, ...
+    'cfg', cfg, 'prm', prm, 'gate', gate, ...
     'fbls', fbls, 'fblw', fblw, 'fblbins', fblbins, ...
     'fblfw', fblfw, 'fblfbins', fblfbins, 'fblag', fblag, ...
-    'fbla', fbla, ...
+    'fbla', fbla, 'fbl_dfm', D_fm, ...
     'target_outer_ncf', target_outer_ncf, ...
     'gain_initial', a_init, 'gain_min', a_min);
 end

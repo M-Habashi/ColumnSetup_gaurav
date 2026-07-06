@@ -55,6 +55,7 @@ hs = struct( ...
     'osi_gain_initial', 1.0, ...
     'osi_gain_min', 0.08, ...
     'target_outer_ncf', 0.3, ...
+    'fable_gate_override', struct(), ...
     'osi_branch_split_hz', [], ...
     'osi_st_branch_hz', [2 30], ...
     'osi_residual_branch_hz', [40 80]);
@@ -72,10 +73,6 @@ phase_lead_tf_discrete = c2d(phase_lead_tf, dt, 'tustin');
 [phase_lead_num, phase_lead_den] = tfdata(phase_lead_tf_discrete, 'v');
 phase_lead_num = phase_lead_num(:).';
 phase_lead_den = phase_lead_den(:).';
-
-fable_setup = prepare_fable_runtime(projectFolder, dt, hs);
-exp_tf_file = fable_setup.exp_tf_file;
-exp_tf_name = fable_setup.exp_tf_name;
 
 v2d_gain = 7.62;
 v2d_const = 0;
@@ -142,6 +139,10 @@ hs_time = hs.time;
 hs_ag = hs.ag;
 hs_time_scale_factor_codegen = hs.time_scale_factor;
 hs_force_sign_codegen = hs.force_sign;
+
+fable_setup = prepare_fable_runtime(projectFolder, dt, hs);
+exp_tf_file = fable_setup.exp_tf_file;
+exp_tf_name = fable_setup.exp_tf_name;
 
 run(fullfile(projectFolder, 'input_signals', 'sample_time_history.m'))
 tend_time_history = time_history(end, 1);

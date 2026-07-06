@@ -31,7 +31,7 @@ m91hist0, m91below0, osigs`. The MATLAB Function block reads them as
 | `M9.1 + OSI Gain` (subsystem) | contains the MATLAB Function block whose body is `osi_gain_runtime`. Inports: `dd` (from a `From` of the numerical command), `dm` (`From dm for M9.1`), `en`. Outports: `osi_gain_out`, `ncf_m91`, `ncf_filtered`. |
 | `OSI Runtime Mode` (Sum) | builds `en = osi_gain_enable_switch + 2*dd_pause_enable` (`OSI Pause Code Gain` is the ×2). `osi_gain_enable_switch value` is a Constant bound to the runtime-tunable `osi_gain_enable_initial` parameter (`ExportedGlobal`, created in `main_ColumnSetup.m` lines 244–247). |
 | `Apply OSI gain` (Product, yellow) | **the authority application point**: input 1 = `dc` (the MATLAB-side PID output command), input 2 = `osi_gain_out`. Output goes to `Saturation limit for the displacement signal that is sent to the MTS` → `Command to MTS`. So authority scales the loop gain (dc), which is exactly what `fable_auth`'s prediction math assumes — **keep this application point**. |
-| `Mux_5` → `File Log` | logging. Columns as read back by `main_ColumnSetup.m`: 1 dd, 2 dc (post-product, post-saturation — i.e. the true plant input), 3 dm, 4 fm, 5 am, 6–8 m̂/ĉ/k̂, 9 tse_fallback, 10 dd_pause_enable, 11 ncf_m91, 12 ncf_filtered, 13 osi_gain. |
+| `Mux_5` → `File Log` | logging. Columns as read back by `main_ColumnSetup.m`: 1 dd, 2 dc (post-product, post-saturation — i.e. the true plant input), 3 dm, 4 fm, 5 am, 6–8 m̂/ĉ/k̂, 9 tse_fallback, 10 dd_pause_enable, 11 auth, 12 b_osi, 13 b_st, 14 b_res, 15 b_fast, 16 trip_reason, 17 valid, 18 decision, 19 g_armed, 20 u_osi, 21 cd_gain. |
 
 Key timing fact: the current block is called **every base-rate sample**
 (2048 Hz) and internally time-slices one 512-sample segment FFT per OSI
@@ -159,15 +159,14 @@ test after ANY change to the three runtime/desktop files.
    Mode`). **Do not change `OSI Runtime Mode`, `dd_pause_enable`, or the
    `osi_gain_enable_initial` mechanism.**
 6. Outputs (block emits `auth, b_osi, b_st, b_res, b_fast, trip_reason,
-   valid, decision`):
+   valid, decision, g_armed`):
    - `auth` → the same wire `osi_gain_out` used: to `Apply OSI gain`
-     input 2, to `OSI Gain Scope`, and to the `Mux_5` input that becomes
-     File-Log column 13.
-   - `b_osi` (selected margin) → the `ncf_m91` mux input (column 11).
-   - `b_fast` → the `ncf_filtered` mux input (column 12) — repurposed;
-     update the column comment in `main_ColumnSetup.m`.
-   - **Grow `Mux_5` by five** and log `b_st`, `b_res`, `trip_reason`,
-     `valid`, `decision` as columns 14–18 (update the Mux size, the File
+     input 2 and to the `Mux_5` input that becomes File-Log column 11.
+   - `b_osi` (selected margin) → fable runtime mux column 12.
+   - `b_fast` → fable runtime mux column 15.
+   - **Grow `Mux_5`** and log `b_st`, `b_res`, `trip_reason`,
+     `valid`, `decision`, `g_armed`, and `u_osi` as columns 13–20
+     (update the Mux size, the File
      Log signal, and the save section of `main_ColumnSetup.m`, lines
      288–301, to read them). Terminate any output you choose not to log.
 7. **Verify the authority application point is untouched**: `dc` →
