@@ -109,7 +109,8 @@ end
 function command_gain = localCommandGain(data, n)
 command_gain = [];
 direct_names = {'command_gain', 'commandGain', 'cmd_gain', ...
-    'cmdGain', 'command_gain_log', 'commandGainLog'};
+    'cmdGain', 'cd_gain', 'cdGain', 'command_gain_log', ...
+    'commandGainLog'};
 for i = 1:numel(direct_names)
     if isfield(data, direct_names{i}) && numel(data.(direct_names{i})) == n
         command_gain = data.(direct_names{i})(:);
@@ -117,10 +118,25 @@ for i = 1:numel(direct_names)
     end
 end
 
+if isfield(data, 'Results')
+    results = data.Results;
+    if iscell(results)
+        results = results{1};
+    end
+    if size(results, 1) == n && size(results, 2) >= 19
+        command_gain = results(:, 19);
+        return
+    elseif size(results, 2) == n && size(results, 1) >= 19
+        command_gain = results(19, :)';
+        return
+    end
+end
+
 if isfield(data, 'logsout')
     sig = data.logsout.FileLogSignals{1}.Values;
     names = localSignalNames(sig);
-    hit = contains(lower(names), 'command') & contains(lower(names), 'gain');
+    hit = strcmpi(names, 'cd_gain') ...
+        | (contains(lower(names), 'command') & contains(lower(names), 'gain'));
     if ~any(hit)
         hit = contains(lower(names), 'cmd') & contains(lower(names), 'gain');
     end

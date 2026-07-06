@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTHS force echo — why the OSI collapses when the numerical loop closes</title>
+<style>
+  :root{
+    --paper:#FBFBF9; --card:#FFFFFF; --ink:#101010; --muted:#6E6C66;
+    --hairline:#E3E2DB; --red:#C24435; --green:#12996B; --blue:#2A78D6;
+    --violet:#4A3AA7; --amber:#B87A00; --chipbg:#F1F0EA;
+    --mono:'Cascadia Code','Consolas','SF Mono',ui-monospace,monospace;
+    --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#15171B; --card:#1D2025; --ink:#E9E7E1; --muted:#9B9992;
+      --hairline:#2E3138; --chipbg:#262930; --red:#E06A59; --green:#2FC08D;
+      --blue:#5D9BE4; --violet:#8B7FD4; --amber:#D99B33; }
+  }
+  :root[data-theme="light"]{ --paper:#FBFBF9; --card:#FFFFFF; --ink:#101010;
+    --muted:#6E6C66; --hairline:#E3E2DB; --red:#C24435; --green:#12996B;
+    --blue:#2A78D6; --violet:#4A3AA7; --amber:#B87A00; --chipbg:#F1F0EA; }
+  :root[data-theme="dark"]{ --paper:#15171B; --card:#1D2025; --ink:#E9E7E1;
+    --muted:#9B9992; --hairline:#2E3138; --chipbg:#262930; --red:#E06A59;
+    --green:#2FC08D; --blue:#5D9BE4; --violet:#8B7FD4; --amber:#D99B33; }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+    font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 28px 120px}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted)}
+  header{padding:64px 0 8px;border-bottom:2px solid var(--ink);margin-bottom:8px}
+  h1{font-size:clamp(28px,4.6vw,46px);line-height:1.06;letter-spacing:-.022em;
+    font-weight:800;margin:14px 0 18px;max-width:21ch}
+  h1 .dim{color:var(--muted);font-weight:650}
+  .lede{max-width:68ch;font-size:17px;color:var(--ink)}
+  .lede b{font-weight:650}
+
+  .verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:1px;background:var(--hairline);border:1px solid var(--hairline);
+    margin:34px 0 0}
+  .tile{background:var(--card);padding:18px 20px 16px}
+  .tile .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .tile .v{font-size:31px;font-weight:750;letter-spacing:-.02em;line-height:1;
+    font-variant-numeric:tabular-nums}
+  .tile .v .arrow{color:var(--muted);font-weight:400;font-size:22px;padding:0 2px}
+  .tile .s{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .good{color:var(--green)} .bad{color:var(--red)}
+
+  section{margin-top:72px}
+  .sechead{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--hairline);
+    padding-bottom:10px;margin-bottom:22px}
+  .sechead .tag{font-family:var(--mono);font-size:12px;font-weight:600;
+    color:var(--paper);background:var(--ink);padding:3px 8px;letter-spacing:.08em}
+  h2{font-size:24px;font-weight:750;letter-spacing:-.015em;margin:0}
+  h3{font-size:17px;font-weight:700;margin:28px 0 8px}
+  p{max-width:76ch;margin:12px 0}
+  p code, li code{font-family:var(--mono);font-size:.87em;background:var(--chipbg);
+    padding:1px 5px;border-radius:3px}
+  ul{max-width:76ch;padding-left:22px} li{margin:7px 0}
+  .note{border-left:3px solid var(--amber);background:var(--chipbg);
+    padding:12px 18px;max-width:72ch;font-size:14.5px;margin:20px 0}
+  .note b{font-weight:650}
+
+  figure{margin:26px 0;padding:0}
+  .figcard{background:#fff;border:1px solid var(--hairline);padding:10px}
+  .figcard img{display:block;width:100%;height:auto}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--muted);
+    line-height:1.55;margin-top:10px;max-width:90ch}
+  figcaption b{color:var(--ink);font-weight:600}
+
+  /* signal-path schematic */
+  .schematic{background:var(--card);border:1px solid var(--hairline);
+    padding:20px 12px 6px;margin:26px 0;overflow-x:auto}
+  .schematic svg{display:block;margin:0 auto;min-width:820px;max-width:980px;width:100%}
+  .sch-box{fill:none;stroke:var(--ink);stroke-width:1.4}
+  .sch-lbl{font-family:var(--mono);font-size:12.5px;fill:var(--ink)}
+  .sch-sub{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+  .sch-wire{stroke:var(--ink);stroke-width:1.3;fill:none}
+  .sch-echo{stroke:var(--red);stroke-width:2;fill:none;stroke-dasharray:7 5}
+  .sch-fix{stroke:var(--green);stroke-width:2;fill:none}
+  .sch-echo-lbl{font-family:var(--mono);font-size:11.5px;fill:var(--red);font-weight:600}
+  .sch-fix-lbl{font-family:var(--mono);font-size:11.5px;fill:var(--green);font-weight:600}
+  @media (prefers-reduced-motion: no-preference){
+    .sch-echo{animation:flow 1.6s linear infinite}
+    @keyframes flow{to{stroke-dashoffset:-24}}
+  }
+
+  /* table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--hairline)}
+  table{border-collapse:collapse;width:100%;min-width:900px;background:var(--card);
+    font-size:13px;font-variant-numeric:tabular-nums}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;text-align:left;padding:10px 12px;
+    border-bottom:2px solid var(--ink);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);
+    font-size:11px;white-space:nowrap}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .d-red{background:var(--red)} .d-amb{background:var(--amber)}
+  .d-gry{background:var(--muted)}
+  .delta-good{color:var(--green);font-weight:600}
+  .recnote{color:var(--muted);font-size:12px;max-width:34ch}
+
+  .fixgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media (max-width:860px){.fixgrid{grid-template-columns:1fr}}
+  .fixcard{border:1px solid var(--hairline);background:var(--card);padding:18px 20px}
+  .fixcard .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .fixcard p{font-size:14px;margin:8px 0}
+  .formula{font-family:var(--mono);font-size:13.5px;background:var(--chipbg);
+    padding:10px 14px;margin:10px 0;overflow-x:auto;white-space:nowrap}
+
+  footer{margin-top:90px;padding-top:16px;border-top:1px solid var(--hairline);
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">fable osi &middot; diagnosis &amp; fix &middot; 2026-07-05 &middot; research/osi_parameter_tuning/fable</div>
+  <h1>The numerical substructure echoes <span class="dim">dm</span> straight back into <span class="dim">dd</span> — and the OSI hears itself</h1>
+  <p class="lede">Closing the numerical loop does not change the PID + H<sub>dc,dm</sub> loop —
+  the intuition is right. What it changes is the <b>command signal the OSI listens to</b>: the 3-DOF FEM has a
+  direct feedthrough term <code>dd = C·x + interface_from_force·fm</code>, so every sample of the measured
+  force — noise included — reappears in <code>dd</code> within the same tick, amplified ×8 by the
+  fem3_ncf3 phase lead. Above the FEM's top mode (18.5&nbsp;Hz) that echo <b>is</b> almost all of
+  <code>dd</code>. The estimator then measures the inverse of the outer feedback path instead of the
+  inner-loop FRF, the chordal margin at those bins reads 0.1–0.3, and the authority law
+  dutifully sheds to the floor. One subtraction at the OSI's command tap — estimator untouched — restores the margin to where the
+  open-loop tests always had it.</p>
+
+  <div class="verdict">
+    <div class="tile">
+      <div class="k">RTHS_02 · median OSI margin</div>
+      <div class="v"><span class="bad">0.29</span><span class="arrow">→</span><span class="good">0.66</span></div>
+      <div class="s">engaged window, target 0.55 · open-loop tests sat at ≈0.6–0.7</div>
+    </div>
+    <div class="tile">
+      <div class="k">time below target</div>
+      <div class="v"><span class="bad">98%</span><span class="arrow">→</span><span class="good">6%</span></div>
+      <div class="s">what was left is the EQ ramp-in transient, not steady state</div>
+    </div>
+    <div class="tile">
+      <div class="k">time at full authority</div>
+      <div class="v"><span class="bad">0%</span><span class="arrow">→</span><span class="good">76%</span></div>
+      <div class="s">a = 1.00 through the entire strong-motion phase</div>
+    </div>
+    <div class="tile">
+      <div class="k">instability detection</div>
+      <div class="v good">kept</div>
+      <div class="s">genuine event still reads b &lt; 0.1 after the fix (record 6)</div>
+    </div>
+  </div>
+</header>
+
+<!-- ================================================================ -->
+<section>
+  <div class="sechead"><span class="tag">F1</span><h2>Where the echo enters the loop</h2></div>
+
+  <p>The RTHS signal path, with the part nobody drew on the whiteboard in red. The FEM's output equation has a
+  <b>D-term</b>: <code>interface_from_force&nbsp;=&nbsp;−5.22·10⁻⁸ m/N</code>. Multiply by the interface
+  stiffness (≈6·10⁶ N/m) and the phase lead's high-frequency gain (×8) and the loop hands the OSI a
+  zero-lag copy of roughly <b>−0.23·dm</b> at every frequency, buried inside <code>dd</code>:</p>
+
+  <div class="schematic">
+  <svg viewBox="0 0 960 300" role="img" aria-label="RTHS block diagram showing the force-echo path">
+    <!-- forward chain -->
+    <rect class="sch-box" x="20"  y="90" width="120" height="52"/>
+    <text class="sch-lbl" x="80"  y="112" text-anchor="middle">FEM (3-DOF)</text>
+    <text class="sch-sub" x="80"  y="128" text-anchor="middle">dd = C·x + iff·fm</text>
+    <rect class="sch-box" x="205" y="90" width="110" height="52"/>
+    <text class="sch-lbl" x="260" y="112" text-anchor="middle">phase lead</text>
+    <text class="sch-sub" x="260" y="128" text-anchor="middle">(8s+71)/(s+71)</text>
+    <rect class="sch-box" x="380" y="90" width="90"  height="52"/>
+    <text class="sch-lbl" x="425" y="112" text-anchor="middle">PID</text>
+    <text class="sch-sub" x="425" y="128" text-anchor="middle">dc</text>
+    <rect class="sch-box" x="535" y="90" width="130" height="52"/>
+    <text class="sch-lbl" x="600" y="112" text-anchor="middle">MTS + specimen</text>
+    <text class="sch-sub" x="600" y="128" text-anchor="middle">H_dc_dm</text>
+    <rect class="sch-box" x="730" y="90" width="100" height="52"/>
+    <text class="sch-lbl" x="780" y="112" text-anchor="middle">load cell</text>
+    <text class="sch-sub" x="780" y="128" text-anchor="middle">fm</text>
+
+    <text class="sch-sub" x="80" y="70" text-anchor="middle">ag (el-centro)</text>
+    <path class="sch-wire" d="M80 74 L80 90" marker-end="url(#ah)"/>
+    <path class="sch-wire" d="M140 116 L205 116" marker-end="url(#ah)"/>
+    <text class="sch-lbl" x="172" y="106" text-anchor="middle">dd</text>
+    <path class="sch-wire" d="M315 116 L380 116" marker-end="url(#ah)"/>
+    <text class="sch-lbl" x="348" y="106" text-anchor="middle">dd_lead</text>
+    <path class="sch-wire" d="M470 116 L535 116" marker-end="url(#ah)"/>
+    <path class="sch-wire" d="M665 116 L730 116" marker-end="url(#ah)"/>
+    <text class="sch-lbl" x="698" y="106" text-anchor="middle">dm</text>
+
+    <!-- force feedback return -->
+    <path class="sch-wire" d="M780 142 L780 210 L80 210 L80 142" marker-end="url(#ah)"/>
+    <text class="sch-lbl" x="430" y="202" text-anchor="middle">fm  (measured force → numerical substructure)</text>
+
+    <!-- echo path -->
+    <path class="sch-echo" d="M760 142 L760 245 L60 245 L60 148"/>
+    <text class="sch-echo-lbl" x="410" y="238" text-anchor="middle">the echo: iff·fm re-enters dd in the SAME tick (D-term), then ×8 through the lead</text>
+
+    <!-- OSI taps -->
+    <circle cx="348" cy="116" r="4" fill="var(--red)"/>
+    <path class="sch-echo" d="M348 116 L348 40"/>
+    <text class="sch-echo-lbl" x="348" y="30" text-anchor="middle">OSI u-tap today: dd_lead (echo inside)</text>
+    <circle cx="698" cy="116" r="4" fill="var(--ink)"/>
+    <path class="sch-wire" d="M698 116 L698 62 L520 62"/>
+    <text class="sch-lbl" x="508" y="66" text-anchor="end">OSI y-tap: dm</text>
+
+    <defs>
+      <marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <path d="M0,0 L7,3.5 L0,7 z" fill="var(--ink)"/>
+      </marker>
+    </defs>
+  </svg>
+  </div>
+
+  <p>The proof is one filter and one regression away. Take the &gt;25&nbsp;Hz part of <code>dd</code> during the
+  earthquake and overlay the reconstructed echo <code>G_lead(iff·fm)</code>: they are the same waveform
+  (r&nbsp;=&nbsp;0.94), and the cross-correlation peaks at <b>0.0&nbsp;ms</b> — the FEM's algebraic D-term, not the
+  actuator's forward path, which would show up 15–25&nbsp;ms later:</p>
+
+  <figure>
+    <div class="figcard"><img src="@@mech_1_zero_lag_echo.png@@" alt="dd high-frequency content overlaid on the reconstructed force echo, and the cross-correlation peaking at zero lag"></div>
+    <figcaption><b>Fig 1 — the echo, visible raw.</b> Left: one second of &gt;25 Hz dd (black) vs 0.92·G_lead(iff·fm) (red), RTHS_02, t = 80–81 s.
+    Right: cross-correlation of the two; the single-sample spike at 0 ms is the algebraic feedthrough. Side lobes at ±15–35 ms are the ordinary loop dynamics.</figcaption>
+  </figure>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <div class="sechead"><span class="tag">F2</span><h2>Why the estimator cannot defend itself</h2></div>
+
+  <p>The OSI's ST branch estimates the inner-loop FRF as <code>M&nbsp;=&nbsp;S_uy/S_uu</code> from
+  (<code>dd</code>,&nbsp;<code>dm</code>) and takes the worst chordal margin over bins that pass three gates —
+  coherence, input power, sidelobe. This is textbook-correct <b>when the command is exogenous</b>. The echo
+  breaks the assumption, and it breaks it in a way every gate approves of:</p>
+  <ul>
+    <li><b>Coherence gate:</b> the echo is a filtered copy of <code>dm</code> — γ² sits at 0.8–1.0 across 20–100 Hz. Passes.</li>
+    <li><b>Input-power gate (−35 dB):</b> el-centro through the FEM concentrates below ~20 Hz; the genuine 3–10 Hz bins
+    sit at −26…−31 dB below the dd peak while the echo floor sits at −20…−35 dB. The echo bins are often
+    <b>stronger</b> than the genuine ones — no threshold separates them. Passes.</li>
+    <li><b>What M becomes:</b> at echo-dominated bins the cross-spectrum measures the <b>inverse of the outer
+    feedback path</b>, not the plant. M gets dragged to ≈ −0.5…−2 on the negative-real axis; the chordal margin of
+    that fiction is 0.1–0.3. The min-scan then reports it as "the loop" — at 46 Hz, b reads <b>0.20</b> where the
+    plant model says <b>0.52</b>.</li>
+  </ul>
+
+  <figure>
+    <div class="figcard"><img src="@@mech_2_spectral_autopsy.png@@" alt="Input spectrum, coherence, and per-bin chordal margin at t=95s for corrupted and cleaned taps"></div>
+    <figcaption><b>Fig 2 — one slow window (t = 95 s), full autopsy.</b> Top: dd input power — the echo (red) floods
+    20–100 Hz above the −35 dB gate; the cleaned tap (black) drops it 20–40 dB. Middle: coherence — echo bins are fully
+    coherent, so the γ² gate cannot help. Bottom: per-bin chordal margin of the bins that pass all gates — corrupted
+    bins (red) scatter down to 0.20 far below both plant models; the cleaned tap's five genuine bins (black) sit on the
+    healthy C·H₇₀₀₀ curve.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="figcard"><img src="@@mech_3_complex_plane.png@@" alt="Estimated FRF on the complex plane, corrupted vs cleaned"></div>
+    <figcaption><b>Fig 3 — where M actually lands.</b> Corrupted 20–100 Hz bins (red) cluster on the negative-real
+    side, far off the model T(ω) locus (green) — the signature of closed-loop identification bias toward the inverse
+    feedback path. The cleaned tap's bins (black) return to the model.</figcaption>
+  </figure>
+
+  <p><b>This also explains why the BLWN / band-noise tests were always fine.</b> An injected broadband command
+  puts real exogenous power in every bin; the echo (a fraction of dm's noise floor) is negligible next to it,
+  the same estimator reads 0.6–0.7, and everything looks healthy. The echo only owns the band when the
+  exogenous content is narrowband and low — exactly an earthquake at intensity 0.06. And it explains the
+  characteristic time signature you saw: at EQ onset the estimator's first windows are nearly pure echo
+  (<b>fast drop to ≈0.1</b>), then the strong motion adds genuine low-frequency bins that pull the min-scan up
+  to the least-bad echo bin (<b>recovery to only ≈0.3</b>).</p>
+
+  <div class="note"><b>No parameter can fix this.</b> We checked every gate knob: the echo is coherent
+  (γ²→1), often stronger than the genuine excitation (power gate inverted), broadband (frequency-median
+  can't vote it out), and stationary (regime detector never fires). The information the estimator needs —
+  "which part of dd did the plant not cause?" — simply is not in (dd, dm). It has to come from the wiring.</div>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <div class="sechead"><span class="tag">FIX</span><h2>Subtract the echo at the OSI tap — one gain, one sum</h2></div>
+
+  <p>The FEM computes <code>dd = C·x + iff·fm</code>. Both <code>iff</code> (a FEM constant) and
+  <code>fm</code> (the measured force the FEM already consumes) are sitting in the model, so the echo term is
+  known <b>exactly, sample by sample</b>. Give the OSI's command input the strictly-proper part only; the
+  actuator keeps receiving the full <code>dd</code> — RTHS physics is untouched, and the estimator, runtime,
+  and authority law stay byte-for-byte as they are.</p>
+
+  <div class="fixgrid">
+    <div class="fixcard">
+      <div class="k">Simulink wiring (exact)</div>
+      <div class="formula">u_osi = G_T( dd_fem − iff·fm ) = G_T(C·x)</div>
+      <p>Tap the FEM output <i>before</i> the phase lead, subtract <code>iff·fm</code> (one Gain + one Sum), pass
+      that through a copy of the phase-lead block, feed the OSI's <code>dd</code> port. Zero approximation:
+      it reconstructs the FEM's strictly-proper output.</p>
+      <p>Equivalent post-lead form: <code>u_osi = dd_lead − G_T(iff·fm)</code>.</p>
+    </div>
+    <div class="fixcard">
+      <div class="k">Offline replay (this study)</div>
+      <div class="formula">u_osi = dd − s·G_T(iff·fm),  s ≈ 0.92 (fitted)</div>
+      <p>Records only store the post-lead <code>dd</code>, so the echo is reconstructed from <code>fm</code> and the
+      saved fem3_ncf3 lead, with one scalar <code>s</code> fitted on the &gt;25 Hz band (the record does not resolve
+      an extra rig-side scaling on fm; on-target the structural wiring needs no fit). 10.8 dB echo suppression —
+      enough to push every echo bin under the estimator's own gates.</p>
+    </div>
+  </div>
+
+  <figure>
+    <div class="figcard"><img src="@@echo_fix_20260625_1740_RTHS_02.png@@" alt="RTHS_02 margin and authority, baseline vs fixed tap"></div>
+    <figcaption><b>Fig 4 — RTHS_02 (the stable reference run), before/after.</b> Red: OSI + authority as wired today —
+    margin pinned at 0.2–0.35, authority slammed to 0.08 and never recovered. Black/green: identical estimator on the
+    cleaned tap — margin 0.62–0.71 through the whole earthquake, authority back at 1.00 by t = 70 and held there for
+    the entire strong-motion phase. Remaining artifacts: the ~5 s dip right at loop engagement (mixed analysis window +
+    EQ ramp-in; see LIMITS) and the post-disengagement tail after t = 110 where the run is over.</figcaption>
+  </figure>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <div class="sechead"><span class="tag">VAL</span><h2>Validation across all ten records</h2></div>
+
+  <p>The same pipeline ran on every new test record plus two historical open-loop controls. The echo detector
+  (zero-lag regression of &gt;25 Hz <code>dd</code> against <code>G_T(iff·fm)</code>) doubles as a
+  classifier — it flags exactly the runs where the numerical loop actually carried the feedthrough, and its
+  <b>lag</b> separates echo (0 ms) from ordinary forward-path correlation (−25 ms at the actuator delay).
+  Metrics below are over the engaged span (skipping the estimator warm-up), target 0.55.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr>
+      <th>record</th><th>echo verdict</th><th>corr @ lag</th>
+      <th>b median</th><th>&lt; target</th><th>full authority</th><th>note</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>20260625_1740_RTHS_02</td>
+        <td><span class="chip"><span class="dot d-red"></span>closed · echo dominant</span></td>
+        <td class="num">0.96 @ 0</td>
+        <td class="num">0.29 <span class="delta-good">→ 0.66</span></td>
+        <td class="num">98% <span class="delta-good">→ 6%</span></td>
+        <td class="num">0% <span class="delta-good">→ 76%</span></td>
+        <td class="recnote">the user's stable run; fully recovered by the fix</td>
+      </tr>
+      <tr>
+        <td>RTHS_instability_during_eq</td>
+        <td><span class="chip"><span class="dot d-red"></span>closed · echo dominant</span></td>
+        <td class="num">0.91 @ 0</td>
+        <td class="num">0.20 <span class="delta-good">→ 0.33</span></td>
+        <td class="num">100% → 93%</td>
+        <td class="num">0% → 0%</td>
+        <td class="recnote">genuine instability: still reads b &lt; 0.1 at the event — detection preserved</td>
+      </tr>
+      <tr>
+        <td>RHTS_no_inst_butindicators_jump</td>
+        <td><span class="chip"><span class="dot d-red"></span>closed · echo dominant</span></td>
+        <td class="num">0.97 @ 0</td>
+        <td class="num">0.71 → 0.71</td>
+        <td class="num">47% → 43%</td>
+        <td class="num">0% → 0%</td>
+        <td class="recnote">loop closed with ~zero excitation and no tracking (LP corr −0.27): a no-information regime — see LIMITS</td>
+      </tr>
+      <tr>
+        <td>RTHS_osi_rising_emergency</td>
+        <td><span class="chip"><span class="dot d-red"></span>closed · echo dominant</span></td>
+        <td class="num">0.95 @ 0</td>
+        <td class="num">0.11 → 0.19</td>
+        <td class="num">88% → 83%</td>
+        <td class="num">0% → 0%</td>
+        <td class="recnote">ran with authority collapsed live (tracking corr 0.33) — the run itself was broken by the bug; not repairable offline</td>
+      </tr>
+      <tr>
+        <td>RTHS_instability_at_the_end</td>
+        <td><span class="chip"><span class="dot d-amb"></span>closed · echo minor</span></td>
+        <td class="num">0.51 @ 0</td>
+        <td class="num">0.71</td>
+        <td class="num">42%</td>
+        <td class="num">33%</td>
+        <td class="recnote">strong broadband excitation swamps the echo; baseline healthy through the test, collapses correctly at the real instability (~93 s). No subtraction applied</td>
+      </tr>
+      <tr>
+        <td>RTHS_5k</td>
+        <td><span class="chip"><span class="dot d-gry"></span>no zero-lag echo</span></td>
+        <td class="num">0.35 @ −52</td>
+        <td class="num">0.51</td>
+        <td class="num">72%</td>
+        <td class="num">0%</td>
+        <td class="recnote">forward-path lag only. Its low margin is a different topic: the 5k plant's healthy margin (≈0.35 by model) sits below the 0.55 target</td>
+      </tr>
+      <tr>
+        <td>20260704_1129_testing_OSI</td>
+        <td><span class="chip"><span class="dot d-gry"></span>no zero-lag echo</span></td>
+        <td class="num">0.31 @ 0</td>
+        <td class="num">0.71</td>
+        <td class="num">24%</td>
+        <td class="num">79%</td>
+        <td class="recnote">strong injected signal — healthy</td>
+      </tr>
+      <tr>
+        <td>osi_highband</td>
+        <td><span class="chip"><span class="dot d-gry"></span>no zero-lag echo</span></td>
+        <td class="num">0.39 @ −52</td>
+        <td class="num">0.52</td>
+        <td class="num">70%</td>
+        <td class="num">0%</td>
+        <td class="recnote">open-loop control group</td>
+      </tr>
+      <tr>
+        <td>osi_lowband</td>
+        <td><span class="chip"><span class="dot d-gry"></span>no zero-lag echo</span></td>
+        <td class="num">0.00 @ +2</td>
+        <td class="num">0.67</td>
+        <td class="num">8%</td>
+        <td class="num">62%</td>
+        <td class="recnote">open-loop control group — healthy</td>
+      </tr>
+      <tr>
+        <td>20260630_1930_testing_OSI</td>
+        <td><span class="chip"><span class="dot d-gry"></span>no zero-lag echo</span></td>
+        <td class="num">0.27 @ 0</td>
+        <td class="num">0.71</td>
+        <td class="num">3%</td>
+        <td class="num">86%</td>
+        <td class="recnote">historical open-loop reference — matches its known-good replay</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p style="margin-top:18px">Three cross-checks worth calling out:</p>
+  <ul>
+    <li><b>The classifier agrees with reality.</b> Every record named RTHS with the feedthrough wiring shows the
+    0.9+ zero-lag signature; every injected-signal test shows either no correlation or the −52-sample forward-path
+    lag. Nothing was hand-labeled.</li>
+    <li><b>The fix does not mask real danger.</b> In <i>RTHS_instability_during_eq</i> the cleaned margin still
+    dives below 0.1 exactly at the divergence — the y-signal (<code>dm</code>) is untouched, so the residual and
+    burst branches see the same growth they always did, and genuinely excited bins still carry the ST evidence.</li>
+    <li><b>Open-loop behavior is bit-identical.</b> When no echo is detected nothing is subtracted; in the Simulink
+    wiring the correction term is literally zero when the numerical loop is bypassed.</li>
+  </ul>
+
+  <figure>
+    <div class="figcard"><img src="@@echo_fix_RTHS_instability_during_eq.png@@" alt="Instability record, baseline vs fixed"></div>
+    <figcaption><b>Fig 5 — the safety check.</b> RTHS_instability_during_eq with the fix: the healthy stretch reads
+    higher (0.3–0.45 vs 0.15–0.25), but at the genuine divergence (t ≈ 38–43 s) both taps agree: b &lt; 0.1,
+    authority sheds. The fix removes the false alarms, not the real ones. (This run was itself partly degraded by
+    the live authority collapse, which is why its "healthy" level stays below RTHS_02's.)</figcaption>
+  </figure>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <div class="sechead"><span class="tag">ARM</span><h2>The start-of-test drop: hold when there is no evidence</h2></div>
+
+  <p>Even with the cleaned tap, the first seconds after the numerical loop engages read low
+  (b ≈ 0.2 for ~5 s on RTHS_02): the 5 s analysis window still straddles the switch-on, and during the EQ
+  ramp-in the FEM's <i>modal</i> response to force noise outweighs the tiny exogenous content. That reading is
+  not evidence — and the authority law already has the right reflex for "no evidence": <b>when the margin is
+  NaN, it holds</b> (<code>fable_auth.m</code>, "no evidence: hold"). So the remaining piece is a small
+  <b>evidence-arming gate</b> (<code>fable_evidence_gate.m</code>) that decides, from the OSI's own input
+  signal, when the slow margin deserves to be believed:</p>
+
+  <ul>
+    <li><b>present</b> — trailing 2 s RMS of the (cleaned) command tap above <code>theta</code> = 0.05 mm
+    (ramp-in/idle sit at 0.002–0.04 mm, strong motion at 0.26–0.79 mm);</li>
+    <li><b>armed</b> — present continuously for <code>arm_s</code> = 6 s, one full analysis window plus the
+    margin median span, so everything the estimator remembers was produced under real excitation;</li>
+    <li><b>fade blank</b> — if the 1 s RMS falls below half the 6 s RMS (an excitation phase ending abruptly),
+    the margin is blanked for 4 s <i>without</i> disarming: the window is full of stale strong segments and dips
+    spuriously right there. Only <i>falling</i> excitation blanks — a growing divergence can never blank itself;</li>
+    <li>while not armed the law receives <b>b = NaN → authority holds</b>. Fast trips are deliberately
+    <b>not</b> gated: <code>fable_auth</code> processes them before the NaN hold, so the burst/FRF guards keep
+    watching — including a divergence that starts from an idle loop, which raises the excitation measure and
+    arms the gate by itself.</li>
+  </ul>
+
+  <figure>
+    <div class="figcard"><img src="@@gate_20260625_1740_RTHS_02.png@@" alt="RTHS_02 with evidence-gated authority"></div>
+    <figcaption><b>Fig 6 — RTHS_02, gated vs ungated law (both on the cleaned tap).</b> Green shading = armed.
+    The engagement transient is blanked, so gated authority (green) <b>never leaves 1.00 at the start</b>
+    (ungated red still crashed to 0.08 and needed 15 s to climb back). The one small step to 0.86 at ~105 s is
+    real evidence (margin 0.50–0.55) and is kept. Onset a_min 0.08 → 1.00; full authority 78% → 90%.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="figcard"><img src="@@gate_RHTS_no_inst_butindicators_jump.png@@" alt="No-excitation record with evidence-gated authority"></div>
+    <figcaption><b>Fig 7 — the "indicators jump" record, solved.</b> Closed loop with almost no excitation: the
+    gate arms only in the one span with real input (margin there reads a healthy 0.707), blanks the stale dip
+    when that phase ends abruptly at t ≈ 72, and the authority <b>never moves for the whole run</b>
+    (full authority 38% → 100%).</figcaption>
+  </figure>
+
+  <p><b>The price, measured.</b> Genuine events during armed operation shed on time
+  (<i>instability_at_the_end</i>, event at 87 s: −0.5 s vs ungated). A genuine event <i>inside the very first
+  arming window</i> (<i>instability_during_eq</i>: event 3 s after engagement) sheds ~11 s later — during the
+  first seconds of excitation, "healthy loop under new input" and "diverging loop" are statistically the same
+  from (u, y), so this delay is an information limit, not a tuning miss; the rig's displacement/force
+  interlocks remain the backstop for that window. The theta/arm sweep (0.03–0.08 mm × 5–8 s) confirms the
+  onset protection is robust: every combination except the loosest (0.03 mm / 5 s) keeps start-up authority
+  at 1.00.</p>
+
+  <div class="note"><b>Simulink realization:</b> RMS block (2 s) → compare (0.05 mm) → 6 s on-delay with the
+  1 s/6 s fade comparator → a switch that publishes NaN in place of the slow margin while unarmed (or gates the
+  authority-update enable). Plain blocks, no algorithm change; validated in
+  <code>run_evidence_gate_validation.m</code>.</div>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <div class="sechead"><span class="tag">LIM</span><h2>Limits, and what to do at the rig</h2></div>
+
+  <h3>What the fix does not cover</h3>
+  <ul>
+    <li><b>Engagement transient (~5–7 s).</b> When the numerical loop switches on, the 5 s analysis window
+    briefly mixes silence with earthquake, and during the EQ ramp-in the FEM's <i>dynamic</i> (modal) response
+    to force noise — which no D-term subtraction can remove — still outweighs the tiny exogenous content.
+    <b>Handled by the evidence gate (section ARM):</b> the margin is blanked and authority holds until the
+    excitation has been present for a full window.</li>
+    <li><b>Closed loop idling without excitation.</b> If the numerical loop runs while the earthquake is
+    essentially zero (record: <i>RHTS_no_inst_butindicators_jump</i>), the only signal circulating is noise —
+    there is no exogenous information at any tap, and no (dd, dm) estimator can measure a margin.
+    <b>Also handled by the gate:</b> it simply never arms, and authority never moves.</li>
+    <li><b>Cold-start events.</b> A genuine divergence within the first ~6 s of excitation sheds late (~11 s on
+    <i>instability_during_eq</i>) — an information limit of any spectral estimator; the rig's amplitude
+    interlocks are the backstop for that window.</li>
+    <li><b>Records already ruined by the live collapse.</b> Two of the saved runs executed with authority at
+    0.08 — the actuator wasn't tracking, so the "plant" in the data genuinely isn't the healthy loop. Offline
+    replay can't (and shouldn't) make those look healthy. They need to be re-run after the wiring fix.</li>
+  </ul>
+
+  <h3>Recommended order of work</h3>
+  <ul>
+    <li>Add the tap correction in <code>model_ColumnSetup_00</code>: <code>u_osi = G_T(dd_fem − iff·fm)</code>
+    (Gain + Sum + one copy of the phase-lead block). The OSI/authority runtime is untouched.</li>
+    <li>Add the evidence-arming gate (section ARM) on the same tap: RMS → threshold → on-delay → NaN switch;
+    defaults theta 0.05 mm, arm 6 s, fade ½ × (1 s / 6 s), blank 4 s.</li>
+    <li>Shadow-run one RTHS (authority logged, not applied) to confirm the live margin sits at ≈0.6–0.7 like the
+    replay, then re-enable active authority.</li>
+    <li>Separate topic, worth deciding deliberately: on the 5k specimen the healthy margin (≈0.35 by the plant
+    model) is below the current 0.55 target, so the law will detune that configuration by design. Either accept
+    that or run the 5k tests with a lower target.</li>
+  </ul>
+
+  <h3>Reproduce everything</h3>
+  <p style="font-family:var(--mono);font-size:13px;max-width:100%">
+    research/osi_parameter_tuning/fable/rths_echo_diagnosis.m&nbsp;&nbsp;% 10-record detector + replays + figures + metrics<br>
+    research/osi_parameter_tuning/fable/rths_echo_mechanism_figs.m&nbsp;&nbsp;% Figs 1–3 (RTHS_02 autopsy)<br>
+    research/osi_parameter_tuning/fable/fable_evidence_gate.m&nbsp;&nbsp;% the arming gate (params/state/step)<br>
+    research/osi_parameter_tuning/fable/run_evidence_gate_validation.m&nbsp;&nbsp;% Figs 6–7 + theta/arm sweep<br>
+    results: results/rths_echo_diagnosis.mat · results/echo_metrics.json · results/evidence_gate_validation.mat · figures/*.png
+  </p>
+</section>
+
+<footer>
+  fable OSI echo diagnosis — generated 2026-07-05 · estimator/authority code unchanged (OSI_tests/fable, control_and_HS/OSI)
+  · analysis confined to research/osi_parameter_tuning/fable · replay caveat: offline authority did not act on the recorded plant
+</footer>
+
+</div>
+</body>
+</html>
