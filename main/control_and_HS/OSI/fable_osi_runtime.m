@@ -330,9 +330,15 @@ elseif W.phase > 0
             S.sb_qpmask = c.res_keep & ~has_input;
 
             % ---- excitation-regime change detector -----------------------
+            % (see fable_osi.m: a quiet segment carries no input-support
+            % information - freeze instead of rebaselining on silence)
             hi_mask = has_input & c.keep;
             S.sb_ndiff = 0;
-            if S.ready
+            seg_quiet = c.regime_quiet_mm > 0 ...
+                && sqrt(mean(W.snap_su.^2)) < c.regime_quiet_mm;
+            if seg_quiet
+                % keep regime_mask, regime_count and ready as they are
+            elseif S.ready
                 nref = sum(double(S.regime_mask));
                 ndiff = sum(double(xor(hi_mask, S.regime_mask)));
                 S.sb_ndiff = ndiff;
@@ -826,7 +832,7 @@ c = struct( ...
     'n_alpha', fbls(50), 'pred_denom_floor', fbls(51), ...
     'hop_s', fbls(52), 'nf', fbls(53), 'nf_fast', fbls(54), ...
     'pred_enable', fbls(55), 'fast_amove_frac', fbls(56), ...
-    'amove_hold', fbls(57), ...
+    'amove_hold', fbls(57), 'regime_quiet_mm', fbls(58), ...
     'freq_hz', fblbins(:, 1), 'bin', fblbins(:, 2), ...
     'keep', fblbins(:, 3) ~= 0, 'res_keep', fblbins(:, 4) ~= 0, ...
     'nominal_curve', fblbins(:, 5), 'window', fblw(:), ...
@@ -1175,6 +1181,7 @@ function [a_out, a_cont, b_filt, below_n, above_n, trip_cool, blind_hops, ...
 % 28 down_settle_s  29 re_shed_delta  30 self_move_gate_s  31 self_move_frac
 % 32-36 evidence-gate params are consumed by fable_osi_runtime before this
 % law step; fableAuthStep intentionally uses only the authority params.
+% 37 blind_up_after_s (Inf = classic "no evidence -> hold forever")
 target = pa(1); a_min = pa(2); a_max = pa(3);
 dt_up = pa(5); filt_alpha = pa(6);
 
@@ -1241,10 +1248,28 @@ if trip_cool > 0
     end
 end
 
-% --- no evidence: hold ------------------------------------------------------
+% --- no evidence: hold, then probe ------------------------------------------
 if isnan(b)
     blind_hops = blind_hops + 1;
     above_n = 0;
+    % blind-probe recovery (see fable_auth.m): after blind_up_after_s of
+    % continuous no-evidence creep authority back up at the probe rate.
+    if isfinite(pa(37)) && trip_cool <= 0 ...
+            && blind_hops >= round(pa(37)/dt_up) ...
+            && a_cont < a_max
+        a_before = a_cont;
+        a_latch = a_latch + (a_max - a_latch)*dt_up/pa(27);
+        a_cap = min(a_max, a_latch);
+        a_cont = min(a_cap, a_cont + pa(16)*dt_up);
+        a_cont = min(max(a_cont, a_min), a_max);
+        if abs(a_cont - a_out) >= pa(18) ...
+                || (a_cont >= a_max - 1e-12 && a_out < a_max)
+            a_out = a_cont;
+        end
+        if a_cont > a_before
+            decision = 3;
+        end
+    end
     move_age = moveAge(move_age, a_out, a_entry, pa);
     return
 end

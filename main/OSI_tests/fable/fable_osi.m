@@ -207,6 +207,11 @@ cfg = struct( ...
     'bl_adapt_tau_s', 100, ...     % gated slow baseline adaptation
     'bl_adapt_max_db', 3, ...
     'regime_hops', 8, ...          % sustained excited-set change => rebaseline
+    'regime_quiet_mm', 0.05, ...   % newest-segment dd RMS below this freezes
+    ...                            % the regime detector: silence carries no
+    ...                            % input-support information, so a paused/
+    ...                            % ended test phase must not throw away a
+    ...                            % valid calibration (0 disables the freeze)
     'warm_updates', 4, ...         % slow updates before margin is reported
     ...                            % ---- fast path ----
     'fast_segment_s', 0.25, ...    % fast segment length (0.25 s -> 4 Hz bins)
@@ -559,7 +564,15 @@ state.sb_qpmask = cfg.res_keep & ~has_input;
 % change, recollect the residual baseline; the ST branch keeps running.
 hi_mask = has_input & cfg.keep;
 state.sb_ndiff = 0;
-if state.ready
+% a segment with no real command power carries no input-support
+% information (the relative pow_floor turns pure noise into a random
+% mask): FREEZE the detector there instead of rebaselining on silence,
+% so a paused or ended test phase keeps its calibration/warm-up
+seg_quiet = cfg.regime_quiet_mm > 0 ...
+    && sqrt(mean(state.xdd.^2)) < cfg.regime_quiet_mm;
+if seg_quiet
+    % keep regime_mask, regime_count and ready exactly as they are
+elseif state.ready
     nref = nnz(state.regime_mask);
     ndiff = nnz(xor(hi_mask, state.regime_mask));
     state.sb_ndiff = ndiff;

@@ -32,6 +32,7 @@
 %
 % Optional workspace overrides (same interface as the other scripts):
 %   nominal_ncf_target / robust_ncf_target     the two NCF floors
+%   minimum_stability_margin_override          closed-loop pole margin floor
 %   section_count_override                     number of 1st-order sections
 %   notch_count_override                       number of 2nd-order notches
 %   specimen_file_override                     healthy specimen file
@@ -46,7 +47,8 @@
 
 clearvars -except phase_lead_robust_config ...
     nominal_ncf_target robust_ncf_target section_count_override ...
-    notch_count_override fem_file_override specimen_file_override ...
+    minimum_stability_margin_override notch_count_override ...
+    fem_file_override specimen_file_override ...
     h_dc_dm_model_file_override pid_gain_override ...
     phase_lead_file_name_override; clc; close all;
 
@@ -54,6 +56,11 @@ script_dir = fileparts(mfilename('fullpath'));
 addpath(fullfile(script_dir, 'utils_HS'));
 project_root = fileparts(fileparts(script_dir));
 addpath(fullfile(project_root, 'helpers', 'utils'));
+addpath(fullfile(project_root, 'control_and_HS', 'c_fem_modeling', ...
+    'utils_fem'));
+addpath(fullfile(project_root, 'results_analysis'));
+addpath(fullfile(project_root, 'control_and_HS', 'b_system_id', ...
+    'id_utils'));
 
 config = struct( ...
     'specimen_file', fullfile(project_root, 'saved_results', ...
@@ -70,6 +77,7 @@ config = struct( ...
             'exp_tf', 'tf_sp1_5000_20260627_233333.mat')}), ...
     'target_ncf_margin', 0.40, ...
     'robust_ncf_target', 0.25, ...
+    'minimum_stability_margin', 0.03, ...
     ... % Recommended structure (see docs/phase_lead_robust_guide.html):
     ... % 1 lead + 1 notch, template warped +-10% so the notch cannot
     ... % overfit the measured resonance frequency. For the blunt but
@@ -101,6 +109,10 @@ end
 if exist('robust_ncf_target', 'var') && ~isempty(robust_ncf_target)
     config.robust_ncf_target = robust_ncf_target;
 end
+if exist('minimum_stability_margin_override', 'var') ...
+        && ~isempty(minimum_stability_margin_override)
+    config.minimum_stability_margin = minimum_stability_margin_override;
+end
 if exist('section_count_override', 'var') ...
         && ~isempty(section_count_override)
     config.phase_lead_section_count = section_count_override;
@@ -125,6 +137,9 @@ if exist('pid_gain_override', 'var') && ~isempty(pid_gain_override)
 end
 
 fprintf('\nDefault files used by this optimization:\n')
+fprintf('  Nominal NCF target: %.4g\n', config.target_ncf_margin)
+fprintf('  Robust NCF target:  %.4g\n', config.robust_ncf_target)
+fprintf('  Stability margin:   %.4g\n', config.minimum_stability_margin)
 fprintf('  Healthy specimen: %s\n', config.specimen_file)
 fprintf('  Healthy exp TF:   %s\n', config.h_dc_dm_model_file)
 fprintf('  FEM:              %s\n', config.fem_file)

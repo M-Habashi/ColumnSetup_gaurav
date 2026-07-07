@@ -64,6 +64,30 @@ if isfield(hs, 'fable_auth_override') && ~isempty(hs.fable_auth_override)
     auth_override = hs.fable_auth_override;
 end
 
+% ---- unreachable-target guard ---------------------------------------------
+% The chordal margin is mathematically capped at cfg.cap (1/sqrt(2) by
+% default). A target at/above cap - up_deadband can NEVER be satisfied: the
+% law then reads a permanent deficit, sheds to the floor at full health and
+% recovery (b_filt >= target + up_deadband) is impossible (seen in the
+% 2026-07-06 tests with target_outer_ncf = 0.7/0.8 against b_osi = 0.707).
+margin_cap = 1/sqrt(2);
+if isfield(osi_override, 'cap') && ~isempty(osi_override.cap)
+    margin_cap = osi_override.cap;
+end
+up_deadband = 0.02;   % fable_auth default; override may change it
+if isfield(auth_override, 'up_deadband') && ~isempty(auth_override.up_deadband)
+    up_deadband = auth_override.up_deadband;
+end
+target_max = margin_cap - up_deadband - 0.02;
+if target_outer_ncf > target_max
+    warning('prepare_fable_runtime:targetUnreachable', ...
+        ['target_outer_ncf %.3g exceeds the reachable margin ' ...
+         '(cap %.3g - up_deadband %.3g - 0.02): clamping to %.3g. ' ...
+         'Set hs.target_outer_ncf at or below this value.'], ...
+        target_outer_ncf, margin_cap, up_deadband, target_max);
+    target_outer_ncf = target_max;
+end
+
 % ---- prior loop model ----------------------------------------------------
 [exp_tf_data, exp_tf_file, exp_tf_name] = ...
     load_saved_result_file(projectFolder, 'exp_tf', false, hs.exp_tf_file);
@@ -90,8 +114,22 @@ C = pid(pid_values.P, pid_values.I, pid_values.D, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 
 % ---- fable config + authority params ------------------------------------
+gate = struct('theta_mm', 0.05, 'arm_s', 6.0, 'drop_s', 0.75, ...
+    'fade_frac', 0.5, 'fade_hold_s', 4.0);
+if isfield(hs, 'fable_gate_override') && ~isempty(hs.fable_gate_override)
+    fn = fieldnames(hs.fable_gate_override);
+    for i = 1:numel(fn)
+        gate.(fn{i}) = hs.fable_gate_override.(fn{i});
+    end
+end
+
 if ~isfield(osi_override, 'threshold')
     osi_override.threshold = target_outer_ncf;
+end
+if ~isfield(osi_override, 'regime_quiet_mm')
+    % the regime detector's quiet-freeze threshold tracks the evidence
+    % gate's presence threshold unless explicitly overridden
+    osi_override.regime_quiet_mm = gate.theta_mm;
 end
 cfg = fable_osi('config', dt, C*H_dc_dm, osi_override);
 
@@ -102,15 +140,6 @@ if ~isfield(auth_override, 'dt_update')
     auth_override.dt_update = cfg.step_s;
 end
 prm = fable_auth('params', auth_override);
-
-gate = struct('theta_mm', 0.05, 'arm_s', 6.0, 'drop_s', 0.75, ...
-    'fade_frac', 0.5, 'fade_hold_s', 4.0);
-if isfield(hs, 'fable_gate_override') && ~isempty(hs.fable_gate_override)
-    fn = fieldnames(hs.fable_gate_override);
-    for i = 1:numel(fn)
-        gate.(fn{i}) = hs.fable_gate_override.(fn{i});
-    end
-end
 
 D_fm = 0;
 has_hs_dfm = isfield(hs, 'M') && isfield(hs, 'C') && isfield(hs, 'K') ...
@@ -167,6 +196,7 @@ end
 % 49 n_burst_bands       50 n_alpha           51 pred_denom_floor
 % 52 hop_s               53 nf                54 nf_fast
 % 55 pred_enable         56 fast_amove_frac   57 amove_hold
+% 58 regime_quiet_mm
 fbls = [cfg.dt; cfg.fs; cfg.step_n; ...
     cfg.steps_per_hop; cfg.segment_n; cfg.n_segment; ...
     cfg.k_eff; cfg.gamma_gate; cfg.gamma_quiet; ...
@@ -185,7 +215,7 @@ fbls = [cfg.dt; cfg.fs; cfg.step_n; ...
     cfg.fast_pin_alpha; cfg.fast_sig_floor; cfg.fast_d_sig_floor; ...
     cfg.n_burst_bands; cfg.n_alpha; cfg.pred_denom_floor; ...
     cfg.hop_s; cfg.nf; cfg.nf_fast; ...
-    pred_enable; cfg.fast_amove_frac; cfg.amove_hold];
+    pred_enable; cfg.fast_amove_frac; cfg.amove_hold; cfg.regime_quiet_mm];
 
 fblw = cfg.window;
 fblbins = [cfg.freq_hz, cfg.bin, double(cfg.keep), double(cfg.res_keep), ...
@@ -207,6 +237,7 @@ fblag = cfg.alpha_grid;
 % 28 down_settle_s  29 re_shed_delta  30 self_move_gate_s 31 self_move_frac
 % 32 gate theta_mm  33 gate arm_s     34 gate drop_s
 % 35 gate fade_frac 36 gate fade_hold_s
+% 37 blind_up_after_s
 fbla = [prm.target; prm.a_min; prm.a_max; prm.a_init; ...
     prm.dt_update; prm.filt_alpha; prm.down_deadband; ...
     prm.down_confirm_n; prm.down_power; prm.down_rate; ...
@@ -217,7 +248,8 @@ fbla = [prm.target; prm.a_min; prm.a_max; prm.a_init; ...
     prm.latch_decay_tau_s; prm.down_settle_s; prm.re_shed_delta; ...
     prm.self_move_gate_s; prm.self_move_frac; ...
     gate.theta_mm; gate.arm_s; gate.drop_s; ...
-    gate.fade_frac; gate.fade_hold_s];
+    gate.fade_frac; gate.fade_hold_s; ...
+    prm.blind_up_after_s];
 
 assignin('caller', 'fbls', fbls);
 assignin('caller', 'fblw', fblw);

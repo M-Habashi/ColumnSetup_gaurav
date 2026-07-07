@@ -118,6 +118,17 @@ function [a_next, ast, decision] = fable_auth(b, valid_up, trip_reason, ...
 %                   high, creep when barely above target. This is the
 %                   "recovery may be fast or slow, whatever performs"
 %                   knob.
+%   blind_up_after_s  Blind-probe recovery: after this long with NO
+%                   margin evidence at all (b = NaN because the tap is
+%                   idle / the evidence gate is disarmed), authority
+%                   creeps back up at up_rate_blind, capped by the
+%                   post-event latch and a_max. A quiet loop cannot be
+%                   hurt by a higher authority, and if excitation
+%                   returns degraded the severe/trip paths shed within
+%                   one or two updates. Inf (default) disables it and
+%                   restores the classic "no evidence -> hold forever"
+%                   behavior. This is what lets authority come back
+%                   after a shed even when the test goes quiet.
 %
 %   ANTI-FLICKER COMMIT GATE
 %   min_step        The COMMITTED authority (what the loop sees) only
@@ -305,10 +316,33 @@ if ast.trip_cool > 0
     end
 end
 
-% --- no evidence: hold ----------------------------------------------------
+% --- no evidence: hold, then probe ------------------------------------------
 if isnan(b)
     ast.blind_hops = ast.blind_hops + 1;
     ast.above_n = 0;
+    % blind-probe recovery: after blind_up_after_s of continuous
+    % no-evidence (idle tap / gate disarmed) creep authority back up at
+    % the probe rate. The burst guard keeps watching the response, any
+    % trip sheds immediately, and once evidence returns the ordinary
+    % regulation path takes over on the next update.
+    if isfinite(prm.blind_up_after_s) && ast.trip_cool <= 0 ...
+            && ast.blind_hops >= round(prm.blind_up_after_s/prm.dt_update) ...
+            && ast.a_cont < prm.a_max
+        a_before = ast.a_cont;
+        ast.a_latch = ast.a_latch + (prm.a_max - ast.a_latch) ...
+            *prm.dt_update/prm.latch_decay_tau_s;
+        a_cap = min(prm.a_max, ast.a_latch);
+        ast.a_cont = min(a_cap, ...
+            ast.a_cont + prm.up_rate_blind*prm.dt_update);
+        ast.a_cont = min(max(ast.a_cont, prm.a_min), prm.a_max);
+        if abs(ast.a_cont - ast.a) >= prm.min_step ...
+                || (ast.a_cont >= prm.a_max - 1e-12 && ast.a < prm.a_max)
+            ast.a = ast.a_cont;
+        end
+        if ast.a_cont > a_before
+            decision = 3;
+        end
+    end
     ast = trackMove(ast, a_entry, prm);
     a_next = ast.a;
     return
@@ -524,6 +558,7 @@ prm = struct( ...
     'up_rate', 0.08, ...       % model-verified recovery speed (units/s)
     'up_rate_blind', 0.02, ... % probe-and-verify recovery (no coherence)
     'up_prop', 3.0, ...        % surplus-proportional recovery boost
+    'blind_up_after_s', Inf, ...% blind-probe recovery delay (Inf = hold)
     'min_step', 0.02, ...      % commit gate (0 = continuous authority)
     'use_pred', 1, ...         % consult the predicted-safe authority
     'pred_guard', 0.03, ...    % predicted margin must clear target+guard
