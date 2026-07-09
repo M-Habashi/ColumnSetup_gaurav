@@ -157,6 +157,9 @@ hs = struct('exp_tf_file', prm.exp_tf_file, ...
     'fable_osi_override', prm.osi_override, ...
     'fable_auth_override', prm.auth_override, ...
     'fable_pred_enable', prm.fable_pred_enable);
+if isfield(prm, 'gate_override') && ~isempty(prm.gate_override)
+    hs.fable_gate_override = prm.gate_override;
+end
 setup = prepare_fable_runtime(prm.projectFolder, record.dt, hs);
 
 dd = record.dd(:);
