@@ -109,7 +109,7 @@ one estimator, two readings + a prediction, one rate law — no calibration phas
 
 <div class="chips">
   <div class="chip"><b class="ok">10 / 10</b>synthetic suite (gpt5: 10/10, fable at HEAD: 8/10)</div>
-  <div class="chip"><b class="ok">90.7</b>fabby score — gpt5_6: 84.9, fable: 73.2 (§4, §6)</div>
+  <div class="chip"><b>90.7</b>fabby score — updated gpt5_6: <b>94.8</b>, fable: 73.2 (§4, §6)</div>
   <div class="chip"><b>0.28–2.0 s</b>damage &rarr; authority moving</div>
   <div class="chip"><b>~1.3 s</b>sprint: floor &rarr; full authority once verified</div>
   <div class="chip"><b>1.5 s</b>warm-up to first reading</div>
@@ -316,10 +316,10 @@ run 0.10 over-conservative or 0.033 unsafe). Sitting shed while the true margin 
 high above target — the "authority never came back" failure — is exactly what this
 punishes. b* is drawn as the dashed ideal line in the margin panel below.</p>
 <div class="chips">
-  <div class="chip"><b class="ok">90.7</b>fabby mean score</div>
-  <div class="chip"><b>84.9</b>gpt5_6 mean score</div>
+  <div class="chip"><b>94.8</b>gpt5_6 mean score (updated 07-10)</div>
+  <div class="chip"><b>90.7</b>fabby mean score</div>
   <div class="chip"><b>73.2</b>fable mean score</div>
-  <div class="chip"><b>57.9 / 0.0 / 0.0</b>hardest case (4, quiet-band): fabby / gpt5 / fable</div>
+  <div class="chip"><b>74.8 / 57.9 / 0.0</b>hardest case (4, quiet-band): gpt5 / fabby / fable</div>
 </div>
 <p class="hint">Click a case, wheel to zoom, drag to pan, double-click to reset.</p>
 <div class="tabs" id="tabs"></div>
@@ -348,61 +348,107 @@ equilibrium instead, as the suite cases show).
 ceiling where the live indicator showed NaN. During the 2&times;-gain window both
 agree the margin is bad. After the gain returns (75.5 s) and the record goes quiet
 (78.4 s), fabby blends back to the ceiling and sprints home; the live law stays at
-0.2 for the remaining 35 s of the record. Note gpt5 (violet) in the pre-test phase:
-its margin reads ~0.2 around 4–14 s and its authority false-sheds to the floor before
-recovering by ~18 s — the idle-tap force echo that fabby's evidence weight (§2.3)
-exists to neutralize.</p></div>
+0.2 for the remaining 35 s of the record. The updated gpt5 (violet) is now clean in
+the idle pre-test phase too — its first version false-shed to the floor there until
+it adopted the same weak-drive-blends-to-ceiling device (§2.3).</p>
+<p><b>Why gpt5 drops instantly at the quake (45 s) while fabby takes ~1.5 s — and
+what the hybrid loop does to both.</b> This run is a full hybrid simulation: the
+numerical FEM substructure loop is closed around the inner actuator loop. The
+Speedgoat tap already carries the <em>feedthrough</em> adjustment — prepare_fable_runtime
+computes the full Newmark feedthrough D_fm = 1000&middot;(ifl&middot;K_eff&#8315;&sup1;&middot;f2f
++ iff) = −6.05&times;10&#8315;&#8309; mm/N here, and the tap is u_osi = G_T(dd_fem −
+D_fm&middot;fm) — but that removes only the <em>zero-lag echo</em>. The FEM's dynamic
+response to fm stays wrapped around the loop: per the vHS stability table the coupled
+open loop is L_out = −F_fm&middot;k_mm&middot;G_T&middot;T_inner, and for this exact
+configuration (5k plant, pl_5k lead, fem_sp1_7000, logged k&#770; = 5856 N/mm) it has
+|L_out| &asymp; 0.30 across the 28–44 Hz quiet band and a coupled NCF margin of
+<b>0.401 @ 8.6 Hz</b> at gain 1, vs the inner loop's <b>0.344 @ 38 Hz</b>. So for
+THIS record the inner loop is the binding one, and the governing margin at quake
+onset is &asymp;0.344: gpt5's instant 0.352 lands near the right answer — but less
+cleanly than "handed the answer key": the quiet-band output shape it fits is
+distorted by the wrap factor |1−T&middot;L_out/T| (~&plusmn;30%) that its inner-model-only
+&rho; family cannot represent; it got away with it because the distortion is smooth
+there. fabby is deviation-based — "plant equals the reference" reads as no deviation
+(median 0.646, high by +0.30) until driven-band evidence accumulates. Both
+authorities still shed within 0.4 s of onset (fabby 45.38 s, gpt5 45.12 s). The
+production-relevant warning cuts the other way: on the 7000 configuration the
+COUPLED loop binds (model outer 0.399 @ 38 Hz &lt; inner 0.588 @ 35 Hz, per the
+numerical_ncf_plan analysis) — and that loop is monitored by <em>neither</em>
+estimator, both of which report the inner-loop margin from the tap. The planned
+online fix (b_out = chordal of W&middot;M&#770; with W = −F_fm&middot;k_mm&middot;G_T
+precomputed) applies equally to fabby, gpt5 and fable.</p></div>
 
-<h2>6 · fabby vs gpt5_6 — an honest comparison</h2>
+<h2>6 · fabby vs gpt5_6 — an honest comparison (updated implementation, 07-10)</h2>
 <p>research/gpt5_6 is an independent redesign of the same problem (gpt_osi + gpt_auth).
-It shares fabby's core skeleton — sliding spectra, a shrinkage FRF estimate, the chordal
-margin, a quiet-band growth term, a log-domain integrator law — so the comparison is
-about the choices layered on that skeleton. Everything below is measured on the
-<em>canonical</em> fable_synthetic_suite (not gpt5_6's local copy) with the identical
-target 0.55; gpt5's traces are the violet lines in §4 and §5.</p>
+Its first version scored 84.9 (case-4 under-defense, an idle-tap false shed on GDB, a
+fragile warm-up residual baseline). The <b>updated</b> version fixed all three: it
+blends the final reading to the NCF ceiling under weak command activity (the same
+evidence-weight device as fabby §2.3), it scales its guard and deadband with the
+quiet-band evidence weight, and — the biggest idea — it replaced the nonparametric
+residual statistic with a <b>one-parameter model fit</b>: fit a positive loop-gain
+multiplier &rho; to the normalized output-spectrum shape in the quiet band, then read
+the margin of &rho;&middot;a&middot;L&#8320; directly. Everything below is measured on
+the <em>canonical</em> fable_synthetic_suite with identical target 0.55; gpt5's traces
+are the violet lines in §4 and §5.</p>
 <table>
-<tr><th></th><th>fabby</th><th>gpt5_6</th></tr>
-<tr><td>canonical suite</td><td>10/10</td><td>10/10 (case-4 detection at 2.000 s — exactly the limit)</td></tr>
-<tr><td>fabby score</td><td><b>90.7</b></td><td>84.9 — case 4 scores 0: the loop runs ~0.03 <em>below</em> the target margin for the whole damaged phase (mean_under 0.030, the 3&times;-weighted side)</td></tr>
-<tr><td>margin accuracy (healthy)</td><td>median error 0.013</td><td><b>0.008</b> — the authority-aware model prior is genuinely better where the model is right</td></tr>
-<tr><td>shrinkage target ("no evidence" reads as…)</td><td>T&#770;&rarr;0 &rarr; the 0.707 ceiling ("nothing observable is wrong")</td><td>the nominal model at the CURRENT authority (confidence-weighted blend)</td></tr>
-<tr><td>full-authority reasoning</td><td>pred(&alpha;) path, min-walk, horizon cap 4&times;, quiet fold, sprint lands on the interpolated safe crossing</td><td>single-point rescale chordal(L&#770;/a): extrapolates 12&times; from a deep shed with no horizon, used only as a binary-ish recovery-boost gate, no landing point</td></tr>
-<tr><td>quiet-band baseline</td><td>model shape |S&#8320;|² + per-bin self-median (record-start independent)</td><td>max envelope of the first 2 s, normalized by total tap rms (assumes the record starts healthy and spectrally representative)</td></tr>
-<tr><td>quiet band watched</td><td>28–100 Hz (any hazard mode)</td><td>28–44 Hz (hard-tuned to this rig's 5k bump — better SNR here, blind to damage elsewhere)</td></tr>
-<tr><td>estimator&harr;authority coupling</td><td>none (only the law knows a)</td><td>estimator requires a_cmd fed back (prior and full_margin scale with it)</td></tr>
-<tr><td>law size</td><td>2 states, 3 terms + conf (~12 params)</td><td><b>1 state, 1 signed error</b> + deadzone + &radic;a damping + boost (8 params) — genuinely simpler</td></tr>
-<tr><td>anti-slam</td><td>quadratic-in-deficit shed (evidence-proportional)</td><td>max_step clamp 0.15/update (hard bound — a nice, robust idea)</td></tr>
-<tr><td>GDB replay (target 0.55)</td><td>full authority 80.0 s, 0 % NaN</td><td>full authority 81.2 s, 0 % NaN, but a false full shed on the idle pre-test tap at ~4–18 s (its own study instead retuned target to 0.315 for this record)</td></tr>
+<tr><th></th><th>fabby</th><th>gpt5_6 (updated)</th></tr>
+<tr><td>canonical suite</td><td>10/10</td><td>10/10</td></tr>
+<tr><td>fabby score</td><td>90.7</td><td><b>94.8</b> — wins 8 of 10 cases; case 4: 74.8 vs 57.9</td></tr>
+<tr><td>margin accuracy (healthy broadband)</td><td>0.013</td><td><b>0.008</b></td></tr>
+<tr><td>case-4 estimate accuracy (healthy lowband)</td><td>0.073 (upper bound by design)</td><td><b>0.001</b> — the &rho;-fit nails it (see caveat below)</td></tr>
+<tr><td>case-4 defense (damaged, true margin min)</td><td>0.475</td><td><b>0.532</b>, with much smoother authority (travel 1.4 vs 3.2)</td></tr>
+<tr><td>quiet-band estimator</td><td>nonparametric pooled growth &rarr; b&#8320;/&radic;g (assumes nothing about the damage shape)</td><td>parametric &rho;-fit onto {&rho;&middot;L&#8320;} (far better-conditioned, but only spans gain-multiplier damage in 28–44 Hz)</td></tr>
+<tr><td>driven-band estimate</td><td>model-free (ridge to zero; L&#8320; used only by the quiet anchor)</td><td>model-blended everywhere (confidence-weighted T-prior at current authority)</td></tr>
+<tr><td>estimator&harr;authority coupling</td><td>none</td><td>a_cmd must be fed back (prior, &rho;-fit and full_margin all scale with it)</td></tr>
+<tr><td>law</td><td>2 states, 3 terms (quadratic shed, creep, certified sprint)</td><td><b>1 state</b>, 1 signed error, evidence-scaled deadband/guard, max_step clamp — simpler</td></tr>
+<tr><td>GDB replay (target 0.55)</td><td>full authority 80.0 s, 0 % NaN</td><td>full authority <b>79.2 s</b>, 0 % NaN, idle phase now clean</td></tr>
 </table>
-<p><b>The case-4 mismatch, quantified</b> (the two estimates visibly disagree in the
-healthy lowband phase — which is right?). With the command at 2–7 Hz the binding
-frequency (~35 Hz) is unobservable, and the two estimators fill that hole from
-opposite priors. In the healthy phase (true b = 0.588): gpt5 reads median 0.599
-(|err| 0.025) — the more accurate <em>number</em> — while fabby reads 0.661 (|err|
-0.073), a deliberate upper bound ("margin of what is observable"). But two caveats
-make gpt5's accuracy less than it seems. First, it is partly by construction: in this
-simulation the healthy plant <em>is</em> the very model gpt5 blends toward, the best
-case a model prior will ever see; on the real rig, with the plant drifted from the
-identified model, that same mechanism confidently reads the model instead of the
-plant. Second, the number is noisy enough to sit below target 21% of the healthy time,
-so gpt5's authority falsely wanders on a perfectly healthy loop — mean a 0.678, dips
-to 0.46 — while fabby holds a = 1.000. The accurate-looking number produces the wrong
-action; the "biased" one produces the right action, and the fabby score (which
-measures resulting-margin tracking, not estimate cosmetics) prices exactly that:
-57.9 vs 0.0. In the damaged phase both over-read by the same physics (signed error
-+0.069 fabby / +0.088 gpt5 — the quiet statistic saturates), fabby marginally closer
-while also holding the true margin higher (median 0.561 vs 0.507).</p>
-<p><b>Verdict.</b> gpt5_6 is a strong design and clearly better than fable at HEAD
-(84.9 vs 73.2); its law is simpler than fabby's and its healthy-margin accuracy is
-better. fabby keeps the overall edge (90.7) for two reasons that map directly to the
-requirements: (1) <em>safety-weighted tracking</em> — in the one scenario where the
-model is blind (case 4), gpt5 settles with the true margin persistently below target
-while fabby defends above it; (2) <em>certified recovery</em> — fabby's sprint lands
-on the predicted safe authority, where gpt5's boost gates on the current reading and
-extrapolates its full-margin check without a horizon, which is exactly the mechanism
-that a noisy weak-signal FRF can fool. Ideas worth adopting from gpt5_6 in a future
-pass: the authority-aware model prior (accuracy at weak drive) and the hard max_step
-clamp (a one-line worst-case bound no tuning can defeat).</p>
+<p><b>Why the &rho;-fit wins here — and where it can lose.</b> fabby's quiet-band
+term estimates growth nonparametrically and maps it through b&#8320;/&radic;g — noisy,
+so the law must defend with margin to spare (fabby's case-4 authority breathes; score
+57.9). gpt5 instead assumes the damaged loop lies in the one-parameter family
+&rho;&middot;a&middot;L&#8320; and fits &rho; to the output shape — a far
+better-conditioned estimate (case-4 error 0.001, authority nearly still). The caveat
+is the assumption: this suite's damage (7000&rarr;5000 plant swap) acts near the
+critical band almost exactly like a gain multiplier, so the family contains the truth
+and the fit is essentially exact — the best case the parametrization will ever see.
+Damage that moves a resonance in frequency or adds a new mode (a cracked specimen
+shifting modes, an actuator oil-column change) is <em>outside</em> the family and
+outside its hard-coded 28–44 Hz window; the fit then returns whichever &rho; best
+mimics the shape, with no residual term left to catch what it missed. fabby's
+nonparametric term is strictly weaker on this suite and strictly more general off it.
+The same trade appears in the driven band: gpt5 blends toward the identified model
+everywhere (accurate while the model is right, confidently wrong when the rig drifts
+from it), fabby stays model-free where it has data.</p>
+<p><b>A warning about gpt5_6's own GDB panel</b> (gpt_osi_report.html shows its
+authority flat at 1.0 through the whole record and calls it PASS). That replay is
+<em>shadow-tuned</em>: its target is set to nominal−guard = 0.325 — below the 5k
+plant's healthy margin — so "never shed" becomes the law's correct equilibrium by
+construction, and the diagnostic-gain destabilization can no longer produce a
+deficit the law is asked to act on. Its own results file records the consequences:
+the indicator latencies for both destabilizing gain edges are NaN (the estimator
+never detected either step — during 57–64.4 s, gain 2 at full logged authority,
+the effective inner margin was &asymp;0.05 and it read median 0.352 with a pinned
+at 1.000), transition_pass = 0 and indicator_pass = 0. Those failing metrics are
+excluded from the headline acceptance, which instead reports "finite /
+no-pre-gain-shed / inverse-gain MAE better than the logged run" — criteria an
+inert a&equiv;1 trace passes automatically (the logged fable MAE of 0.627 is
+dominated by its post-event deadlock; in the damaged window gpt5's MAE 0.459 is
+actually WORSE than the broken live run's 0.364). The §5 replay above runs both
+methods at the canonical target 0.55 with no per-record tuning.</p>
+<p><b>Verdict.</b> On this benchmark the updated gpt5_6 is the better implementation:
+higher score (94.8 vs 90.7), smoother authority, faster GDB recovery, and a simpler
+law — and its update is partly convergent evolution (it adopted the evidence-weight
+blend fabby introduced, while its &rho;-fit and max_step clamp are ideas fabby should
+adopt). fabby's remaining advantages are structural rather than measured: no
+model dependence in the driven band, no a_cmd coupling into the estimator, a quiet
+band that watches 28–100 Hz rather than 28–44, and a damage model that assumes
+nothing about how the plant fails. Which one is "better" on the real rig therefore
+hinges on one question: how well does damage on this column stay inside the
+gain-multiplier family of the identified model? The natural v3 is fabby's skeleton
+with gpt5's &rho;-fit added as a second quiet-band reading (min of the two: parametric
+sharpness when the family holds, nonparametric floor when it doesn't) plus the
+max_step clamp.</p>
 
 <h2>7 · Honest limits</h2>
 <p>

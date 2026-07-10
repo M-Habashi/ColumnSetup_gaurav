@@ -10,11 +10,12 @@ function [out, state, info] = gpt_osi(varargin)
 %
 %   b(w) = 1 / sqrt(2*(|1-T(w)|^2 + |T(w)|^2)).
 %
-% A single innovation-power ratio covers frequencies that the command does
-% not excite.  Both terms are continuous: low-confidence frequency bins
-% shrink to the current-authority nominal model, and startup publishes that
-% prior rather than NaN.  The only discrete phases are buffer fill and the
-% fixed two-second innovation-baseline warm-up.
+% A quiet-band model fit covers frequencies that the command does not
+% excite.  It fits one positive loop-gain multiplier from the normalized
+% output-spectrum shape, then evaluates the NCF margin of a*rho*L0.  The
+% coherent driven-band gain continuously decides how much of that fit is
+% supported.  Weak command activity blends the final reading to the finite
+% NCF ceiling, so displacement feedthrough cannot become false evidence.
 
 if ischar(varargin{1}) || isstring(varargin{1})
     switch lower(char(varargin{1}))
@@ -41,14 +42,13 @@ cfg = struct( ...
     'segment_s', 0.5, ...
     'memory_s', 0.35, ...
     'margin_s', 0.20, ...
-    'residual_s', 0.50, ...
+    'residual_s', 1.50, ...
     'warm_s', 2.0, ...
     'band_hz', [2 100], ...
     'line_reject_hz', [58 62], ...
     'residual_band_hz', [28 44], ...
     'power_floor_db', 30, ...
     'quiet_rms', 0.05, ...
-    'residual_floor', 0.03, ...
     'cap', 1/sqrt(2));
 
 names = fieldnames(override);
@@ -80,6 +80,8 @@ L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
 cfg.L0 = L0(:);
 cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
 cfg.nominal = min(cfg.nominal_curve(cfg.keep));
+cfg.shape = max(abs(1./(1+cfg.L0)).^2, eps);
+cfg.rho_grid = logspace(log10(0.5), log10(6), 25);
 cfg.spectral_alpha = 1 - exp(-cfg.step_s/cfg.memory_s);
 cfg.margin_alpha = 1 - exp(-cfg.step_s/cfg.margin_s);
 cfg.residual_alpha = 1 - exp(-cfg.step_s/cfg.residual_s);
@@ -98,8 +100,7 @@ state = struct( ...
     'Suu', zeros(nf, 1), ...
     'Syy', zeros(nf, 1), ...
     'Syu', complex(zeros(nf, 1)), ...
-    'res0', zeros(nf, 1), ...
-    'log_growth', 0, ...
+    'log_rho', 0, ...
     'b', cfg.cap, ...
     'a_cmd', 1.0);
 end
@@ -154,7 +155,8 @@ state.spectral_count = state.spectral_count+1;
 
 gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
 p_rel = state.Suu/max(max(state.Suu), eps);
-confidence = activity*gamma2.*p_rel./(p_rel+cfg.power_floor);
+leverage = p_rel./(p_rel+cfg.power_floor);
+confidence = activity*gamma2.*leverage;
 That = state.Syu./max(state.Suu, eps);
 Tuse = confidence.*That + (1-confidence).*Tprior;
 
@@ -166,38 +168,50 @@ bcurve = chordal(Lhat, cfg.cap);
 bcurve = movmedian(bcurve, 3);
 b_st = min(bcurve(cfg.keep));
 
-u_energy = sqrt(rms(state.u)^2+cfg.quiet_rms^2);
-innovation = state.Syy.*max(1-gamma2, cfg.residual_floor)/u_energy;
 if state.step_count <= cfg.warm_steps
-    % The componentwise warm-up envelope is a one-sided noise reference:
-    % ordinary startup scatter maps to growth <= 1, while later output
-    % amplification must exceed every warm-up snapshot before it can lower
-    % the residual NCF term.
-    state.res0 = max(state.res0, innovation);
     b_res = b_prior;
 else
-    base_floor = max(median(state.res0(cfg.res_keep)), eps);
-    ratio = innovation./max(state.res0, 0.1*base_floor);
-    ratio = max(movmedian(ratio(cfg.res_keep), 3), eps);
-    growth_now = mean(ratio.^4)^(1/4);
-    state.log_growth = state.log_growth+cfg.residual_alpha* ...
-        (log(max(growth_now,1))-state.log_growth);
-    growth = exp(state.log_growth);
-    b_res = min(cfg.cap, b_prior/sqrt(max(growth, 1)));
+    % Fit one positive loop-gain multiplier from the SHAPE of the quiet
+    % output spectrum.  Normalization by the band median removes unknown
+    % noise intensity; retaining the nominal phase makes the prediction
+    % authority-aware through |1+a*rho*L0|^{-2}.
+    qobs = state.Syy./cfg.shape;
+    qobs = qobs/max(median(qobs(cfg.res_keep)), eps);
+    loss = zeros(size(cfg.rho_grid));
+    for k = 1:numel(cfg.rho_grid)
+        qmod = abs((1+cfg.L0)./(1+a_now*cfg.rho_grid(k)*cfg.L0)).^2;
+        qmod = qmod/max(median(qmod(cfg.res_keep)), eps);
+        loss(k) = median(abs(log(max(qobs(cfg.res_keep), eps))- ...
+            log(max(qmod(cfg.res_keep), eps))));
+    end
+    [~, kbest] = min(loss);
+    w = confidence.^2;
+    Lmodel = a_now*cfg.L0;
+    rho_drive = real(sum(w.*conj(Lmodel).*Lhat))/ ...
+        max(sum(w.*abs(Lmodel).^2), eps);
+    shape_weight = min(max(2*(rho_drive-1), 0), 1);
+    rho_target = 1+shape_weight*(cfg.rho_grid(kbest)-1);
+    state.log_rho = state.log_rho+cfg.residual_alpha* ...
+        (log(rho_target)-state.log_rho);
+    rho = exp(state.log_rho);
+    b_res_curve = movmedian(chordal(a_now*rho*cfg.L0, cfg.cap), 3);
+    b_res = min(b_res_curve(cfg.keep));
 end
 
-% The innovation term is informative only when the experiment is active
-% and the residual band itself is not coherently observed.  Both factors
-% are continuous evidence weights, not mode gates.
-res_weight = activity*(1-mean(confidence(cfg.res_keep)))^2;
-b_raw = b_st-res_weight*max(b_st-b_res, 0);
+% The quiet-band model is informative only when the experiment is active
+% and that band has little command leverage.  Both factors are continuous
+% evidence weights, not mode gates.
+res_weight = activity*(1-mean(leverage(cfg.res_keep)))^2;
+b_evid = b_st-res_weight*max(b_st-b_res, 0);
+b_raw = activity*b_evid+(1-activity)*cfg.cap;
 state.b = state.b + cfg.margin_alpha*(b_raw-state.b);
 b = min(max(state.b, 0), cfg.cap);
 ready = state.step_count*cfg.step_s >= cfg.warm_s;
 info = makeInfo(b_st, b_res, b_raw, Tuse, Lhat, confidence, ...
     cfg, state, ready);
 info.residual_weight = res_weight;
-full_curve = movmedian(chordal(Lhat/a_now, cfg.cap), 3);
+alpha_recovery = min(1/a_now, 4);
+full_curve = movmedian(chordal(alpha_recovery*Lhat, cfg.cap), 3);
 info.full_margin = min(full_curve(cfg.keep));
 end
 

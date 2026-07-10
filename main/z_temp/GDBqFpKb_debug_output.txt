@@ -233334,3 +233334,58 @@ Error in <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('de
 expData = load(result.hs.exp_tf_file);
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 } 
+analyze_osi
+
+Available files:
+
+saved_results
+  |-- tests
+    |-- important
+      |-- [1] 20260617_1623_sp1_ori_P30_I0_D0001_Po_015_Io_20_Do_00015.mat
+      |-- [2] 20260617_1655_sp1_ori_P30_I10_D0001_Po_015_Io_20_Do_00015.mat
+      |-- [3] 20260617_1708_sp1_ori_P30_I30_D0001_Po_015_Io_20_Do_00015.mat
+      |-- [4] 20260617_1719_sp1_ori_P50_I30_D0001_Po_015_Io_20_Do_00015.mat
+      |-- [5] 20260617_1731_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat
+      |-- [6] 20260617_1749_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat
+      |-- [7] 20260625_1740_RTHS_02.mat
+      |-- [8] 20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat
+      |-- [9] 20260630_1930_testing_OSI.mat
+    |-- tsting_osi
+      |-- [10] 20260704_1129_testing_OSI.mat
+      |-- [11] GDBqFpKb.mat
+      |-- [12] RHTS_no_inst_butindicators_jump.mat
+      |-- [13] RTHS_5k.mat
+      |-- [14] RTHS_instability_at_the_end.mat
+      |-- [15] RTHS_instability_during_eq.mat
+      |-- [16] RTHS_osi_rising_emergency.mat
+      |-- [17] osi_highband.mat
+      |-- [18] osi_lowband.mat
+
+Select file number to load: 11
+
+Available files:
+
+saved_results
+  |-- exp_tf
+    |-- [1] tf_sp1_5000_20260627_233333.mat
+    |-- [2] tf_sp1_7000_20260627_210411.mat
+
+Select file number to load: 2
+GPT 5.6 replay: GDBqFpKb.mat | 910 updates | target 0.550
+
+ans = 
+
+  <a href="matlab:helpPopup('struct')" style="font-weight:bold">struct</a> with fields:
+
+                 tc: [910×1 double]
+                  b: [910×1 double]
+               b_st: [910×1 double]
+              b_res: [910×1 double]
+              b_raw: [910×1 double]
+             b_full: [910×1 double]
+    residual_weight: [910×1 double]
+        auth_factor: [910×1 double]
+                cfg: [1×1 struct]
+          test_file: 'C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\Gaurav Setup\ColumnSetup_gaurav\main\saved_results\tests\tsting_osi\GDBqFpKb.mat'
+        exp_tf_file: 'C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\Gaurav Setup\ColumnSetup_gaurav\main\saved_results\exp_tf\tf_sp1_7000_20260627_210411.mat'
+

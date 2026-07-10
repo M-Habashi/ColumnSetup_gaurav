@@ -5,18 +5,12 @@ function [a_next, state, info] = gpt_auth(varargin)
 %   state = gpt_auth('state', prm)
 %   [a, state, info] = gpt_auth(b, b_full, residual_weight, state, prm)
 %
-% Over the rig's authority range, reducing authority increases the NCF
-% margin.  A log-integral update therefore regulates the continuous GPT OSI
-% reading onto b_ref = target+guard:
-%
-%   e = deadzone(b-b_ref),
-%   log(a_next) = clip(log(a) + rate*sqrt(a)*dt*e, limits).
-%
-% The logarithm makes equal relative corrections symmetric.  The NCF
-% deadzone suppresses small margin noise, while sqrt(a) damps absolute
-% motion after authority has already been reduced.  There are no
-% up/down modes, validity gates, counters, latches, prediction grids, commit
-% thresholds, or separate recovery law.
+% Reducing authority increases the NCF margin, so one log-integral update
+% regulates the continuous reading onto b_ref.  The quiet-band evidence
+% weight doubles the base guard and deadband when the hazard band is not
+% directly observed.  A four-times rolling prediction horizon supplies
+% the positive recovery boost; there are no modes, latches, counters, or
+% separate recovery state.
 
 if ischar(varargin{1}) || isstring(varargin{1})
     switch lower(char(varargin{1}))
@@ -42,9 +36,10 @@ state = varargin{4};
 prm = varargin{5};
 
 a0 = min(max(state.a, prm.a_min), prm.a_max);
-b_ref = prm.target+prm.guard;
+b_ref = prm.target+prm.guard*(1+min(max(residual_weight, 0), 1));
 e_raw = b-b_ref;
-e = sign(e_raw)*max(abs(e_raw)-prm.deadband,0);
+db = prm.deadband*(1+min(max(residual_weight, 0), 1));
+e = sign(e_raw)*max(abs(e_raw)-db,0);
 headroom = 1/sqrt(2)-b_ref;
 coherent = min(1,max(0,(0.60-residual_weight)/0.40));
 full_safe = min(1,max(0,(b_full-prm.target)/prm.guard));
@@ -55,17 +50,16 @@ a_free = exp(min(max(log_a, log(prm.a_min)), log(prm.a_max)));
 a_next = a0+min(max(a_free-a0,-prm.max_step),prm.max_step);
 state.a = a_next;
 info = struct('a_target', a_next, 'margin_error', e_raw, ...
-    'regulated_error', e, ...
-    'coherent_weight', coherent, 'full_safe_weight', full_safe, ...
-    'rate', rate);
+    'regulated_error', e, 'coherent_weight', coherent, ...
+    'full_safe_weight', full_safe, 'rate', rate);
 end
 
 function prm = makeParams(override)
 prm = struct( ...
     'target', 0.55, ...
-    'guard', 0.03, ...
-    'deadband', 0.012, ...
-    'rate', 4.25, ...
+    'guard', 0.02, ...
+    'deadband', 0.008, ...
+    'rate', 5.0, ...
     'up_boost', 400.0, ...
     'max_step', 0.15, ...
     'a_min', 0.08, ...

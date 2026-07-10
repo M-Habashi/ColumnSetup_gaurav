@@ -109,10 +109,12 @@
 <main>
   <header>
     <h1>GPT OSI</h1>
-    <p class="intro">A continuous normalized-coprime-factor margin estimate and symmetric authority regulator designed for a two-second response envelope.</p>
+    <p class="intro">A continuous normalized-coprime-factor margin estimate with authority-aware quiet-band inference and a two-second response envelope.</p>
     <div class="status-line" id="statusLine">
       <span>Study data <strong id="dataStatus">loading</strong></span>
+      <span>Acceptance <strong id="acceptanceStatus">loading</strong></span>
       <span>Target margin <strong>0.55</strong></span>
+      <span>Fabby score <strong id="fabbyScore">loading</strong></span>
       <span>Estimator cadence <strong>0.125 s</strong></span>
       <span>Warm-up <strong>2.0 s</strong></span>
     </div>
@@ -120,7 +122,7 @@
 
   <section aria-labelledby="design-title">
     <h2 id="design-title">Three equations, two measured terms</h2>
-    <p>The coherent and innovation terms answer different information questions. The first measures the loop where the command excites it. The second prevents an unexcited hazardous band from being mistaken for a healthy one. Startup and weak evidence use the nominal loop as a Bayesian-style prior, so the published result is finite at every update.</p>
+    <p>The coherent and quiet-band terms answer different observability questions. The first measures the loop where the command excites it. The second fits the output-spectrum shape where the command has little leverage. Weak command activity blends the result to the finite NCF ceiling, preventing displacement feedthrough from becoming false loop evidence.</p>
     <div class="math-grid">
       <article class="math-step">
         <span class="step-no">01 · measured NCF</span>
@@ -129,13 +131,13 @@
       </article>
       <article class="math-step">
         <span class="step-no">02 · unexcited band</span>
-        <div class="equation">R = S<sub>yy</sub>(1−γ²)<br>b<sub>R</sub> = b<sub>0</sub> / √max(q<sub>tail</sub>(R/R<sub>0</sub>),1)</div>
-        <p>The upper tail of innovation growth maps measured output amplification back to a conservative NCF level. This is the only extra term needed for the canonical low-band damage case.</p>
+        <div class="equation">q = (S<sub>yy</sub>/|S<sub>0</sub>|²) / median(S<sub>yy</sub>/|S<sub>0</sub>|²)<br>ρ̂ = arg min<sub>ρ</sub> median |log q − log q<sub>ρ</sub>|<br>b<sub>R</sub> = min<sub>ω</sub> chordal(aρ̂L<sub>0</sub>)</div>
+        <p>A scalar loop-gain multiplier is fitted from spectral shape, so unknown noise intensity cancels. Coherent driven-band gain continuously weights this fit: a healthy low-band record stays at ρ = 1, while real damage releases the hazard-band estimate.</p>
       </article>
       <article class="math-step">
         <span class="step-no">03 · authority</span>
-        <div class="equation">a* = min(a<sub>NCF</sub>, a(b<sub>R</sub>/b<sub>t</sub>)²)<br>ln a<sup>+</sup> = ln a + λ(ln a*−ln a)</div>
-        <p>The estimated loop is rescaled across authority candidates and the largest NCF-safe value is selected. One log-domain time constant handles both shedding and recovery—no latches, mode switches, counters, or commit gate.</p>
+        <div class="equation">b<sub>ref</sub> = b<sub>t</sub> + g(1+w<sub>R</sub>)<br>d ln a / dt = k · deadzone(b−b<sub>ref</sub>)</div>
+        <p>One log-integral law handles shedding and recovery. The same observability weight scales its guard and deadband; a 4× rolling prediction horizon accelerates recovery without a deep-shed extrapolation to full authority. There are no latches, counters, cooldowns, or separate recovery mode.</p>
       </article>
     </div>
     <p class="note"><strong>NCF cap:</strong> this study retains FABLE’s imposed reporting cap of 1/√2 for direct comparison. It is a software convention, not the intrinsic maximum of the chordal expression, which can reach 1.</p>
@@ -153,18 +155,18 @@
         <div class="spacer"></div>
         <div class="checks" aria-label="Optional GPT branches">
           <label><input id="showSt" type="checkbox"> coherent term</label>
-          <label><input id="showRes" type="checkbox"> innovation term</label>
+          <label><input id="showRes" type="checkbox"> quiet-band model</label>
         </div>
       </div>
       <div class="plot-meta" id="plotMeta"><span>Selecting data…</span></div>
       <div class="chart" id="marginChart"><span class="chart-title">NCF margin</span><svg role="img" aria-label="NCF margin comparison"></svg><div class="tooltip"></div></div>
       <div class="chart" id="authorityChart"><span class="chart-title">Authority factor</span><svg role="img" aria-label="Authority comparison"></svg><div class="tooltip"></div></div>
       <div class="legend">
-        <span style="color:var(--reference)"><i class="swatch"></i>true / inverse-gain reference</span>
+        <span style="color:var(--reference)"><i class="swatch"></i>true NCF / diagnostic-gain inverse (context)</span>
         <span style="color:var(--fable)"><i class="swatch"></i>FABLE</span>
         <span style="color:var(--gpt)"><i class="swatch"></i>GPT</span>
         <span style="color:var(--measured)"><i class="swatch"></i>GPT coherent term</span>
-        <span style="color:var(--residual)"><i class="swatch"></i>GPT innovation term</span>
+        <span style="color:var(--residual)"><i class="swatch"></i>GPT quiet-band model</span>
       </div>
     </div>
   </section>
@@ -183,16 +185,17 @@
       <tr><td><code>segment_s</code></td><td>Recent-data span and frequency resolution.</td><td>0.50 s</td></tr>
       <tr><td><code>memory_s</code></td><td>Exponential spectral memory; determines change detection speed.</td><td>0.35 s</td></tr>
       <tr><td><code>margin_s</code></td><td>Final continuous margin smoothing.</td><td>0.20 s</td></tr>
-      <tr><td><code>warm_s</code></td><td>Innovation-baseline acquisition. A nominal finite prior is published during this interval.</td><td>2.00 s</td></tr>
-      <tr><td><code>target / guard</code></td><td>Required NCF level and prediction standoff.</td><td>0.55 / 0.015</td></tr>
-      <tr><td><code>tau_s</code></td><td>Single symmetric authority time constant.</td><td>0.25 s</td></tr>
+      <tr><td><code>residual_s</code></td><td>Memory of the quiet-band gain fit.</td><td>1.50 s</td></tr>
+      <tr><td><code>warm_s</code></td><td>Finite nominal-prior warm-up.</td><td>2.00 s</td></tr>
+      <tr><td><code>target / guard</code></td><td>Required NCF level and base observability standoff.</td><td>0.55 / 0.020</td></tr>
+      <tr><td><code>deadband / rate</code></td><td>Base NCF noise band and log-authority gain.</td><td>0.008 / 5.0</td></tr>
     </tbody></table></div>
   </section>
 
   <section aria-labelledby="gdb-title">
-    <h2 id="gdb-title">How GDBqFpKb is scored</h2>
-    <p><code>Results(:,21)</code> is a destabilizing diagnostic loop-gain multiplier, not an authority command. The natural compensation reference is therefore <code>a_ref = min(1,1/g)</code>: 1, 0.667, 0.5, then 1. GPT OSI never receives that gain signal. It sees only <code>u_osi</code> and <code>dm</code>; the gain is used afterward to measure response latency and tracking error.</p>
-    <p>This is a shadow replay, not a counterfactual closed-loop experiment: the recorded motion was produced with the logged FABLE authority. The synthetic cases provide the causal closed-loop acceptance test; GDB provides the requested experimental timing and reference-following check.</p>
+    <h2 id="gdb-title">How GDBqFpKb is used</h2>
+    <p><code>Results(:,21)</code> is a diagnostic loop-gain multiplier, not an authority command. GPT OSI never receives it; the replay uses only <code>u_osi</code>, <code>dm</code>, and the logged authority that actually acted on the plant. The replay uses the same canonical 0.55 target and default authority law as the ten-case suite.</p>
+    <p>Because this is an open-loop replay, the plotted diagnostic-gain inverse is context only—not a true authority or acceptance reference. Acceptance checks continuous output, idle behavior before the earthquake, deficit detection at earthquake onset and both destabilizing edges, then post-quiet recovery. Logged FABLE traces remain context only.</p>
   </section>
 
   <footer>Generated from <code>run_gpt_study.m</code>. MATLAB result files store one top-level <code>result</code> struct. Source, generated data, and report are confined to <code>research/gpt5_6</code>.</footer>
@@ -213,6 +216,8 @@
     return;
   }
   $('#dataStatus').textContent = `ready · ${D.generated_at}`;
+  $('#fabbyScore').textContent = fmt(D.fabby_score.mean_score,2);
+  $('#acceptanceStatus').innerHTML = pass(D.acceptance.all_pass);
   const items = [...D.cases.map((c,i) => ({kind:'case', i, name:`${i+1}. ${c.name.replaceAll('_',' ')}`})), {kind:'gdb', name:'GDBqFpKb experimental replay'}];
   const select = $('#caseSelect');
   items.forEach((x,i) => { const o=document.createElement('option'); o.value=i; o.textContent=x.name; select.append(o); });
@@ -225,14 +230,14 @@
       const g=D.gdb;
       return {name:item.name, t:clean(g.t), margin:[
         {name:'FABLE',v:clean(g.fable_b),c:colors.fable}, {name:'GPT',v:clean(g.gpt_b),c:colors.gpt},
-        {name:'GPT coherent',v:clean(g.gpt_b_st),c:colors.st,optional:'st'}, {name:'GPT innovation',v:clean(g.gpt_b_res),c:colors.res,optional:'res'}],
-        authority:[{name:'inverse gain',v:clean(g.a_reference),c:colors.ref,dash:true},{name:'FABLE',v:clean(g.fable_a),c:colors.fable},{name:'GPT',v:clean(g.gpt_a),c:colors.gpt}],
-        meta:`experimental shadow replay · GPT MAE ${fmt(D.gdb_metrics.gpt_mae)} · FABLE MAE ${fmt(D.gdb_metrics.fable_mae)} · worst GPT transition ${fmt(D.gdb_metrics.worst_transition_s)} s`, events:eventList('gdb')};
+        {name:'GPT coherent',v:clean(g.gpt_b_st),c:colors.st,optional:'st'}, {name:'GPT quiet-band',v:clean(g.gpt_b_res),c:colors.res,optional:'res'}],
+        authority:[{name:'diag-gain inverse (context)',v:clean(g.diag_gain_inverse),c:colors.ref,dash:true},{name:'FABLE (logged)',v:clean(g.fable_a),c:colors.fable},{name:'GPT',v:clean(g.gpt_a),c:colors.gpt}],
+        meta:`experimental open-loop replay · target 0.55 · quake deficit ${D.acceptance.gdb_detect_quake_deficit_pass?'PASS':'FAIL'} (${fmt(A.gdb_quake_deficit_latency_s)} s) · edges 1.5× ${fmt(A.gdb_edge_1p5_latency_s)} s / 2× ${fmt(A.gdb_edge_2_latency_s)} s`, events:eventList('gdb')};
     }
     const c=D.cases[item.i];
     return {name:c.name.replaceAll('_',' '), t:clean(c.t), margin:[
       {name:'true NCF',v:clean(c.true_b),c:colors.ref,dash:true},{name:'FABLE',v:clean(c.fable_b),c:colors.fable},{name:'GPT',v:clean(c.gpt_b),c:colors.gpt},
-      {name:'GPT coherent',v:clean(c.gpt_b_st),c:colors.st,optional:'st'},{name:'GPT innovation',v:clean(c.gpt_b_res),c:colors.res,optional:'res'}],
+      {name:'GPT coherent',v:clean(c.gpt_b_st),c:colors.st,optional:'st'},{name:'GPT quiet-band',v:clean(c.gpt_b_res),c:colors.res,optional:'res'}],
       authority:[{name:'FABLE',v:clean(c.fable_a),c:colors.fable},{name:'GPT',v:clean(c.gpt_a),c:colors.gpt}],
       meta:`FABLE ${c.fable_pass?'PASS':'FAIL'} · GPT ${c.gpt_pass?'PASS':'FAIL'} · warm-up ${fmt(c.gpt_timing.warmup_s)} s · response ${fmt(c.gpt_timing.authority_s)} s · recovery ${fmt(c.gpt_timing.recovery_s)} s`, events:eventList(c.name)};
   }
@@ -274,7 +279,7 @@
   function choose(i){index=(i+items.length)%items.length;select.value=index;domain=null;renderAll();}
   select.onchange=()=>choose(+select.value);$('#prevCase').onclick=()=>choose(index-1);$('#nextCase').onclick=()=>choose(index+1);$('#resetZoom').onclick=()=>{domain=null;renderAll();};$('#showSt').onchange=renderAll;$('#showRes').onchange=renderAll;
 
-  const A=D.acceptance, rows=[['10 canonical cases',`${A.canonical_pass_count}/10`,'10/10',A.canonical_pass],['Continuous GPT readings',A.continuous?'0 NaN':'NaN present','0 NaN',A.continuous],['Warm-up',`${fmt(A.worst_warmup_s)} s`,'≤ 2.0 s',A.warmup_pass],['Damage authority response',`${fmt(A.worst_detection_s)} s`,'≤ 2.0 s',A.detection_pass],['Authority recovery',`${fmt(A.worst_recovery_s)} s`,'≤ 2.0 s',A.recovery_pass],['Material direction reversals',`${A.max_material_reversals}`,'≤ 12 per case',A.chatter_pass],['GDB gain transitions',`${fmt(D.gdb_metrics.worst_transition_s)} s`,'≤ 2.0 s',D.gdb_metrics.transition_pass]];
+  const A=D.acceptance, rows=[['Fabby score',fmt(A.fabby_score,2),'> 92',A.fabby_score_pass],['10 canonical cases',`${A.canonical_pass_count}/10`,'10/10',A.canonical_pass],['Continuous GPT readings',A.continuous?'0 NaN':'NaN present','0 NaN',A.continuous],['Warm-up',`${fmt(A.worst_warmup_s)} s`,'≤ 2.0 s',A.warmup_pass],['Margin-drop detection',`${fmt(A.worst_detection_s)} s`,'≤ 2.0 s',A.detection_pass],['Authority response',`${fmt(A.worst_authority_s)} s`,'≤ 2.0 s',A.authority_pass],['Authority recovery',`${fmt(A.worst_recovery_s)} s`,'≤ 2.0 s',A.recovery_pass],['Tail reliability',`${fmt(A.max_tail_step,4)} max step`,'≤ 0.05',A.reliability_pass],['GDB continuous',A.gdb_continuous_pass?'0 NaN':'NaN present','0 NaN',A.gdb_continuous_pass],['GDB no idle shed',`min a ${fmt(A.gdb_no_idle_min_a)}`,'a = 1.00, t < 44 s',A.gdb_no_idle_shed_pass],['GDB quake deficit',`activity ${fmt(A.gdb_quake_activity_s)} s; margin ${fmt(A.gdb_quake_deficit_latency_s)} s`,'≤ 2.0 s after RMS > 0.05 mm',A.gdb_detect_quake_deficit_pass],['GDB detect edge 1.5×',`${fmt(A.gdb_edge_1p5_latency_s)} s`,'drop ≥ 0.04 within ≤ 2.0 s',A.gdb_detect_edge_1p5_pass],['GDB detect edge 2×',`${fmt(A.gdb_edge_2_latency_s)} s`,'drop ≥ 0.04 within ≤ 2.0 s',A.gdb_detect_edge_2_pass],['GDB recovery',`cross ${fmt(A.gdb_recovery_margin_cross_s)} s; ${fmt(A.gdb_recovery_latency_s)} s; tail min ${fmt(A.gdb_recovery_tail_min_a)}`,'a ≥ 0.95 within ≤ 3.0 s and holds',A.gdb_recovery_pass]];
   $('#acceptanceTable tbody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${pass(r[3])}</td></tr>`).join('');
   $('#caseTable tbody').innerHTML=D.cases.map(c=>`<tr><td>${c.name.replaceAll('_',' ')}</td><td>${pass(c.fable_pass)}</td><td>${pass(c.gpt_pass)}</td><td>${fmt(c.gpt_timing.warmup_s)} s</td><td>${fmt(c.gpt_timing.authority_s)} s</td><td>${fmt(c.gpt_timing.recovery_s)} s</td></tr>`).join('');
   choose(0);

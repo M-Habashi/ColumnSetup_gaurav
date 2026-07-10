@@ -1,36 +1,42 @@
 GPT OSI STUDY
-Generated: 2026-07-10 03:22:52 *
+Generated: 2026-07-10 11:40:39 *
 
 healthy_broadband            PASS
-[ok] median error 0.008 <= 0.06 | [ok] false-low 0.0% <= 2% | [ok] mean a 0.995 >= 0.92 | [ok] min a 0.92 >= 0.70 | [ok] no fast trips | [ok] true margin >= target-0.02
+[ok] median error 0.008 <= 0.06 | [ok] false-low 0.0% <= 2% | [ok] mean a 0.998 >= 0.92 | [ok] min a 0.93 >= 0.70 | [ok] no fast trips | [ok] true margin >= target-0.02
 
 intensity_step               PASS
-[ok] median error 0.007 <= 0.06 | [ok] false-low 0.0% <= 2% | [ok] mean a 0.961 >= 0.92 | [ok] min a 0.80 >= 0.70 | [ok] no fast trips | [ok] true margin >= target-0.02
+[ok] median error 0.005 <= 0.06 | [ok] false-low 0.0% <= 2% | [ok] mean a 1.000 >= 0.92 | [ok] min a 0.99 >= 0.70 | [ok] no fast trips | [ok] true margin >= target-0.02
 
 damage_step_broadband        PASS
-[ok] authority response 0.375 s <= 0.75 s | [ok] defended violations 0.0% | [ok] min a 0.38 < 0.90 | [ok] no pre-damage trips
+[ok] authority response 0.375 s <= 0.75 s | [ok] defended violations 0.0% | [ok] min a 0.39 < 0.90 | [ok] no pre-damage trips
 
 damage_step_lowband          PASS
-[ok] authority response 2.000 s <= 2.00 s | [ok] defended violations 0.0% | [ok] min a 0.37 < 0.90 | [ok] no pre-damage trips
+[ok] authority response 1.375 s <= 2.00 s | [ok] defended violations 0.0% | [ok] min a 0.33 < 0.90 | [ok] no pre-damage trips
 
 silent                       PASS
 [ok] authority never sheds | [ok] no alarms
 
 gradual_softening            PASS
-[ok] ramp violations 0.0% <= 2% | [ok] final a 0.42 <= 0.80 | [ok] settled error 0.023 <= 0.08 | [ok] no pre-ramp trips
+[ok] ramp violations 0.0% <= 2% | [ok] final a 0.45 <= 0.80 | [ok] settled error 0.024 <= 0.08 | [ok] no pre-ramp trips
 
 damage_then_repair           PASS
 [ok] damage response 0.500 s <= 0.5 s | [ok] damaged violations 0.0% | [ok] a(repair+60) 1.00 >= 0.65 | [ok] a(repair+105) 1.00 >= 0.75 | [ok] authority recovers | [ok] healthy recovery margin
 
 starts_damaged_improves      PASS
-[ok] damaged-start violations 0.0% | [ok] target error 0.016 <= 0.06 | [ok] authority below max while damaged | [ok] full authority 1.62 s <= 30 s
+[ok] damaged-start violations 0.0% | [ok] target error 0.006 <= 0.06 | [ok] authority below max while damaged | [ok] full authority 1.62 s <= 30 s
 
 regime_change_healthy        PASS
-[ok] false-low 0.0% <= 2% | [ok] no trips outside transition | [ok] late min a 0.93 >= 0.85
+[ok] false-low 0.0% <= 2% | [ok] no trips outside transition | [ok] late min a 0.95 >= 0.85
 
 transient_pulse              PASS
-[ok] trips confined to pulse | [ok] low duration 3.6 s <= 10 s | [ok] a(pulse+40) 1.00 >= 0.22 | [ok] final a 0.96 >= 0.5 | [ok] healthy post-pulse margin
+[ok] trips confined to pulse | [ok] low duration 0.9 s <= 10 s | [ok] a(pulse+40) 1.00 >= 0.22 | [ok] final a 1.00 >= 0.5 | [ok] healthy post-pulse margin
 
-Acceptance all pass: PASS
-GDB transition latencies: 2.250 5.000 2.000 s
-GDB indicator latencies: 2.375 0.750 NaN s
+Acceptance all pass: FAIL
+Fabby score: 94.770 | > 92 | PASS
+GDB target: 0.550
+GDB continuous: PASS | 0 NaN
+GDB no idle shed: PASS | min a 1.000 (t < 44 s)
+GDB quake deficit: PASS | activity 45.125 s, margin latency 0.000 s (limit <= 2.000 s)
+GDB detect edge 1.5: FAIL | NaN s (drop >= 0.040, limit <= 2.000 s)
+GDB detect edge 2: FAIL | NaN s (drop >= 0.040, limit <= 2.000 s)
+GDB recovery: PASS | margin cross 76.500 s, authority latency 2.750 s, tail min a 0.958 (limit <= 3.000 s)
