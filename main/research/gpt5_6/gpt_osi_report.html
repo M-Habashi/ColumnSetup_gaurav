@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GPT OSI — continuous NCF margin regulator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --surface: #111113;
+      --surface-2: #18181b;
+      --line: rgba(255,255,255,.11);
+      --line-strong: rgba(255,255,255,.22);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --fable: #ac6420;
+      --gpt: #39bf5e;
+      --measured: #007ca8;
+      --residual: #901500;
+      --reference: #e4e4e7;
+      --danger: #ef6b5b;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { width: min(1240px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 70px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 48px); line-height: 1.04; letter-spacing: -.035em; font-weight: 720; }
+    h2 { margin: 42px 0 14px; font-size: 23px; letter-spacing: -.015em; }
+    h3 { margin: 0 0 10px; font-size: 16px; }
+    p { max-width: 82ch; color: #d4d4d8; }
+    .intro { margin: 0; font-size: 17px; color: var(--muted); }
+    code, .mono { font-family: "Cascadia Code", Consolas, monospace; font-size: .92em; }
+    .status-line { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; color: var(--muted); }
+    .status-line strong { color: var(--text); font-weight: 650; }
+    .rule { border-top: 1px solid var(--line); margin-top: 32px; }
+    .math-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); }
+    .math-step { padding: 18px; min-height: 170px; border-right: 1px solid var(--line); background: var(--surface); }
+    .math-step:last-child { border-right: 0; }
+    .step-no { color: var(--muted); font: 12px/1.2 "Cascadia Code", Consolas, monospace; }
+    .equation { margin: 14px 0 10px; color: var(--text); font: 600 15px/1.55 "Cambria Math", Cambria, serif; overflow-wrap: anywhere; }
+    .math-step p { margin: 0; color: var(--muted); font-size: 13px; }
+    .plot-shell { border: 1px solid var(--line); background: var(--surface); }
+    .plot-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; padding: 14px; border-bottom: 1px solid var(--line); }
+    label { color: var(--muted); font-size: 12px; }
+    label span { display: block; margin-bottom: 5px; }
+    select, button {
+      min-height: 36px;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      background: #0d0d0f;
+      color: var(--text);
+      padding: 7px 10px;
+      font: inherit;
+    }
+    select { min-width: 260px; }
+    button { cursor: pointer; }
+    button:hover, button:focus-visible, select:focus-visible { border-color: #71717a; outline: none; }
+    .spacer { flex: 1; }
+    .checks { display: flex; align-items: center; gap: 12px; padding-bottom: 7px; }
+    .checks label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+    .checks input { accent-color: var(--measured); }
+    .plot-meta { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .plot-meta strong { color: var(--text); }
+    .chart { position: relative; border-bottom: 1px solid var(--line); }
+    .chart:last-child { border-bottom: 0; }
+    .chart-title { position: absolute; left: 15px; top: 11px; z-index: 1; color: var(--muted); font-size: 12px; pointer-events: none; }
+    svg { display: block; width: 100%; height: 292px; touch-action: none; user-select: none; }
+    .plot-bg { fill: #0c0c0e; }
+    .grid { stroke: rgba(255,255,255,.07); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .axis { stroke: rgba(255,255,255,.2); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .tick { fill: #8f8f98; font: 11px ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .series { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
+    .series.thin { stroke-width: 1.25; }
+    .series.dashed { stroke-dasharray: 7 6; }
+    .event { stroke: rgba(255,255,255,.25); stroke-width: 1; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
+    .crosshair { stroke: rgba(255,255,255,.34); stroke-width: 1; vector-effect: non-scaling-stroke; pointer-events: none; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    .swatch { display: inline-block; width: 19px; height: 2px; margin: 0 7px 3px 0; vertical-align: middle; background: currentColor; }
+    .tooltip { position: absolute; display: none; z-index: 3; min-width: 155px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 4px; background: #09090b; color: var(--muted); font: 11px/1.45 "Cascadia Code", Consolas, monospace; pointer-events: none; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 790px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: top; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-size: 12px; font-weight: 600; background: var(--surface-2); }
+    tr:last-child td { border-bottom: 0; }
+    .pass { color: var(--gpt); }
+    .fail { color: var(--danger); }
+    .note { padding: 15px 17px; border-left: 3px solid var(--fable); background: var(--surface); color: #d4d4d8; }
+    .method-table td:nth-child(2) { color: var(--muted); text-align: left; }
+    footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    @media (max-width: 820px) {
+      main { width: min(100% - 20px, 1240px); padding-top: 24px; }
+      .math-grid { grid-template-columns: 1fr; }
+      .math-step { border-right: 0; border-bottom: 1px solid var(--line); min-height: 0; }
+      .math-step:last-child { border-bottom: 0; }
+      select { min-width: min(100%, 250px); }
+      svg { height: 250px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>GPT OSI</h1>
+    <p class="intro">A continuous normalized-coprime-factor margin estimate and symmetric authority regulator designed for a two-second response envelope.</p>
+    <div class="status-line" id="statusLine">
+      <span>Study data <strong id="dataStatus">loading</strong></span>
+      <span>Target margin <strong>0.55</strong></span>
+      <span>Estimator cadence <strong>0.125 s</strong></span>
+      <span>Warm-up <strong>2.0 s</strong></span>
+    </div>
+  </header>
+
+  <section aria-labelledby="design-title">
+    <h2 id="design-title">Three equations, two measured terms</h2>
+    <p>The coherent and innovation terms answer different information questions. The first measures the loop where the command excites it. The second prevents an unexcited hazardous band from being mistaken for a healthy one. Startup and weak evidence use the nominal loop as a Bayesian-style prior, so the published result is finite at every update.</p>
+    <div class="math-grid">
+      <article class="math-step">
+        <span class="step-no">01 · measured NCF</span>
+        <div class="equation">T̂ = S<sub>yu</sub>/S<sub>uu</sub><br>b<sub>ST</sub> = min<sub>ω</sub> 1 / √[2(|1−T̂|²+|T̂|²)]</div>
+        <p>A 0.5 s sliding DFT is exponentially averaged. Coherence and input power continuously shrink uncertain bins toward the current-authority nominal model; there is no valid/invalid gate.</p>
+      </article>
+      <article class="math-step">
+        <span class="step-no">02 · unexcited band</span>
+        <div class="equation">R = S<sub>yy</sub>(1−γ²)<br>b<sub>R</sub> = b<sub>0</sub> / √max(q<sub>tail</sub>(R/R<sub>0</sub>),1)</div>
+        <p>The upper tail of innovation growth maps measured output amplification back to a conservative NCF level. This is the only extra term needed for the canonical low-band damage case.</p>
+      </article>
+      <article class="math-step">
+        <span class="step-no">03 · authority</span>
+        <div class="equation">a* = min(a<sub>NCF</sub>, a(b<sub>R</sub>/b<sub>t</sub>)²)<br>ln a<sup>+</sup> = ln a + λ(ln a*−ln a)</div>
+        <p>The estimated loop is rescaled across authority candidates and the largest NCF-safe value is selected. One log-domain time constant handles both shedding and recovery—no latches, mode switches, counters, or commit gate.</p>
+      </article>
+    </div>
+    <p class="note"><strong>NCF cap:</strong> this study retains FABLE’s imposed reporting cap of 1/√2 for direct comparison. It is a software convention, not the intrinsic maximum of the chordal expression, which can reach 1.</p>
+  </section>
+
+  <section aria-labelledby="plots-title">
+    <h2 id="plots-title">Fresh ten-case comparison</h2>
+    <p>Choose a canonical case or the experimental GDBqFpKb replay. Scroll over either plot to zoom in time, drag to pan, and double-click to reset. Both panels share the same time window.</p>
+    <div class="plot-shell">
+      <div class="plot-controls">
+        <button id="prevCase" type="button" aria-label="Previous case">Previous</button>
+        <label><span>Case</span><select id="caseSelect" aria-label="Select test case"></select></label>
+        <button id="nextCase" type="button" aria-label="Next case">Next</button>
+        <button id="resetZoom" type="button">Reset zoom</button>
+        <div class="spacer"></div>
+        <div class="checks" aria-label="Optional GPT branches">
+          <label><input id="showSt" type="checkbox"> coherent term</label>
+          <label><input id="showRes" type="checkbox"> innovation term</label>
+        </div>
+      </div>
+      <div class="plot-meta" id="plotMeta"><span>Selecting data…</span></div>
+      <div class="chart" id="marginChart"><span class="chart-title">NCF margin</span><svg role="img" aria-label="NCF margin comparison"></svg><div class="tooltip"></div></div>
+      <div class="chart" id="authorityChart"><span class="chart-title">Authority factor</span><svg role="img" aria-label="Authority comparison"></svg><div class="tooltip"></div></div>
+      <div class="legend">
+        <span style="color:var(--reference)"><i class="swatch"></i>true / inverse-gain reference</span>
+        <span style="color:var(--fable)"><i class="swatch"></i>FABLE</span>
+        <span style="color:var(--gpt)"><i class="swatch"></i>GPT</span>
+        <span style="color:var(--measured)"><i class="swatch"></i>GPT coherent term</span>
+        <span style="color:var(--residual)"><i class="swatch"></i>GPT innovation term</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="acceptance-title">
+    <h2 id="acceptance-title">Acceptance results</h2>
+    <div class="table-wrap"><table id="acceptanceTable"><thead><tr><th>Requirement</th><th>Measured</th><th>Limit</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+    <h2>Canonical case scorecard</h2>
+    <div class="table-wrap"><table id="caseTable"><thead><tr><th>Case</th><th>FABLE</th><th>GPT</th><th>GPT warm-up</th><th>GPT response</th><th>GPT recovery</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="parameters-title">
+    <h2 id="parameters-title">What remains tunable</h2>
+    <p>The algorithm exposes structural limits and four meaningful performance values. Frequency bands and the 1/√2 comparison cap describe the experiment; they are not behavioral gates.</p>
+    <div class="table-wrap"><table class="method-table"><thead><tr><th>Value</th><th>Role</th><th>Selected</th></tr></thead><tbody>
+      <tr><td><code>segment_s</code></td><td>Recent-data span and frequency resolution.</td><td>0.50 s</td></tr>
+      <tr><td><code>memory_s</code></td><td>Exponential spectral memory; determines change detection speed.</td><td>0.35 s</td></tr>
+      <tr><td><code>margin_s</code></td><td>Final continuous margin smoothing.</td><td>0.20 s</td></tr>
+      <tr><td><code>warm_s</code></td><td>Innovation-baseline acquisition. A nominal finite prior is published during this interval.</td><td>2.00 s</td></tr>
+      <tr><td><code>target / guard</code></td><td>Required NCF level and prediction standoff.</td><td>0.55 / 0.015</td></tr>
+      <tr><td><code>tau_s</code></td><td>Single symmetric authority time constant.</td><td>0.25 s</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section aria-labelledby="gdb-title">
+    <h2 id="gdb-title">How GDBqFpKb is scored</h2>
+    <p><code>Results(:,21)</code> is a destabilizing diagnostic loop-gain multiplier, not an authority command. The natural compensation reference is therefore <code>a_ref = min(1,1/g)</code>: 1, 0.667, 0.5, then 1. GPT OSI never receives that gain signal. It sees only <code>u_osi</code> and <code>dm</code>; the gain is used afterward to measure response latency and tracking error.</p>
+    <p>This is a shadow replay, not a counterfactual closed-loop experiment: the recorded motion was produced with the logged FABLE authority. The synthetic cases provide the causal closed-loop acceptance test; GDB provides the requested experimental timing and reference-following check.</p>
+  </section>
+
+  <footer>Generated from <code>run_gpt_study.m</code>. MATLAB result files store one top-level <code>result</code> struct. Source, generated data, and report are confined to <code>research/gpt5_6</code>.</footer>
+</main>
+<script src="report_data.js"></script>
+<script>
+(() => {
+  'use strict';
+  const D = window.GPT_OSI_DATA;
+  const $ = (q) => document.querySelector(q);
+  const ns = 'http://www.w3.org/2000/svg';
+  const colors = {ref:'#e4e4e7', fable:'#ac6420', gpt:'#39bf5e', st:'#007ca8', res:'#901500'};
+  const fmt = (v, n=3) => v == null || !Number.isFinite(+v) ? '—' : (+v).toFixed(n);
+  const pass = (v) => `<span class="${v?'pass':'fail'}">${v?'PASS':'FAIL'}</span>`;
+  if (!D) {
+    $('#dataStatus').textContent = 'not generated — run run_gpt_study.m';
+    $('#plotMeta').innerHTML = '<span class="fail">report_data.js is missing. Run the MATLAB study first.</span>';
+    return;
+  }
+  $('#dataStatus').textContent = `ready · ${D.generated_at}`;
+  const items = [...D.cases.map((c,i) => ({kind:'case', i, name:`${i+1}. ${c.name.replaceAll('_',' ')}`})), {kind:'gdb', name:'GDBqFpKb experimental replay'}];
+  const select = $('#caseSelect');
+  items.forEach((x,i) => { const o=document.createElement('option'); o.value=i; o.textContent=x.name; select.append(o); });
+  let index=0, domain=null, drag=null;
+
+  const clean = (a) => a.map(v => v == null ? NaN : +v);
+  function current() {
+    const item=items[index];
+    if (item.kind==='gdb') {
+      const g=D.gdb;
+      return {name:item.name, t:clean(g.t), margin:[
+        {name:'FABLE',v:clean(g.fable_b),c:colors.fable}, {name:'GPT',v:clean(g.gpt_b),c:colors.gpt},
+        {name:'GPT coherent',v:clean(g.gpt_b_st),c:colors.st,optional:'st'}, {name:'GPT innovation',v:clean(g.gpt_b_res),c:colors.res,optional:'res'}],
+        authority:[{name:'inverse gain',v:clean(g.a_reference),c:colors.ref,dash:true},{name:'FABLE',v:clean(g.fable_a),c:colors.fable},{name:'GPT',v:clean(g.gpt_a),c:colors.gpt}],
+        meta:`experimental shadow replay · GPT MAE ${fmt(D.gdb_metrics.gpt_mae)} · FABLE MAE ${fmt(D.gdb_metrics.fable_mae)} · worst GPT transition ${fmt(D.gdb_metrics.worst_transition_s)} s`, events:eventList('gdb')};
+    }
+    const c=D.cases[item.i];
+    return {name:c.name.replaceAll('_',' '), t:clean(c.t), margin:[
+      {name:'true NCF',v:clean(c.true_b),c:colors.ref,dash:true},{name:'FABLE',v:clean(c.fable_b),c:colors.fable},{name:'GPT',v:clean(c.gpt_b),c:colors.gpt},
+      {name:'GPT coherent',v:clean(c.gpt_b_st),c:colors.st,optional:'st'},{name:'GPT innovation',v:clean(c.gpt_b_res),c:colors.res,optional:'res'}],
+      authority:[{name:'FABLE',v:clean(c.fable_a),c:colors.fable},{name:'GPT',v:clean(c.gpt_a),c:colors.gpt}],
+      meta:`FABLE ${c.fable_pass?'PASS':'FAIL'} · GPT ${c.gpt_pass?'PASS':'FAIL'} · warm-up ${fmt(c.gpt_timing.warmup_s)} s · response ${fmt(c.gpt_timing.authority_s)} s · recovery ${fmt(c.gpt_timing.recovery_s)} s`, events:eventList(c.name)};
+  }
+  function eventList(name) {
+    const map={damage_step_broadband:[[45,'damage']],damage_step_lowband:[[50,'damage']],gradual_softening:[[60,'softening'],[100,'fully damaged']],damage_then_repair:[[50,'damage'],[100,'repair']],starts_damaged_improves:[[80,'repair']],regime_change_healthy:[[70,'band change']],transient_pulse:[[45,'pulse']],intensity_step:[[50,'input ×5']],gdb:[[50.224,'g=1.5'],[56.521,'g=2'],[75.469,'g=1']]};
+    return map[name]||[];
+  }
+  function visible(s) { return !s.optional || (s.optional==='st'&&$('#showSt').checked) || (s.optional==='res'&&$('#showRes').checked); }
+  function el(name,attrs={}) { const x=document.createElementNS(ns,name); Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v)); return x; }
+  function pathData(t,v,x,y,lo,hi) {
+    let d='', open=false;
+    for(let i=0;i<t.length;i++){ if(t[i]<lo||t[i]>hi||!Number.isFinite(v[i])){open=false;continue;} const p=`${x(t[i]).toFixed(2)},${y(v[i]).toFixed(2)}`; d+=open?` L${p}`:` M${p}`;open=true; }
+    return d;
+  }
+  function renderChart(container,series,yDomain,titleData) {
+    const svg=container.querySelector('svg'), tip=container.querySelector('.tooltip'); svg.replaceChildren();
+    const W=1100,H=292,m={l:64,r:22,t:28,b:36},pw=W-m.l-m.r,ph=H-m.t-m.b;
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    const d=current(), full=[d.t[0],d.t[d.t.length-1]]; if(!domain) domain=[...full];
+    const x=v=>m.l+(v-domain[0])/(domain[1]-domain[0])*pw, y=v=>m.t+(yDomain[1]-v)/(yDomain[1]-yDomain[0])*ph;
+    svg.append(el('rect',{x:m.l,y:m.t,width:pw,height:ph,class:'plot-bg'}));
+    for(let i=0;i<=5;i++){const yy=m.t+i*ph/5, val=yDomain[1]-i*(yDomain[1]-yDomain[0])/5;svg.append(el('line',{x1:m.l,x2:m.l+pw,y1:yy,y2:yy,class:'grid'}));const tx=el('text',{x:m.l-10,y:yy+4,'text-anchor':'end',class:'tick'});tx.textContent=fmt(val,2);svg.append(tx);}
+    for(let i=0;i<=6;i++){const xx=m.l+i*pw/6,val=domain[0]+i*(domain[1]-domain[0])/6;svg.append(el('line',{x1:xx,x2:xx,y1:m.t,y2:m.t+ph,class:'grid'}));const tx=el('text',{x:xx,y:H-12,'text-anchor':'middle',class:'tick'});tx.textContent=fmt(val,1);svg.append(tx);}
+    svg.append(el('line',{x1:m.l,x2:m.l,y1:m.t,y2:m.t+ph,class:'axis'}));svg.append(el('line',{x1:m.l,x2:m.l+pw,y1:m.t+ph,y2:m.t+ph,class:'axis'}));
+    d.events.forEach(([te])=>{if(te>=domain[0]&&te<=domain[1])svg.append(el('line',{x1:x(te),x2:x(te),y1:m.t,y2:m.t+ph,class:'event'}));});
+    if(titleData==='margin'){const yy=y(D.target);svg.append(el('line',{x1:m.l,x2:m.l+pw,y1:yy,y2:yy,class:'event'}));}
+    series.filter(visible).forEach(s=>{const p=el('path',{d:pathData(d.t,s.v,x,y,...domain),class:`series${s.dash?' dashed':''}${s.optional?' thin':''}`,stroke:s.c});svg.append(p);});
+    const cross=el('line',{x1:0,x2:0,y1:m.t,y2:m.t+ph,class:'crosshair',visibility:'hidden'});svg.append(cross);
+    function pointer(e){const r=svg.getBoundingClientRect(), px=(e.clientX-r.left)/r.width*W;if(px<m.l||px>m.l+pw)return null;return {px,t:domain[0]+(px-m.l)/pw*(domain[1]-domain[0]),r};}
+    svg.onpointermove=e=>{const p=pointer(e);if(!p)return;if(drag){const dt=(e.clientX-drag.x)/p.r.width*(domain[1]-domain[0]);setDomain([drag.domain[0]-dt,drag.domain[1]-dt],full);renderAll();return;}cross.setAttribute('x1',p.px);cross.setAttribute('x2',p.px);cross.setAttribute('visibility','visible');const k=nearest(d.t,p.t);tip.style.display='block';tip.style.left=`${Math.min(e.offsetX+14,container.clientWidth-175)}px`;tip.style.top='40px';tip.innerHTML=`t ${fmt(d.t[k],3)} s<br>${series.filter(visible).map(s=>`${s.name}: ${fmt(s.v[k])}`).join('<br>')}`;};
+    svg.onpointerleave=()=>{cross.setAttribute('visibility','hidden');tip.style.display='none';drag=null;};
+    svg.onpointerdown=e=>{svg.setPointerCapture(e.pointerId);drag={x:e.clientX,domain:[...domain]};};svg.onpointerup=()=>{drag=null;};
+    svg.onwheel=e=>{e.preventDefault();const p=pointer(e);if(!p)return;const factor=e.deltaY>0?1.25:.8,span=(domain[1]-domain[0])*factor,frac=(p.t-domain[0])/(domain[1]-domain[0]);setDomain([p.t-frac*span,p.t+(1-frac)*span],full);renderAll();};
+    svg.ondblclick=()=>{domain=null;renderAll();};
+  }
+  function nearest(a,v){let lo=0,hi=a.length-1;while(lo<hi){const m=(lo+hi)>>1;if(a[m]<v)lo=m+1;else hi=m;}return Math.max(0,lo>0&&Math.abs(a[lo-1]-v)<Math.abs(a[lo]-v)?lo-1:lo);}
+  function setDomain(next,full){const minSpan=Math.max(.5,(full[1]-full[0])/500),span=Math.max(minSpan,Math.min(full[1]-full[0],next[1]-next[0]));let lo=next[0],hi=lo+span;if(lo<full[0]){lo=full[0];hi=lo+span;}if(hi>full[1]){hi=full[1];lo=hi-span;}domain=[lo,hi];}
+  function renderAll(){const d=current();$('#plotMeta').innerHTML=`<strong>${d.name}</strong><span>${d.meta}</span>`;renderChart($('#marginChart'),d.margin,[0,.75],'margin');renderChart($('#authorityChart'),d.authority,[0,1.05],'authority');}
+  function choose(i){index=(i+items.length)%items.length;select.value=index;domain=null;renderAll();}
+  select.onchange=()=>choose(+select.value);$('#prevCase').onclick=()=>choose(index-1);$('#nextCase').onclick=()=>choose(index+1);$('#resetZoom').onclick=()=>{domain=null;renderAll();};$('#showSt').onchange=renderAll;$('#showRes').onchange=renderAll;
+
+  const A=D.acceptance, rows=[['10 canonical cases',`${A.canonical_pass_count}/10`,'10/10',A.canonical_pass],['Continuous GPT readings',A.continuous?'0 NaN':'NaN present','0 NaN',A.continuous],['Warm-up',`${fmt(A.worst_warmup_s)} s`,'≤ 2.0 s',A.warmup_pass],['Damage authority response',`${fmt(A.worst_detection_s)} s`,'≤ 2.0 s',A.detection_pass],['Authority recovery',`${fmt(A.worst_recovery_s)} s`,'≤ 2.0 s',A.recovery_pass],['Material direction reversals',`${A.max_material_reversals}`,'≤ 12 per case',A.chatter_pass],['GDB gain transitions',`${fmt(D.gdb_metrics.worst_transition_s)} s`,'≤ 2.0 s',D.gdb_metrics.transition_pass]];
+  $('#acceptanceTable tbody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${pass(r[3])}</td></tr>`).join('');
+  $('#caseTable tbody').innerHTML=D.cases.map(c=>`<tr><td>${c.name.replaceAll('_',' ')}</td><td>${pass(c.fable_pass)}</td><td>${pass(c.gpt_pass)}</td><td>${fmt(c.gpt_timing.warmup_s)} s</td><td>${fmt(c.gpt_timing.authority_s)} s</td><td>${fmt(c.gpt_timing.recovery_s)} s</td></tr>`).join('');
+  choose(0);
+})();
+</script>
+</body>
+</html>

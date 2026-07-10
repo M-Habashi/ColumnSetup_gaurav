@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fabby OSI — design &amp; validation report</title>
+<style>
+:root{
+  --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
+  --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+  --border:rgba(11,11,11,.10);
+  --blue:#2a78d6; --yellow:#eda100; --red:#e34948; --aqua:#1baf7a;
+  --band:rgba(137,135,129,.18);
+}
+:root[data-theme="dark"]{
+  --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7;
+  --muted:#898781; --grid:#2c2c2a; --axis:#383835;
+  --border:rgba(255,255,255,.10);
+  --blue:#3987e5; --yellow:#c98500; --red:#e66767; --aqua:#199e70;
+  --band:rgba(137,135,129,.22);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7;
+    --muted:#898781; --grid:#2c2c2a; --axis:#383835;
+    --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --yellow:#c98500; --red:#e66767; --aqua:#199e70;
+    --band:rgba(137,135,129,.22);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;}
+.wrap{max-width:1060px;margin:0 auto;padding:28px 20px 80px}
+h1{font-size:26px;margin:8px 0 2px}
+h2{font-size:19px;margin:44px 0 10px;border-top:1px solid var(--grid);padding-top:26px}
+h3{font-size:15.5px;margin:24px 0 6px}
+p{color:var(--ink2);max-width:78ch}
+.sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.chip{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 14px;font-size:13px;color:var(--ink2)}
+.chip b{color:var(--ink);font-size:17px;display:block}
+.chip .ok{color:#0ca30c}
+code,.mono{font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+.eq{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:12px 18px;margin:10px 0;font-family:ui-monospace,Consolas,monospace;
+  font-size:13.5px;color:var(--ink);overflow-x:auto;white-space:pre;line-height:1.7}
+.note{border-left:3px solid var(--yellow);padding:2px 0 2px 12px;margin:12px 0}
+.note p{margin:4px 0}
+table{border-collapse:collapse;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;font-size:13px;margin:12px 0;display:block;overflow-x:auto;max-width:100%}
+th,td{padding:6px 12px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td:first-child{font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 10px}
+.tab{border:1px solid var(--border);background:var(--surface);color:var(--ink2);
+  border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer;user-select:none}
+.tab:hover{border-color:var(--muted)}
+.tab.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tab .pf{font-size:10.5px;display:block;margin-top:1px}
+.pf .p{color:#0ca30c}.tab.on .pf .p{color:#7be07b}
+.pf .f{color:var(--red)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px 8px;margin:10px 0}
+.card h4{margin:0 0 2px;font-size:14px}
+.card .cs{color:var(--muted);font-size:12px;margin-bottom:8px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink2);
+  margin:2px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:0;border-top:2.5px solid;display:inline-block}
+.legend i.dash{border-top-style:dashed}
+.legend i.band{width:14px;height:10px;border:none;background:var(--band)}
+.detail{font-size:12px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;
+  white-space:pre-wrap;margin:8px 0 6px;line-height:1.6}
+.detail .ok{color:#0ca30c}.detail .fail{color:var(--red);font-weight:700}
+svg{display:block;width:100%;height:auto}
+.hint{font-size:12px;color:var(--muted);margin:4px 2px 10px}
+.ttip{position:fixed;pointer-events:none;background:var(--surface);
+  border:1px solid var(--border);box-shadow:0 4px 14px rgba(0,0,0,.15);
+  border-radius:8px;padding:8px 11px;font-size:12px;z-index:50;display:none;min-width:150px}
+.ttip .tt-t{color:var(--muted);margin-bottom:4px}
+.ttip .row{display:flex;align-items:center;gap:7px;margin:2px 0}
+.ttip .row i{width:12px;border-top:2.5px solid;display:inline-block}
+.ttip .row b{margin-left:auto;font-variant-numeric:tabular-nums}
+.ttip .row span{color:var(--ink2)}
+.themebtn{position:fixed;top:14px;right:16px;background:var(--surface);
+  border:1px solid var(--border);color:var(--ink2);border-radius:8px;
+  padding:6px 11px;font-size:12px;cursor:pointer;z-index:60}
+.flow{display:flex;gap:0;align-items:stretch;flex-wrap:wrap;margin:16px 0}
+.fbox{background:var(--surface);border:1px solid var(--border);border-radius:9px;
+  padding:10px 13px;font-size:12.5px;max-width:200px}
+.fbox b{display:block;font-size:13px;margin-bottom:3px}
+.fbox span{color:var(--ink2)}
+.farr{align-self:center;color:var(--muted);padding:0 8px;font-size:17px}
+</style>
+</head>
+<body>
+<button class="themebtn" onclick="toggleTheme()">◐ theme</button>
+<div class="wrap">
+
+<h1>fabby — a continuous NCF-margin OSI</h1>
+<div class="sub">research/fable_2 · target 0.55 · step 0.125 s · built 2026-07-10 ·
+one estimator, two readings, three gains — no calibration phase, no trips, no latches, no NaN</div>
+
+<div class="chips">
+  <div class="chip"><b class="ok">10 / 10</b>synthetic suite (fable at HEAD: 8/10)</div>
+  <div class="chip"><b>0.28–2.0 s</b>damage &rarr; authority moving</div>
+  <div class="chip"><b>1.5 s</b>floor &rarr; full authority (GDB sprint)</div>
+  <div class="chip"><b>1.5 s</b>warm-up to first reading</div>
+  <div class="chip"><b>0</b>NaN readings, everywhere</div>
+  <div class="chip"><b>11</b>indicator parameters (fable: ~60)</div>
+</div>
+
+<h2>1 · The idea: remove, don't add</h2>
+<p>
+fable answers "is the loop still stable?" with two spectral rings, a calibration
+phase, a coherence gate, an input-power gate, a sidelobe guard, two CUSUM trip
+detectors, a regime-change detector, an evidence gate and a 20-knob authority law
+with latched ceilings. Each piece exists because a simpler draft failed some record
+— but the pieces interact, and the failures we saw (GDBqFpKb stuck at a&nbsp;=&nbsp;0.2
+forever; NaN readings whenever a gate blanks) are failures of the <em>interactions</em>.
+</p>
+<p>
+fabby starts from the observation that almost all of those guards exist to answer one
+question: <b>"which frequencies am I allowed to believe?"</b> There is a single
+mathematical device that answers it without any gate: <b>prior regularization</b>.
+Believe each bin exactly in proportion to how strongly the command drives it; where it
+isn't driven, believe the healthy prior. Every reading then degrades <em>continuously</em>
+toward "no evidence = healthy ceiling" instead of flipping through branches, so the
+indicator can be simple because it has nothing to protect itself from.
+</p>
+
+<div class="flow">
+  <div class="fbox"><b>0.5 s Hann segment</b><span>every 0.125 s step, one FFT of the
+  tap u and the response dm</span></div>
+  <div class="farr">&rarr;</div>
+  <div class="fbox"><b>forgetting spectra</b><span>S<sub>uu</sub>, S<sub>yy</sub>,
+  S<sub>uy</sub> — exponential memory &tau; &asymp; 1 s. The warm-up IS the memory
+  filling: &le; 1.5 s</span></div>
+  <div class="farr">&rarr;</div>
+  <div class="fbox"><b>regularized FRF</b><span>T&#770; = S<sub>uy</sub>/(S<sub>uu</sub>+&lambda;),
+  &lambda; = 10% of mean input power</span></div>
+  <div class="farr">&rarr;</div>
+  <div class="fbox"><b>two margins</b><span>driven band: chordal NCF margin of T&#770;.
+  Quiet band: sensitivity growth of the output floor</span></div>
+  <div class="farr">&rarr;</div>
+  <div class="fbox"><b>b = min, always finite</b><span>evidence-weighted toward the
+  0.707 ceiling as the drive dies</span></div>
+</div>
+
+<h2>2 · The math</h2>
+
+<h3>2.1 Driven band — the project margin, regularized</h3>
+<p>The quantity is unchanged from the project definition: with the estimated
+closed-loop FRF T&#770;(&omega;) from the OSI tap to the measured displacement, the
+generalized (chordal) NCF stability margin is</p>
+<div class="eq">b(&omega;) = 1 / ( &radic;2 · &radic;( |1−T&#770;(&omega;)|² + |T&#770;(&omega;)|² ) ),      b_st = min over band of movmedian₃( b(&omega;) )</div>
+<p>capped at its mathematical ceiling 1/&radic;2 &asymp; 0.707 (T&#770; = S&#772;T&#772;
+identity: |S|²+|T|² &ge; ½ always, with equality only at T = ½ — so 0.707 literally means
+"as far from instability as any loop can be"). The FRF estimate is the
+<b>ridge-regularized least squares</b> solution</p>
+<div class="eq">T&#770;(&omega;) = S<sub>uy</sub>(&omega;) / ( S<sub>uu</sub>(&omega;) + &lambda; ),      &lambda; = prior_frac · mean<sub>band</sub>( S<sub>uu</sub> ),  prior_frac = 0.10</div>
+<p>
+which is the Bayesian posterior mean under a zero-mean prior on T&#770;. Where the
+command has power (S<sub>uu</sub> &raquo; &lambda;) the data win and T&#770; is the
+ordinary H1 estimate; where it hasn't (S<sub>uu</sub> &laquo; &lambda;) the estimate
+shrinks to 0 and the chordal margin of 0 is the ceiling — "nothing observable is
+wrong". This single term is what replaces fable's coherence gate, input-power gate
+and sidelobe guard: a noise bin cannot fake a deficit because a noise bin has no
+leverage on T&#770;. There is no bin mask, no minimum-bin count, no NaN.
+</p>
+
+<h3>2.2 Quiet band — margin from sensitivity growth</h3>
+<p>Damage at frequencies the command doesn't drive (the lowband-earthquake case) never
+appears in T&#770;. But the output noise floor there is shaped by the sensitivity:
+P<sub>yy</sub>(&omega;) &asymp; |S(&omega;)|²·N&#8320;(&omega;), and the chordal margin obeys
+b &le; 1/(&radic;2·|S|). So the <b>growth</b> of the self-normalized floor against the
+model shape |S&#8320;|² estimates the margin loss directly:</p>
+<div class="eq">q(&omega;) = P&#772;<sub>yy</sub>(&omega;) / |S&#8320;(&omega;)|²   (self-normalized by its quiet-band median)
+g(&omega;*) = max over quiet bins of movmean₇( q )        ("quiet": S<sub>uu</sub> &lt; &lambda;, both memories)
+b_q = b&#8320;(&omega;*) / &radic;( g(&omega;*) / g_thr )</div>
+<p>
+b&#8320;(&omega;*) is the nominal margin curve of the initial loop model at the growing
+bin — the anchor the growth discounts. The 7-bin pooling matches the physical bandwidth
+of an emerging unstable mode (the 5k-plant bump spans ~12 Hz above 2 dB) and buys the
+variance reduction that lets 1–2 dB of growth be evidence. g_thr (1 dB) recenters the
+statistic so the <em>typical healthy</em> pooled maximum reads the anchor — and the map
+is deliberately smooth with <b>no saturation kink</b>, because the authority law needs
+b_q to be a monotone continuous function of growth to have an equilibrium instead of a
+relaxation oscillation (the single most important lesson of this redesign — see §5).
+</p>
+
+<h3>2.3 Evidence weight — no drive, no verdict, no NaN</h3>
+<p>On the real rig the OSI tap u = G_T(dd_fem − iff·fm) contains the force echo of dm,
+so an <em>idle</em> tap still correlates with the output and would fake a terrible
+margin (GDBqFpKb reads b &asymp; 0.13 before the earthquake even starts). The fix is the
+same idea once more: weight the verdict by how much exogenous drive actually exists,</p>
+<div class="eq">w = clip( rms(u)/quiet_mm − 1, 0, 1 ),   quiet_mm = 0.05 mm
+b = w · min(b_st, b_q) + (1−w) · 0.707</div>
+<p>
+Below 0.05 mm rms the tap is echo and sensor noise — the reading blends to the healthy
+ceiling instead of going NaN, which is precisely what lets authority recover through
+silence (GDB's stuck-at-0.2 deadlock cannot happen). Full trust needs only 0.1 mm; the
+suite commands run at 0.15 mm rms and the GDB earthquake at 0.14–0.28.
+</p>
+
+<h3>2.4 The authority law — one state, one line</h3>
+<div class="eq">d ln a / dt = ( −k_dn·max(target − b, 0)                    shed:   7 /s
+              + k_up·max(b − target − 0.025, 0)            creep:  0.32 /s
+              + k_hi·max(b − 0.695, 0) ) / target          sprint: 60 /s</div>
+<p>
+A multiplicative integrator on ln&nbsp;a, clipped to [0.08, 1]. The shed term is
+proportional: a grazing dip nibbles, a collapse sheds at multiple ln-units per second —
+that <em>is</em> the "severe" branch, no second path needed. Recovery is two-sloped on
+purpose: just above the target a damaged loop at reduced authority is
+<em>observationally identical</em> to a healthy one (the ambiguous zone), so authority
+creeps there and the estimator's ~1 s lag can never be outrun into bad territory; at
+the ceiling (b &gt; 0.695 — only an unambiguously healthy or idle loop reads there) it
+sprints, giving floor-to-full recovery in ~1.5 s. The deadband [target,
+target+0.025] is where a rests — the entire anti-flicker story. No confirmation
+counters, no commit gate, no latches, no cooldowns: 8 parameters, 1 state variable.
+</p>
+
+<h2>3 · What was removed, and what pays for it</h2>
+<table>
+<tr><th>fable mechanism</th><th>fabby replacement</th></tr>
+<tr><td>coherence gate + null calibration</td><td rowspan="3">ridge prior &lambda; (§2.1) — undriven bins have no leverage</td></tr>
+<tr><td>input-power gate (35 dB)</td></tr>
+<tr><td>sidelobe / leakage guard (25 dB)</td></tr>
+<tr><td>80-window calibration phase</td><td>none: the model shape |S&#8320;|² is the baseline; warm-up = memory fill (&le;1.5 s)</td></tr>
+<tr><td>residual z-score + engage/expire hysteresis</td><td>smooth growth&rarr;margin map (§2.2), deadband in the law</td></tr>
+<tr><td>2 CUSUM fast-trip detectors + trip undo</td><td>proportional shed on a fast estimator (&tau;&asymp;1 s) — a collapse reads huge deficit within ~0.3 s</td></tr>
+<tr><td>regime-change detector + rebaseline</td><td>nothing to rebaseline: forgetting spectra follow the excitation by themselves</td></tr>
+<tr><td>evidence gate (NaN) + blind probe + latch ceiling</td><td>evidence weight w (§2.3): silence reads healthy, recovery is the ordinary sprint</td></tr>
+<tr><td>5 s window + 0.6 s fast ring (two scales)</td><td>one scale: &tau;_s = 0.9 s driven / &tau;_q = 1.25 s quiet</td></tr>
+</table>
+<div class="note"><p><b>What pays for it:</b> a shorter memory means a noisier margin
+(&sigma; &asymp; 0.02–0.04 vs fable's ~0.01 slow branch), which the law absorbs in its
+deadband + creep asymmetry rather than in the estimator. And with no latch, a
+repaired-then-quiet plant recovers fast — the deliberate post-trip caution of fable is
+gone. That is a <em>choice</em>: the 10-case ground-truth suite (incl. quiet-band
+damage, repair, and pulse cases) accepts it, and the speed requirements demand it.</p></div>
+
+<h3>Parameters (complete list)</h3>
+<table>
+<tr><th>indicator</th><th>value</th><th>meaning</th></tr>
+<tr><td>segment_s / step_s</td><td>0.5 / 0.125 s</td><td>FFT segment, update cadence</td></tr>
+<tr><td>tau_s / tau_q</td><td>0.9 / 1.25 s</td><td>driven / quiet spectral memory (speed &harr; noise)</td></tr>
+<tr><td>prior_frac</td><td>0.10</td><td>ridge prior vs mean input power (which bins to believe)</td></tr>
+<tr><td>g_thr_db / pool_n</td><td>1.0 dB / 7</td><td>healthy pooled-max recentering / mode bandwidth</td></tr>
+<tr><td>quiet_mm</td><td>0.05 mm</td><td>tap rms below which there is no evidence</td></tr>
+<tr><td>warm_s</td><td>1.5 s</td><td>report ceiling until the memory has filled</td></tr>
+<tr><td>band / quiet band / line reject</td><td>2–100 / 28–100 / 58–62 Hz</td><td>project constants (shared with fable)</td></tr>
+<tr><th>authority</th><th>value</th><th>meaning</th></tr>
+<tr><td>target</td><td>0.55</td><td>margin to regulate onto</td></tr>
+<tr><td>k_dn</td><td>7</td><td>proportional shed gain</td></tr>
+<tr><td>k_up / db_up</td><td>0.32 / 0.025</td><td>ambiguous-zone creep + rest band</td></tr>
+<tr><td>k_hi / b_hi</td><td>60 / 0.695</td><td>ceiling sprint (full recovery ~1.5 s)</td></tr>
+<tr><td>a_min / a_max</td><td>0.08 / 1</td><td>authority bounds</td></tr>
+</table>
+
+<h2>4 · The 10 ground-truth cases (click a case, wheel to zoom, drag to pan, double-click to reset)</h2>
+<p>Sample-accurate closed inner loop (discrete PID &times; identified 7000/5000 plants)
+where the <b>true</b> chordal margin is computable at every step. Both methods run the
+identical simulation; the authority each one commands feeds back into its own loop.
+fabby passes 10/10; fable at HEAD passes 8/10 (its case-4 quiet-band defense and case-8
+recovery regressions are visible below).</p>
+<div class="tabs" id="tabs"></div>
+<div id="caseview"></div>
+
+<h2>5 · GDBqFpKb replay — following the diagnostic gain</h2>
+<p>
+The record that motivated the redesign: a live run (target was 0.8, up_deadband 0.10)
+where a diagnostic inner-loop gain was stepped 1 &rarr; 1.5 (50.2 s) &rarr; 2 (56.5 s)
+&rarr; 1 (75.5 s). The live law shed to a = 0.2 at 64.4 s and <b>never recovered</b> —
+after the earthquake ends (~78.4 s) its evidence gate blanks the margin to NaN and the
+recovery deadlocks. Below, fabby replays the same logged tap u_osi and dm (open loop:
+its authority cannot affect the logged plant, so once the reading sits below target it
+integrates to the floor — in closed loop it would settle at the b&nbsp;=&nbsp;target
+equilibrium instead, as the suite cases show).
+</p>
+<div class="chips">
+  <div class="chip"><b>+0.28 s</b>shed begins after the 1.5&times; gain step (live: +14.2 s)</div>
+  <div class="chip"><b>~76.5 s</b>recovery starts (gain edge at 75.47 s)</div>
+  <div class="chip"><b>79.6 s</b>full authority — 1.5 s sprint (live: never)</div>
+  <div class="chip"><b>0 %</b>NaN readings (live b_osi: 87 % NaN)</div>
+</div>
+<div id="gdbview"></div>
+<div class="note"><p><b>Reading the margin panel:</b> before 45 s the tap is idle
+(echo + noise, rms &lt; 0.013 mm) — the evidence weight holds fabby at the healthy
+ceiling where the live indicator showed NaN. During the 2&times;-gain window both
+agree the margin is bad. After the gain returns (75.5 s) and the record goes quiet
+(78.4 s), fabby blends back to the ceiling and sprints home; the live law stays at
+0.2 for the remaining 35 s of the record.</p></div>
+
+<h2>6 · Honest limits</h2>
+<p>
+<b>Quiet-band information limit.</b> Below ~1.5–2 dB of sensitivity growth the quiet
+statistic is inside its own noise; the defendable true margin in a lowband-earthquake
+scenario is &asymp; 0.41–0.48 (suite tolerance target−0.15), not the target itself. This is
+physics, not tuning — fable hits the same wall (its case 4 currently regulates <em>worse</em>
+because of the latch regression). <b>Regulation wobble.</b> In sustained quiet-band
+damage, authority breathes ±0.15 around its equilibrium with a ~10 s period (visible in
+case 4) — the price of a 1.25 s estimator driving 2 s reactions; the deadband keeps it
+off the healthy cases entirely. <b>Fading drive over damage.</b> When the drive dies
+while the plant is damaged, evidence fades and authority recovers — indistinguishable,
+by information, from a healed plant. fable "solves" this with a latched ceiling; fabby
+deliberately does not (the GDB deadlock is that latch's failure mode). The protection
+is speed: if excitation returns degraded, the proportional shed reacts within ~0.3 s.
+</p>
+
+<div class="sub" style="margin-top:36px">
+Files: <span class="mono">fabby_osi.m · fabby_auth.m · fabby_method.m · run_fabby_tests.m
+· make_report_data.m · results/</span> — reproduce with
+<span class="mono">run_fabby_tests()</span> (runs both methods on the suite, replays
+GDBqFpKb, regenerates report_data.js; leaves OSI_tests/fable untouched).
+</div>
+</div>
+
+<div class="ttip" id="ttip"></div>
+<script src="report_data.js"></script>
+<script>
+'use strict';
+function toggleTheme(){
+  const r=document.documentElement;
+  const dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur=r.getAttribute('data-theme')||(dark?'dark':'light');
+  r.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  drawAll();
+}
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const ttip=document.getElementById('ttip');
+
+/* ---------- minimal linked-panel chart engine (SVG, zoom/pan) ---------- */
+function Chart(host,panels,x0,x1,events){
+  // panels: [{h, ylab, ylim, series:[{t,y,color,name,dash,width,stairs}], band:{t,lo,hi,name}}]
+  const W=1000, padL=52, padR=14;
+  const view={x0,x1};
+  const svgs=[];
+  panels.forEach(p=>{
+    const H=p.h;
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    svg.style.cursor='crosshair';
+    host.appendChild(svg);
+    svgs.push({svg,p,H});
+  });
+  function xpix(t){return padL+(t-view.x0)/(view.x1-view.x0)*(W-padL-padR)}
+  function draw(){
+    svgs.forEach(({svg,p,H})=>{
+      const padT=8,padB=(p===panels[panels.length-1].ref?26:18);
+      const yl=p.ylim;
+      const ypix=v=>padT+(yl[1]-v)/(yl[1]-yl[0])*(H-padT-18);
+      let s='';
+      // grid + y ticks
+      const yt=p.yticks||niceTicks(yl[0],yl[1],4);
+      yt.forEach(v=>{
+        const y=ypix(v);
+        s+=`<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="${css('--grid')}" stroke-width="1"/>`;
+        s+=`<text x="${padL-7}" y="${y+4}" text-anchor="end" font-size="11" fill="${css('--muted')}">${fmt(v)}</text>`;
+      });
+      // x ticks
+      niceTicks(view.x0,view.x1,7).forEach(v=>{
+        if(v<view.x0||v>view.x1)return;
+        const x=xpix(v);
+        s+=`<line x1="${x}" x2="${x}" y1="${H-18}" y2="${H-14}" stroke="${css('--axis')}"/>`;
+        s+=`<text x="${x}" y="${H-3}" text-anchor="middle" font-size="11" fill="${css('--muted')}">${fmt(v)}</text>`;
+      });
+      s+=`<line x1="${padL}" x2="${W-padR}" y1="${H-18}" y2="${H-18}" stroke="${css('--axis')}"/>`;
+      // events
+      (events||[]).forEach(ev=>{
+        if(ev.t<view.x0||ev.t>view.x1)return;
+        const x=xpix(ev.t);
+        s+=`<line x1="${x}" x2="${x}" y1="${padT}" y2="${H-18}" stroke="${css('--red')}" stroke-dasharray="3 4" stroke-width="1" opacity=".6"/>`;
+        if(p.evlab) s+=`<text x="${x+3}" y="${padT+10}" font-size="10.5" fill="${css('--red')}" opacity=".85">${ev.n}</text>`;
+      });
+      // band
+      if(p.band){
+        let up='',dn='';
+        const b=p.band;
+        for(let i=0;i<b.t.length;i++){
+          if(b.t[i]<view.x0-2||b.t[i]>view.x1+2)continue;
+          up+=(up?'L':'M')+xpix(b.t[i]).toFixed(1)+' '+ypix(clamp(b.hi[i],yl)).toFixed(1)+' ';
+          dn=('L'+xpix(b.t[i]).toFixed(1)+' '+ypix(clamp(b.lo[i],yl)).toFixed(1)+' ')+dn;
+        }
+        if(up)s+=`<path d="${up}${dn.replace('L','L')}Z" fill="${css('--band')}" stroke="none"/>`;
+      }
+      // series
+      p.series.forEach(sr=>{
+        const col=css(sr.color);
+        let d='',pen=false;
+        for(let i=0;i<sr.t.length;i++){
+          const tv=sr.t[i],yv=sr.y[i];
+          if(tv<view.x0-1||tv>view.x1+1){pen=false;continue}
+          if(yv==null||!isFinite(yv)){pen=false;continue}
+          const x=xpix(tv).toFixed(1),y=ypix(clamp(yv,yl)).toFixed(1);
+          d+=(pen?'L':'M')+x+' '+y+' ';
+          pen=true;
+        }
+        if(d)s+=`<path d="${d}" fill="none" stroke="${col}" stroke-width="${sr.width||2}" ${sr.dash?`stroke-dasharray="${sr.dash}"`:''} stroke-linejoin="round"/>`;
+      });
+      // y label
+      s+=`<text x="4" y="${padT+11}" font-size="11.5" fill="${css('--ink2')}">${p.ylab}</text>`;
+      s+=`<line class="xh" x1="-9" x2="-9" y1="${padT}" y2="${H-18}" stroke="${css('--muted')}" stroke-width="1" opacity=".8"/>`;
+      svg.innerHTML=s;
+    });
+  }
+  function clamp(v,yl){return Math.max(yl[0],Math.min(yl[1],v))}
+  // interactions
+  let drag=null;
+  svgs.forEach(({svg,p,H})=>{
+    svg.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const r=svg.getBoundingClientRect();
+      const fx=(e.clientX-r.left)/r.width*W;
+      const t=view.x0+(fx-padL)/(W-padL-padR)*(view.x1-view.x0);
+      const f=e.deltaY>0?1.25:0.8;
+      let nx0=t-(t-view.x0)*f, nx1=t+(view.x1-t)*f;
+      nx0=Math.max(x0,nx0);nx1=Math.min(x1,nx1);
+      if(nx1-nx0>0.5){view.x0=nx0;view.x1=nx1;draw()}
+    },{passive:false});
+    svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,v0:view.x0,v1:view.x1};svg.setPointerCapture(e.pointerId)});
+    svg.addEventListener('pointerup',()=>drag=null);
+    svg.addEventListener('dblclick',()=>{view.x0=x0;view.x1=x1;draw()});
+    svg.addEventListener('pointermove',e=>{
+      const r=svg.getBoundingClientRect();
+      if(drag&&e.buttons){
+        const dt=-(e.clientX-drag.x)/r.width*W/(W-padL-padR)*(drag.v1-drag.v0);
+        let nx0=drag.v0+dt,nx1=drag.v1+dt;
+        if(nx0<x0){nx1+=x0-nx0;nx0=x0} if(nx1>x1){nx0-=nx1-x1;nx1=x1}
+        view.x0=nx0;view.x1=nx1;draw();ttip.style.display='none';return;
+      }
+      const fx=(e.clientX-r.left)/r.width*W;
+      const t=view.x0+(fx-padL)/(W-padL-padR)*(view.x1-view.x0);
+      if(t<view.x0||t>view.x1){hideTT();return}
+      svgs.forEach(({svg:s2})=>{
+        const xh=s2.querySelector('.xh');
+        if(xh){xh.setAttribute('x1',xpix(t));xh.setAttribute('x2',xpix(t))}
+      });
+      showTT(e,t);
+    });
+    svg.addEventListener('pointerleave',hideTT);
+  });
+  function hideTT(){ttip.style.display='none';
+    svgs.forEach(({svg})=>{const xh=svg.querySelector('.xh');if(xh){xh.setAttribute('x1',-9);xh.setAttribute('x2',-9)}})}
+  function showTT(e,t){
+    ttip.innerHTML='';
+    const tt=document.createElement('div');tt.className='tt-t';
+    tt.textContent='t = '+t.toFixed(2)+' s';ttip.appendChild(tt);
+    panels.forEach(p=>p.series.forEach(sr=>{
+      const i=nearest(sr.t,t);
+      if(i<0)return;
+      const row=document.createElement('div');row.className='row';
+      const key=document.createElement('i');key.style.borderTopColor=css(sr.color);
+      if(sr.dash)key.style.borderTopStyle='dashed';
+      const nm=document.createElement('span');nm.textContent=sr.name;
+      const val=document.createElement('b');
+      const v=sr.y[i];val.textContent=(v==null||!isFinite(v))?'—':(+v).toFixed(3);
+      row.append(key,nm,val);ttip.appendChild(row);
+    }));
+    ttip.style.display='block';
+    const tw=ttip.offsetWidth,th=ttip.offsetHeight;
+    let lx=e.clientX+16,ly=e.clientY+12;
+    if(lx+tw>innerWidth-8)lx=e.clientX-tw-14;
+    if(ly+th>innerHeight-8)ly=e.clientY-th-10;
+    ttip.style.left=lx+'px';ttip.style.top=ly+'px';
+  }
+  draw();
+  return {draw};
+}
+function nearest(ts,t){
+  if(!ts.length)return -1;
+  let lo=0,hi=ts.length-1;
+  if(t<ts[0]-1||t>ts[hi]+1)return -1;
+  while(hi-lo>1){const m=(hi+lo)>>1;(ts[m]<t)?lo=m:hi=m}
+  return (t-ts[lo]<ts[hi]-t)?lo:hi;
+}
+function niceTicks(a,b,n){
+  const span=b-a,step0=span/n,mag=Math.pow(10,Math.floor(Math.log10(step0)));
+  const step=[1,2,2.5,5,10].map(m=>m*mag).find(s=>span/s<=n+1)||mag*10;
+  const t=[];for(let v=Math.ceil(a/step)*step;v<=b+1e-9;v+=step)t.push(+v.toFixed(6));
+  return t;
+}
+const fmt=v=>Math.abs(v)>=100?v.toFixed(0):(Math.abs(v)>=10?+v.toFixed(1)+'':+v.toFixed(2)+'');
+
+/* ------------------------------ suite view ------------------------------ */
+const EVENTS={
+  damage_step_broadband:[{t:45,n:'damage'}],
+  damage_step_lowband:[{t:50,n:'damage'}],
+  intensity_step:[{t:50,n:'input ×5'}],
+  gradual_softening:[{t:60,n:'ramp start'},{t:100,n:'ramp end'}],
+  damage_then_repair:[{t:50,n:'damage'},{t:100,n:'repair'}],
+  starts_damaged_improves:[{t:80,n:'heals'}],
+  regime_change_healthy:[{t:70,n:'band switch'}],
+  transient_pulse:[{t:45,n:'pulse'}]
+};
+let curCase=2, charts=[];
+const tabs=document.getElementById('tabs');
+REPORT.cases.forEach((c,i)=>{
+  const b=document.createElement('button');b.className='tab';
+  b.innerHTML=`${i+1}. ${c.name.replace(/_/g,' ')}<span class="pf">`+
+    `<span class="${c.pass_fabby?'p':'f'}">fabby ${c.pass_fabby?'PASS':'FAIL'}</span> · `+
+    `<span class="${c.pass_fable?'p':'f'}">fable ${c.pass_fable?'PASS':'FAIL'}</span></span>`;
+  b.onclick=()=>{curCase=i;renderCase();};
+  tabs.appendChild(b);
+});
+function renderCase(){
+  [...tabs.children].forEach((b,i)=>b.classList.toggle('on',i===curCase));
+  const c=REPORT.cases[curCase];
+  const host=document.getElementById('caseview');
+  host.innerHTML='';
+  const card=document.createElement('div');card.className='card';
+  card.innerHTML=`<h4>${curCase+1} · ${c.name.replace(/_/g,' ')}</h4>
+  <div class="cs">closed-loop ground truth · target ${REPORT.target}</div>
+  <div class="legend">
+    <span><i class="band"></i>dm envelope</span>
+    <span><i style="border-color:var(--ink)"></i>true margin</span>
+    <span><i style="border-color:var(--blue)"></i>fabby estimate</span>
+    <span><i style="border-color:var(--yellow)"></i>fable estimate</span>
+    <span><i class="dash" style="border-color:var(--muted)"></i>target</span>
+  </div>
+  <div class="charts"></div>
+  <div class="detail">${badge(c.detail_fabby,'fabby')}\n${badge(c.detail_fable,'fable')}</div>`;
+  host.appendChild(card);
+  const cv=card.querySelector('.charts');
+  const t0=c.tc[0],t1=c.tc[c.tc.length-1];
+  const tgt={t:[t0,t1],y:[REPORT.target,REPORT.target],color:'--muted',name:'target',dash:'5 5',width:1.4};
+  charts=[Chart(cv,[
+    {h:120,ylab:'dm (mm)',ylim:dmLim(c),series:[],band:{t:c.dm_t,lo:c.dm_lo,hi:c.dm_hi},evlab:true},
+    {h:210,ylab:'NCF margin',ylim:[0,0.75],yticks:[0,0.2,0.4,0.55,0.707],series:[
+      tgt,
+      {t:c.tc,y:c.b_true,color:'--ink',name:'true margin',width:2.4},
+      {t:c.tc,y:c.b_fabby,color:'--blue',name:'fabby b'},
+      {t:c.tc,y:c.b_fable,color:'--yellow',name:'fable b'}]},
+    {h:170,ylab:'authority a',ylim:[0,1.05],series:[
+      {t:c.tc,y:c.a_fabby,color:'--blue',name:'fabby a',width:2.4},
+      {t:c.tc,y:c.a_fable,color:'--yellow',name:'fable a'}]}
+  ],t0,t1,EVENTS[c.name]||[])];
+}
+function dmLim(c){
+  let m=0;c.dm_hi.forEach(v=>{if(isFinite(v)&&Math.abs(v)>m)m=Math.abs(v)});
+  c.dm_lo.forEach(v=>{if(isFinite(v)&&Math.abs(v)>m)m=Math.abs(v)});
+  return [-m*1.05,m*1.05];
+}
+function badge(d,who){
+  return who+':  '+d.replace(/\[ok\]/g,'<span class="ok">[ok]</span>')
+                   .replace(/\[FAIL\]/g,'<span class="fail">[FAIL]</span>');
+}
+
+/* ------------------------------- GDB view ------------------------------- */
+function renderGDB(){
+  const g=REPORT.gdb;
+  const host=document.getElementById('gdbview');
+  host.innerHTML='';
+  const card=document.createElement('div');card.className='card';
+  card.innerHTML=`<h4>GDBqFpKb — logged tap replay</h4>
+  <div class="cs">el-centro at 45 s · diagnostic gain steps marked red · live target was 0.8, fabby replay target 0.55</div>
+  <div class="legend">
+    <span><i class="band"></i>u_osi envelope</span>
+    <span><i style="border-color:var(--ink)"></i>diag gain</span>
+    <span><i style="border-color:var(--blue)"></i>fabby</span>
+    <span><i style="border-color:var(--yellow)"></i>live fable (logged)</span>
+    <span><i class="dash" style="border-color:var(--muted)"></i>target 0.55</span>
+  </div>
+  <div class="charts"></div>`;
+  host.appendChild(card);
+  const cv=card.querySelector('.charts');
+  const t0=0,t1=g.tc[g.tc.length-1];
+  const ev=[{t:50.224,n:'gain 1.5'},{t:56.521,n:'gain 2'},{t:75.469,n:'gain 1'},{t:78.4,n:'quake ends'}];
+  Chart(cv,[
+    {h:120,ylab:'u_osi (mm) + diag gain',ylim:[-1.1,2.3],yticks:[-1,0,1,2],series:[
+      {t:g.tc,y:g.diag_gain,color:'--ink',name:'diag gain',width:1.6}],
+      band:{t:g.u_t,lo:g.u_lo,hi:g.u_hi},evlab:true},
+    {h:210,ylab:'NCF margin',ylim:[0,0.75],yticks:[0,0.2,0.4,0.55,0.707],series:[
+      {t:[t0,t1],y:[0.55,0.55],color:'--muted',name:'target',dash:'5 5',width:1.4},
+      {t:g.tc,y:g.b,color:'--blue',name:'fabby b',width:2.2},
+      {t:g.tc,y:g.b_logged,color:'--yellow',name:'live b_osi (NaN gaps)'}]},
+    {h:170,ylab:'authority a',ylim:[0,1.05],series:[
+      {t:g.tc,y:g.a,color:'--blue',name:'fabby a',width:2.4},
+      {t:g.tc,y:g.auth_logged,color:'--yellow',name:'live authority'}]}
+  ],t0,t1,ev);
+}
+
+function drawAll(){renderCase();renderGDB();}
+drawAll();
+</script>
+</body>
+</html>
