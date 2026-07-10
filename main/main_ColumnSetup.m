@@ -380,6 +380,7 @@ end
 if exist('exp_tf_name', 'var')
     result.exp_tf_name = exp_tf_name;
 end
+result.git_provenance = get_git_provenance(projectFolder);
 
 save(file_name, 'result', '-v7.3')
 
@@ -394,43 +395,7 @@ disp('===============================================================')
 
 %% Plotting Simulation Data
 
-if ~exist('result', 'var')
-    fprintf('\nLoaded data uses the old saved-result format.\n')
-    fprintf('Convert saved test MAT files from the main folder with:\n')
-    fprintf('  convert_saved_result_to_struct\n\n')
-    return
-end
-if exist('projectFolder', 'var') ...
-        && isfolder(fullfile(projectFolder, 'results_analysis'))
-    addpath(fullfile(projectFolder, 'results_analysis'))
-elseif isfolder(fullfile(pwd, 'results_analysis'))
-    addpath(fullfile(pwd, 'results_analysis'))
-end
-visualize_saved_results(result)
-
-%% Hybrid Simulation Reference Comparison
-
-% Compare the recorded HS response against the full FEM reference.
-try
-    if exist('file_name', 'var') && isfile(file_name)
-        recorded_data = file_name;
-    elseif exist('result', 'var') && isstruct(result)
-        recorded_data = result;
-    else
-        recorded_data = [];
-    end
-
-    if exist('hs', 'var') && isstruct(hs) && isfield(hs, 'fem') ...
-            && ~isempty(recorded_data)
-        compare_hs_response_to_reference(hs.fem, recorded_data);
-    elseif ~isempty(recorded_data)
-        compare_hs_response_to_reference([], recorded_data);
-    else
-        compare_hs_response_to_reference();
-    end
-catch ME
-    fprintf('Comparison failed: %s\n', ME.message)
-end
+plot_test_result(result, file_name, exp_tf_file)
 %%
 
 %slrtExplorer

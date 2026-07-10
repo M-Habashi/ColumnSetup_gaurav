@@ -43,6 +43,10 @@ auth_override = struct( ...
 if nargin < 1 || isempty(test_file)
     [data, test_file, test_name] = load_saved_result_file( ...
         project_folder, 'tests', false, '', false);
+elseif isstruct(test_file)
+    data = test_file;
+    test_file = '';
+    test_name = fieldOr(data, 'file', 'In-memory result');
 else
     data = load(test_file);
     [~, test_name, ext] = fileparts(test_file);
