@@ -22,6 +22,7 @@ validateattributes(forcePrompt, {'logical'}, {'scalar'}, mfilename, ...
 resultSubfolder = normalizeSubfolder(resultSubfolder);
 rootFolder = fullfile(projectFolder, 'saved_results', resultSubfolder);
 files = dir(fullfile(rootFolder, '**', '*.mat'));
+files = files(~arrayfun(@(file) isInOldFolder(rootFolder, file.folder), files));
 [~, order] = sort(string(fullfile({files.folder}, {files.name})));
 files = files(order);
 
@@ -92,6 +93,12 @@ function tf = isPathUnderRoot(filePath, rootFolder)
     filePath = string(char(java.io.File(filePath).getCanonicalPath()));
     rootFolder = string(char(java.io.File(rootFolder).getCanonicalPath()));
     tf = startsWith(lower(filePath), lower(rootFolder+filesep));
+end
+
+function tf = isInOldFolder(rootFolder, folder)
+% Units: input paths and logical output are unitless.
+    relFolder = getRelativeFolder(rootFolder, folder);
+    tf = any(strcmpi(strsplit(char(relFolder), filesep), 'old'));
 end
 
 function resultSubfolder = normalizeSubfolder(resultSubfolder)
