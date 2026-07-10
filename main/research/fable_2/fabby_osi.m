@@ -118,7 +118,10 @@ cfg = struct( ...
     'medfilt_n', 3, ...
     'warm_s', 1.5, ...              % spectra fill time; b = cap before this
     'cap', 1/sqrt(2), ...
-    'anchor_min', 0.15);
+    'anchor_min', 0.15, ...
+    'pred_alpha_max', 16, ...       % authority-prediction grid reach
+    'pred_n', 13, ...               % grid points (log-spaced from 1)
+    'pred_den_floor', 1e-3);        % |1-That| guard for L = That/(1-That)
 names = fieldnames(override);
 for i = 1:numel(names)
     if ~isfield(cfg, names{i})
@@ -149,6 +152,7 @@ cfg.window = 0.5 - 0.5*cos(2*pi*n/(cfg.segment_n - 1));   % Hann
 cfg.al   = 1 - exp(-cfg.step_s/cfg.tau_s);
 cfg.al_q = 1 - exp(-cfg.step_s/cfg.tau_q);
 cfg.warm_steps = ceil(cfg.warm_s/cfg.step_s);
+cfg.agrid = logspace(0, log10(cfg.pred_alpha_max), cfg.pred_n).';
 
 % Prior loop model: quiet-band anchor b0(w) and noise-floor shape |S0|^2.
 % Used ONLY by the quiet-band reading; the driven-band margin is model-free.
@@ -209,6 +213,29 @@ b_st = min(cfg.cap, min(chord(cfg.keep)));
 [~, i_st] = min(chord + 1e9*~cfg.keep);
 f_st = cfg.freq_hz(i_st);
 
+% ---- authority-prediction path ---------------------------------------------
+% From the same regularized FRF: the open loop L = That/(1-That), so the
+% margin the loop WOULD have at a relative gain multiplier alpha is the
+% chordal margin of alpha*L. Computed on the bins the data actually
+% support (Suu >= lambda, leverage >= 50%). The authority law uses the
+% MINIMUM along the path 1 -> alpha (the margin is not monotone in gain,
+% and authority moves through every intermediate value), and sprints
+% recovery only where this model-verified curve clears the target.
+pred = cfg.cap*ones(cfg.pred_n, 1);
+pmask = cfg.keep & state.Suu >= lam;
+if nnz(pmask) >= 5
+    den = 1 - That(pmask);
+    small = abs(den) < cfg.pred_den_floor;
+    den(small) = cfg.pred_den_floor*exp(1i*angle(den(small)));
+    Lh = That(pmask)./den;
+    for k = 1:cfg.pred_n
+        La = cfg.agrid(k)*Lh;
+        ck = abs(1 + La)./sqrt(2*(1 + abs(La).^2));
+        ck = movmedian(ck, cfg.medfilt_n);   % same single-bin-spike
+        pred(k) = min(cfg.cap, min(ck));     % guard as the margin itself
+    end
+end
+
 % ---- reading 2: quiet-band growth margin ----------------------------------
 % quiet = hazard-band bins with no meaningful command power, judged on BOTH
 % the forgotten spectra and the newest segment (so a fresh excitation-regime
@@ -235,6 +262,16 @@ if nq >= cfg.min_quiet_bins
     b_q = min(cfg.cap, cfg.anchor(i_q)/sqrt(max(g_max/g_thr, 1e-3)));
 end
 
+% observability of the prediction: with a populated quiet band, the
+% command does NOT drive the loop's hazard region, so the driven-band FRF
+% certifies nothing about higher authority there - and the quiet statistic
+% itself saturates blind at reduced gain, so it cannot substitute. The
+% law uses this flag to disable the model-verified sprint; regulation then
+% rides on the (slower, always-safe) proportional creep. Wherever the
+% sprint is supposed to be fast - broadband repair/heal, pulse over, test
+% over, silence - the quiet set is empty and the flag is false.
+q_blind = nq >= cfg.min_quiet_bins;
+
 % ---- combine ---------------------------------------------------------------
 % evidence weight: below quiet_mm of tap rms the "loop" visible in the
 % spectra is only the force-echo of the output noise, which is coherent
@@ -244,14 +281,22 @@ w_ev = max(0, min(1, sqrt(state.pin)/cfg.quiet_mm - 1));
 warm = state.step_count <= cfg.warm_steps;
 if warm
     b = cfg.cap;
+    pred(:) = cfg.cap;
+    blind = 0;
 else
     b_evid = max(min([b_st, b_q, cfg.cap]), 1e-3);
     b = w_ev*b_evid + (1 - w_ev)*cfg.cap;
+    pred = w_ev*pred + (1 - w_ev)*cfg.cap;
+    % the blindness only matters to the extent there is evidence at all:
+    % an idle tap populates the quiet mask trivially, but idle recovery
+    % must ride the sprint (b and pred read the ceiling there anyway)
+    blind = double(q_blind)*w_ev;
 end
 
 info = struct('margin', b, 'b_st', b_st, 'b_q', b_q, ...
     'f_st_hz', f_st, 'f_q_hz', f_q, 'g_db', g_db, 'n_quiet', nq, ...
-    'lam', lam, 'warm', warm, 'w_ev', w_ev, ...
+    'lam', lam, 'warm', warm, 'w_ev', w_ev, 'blind', blind, ...
+    'pred', pred, 'agrid', cfg.agrid, ...
     'nominal', cfg.nominal, 'nominal_hz', cfg.nominal_hz);
 end
 
@@ -288,6 +333,8 @@ f_q = NaN(n_step, 1);
 g_db = NaN(n_step, 1);
 n_quiet = zeros(n_step, 1);
 warm = false(n_step, 1);
+blind = zeros(n_step, 1);
+pred = NaN(cfg.pred_n, n_step);
 
 for k = 1:n_step
     idx = (k-1)*cfg.step_n + (1:cfg.step_n);
@@ -301,9 +348,12 @@ for k = 1:n_step
     g_db(k) = ik.g_db;
     n_quiet(k) = ik.n_quiet;
     warm(k) = ik.warm;
+    blind(k) = ik.blind;
+    pred(:, k) = ik.pred;
 end
 
 result = struct('tc', tc, 'b', b, 'b_st', b_st, 'b_q', b_q, ...
     'f_st', f_st, 'f_q', f_q, 'g_db', g_db, 'n_quiet', n_quiet, ...
-    'warm', warm, 'cfg', cfg, 'state', state);
+    'warm', warm, 'blind', blind, 'pred', pred, 'agrid', cfg.agrid, ...
+    'cfg', cfg, 'state', state);
 end

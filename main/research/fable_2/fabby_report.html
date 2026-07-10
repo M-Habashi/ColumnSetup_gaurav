@@ -10,6 +10,7 @@
   --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
   --border:rgba(11,11,11,.10);
   --blue:#2a78d6; --yellow:#eda100; --red:#e34948; --aqua:#1baf7a;
+  --violet:#4a3aa7;
   --band:rgba(137,135,129,.18);
 }
 :root[data-theme="dark"]{
@@ -17,6 +18,7 @@
   --muted:#898781; --grid:#2c2c2a; --axis:#383835;
   --border:rgba(255,255,255,.10);
   --blue:#3987e5; --yellow:#c98500; --red:#e66767; --aqua:#199e70;
+  --violet:#9085e9;
   --band:rgba(137,135,129,.22);
 }
 @media (prefers-color-scheme: dark){
@@ -25,6 +27,7 @@
     --muted:#898781; --grid:#2c2c2a; --axis:#383835;
     --border:rgba(255,255,255,.10);
     --blue:#3987e5; --yellow:#c98500; --red:#e66767; --aqua:#199e70;
+    --violet:#9085e9;
     --band:rgba(137,135,129,.22);
   }
 }
@@ -102,15 +105,15 @@ svg{display:block;width:100%;height:auto}
 
 <h1>fabby — a continuous NCF-margin OSI</h1>
 <div class="sub">research/fable_2 · target 0.55 · step 0.125 s · built 2026-07-10 ·
-one estimator, two readings, three gains — no calibration phase, no trips, no latches, no NaN</div>
+one estimator, two readings + a prediction, one rate law — no calibration phase, no trips, no latches, no NaN</div>
 
 <div class="chips">
-  <div class="chip"><b class="ok">10 / 10</b>synthetic suite (fable at HEAD: 8/10)</div>
+  <div class="chip"><b class="ok">10 / 10</b>synthetic suite (gpt5: 10/10, fable at HEAD: 8/10)</div>
+  <div class="chip"><b class="ok">90.7</b>fabby score — gpt5_6: 84.9, fable: 73.2 (§4, §6)</div>
   <div class="chip"><b>0.28–2.0 s</b>damage &rarr; authority moving</div>
-  <div class="chip"><b>1.5 s</b>floor &rarr; full authority (GDB sprint)</div>
+  <div class="chip"><b>~1.3 s</b>sprint: floor &rarr; full authority once verified</div>
   <div class="chip"><b>1.5 s</b>warm-up to first reading</div>
   <div class="chip"><b>0</b>NaN readings, everywhere</div>
-  <div class="chip"><b>11</b>indicator parameters (fable: ~60)</div>
 </div>
 
 <h2>1 · The idea: remove, don't add</h2>
@@ -143,11 +146,12 @@ indicator can be simple because it has nothing to protect itself from.
   <div class="fbox"><b>regularized FRF</b><span>T&#770; = S<sub>uy</sub>/(S<sub>uu</sub>+&lambda;),
   &lambda; = 10% of mean input power</span></div>
   <div class="farr">&rarr;</div>
-  <div class="fbox"><b>two margins</b><span>driven band: chordal NCF margin of T&#770;.
-  Quiet band: sensitivity growth of the output floor</span></div>
+  <div class="fbox"><b>two margins + a prediction</b><span>driven band: chordal NCF
+  margin of T&#770;. Quiet band: sensitivity growth of the output floor.
+  Prediction: margin at higher authority from &alpha;L&#770;</span></div>
   <div class="farr">&rarr;</div>
   <div class="fbox"><b>b = min, always finite</b><span>evidence-weighted toward the
-  0.707 ceiling as the drive dies</span></div>
+  0.707 ceiling as the drive dies; the prediction gates the recovery sprint</span></div>
 </div>
 
 <h2>2 · The math</h2>
@@ -206,21 +210,52 @@ silence (GDB's stuck-at-0.2 deadlock cannot happen). Full trust needs only 0.1 m
 suite commands run at 0.15 mm rms and the GDB earthquake at 0.14–0.28.
 </p>
 
-<h3>2.4 The authority law — one state, one line</h3>
-<div class="eq">d ln a / dt = ( −k_dn·max(target − b, 0)                    shed:   7 /s
-              + k_up·max(b − target − 0.025, 0)            creep:  0.32 /s
-              + k_hi·max(b − 0.695, 0) ) / target          sprint: 60 /s</div>
+<h3>2.4 The authority prediction — how recovery gets to be fast AND safe</h3>
+<p>The regularized FRF contains more than the current margin: with
+L&#770; = T&#770;/(1−T&#770;), the margin the loop <em>would</em> have at a relative
+gain multiplier &alpha; is the chordal margin of &alpha;L&#770; — computable for every
+&alpha; from data already in hand. fabby evaluates it on a small log grid and the law
+uses the <b>minimum along the path</b> from &alpha;=1 up to full authority (the margin
+is not monotone in gain, and authority passes through every intermediate value):</p>
+<div class="eq">pred(&alpha;) = min over driven bins of  |1+&alpha;L&#770;| / &radic;(2(1+|&alpha;L&#770;|²)),   &alpha; &isin; [1 … min(a_max/a, 4)]
+&alpha;_safe   = the &alpha; where the path-min of pred crosses target + 0.025   (certified-safe multiplier)
+blind    = [quiet band populated] &times; w      (observability of the certification)</div>
+<p>Two guards make the certification honest. The <b>horizon cap</b> (&alpha; &le; 4): a
+weak-signal FRF extrapolated 10&times; is noise, so the law only ever certifies "the
+next factor of 4 is safe", climbs, and re-verifies from fresh data — a rolling
+certification that still reaches full authority in a couple of estimator lengths. The
+<b>observability gate</b>: when the quiet band is populated, the command does not
+drive the frequencies where this rig actually goes unstable — the driven-band FRF then
+certifies nothing about higher authority there, and the quiet statistic itself is
+blind at reduced gain (growth below its noise floor). A certification that does not
+cover the hazard band is not a certification, so <code>blind</code> disables the
+sprint and regulation rides the always-safe creep. In every situation where recovery
+should be fast — broadband repair or heal, pulse over, test over, silence — the quiet
+set is empty and the sprint has full authority to act.</p>
+
+<h3>2.5 The authority law — one rate equation</h3>
+<div class="eq">d ln a / dt =  −(k_dn·d + k_dn2·d²)                       d = relu(target − b)/target        shed
+              + k_creep·s                                 s = relu(b − target − 0.025)/target  creep
+              + min(k_sprint·ln &alpha;_safe, r_max)·conf·(1−blind)                              sprint
+
+conf &larr; conf + (conf_raw − conf)·dt/&tau;,   &tau; = 1.2 s up / 0.8 s down
+conf_raw = sat( (b − target − 0.03)/0.05 )</div>
 <p>
-A multiplicative integrator on ln&nbsp;a, clipped to [0.08, 1]. The shed term is
-proportional: a grazing dip nibbles, a collapse sheds at multiple ln-units per second —
-that <em>is</em> the "severe" branch, no second path needed. Recovery is two-sloped on
-purpose: just above the target a damaged loop at reduced authority is
-<em>observationally identical</em> to a healthy one (the ambiguous zone), so authority
-creeps there and the estimator's ~1 s lag can never be outrun into bad territory; at
-the ceiling (b &gt; 0.695 — only an unambiguously healthy or idle loop reads there) it
-sprints, giving floor-to-full recovery in ~1.5 s. The deadband [target,
-target+0.025] is where a rests — the entire anti-flicker story. No confirmation
-counters, no commit gate, no latches, no cooldowns: 8 parameters, 1 state variable.
+A multiplicative integrator on ln&nbsp;a, clipped to [0.08, 1], two state variables
+(a, conf). The <b>shed is quadratic in the deficit</b>: a grazing dip (d&asymp;0.05)
+nibbles at ~0.3&nbsp;ln/s while a collapsing reading (d&asymp;0.4) sheds at ~6&nbsp;ln/s —
+large authority drops only happen when the margin evidence itself is large, which is
+the "minimize sudden drops unless strongly justified" requirement made structural.
+The <b>creep</b> keeps regulation alive where the model is blind. The <b>sprint</b>
+drives authority toward the certified-safe point a·&alpha;_safe at a rate proportional
+to the certified distance ln&nbsp;&alpha;_safe (capped 2&nbsp;ln/s — floor to full in
+~1.3&nbsp;s): for a healed or idle plant &alpha;_safe pins at the horizon and it runs
+flat out, while for a damaged plant it <em>tapers smoothly to zero exactly at the
+predicted target crossing</em> — an over-shed is reclaimed in a couple of seconds, but
+authority never charges past what the model can defend. conf multiplies it so the
+reading must sit clearly above target for a second or two first — trust builds slowly
+and evaporates instantly. No confirmation counters, no commit gate, no latches, no
+cooldowns.
 </p>
 
 <h2>3 · What was removed, and what pays for it</h2>
@@ -234,14 +269,16 @@ counters, no commit gate, no latches, no cooldowns: 8 parameters, 1 state variab
 <tr><td>2 CUSUM fast-trip detectors + trip undo</td><td>proportional shed on a fast estimator (&tau;&asymp;1 s) — a collapse reads huge deficit within ~0.3 s</td></tr>
 <tr><td>regime-change detector + rebaseline</td><td>nothing to rebaseline: forgetting spectra follow the excitation by themselves</td></tr>
 <tr><td>evidence gate (NaN) + blind probe + latch ceiling</td><td>evidence weight w (§2.3): silence reads healthy, recovery is the ordinary sprint</td></tr>
+<tr><td>prediction curve + safe-interval search + pred_floor/caps</td><td>same idea, minimal: certified-safe &alpha;_safe from the path-min over a capped horizon (§2.4)</td></tr>
+<tr><td>latched post-event ceiling (200 s memory)</td><td>observability gate: sprint off while the hazard band is command-undriven; nothing remembered</td></tr>
 <tr><td>5 s window + 0.6 s fast ring (two scales)</td><td>one scale: &tau;_s = 0.9 s driven / &tau;_q = 1.25 s quiet</td></tr>
 </table>
 <div class="note"><p><b>What pays for it:</b> a shorter memory means a noisier margin
-(&sigma; &asymp; 0.02–0.04 vs fable's ~0.01 slow branch), which the law absorbs in its
-deadband + creep asymmetry rather than in the estimator. And with no latch, a
-repaired-then-quiet plant recovers fast — the deliberate post-trip caution of fable is
-gone. That is a <em>choice</em>: the 10-case ground-truth suite (incl. quiet-band
-damage, repair, and pulse cases) accepts it, and the speed requirements demand it.</p></div>
+(&sigma; &asymp; 0.02–0.04 vs fable's ~0.01 slow branch), which the law absorbs in the
+deadband, the quadratic shed and the conf gate rather than in the estimator. Post-event
+caution shrank from fable's 200 s latch to a ~10 s envelope — the model-verified sprint
+is what makes that safe: it re-checks the driven band every step on fresh data instead
+of remembering that something once went wrong.</p></div>
 
 <h3>Parameters (complete list)</h3>
 <table>
@@ -252,21 +289,39 @@ damage, repair, and pulse cases) accepts it, and the speed requirements demand i
 <tr><td>g_thr_db / pool_n</td><td>1.0 dB / 7</td><td>healthy pooled-max recentering / mode bandwidth</td></tr>
 <tr><td>quiet_mm</td><td>0.05 mm</td><td>tap rms below which there is no evidence</td></tr>
 <tr><td>warm_s</td><td>1.5 s</td><td>report ceiling until the memory has filled</td></tr>
+<tr><td>pred grid / horizon</td><td>13 pts, &alpha; &le; 4</td><td>authority-prediction path (§2.4)</td></tr>
 <tr><td>band / quiet band / line reject</td><td>2–100 / 28–100 / 58–62 Hz</td><td>project constants (shared with fable)</td></tr>
 <tr><th>authority</th><th>value</th><th>meaning</th></tr>
 <tr><td>target</td><td>0.55</td><td>margin to regulate onto</td></tr>
-<tr><td>k_dn</td><td>7</td><td>proportional shed gain</td></tr>
-<tr><td>k_up / db_up</td><td>0.32 / 0.025</td><td>ambiguous-zone creep + rest band</td></tr>
-<tr><td>k_hi / b_hi</td><td>60 / 0.695</td><td>ceiling sprint (full recovery ~1.5 s)</td></tr>
+<tr><td>k_dn / k_dn2</td><td>6 / 25</td><td>linear + quadratic shed (gentle grazes, fast collapses)</td></tr>
+<tr><td>k_creep / db_up</td><td>0.5 / 0.025</td><td>model-free proportional recovery + rest band</td></tr>
+<tr><td>k_sprint / r_max</td><td>3 / 2.0</td><td>sprint per ln of certified headroom, capped (floor&rarr;full ~1.3 s)</td></tr>
+<tr><td>conf_off / conf_w / &tau;_conf</td><td>0.03 / 0.05 / 1.2 s up, 0.8 s down</td><td>sprint trust: builds slowly, evaporates instantly</td></tr>
 <tr><td>a_min / a_max</td><td>0.08 / 1</td><td>authority bounds</td></tr>
 </table>
 
-<h2>4 · The 10 ground-truth cases (click a case, wheel to zoom, drag to pan, double-click to reset)</h2>
+<h2>4 · The 10 ground-truth cases &amp; the fabby score</h2>
 <p>Sample-accurate closed inner loop (discrete PID &times; identified 7000/5000 plants)
 where the <b>true</b> chordal margin is computable at every step. Both methods run the
 identical simulation; the authority each one commands feeds back into its own loop.
-fabby passes 10/10; fable at HEAD passes 8/10 (its case-4 quiet-band defense and case-8
-recovery regressions are visible below).</p>
+fabby passes 10/10; fable at HEAD passes 8/10.</p>
+<p><b>The fabby score</b> (fabby_score.m) measures the thing that actually matters for
+J4: how well the true margin <em>resulting from the commanded authority</em> tracks the
+best-achievable margin. From the known plant blend &lambda;(t), the ideal is
+b*(t) = max(target, b_true at full authority) — never detune a healthy loop, regulate
+a damaged one exactly onto the target. The signed error e = b_true − b* is averaged
+with the unsafe side (e &lt; 0, less margin than the target demands) weighted
+3&times;, and mapped to a 0–100 score (100 = perfect tracking; 0 = spending the whole
+run 0.10 over-conservative or 0.033 unsafe). Sitting shed while the true margin is
+high above target — the "authority never came back" failure — is exactly what this
+punishes. b* is drawn as the dashed ideal line in the margin panel below.</p>
+<div class="chips">
+  <div class="chip"><b class="ok">90.7</b>fabby mean score</div>
+  <div class="chip"><b>84.9</b>gpt5_6 mean score</div>
+  <div class="chip"><b>73.2</b>fable mean score</div>
+  <div class="chip"><b>57.9 / 0.0 / 0.0</b>hardest case (4, quiet-band): fabby / gpt5 / fable</div>
+</div>
+<p class="hint">Click a case, wheel to zoom, drag to pan, double-click to reset.</p>
 <div class="tabs" id="tabs"></div>
 <div id="caseview"></div>
 
@@ -283,8 +338,8 @@ equilibrium instead, as the suite cases show).
 </p>
 <div class="chips">
   <div class="chip"><b>+0.28 s</b>shed begins after the 1.5&times; gain step (live: +14.2 s)</div>
-  <div class="chip"><b>~76.5 s</b>recovery starts (gain edge at 75.47 s)</div>
-  <div class="chip"><b>79.6 s</b>full authority — 1.5 s sprint (live: never)</div>
+  <div class="chip"><b>76.8 s</b>recovery starts (gain edge at 75.47 s)</div>
+  <div class="chip"><b>80.0 s</b>full authority (live: never)</div>
   <div class="chip"><b>0 %</b>NaN readings (live b_osi: 87 % NaN)</div>
 </div>
 <div id="gdbview"></div>
@@ -293,22 +348,86 @@ equilibrium instead, as the suite cases show).
 ceiling where the live indicator showed NaN. During the 2&times;-gain window both
 agree the margin is bad. After the gain returns (75.5 s) and the record goes quiet
 (78.4 s), fabby blends back to the ceiling and sprints home; the live law stays at
-0.2 for the remaining 35 s of the record.</p></div>
+0.2 for the remaining 35 s of the record. Note gpt5 (violet) in the pre-test phase:
+its margin reads ~0.2 around 4–14 s and its authority false-sheds to the floor before
+recovering by ~18 s — the idle-tap force echo that fabby's evidence weight (§2.3)
+exists to neutralize.</p></div>
 
-<h2>6 · Honest limits</h2>
+<h2>6 · fabby vs gpt5_6 — an honest comparison</h2>
+<p>research/gpt5_6 is an independent redesign of the same problem (gpt_osi + gpt_auth).
+It shares fabby's core skeleton — sliding spectra, a shrinkage FRF estimate, the chordal
+margin, a quiet-band growth term, a log-domain integrator law — so the comparison is
+about the choices layered on that skeleton. Everything below is measured on the
+<em>canonical</em> fable_synthetic_suite (not gpt5_6's local copy) with the identical
+target 0.55; gpt5's traces are the violet lines in §4 and §5.</p>
+<table>
+<tr><th></th><th>fabby</th><th>gpt5_6</th></tr>
+<tr><td>canonical suite</td><td>10/10</td><td>10/10 (case-4 detection at 2.000 s — exactly the limit)</td></tr>
+<tr><td>fabby score</td><td><b>90.7</b></td><td>84.9 — case 4 scores 0: the loop runs ~0.03 <em>below</em> the target margin for the whole damaged phase (mean_under 0.030, the 3&times;-weighted side)</td></tr>
+<tr><td>margin accuracy (healthy)</td><td>median error 0.013</td><td><b>0.008</b> — the authority-aware model prior is genuinely better where the model is right</td></tr>
+<tr><td>shrinkage target ("no evidence" reads as…)</td><td>T&#770;&rarr;0 &rarr; the 0.707 ceiling ("nothing observable is wrong")</td><td>the nominal model at the CURRENT authority (confidence-weighted blend)</td></tr>
+<tr><td>full-authority reasoning</td><td>pred(&alpha;) path, min-walk, horizon cap 4&times;, quiet fold, sprint lands on the interpolated safe crossing</td><td>single-point rescale chordal(L&#770;/a): extrapolates 12&times; from a deep shed with no horizon, used only as a binary-ish recovery-boost gate, no landing point</td></tr>
+<tr><td>quiet-band baseline</td><td>model shape |S&#8320;|² + per-bin self-median (record-start independent)</td><td>max envelope of the first 2 s, normalized by total tap rms (assumes the record starts healthy and spectrally representative)</td></tr>
+<tr><td>quiet band watched</td><td>28–100 Hz (any hazard mode)</td><td>28–44 Hz (hard-tuned to this rig's 5k bump — better SNR here, blind to damage elsewhere)</td></tr>
+<tr><td>estimator&harr;authority coupling</td><td>none (only the law knows a)</td><td>estimator requires a_cmd fed back (prior and full_margin scale with it)</td></tr>
+<tr><td>law size</td><td>2 states, 3 terms + conf (~12 params)</td><td><b>1 state, 1 signed error</b> + deadzone + &radic;a damping + boost (8 params) — genuinely simpler</td></tr>
+<tr><td>anti-slam</td><td>quadratic-in-deficit shed (evidence-proportional)</td><td>max_step clamp 0.15/update (hard bound — a nice, robust idea)</td></tr>
+<tr><td>GDB replay (target 0.55)</td><td>full authority 80.0 s, 0 % NaN</td><td>full authority 81.2 s, 0 % NaN, but a false full shed on the idle pre-test tap at ~4–18 s (its own study instead retuned target to 0.315 for this record)</td></tr>
+</table>
+<p><b>The case-4 mismatch, quantified</b> (the two estimates visibly disagree in the
+healthy lowband phase — which is right?). With the command at 2–7 Hz the binding
+frequency (~35 Hz) is unobservable, and the two estimators fill that hole from
+opposite priors. In the healthy phase (true b = 0.588): gpt5 reads median 0.599
+(|err| 0.025) — the more accurate <em>number</em> — while fabby reads 0.661 (|err|
+0.073), a deliberate upper bound ("margin of what is observable"). But two caveats
+make gpt5's accuracy less than it seems. First, it is partly by construction: in this
+simulation the healthy plant <em>is</em> the very model gpt5 blends toward, the best
+case a model prior will ever see; on the real rig, with the plant drifted from the
+identified model, that same mechanism confidently reads the model instead of the
+plant. Second, the number is noisy enough to sit below target 21% of the healthy time,
+so gpt5's authority falsely wanders on a perfectly healthy loop — mean a 0.678, dips
+to 0.46 — while fabby holds a = 1.000. The accurate-looking number produces the wrong
+action; the "biased" one produces the right action, and the fabby score (which
+measures resulting-margin tracking, not estimate cosmetics) prices exactly that:
+57.9 vs 0.0. In the damaged phase both over-read by the same physics (signed error
++0.069 fabby / +0.088 gpt5 — the quiet statistic saturates), fabby marginally closer
+while also holding the true margin higher (median 0.561 vs 0.507).</p>
+<p><b>Verdict.</b> gpt5_6 is a strong design and clearly better than fable at HEAD
+(84.9 vs 73.2); its law is simpler than fabby's and its healthy-margin accuracy is
+better. fabby keeps the overall edge (90.7) for two reasons that map directly to the
+requirements: (1) <em>safety-weighted tracking</em> — in the one scenario where the
+model is blind (case 4), gpt5 settles with the true margin persistently below target
+while fabby defends above it; (2) <em>certified recovery</em> — fabby's sprint lands
+on the predicted safe authority, where gpt5's boost gates on the current reading and
+extrapolates its full-margin check without a horizon, which is exactly the mechanism
+that a noisy weak-signal FRF can fool. Ideas worth adopting from gpt5_6 in a future
+pass: the authority-aware model prior (accuracy at weak drive) and the hard max_step
+clamp (a one-line worst-case bound no tuning can defeat).</p>
+
+<h2>7 · Honest limits</h2>
 <p>
 <b>Quiet-band information limit.</b> Below ~1.5–2 dB of sensitivity growth the quiet
 statistic is inside its own noise; the defendable true margin in a lowband-earthquake
-scenario is &asymp; 0.41–0.48 (suite tolerance target−0.15), not the target itself. This is
+scenario is &asymp; 0.45–0.48 (suite tolerance target−0.15), not the target itself. This is
 physics, not tuning — fable hits the same wall (its case 4 currently regulates <em>worse</em>
 because of the latch regression). <b>Regulation wobble.</b> In sustained quiet-band
-damage, authority breathes ±0.15 around its equilibrium with a ~10 s period (visible in
-case 4) — the price of a 1.25 s estimator driving 2 s reactions; the deadband keeps it
-off the healthy cases entirely. <b>Fading drive over damage.</b> When the drive dies
-while the plant is damaged, evidence fades and authority recovers — indistinguishable,
-by information, from a healed plant. fable "solves" this with a latched ceiling; fabby
-deliberately does not (the GDB deadlock is that latch's failure mode). The protection
-is speed: if excitation returns degraded, the proportional shed reacts within ~0.3 s.
+damage, authority breathes between ~0.16 and ~0.64 around its equilibrium (visible in
+case 4) — the price of a 1.25 s estimator driving 2 s reactions; the deadband and the
+envelope keep it off the healthy cases entirely. <b>Verified recovery is 3–7 s
+end-to-end, not 2.</b> The sprint itself moves floor&rarr;full in ~1.3 s, but it fires
+only after the estimator has flushed (~1 s) and the reading has sat clearly above
+target for ~1–2 s (conf). That verification lag is deliberate: recovering into a
+damaged plant on one noisy healthy-looking sample is how hunting starts. When evidence
+is unambiguous (idle tap, silence, GDB post-test) total recovery is ~1.5–2 s.
+<b>Quiet-band recovery rides the creep.</b> With the hazard band command-undriven the
+sprint's certification is void (observability gate), so reclaiming authority after a
+quiet-band shed is proportional-only — visibly slower breathing in case 4. That is the
+correct asymmetry: fast recovery is reserved for situations the model can actually
+verify. <b>Fading drive over damage.</b> When the drive dies while the plant is
+damaged, evidence fades and authority recovers — indistinguishable, by information,
+from a healed plant. fable "solves" this with a 200 s latched ceiling; fabby keeps
+nothing (the GDB deadlock is that latch's failure mode). The protection is speed: if
+excitation returns degraded, the quadratic shed reacts within ~0.3 s.
 </p>
 
 <div class="sub" style="margin-top:36px">
@@ -502,7 +621,9 @@ REPORT.cases.forEach((c,i)=>{
   const b=document.createElement('button');b.className='tab';
   b.innerHTML=`${i+1}. ${c.name.replace(/_/g,' ')}<span class="pf">`+
     `<span class="${c.pass_fabby?'p':'f'}">fabby ${c.pass_fabby?'PASS':'FAIL'}</span> · `+
-    `<span class="${c.pass_fable?'p':'f'}">fable ${c.pass_fable?'PASS':'FAIL'}</span></span>`;
+    `<span class="${c.pass_gpt?'p':'f'}">gpt5 ${c.pass_gpt?'PASS':'FAIL'}</span> · `+
+    `<span class="${c.pass_fable?'p':'f'}">fable ${c.pass_fable?'PASS':'FAIL'}</span></span>`+
+    `<span class="pf">score ${c.score_fabby.toFixed(1)} · ${c.score_gpt.toFixed(1)} · ${c.score_fable.toFixed(1)}</span>`;
   b.onclick=()=>{curCase=i;renderCase();};
   tabs.appendChild(b);
 });
@@ -513,16 +634,19 @@ function renderCase(){
   host.innerHTML='';
   const card=document.createElement('div');card.className='card';
   card.innerHTML=`<h4>${curCase+1} · ${c.name.replace(/_/g,' ')}</h4>
-  <div class="cs">closed-loop ground truth · target ${REPORT.target}</div>
+  <div class="cs">closed-loop ground truth · target ${REPORT.target} ·
+    fabby score <b>${c.score_fabby.toFixed(1)}</b> · gpt5 ${c.score_gpt.toFixed(1)} · fable ${c.score_fable.toFixed(1)}</div>
   <div class="legend">
     <span><i class="band"></i>dm envelope</span>
     <span><i style="border-color:var(--ink)"></i>true margin</span>
-    <span><i style="border-color:var(--blue)"></i>fabby estimate</span>
-    <span><i style="border-color:var(--yellow)"></i>fable estimate</span>
+    <span><i class="dash" style="border-color:var(--aqua)"></i>ideal b*</span>
+    <span><i style="border-color:var(--blue)"></i>fabby</span>
+    <span><i style="border-color:var(--violet)"></i>gpt5_6</span>
+    <span><i style="border-color:var(--yellow)"></i>fable</span>
     <span><i class="dash" style="border-color:var(--muted)"></i>target</span>
   </div>
   <div class="charts"></div>
-  <div class="detail">${badge(c.detail_fabby,'fabby')}\n${badge(c.detail_fable,'fable')}</div>`;
+  <div class="detail">${badge(c.detail_fabby,'fabby')}\n${badge(c.detail_gpt,'gpt5 ')}\n${badge(c.detail_fable,'fable')}</div>`;
   host.appendChild(card);
   const cv=card.querySelector('.charts');
   const t0=c.tc[0],t1=c.tc[c.tc.length-1];
@@ -531,12 +655,15 @@ function renderCase(){
     {h:120,ylab:'dm (mm)',ylim:dmLim(c),series:[],band:{t:c.dm_t,lo:c.dm_lo,hi:c.dm_hi},evlab:true},
     {h:210,ylab:'NCF margin',ylim:[0,0.75],yticks:[0,0.2,0.4,0.55,0.707],series:[
       tgt,
+      {t:c.tc,y:c.b_star,color:'--aqua',name:'ideal b*',dash:'6 4',width:1.6},
       {t:c.tc,y:c.b_true,color:'--ink',name:'true margin',width:2.4},
       {t:c.tc,y:c.b_fabby,color:'--blue',name:'fabby b'},
-      {t:c.tc,y:c.b_fable,color:'--yellow',name:'fable b'}]},
+      {t:c.tc,y:c.b_gpt,color:'--violet',name:'gpt5 b',width:1.4},
+      {t:c.tc,y:c.b_fable,color:'--yellow',name:'fable b',width:1.4}]},
     {h:170,ylab:'authority a',ylim:[0,1.05],series:[
       {t:c.tc,y:c.a_fabby,color:'--blue',name:'fabby a',width:2.4},
-      {t:c.tc,y:c.a_fable,color:'--yellow',name:'fable a'}]}
+      {t:c.tc,y:c.a_gpt,color:'--violet',name:'gpt5 a',width:1.6},
+      {t:c.tc,y:c.a_fable,color:'--yellow',name:'fable a',width:1.4}]}
   ],t0,t1,EVENTS[c.name]||[])];
 }
 function dmLim(c){
@@ -561,6 +688,7 @@ function renderGDB(){
     <span><i class="band"></i>u_osi envelope</span>
     <span><i style="border-color:var(--ink)"></i>diag gain</span>
     <span><i style="border-color:var(--blue)"></i>fabby</span>
+    <span><i style="border-color:var(--violet)"></i>gpt5_6</span>
     <span><i style="border-color:var(--yellow)"></i>live fable (logged)</span>
     <span><i class="dash" style="border-color:var(--muted)"></i>target 0.55</span>
   </div>
@@ -576,10 +704,12 @@ function renderGDB(){
     {h:210,ylab:'NCF margin',ylim:[0,0.75],yticks:[0,0.2,0.4,0.55,0.707],series:[
       {t:[t0,t1],y:[0.55,0.55],color:'--muted',name:'target',dash:'5 5',width:1.4},
       {t:g.tc,y:g.b,color:'--blue',name:'fabby b',width:2.2},
-      {t:g.tc,y:g.b_logged,color:'--yellow',name:'live b_osi (NaN gaps)'}]},
+      {t:g.tc,y:g.b_gpt,color:'--violet',name:'gpt5 b',width:1.4},
+      {t:g.tc,y:g.b_logged,color:'--yellow',name:'live b_osi (NaN gaps)',width:1.4}]},
     {h:170,ylab:'authority a',ylim:[0,1.05],series:[
       {t:g.tc,y:g.a,color:'--blue',name:'fabby a',width:2.4},
-      {t:g.tc,y:g.auth_logged,color:'--yellow',name:'live authority'}]}
+      {t:g.tc,y:g.a_gpt,color:'--violet',name:'gpt5 a',width:1.6},
+      {t:g.tc,y:g.auth_logged,color:'--yellow',name:'live authority',width:1.4}]}
   ],t0,t1,ev);
 }
 

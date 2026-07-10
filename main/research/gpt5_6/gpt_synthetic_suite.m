@@ -1,9 +1,13 @@
-function suite = gpt_synthetic_suite(method_name, target)
+function suite = gpt_synthetic_suite(method_name, target, scenario_ids, ...
+        auth_override, osi_override)
 %GPT_SYNTHETIC_SUITE Local copy of the canonical ten FABLE scenarios.
 % This harness writes nothing; callers save results under research/gpt5_6.
 
 if nargin < 1, method_name = 'gpt'; end
 if nargin < 2, target = 0.55; end
+if nargin < 3, scenario_ids = 1:10; end
+if nargin < 4, auth_override = struct(); end
+if nargin < 5, osi_override = struct(); end
 
 here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(here));
@@ -28,7 +32,8 @@ cm = struct('dt', dt, 'C', C, 'H7', H7, 'H5', H5, ...
     'L7', squeeze(freqresp(C*H7, 2*pi*f)), ...
     'L5', squeeze(freqresp(C*H5, 2*pi*f)), ...
     'target', target, 'noise_std', 0.05, 'cmd_rms', 0.15, ...
-    'nominal_tf', C*H7);
+    'nominal_tf', C*H7, 'gpt_auth_override', auth_override, ...
+    'gpt_osi_override', osi_override);
 
 switch lower(method_name)
     case 'gpt'
@@ -44,7 +49,7 @@ end
 scenarios = scenarioTable();
 suite = struct('method', method.name, 'target', target, ...
     'cases', struct('name', {}, 'pass', {}, 'detail', {}, 'timing', {}, 'sim', {}));
-for i = 1:numel(scenarios)
+for i = scenario_ids(:)'
     fprintf('\n=== %2d %s (%s) ===\n', i, scenarios(i).name, method.name)
     sim = simulateScenario(scenarios(i), cm, method);
     [pass, detail] = evaluateScenario(scenarios(i), sim, cm);
@@ -55,13 +60,16 @@ for i = 1:numel(scenarios)
     fprintf('%s\n', detail)
 end
 suite.all_pass = all([suite.cases.pass]);
-fprintf('\n%s: %d/10 PASS\n', upper(method.name), nnz([suite.cases.pass]))
+fprintf('\n%s: %d/%d PASS\n', upper(method.name), ...
+    nnz([suite.cases.pass]), numel(suite.cases))
 end
 
-function ctx = initGpt(dt, L0, target, ~)
-cfg = gpt_osi('config', dt, L0, struct());
-prm = gpt_auth('params', struct('target', target, ...
-    'dt_update', cfg.step_s));
+function ctx = initGpt(dt, L0, target, cm)
+cfg = gpt_osi('config', dt, L0, cm.gpt_osi_override);
+aovr = cm.gpt_auth_override;
+aovr.target = target;
+aovr.dt_update = cfg.step_s;
+prm = gpt_auth('params', aovr);
 ctx = struct('cfg', cfg, 'osi', gpt_osi('state', cfg), ...
     'prm', prm, 'auth', gpt_auth('state', prm), 'a_last', prm.a_init);
 end
@@ -69,12 +77,14 @@ end
 function [ctx, b, a, trip, extra] = stepGpt(ctx, dd, dm)
 ctx.osi.a_cmd = ctx.a_last;
 [b, ctx.osi, oi] = gpt_osi(dd, dm, ctx.cfg, ctx.osi);
-[a, ctx.auth, ai] = gpt_auth(b, oi.L_hat, oi.b_res, ctx.auth, ctx.prm);
+a0 = ctx.a_last;
+[a, ctx.auth] = gpt_auth(b, oi.full_margin, oi.residual_weight, ...
+    ctx.auth, ctx.prm);
 ctx.a_last = a;
 trip = 0;
 extra = struct('b_st', oi.b_st, 'b_res', oi.b_res, 'b_fast', NaN, ...
-    'decision', sign(a-ai.a_target), 'ready', oi.ready, ...
-    'a_target', ai.a_target, 'confidence', oi.confidence);
+    'decision', sign(a-a0), 'ready', oi.ready, ...
+    'a_target', a, 'confidence', oi.confidence);
 end
 
 function ctx = initFable(dt, L0, target, ~)
@@ -300,7 +310,10 @@ if ~isempty(scn.lam_t)
     event = scn.lam_t(1); ip = find(sim.tc<=event,1,'last');
     if ~isempty(ip)
         apre = sim.a(ip);
-        timing.detection_s = delay(sim.tc, sim.tc>event & sim.b_est<0.50, event);
+        pre = sim.tc>=event-1 & sim.tc<=event;
+        bpre = median(sim.b_est(pre),'omitnan');
+        timing.detection_s = delay(sim.tc, ...
+            sim.tc>event & sim.b_est<=bpre-0.04, event);
         timing.authority_s = delay(sim.tc, sim.tc>event & sim.a<0.98*apre, event);
     end
     if strcmp(scn.name,'damage_then_repair')

@@ -22,7 +22,7 @@ end
 
 function [ctx, b, a, trip, extra] = stepFabby(ctx, dd_blk, dm_blk)
 [b, ctx.state, oi] = fabby_osi(dd_blk, dm_blk, ctx.cfg, ctx.state);
-[a, ctx.ast] = fabby_auth(b, ctx.ast, ctx.prm);
+[a, ctx.ast] = fabby_auth(b, oi.pred, oi.agrid, oi.blind, ctx.ast, ctx.prm);
 trip = 0;
 extra = struct('b_st', oi.b_st, 'b_res', oi.b_q, 'b_fast', NaN, ...
     'decision', 0);
