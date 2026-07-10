@@ -1,0 +1,160 @@
+{
+  "method": "diagnostic-return-gated recovery, isolated offline wrapper",
+  "legacy_suite_source": "C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\main\\OSI_tests\\fable\\results\\suite_runtime_sliced.mat",
+  "legacy_suite_method": "runtime_sliced",
+  "legacy_suite_target": 0.55,
+  "legacy_case_count": 10,
+  "old_pass_count": 8,
+  "candidate_pass_count": 8,
+  "all_legacy_authority_sample_identical": true,
+  "legacy_cases": [
+    {
+      "case": "healthy_broadband",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 0.20679712221749358,
+      "authority_total_variation_candidate": 0.20679712221749358,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "intensity_step",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 0.18111558760456692,
+      "authority_total_variation_candidate": 0.18111558760456692,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "damage_step_broadband",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 1.20587065696109,
+      "authority_total_variation_candidate": 1.20587065696109,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "damage_step_lowband",
+      "old_pass": false,
+      "candidate_pass": false,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 5.330324461351948,
+      "authority_total_variation_candidate": 5.330324461351948,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "silent",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 0.0,
+      "authority_total_variation_candidate": 0.0,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "gradual_softening",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 0.8221149325325057,
+      "authority_total_variation_candidate": 0.8221149325325057,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "damage_then_repair",
+      "old_pass": false,
+      "candidate_pass": false,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 1.743305014960873,
+      "authority_total_variation_candidate": 1.743305014960873,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "starts_damaged_improves",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 2.112397775355779,
+      "authority_total_variation_candidate": 2.112397775355779,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "regime_change_healthy",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 0.6298625534497501,
+      "authority_total_variation_candidate": 0.6298625534497501,
+      "b_osi_identical": true,
+      "trip_identical": true
+    },
+    {
+      "case": "transient_pulse",
+      "old_pass": true,
+      "candidate_pass": true,
+      "diagnostic_restore_activations": 0,
+      "max_abs_authority_difference": 0.0,
+      "authority_total_variation_old": 1.1275720149548927,
+      "authority_total_variation_candidate": 1.1275720149548927,
+      "b_osi_identical": true,
+      "trip_identical": true
+    }
+  ],
+  "gdb_replay": {
+    "record": "C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\main\\saved_results\\tests\\tsting_osi\\GDBqFpKb.mat",
+    "diagnostic_gain_return_s": 75.46923828125,
+    "authority_at_return": 0.2,
+    "clean_b_fast_confirmation_times_s": [
+      75.52685546875,
+      75.65185546875,
+      75.77685546875
+    ],
+    "clean_b_fast_values": [
+      0.7071067811865475,
+      0.7071067811865475,
+      0.7071067811865475
+    ],
+    "trip_during_confirmation_or_ramp": false,
+    "authority_full_s": 76.27685546875,
+    "time_to_full_from_gain_return_s": 0.8076171875,
+    "old_final_authority": 0.2,
+    "candidate_final_authority": 1.0,
+    "old_b_osi_first_cap_after_return_s": 77.77685546875,
+    "old_b_osi_measurement_delay_s": 2.3076171875,
+    "b_osi_delay_is_not_changed": true,
+    "decision_reference": {
+      "requested_target": 0.8,
+      "b_cap": 0.7071067811865475,
+      "up_deadband": 0.04,
+      "feasible_reference": 0.6471067811865474,
+      "rule": "b_ref = min(requested_target, b_cap - up_deadband - 0.02)",
+      "purpose": "prevents the ordinary authority law from immediately re-shedding after supervised restoration"
+    },
+    "branch_policy": {
+      "b_st": "unchanged measurement-only coherent branch",
+      "b_res": "unchanged measurement-only residual branch",
+      "b_fast": "unchanged fast guard; only used permissively after the supervised return edge",
+      "b_osi": "unchanged selected measurement margin; never overwritten with a synthetic healthy value"
+    }
+  },
+  "important_limit": "The supervisor can restore authority immediately after the known gain-return event, but b_st/b_res/b_osi remain measurement estimates and retain their window latency."
+}

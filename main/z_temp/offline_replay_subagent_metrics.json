@@ -1,0 +1,179 @@
+{
+  "record": "C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\main\\saved_results\\tests\\tsting_osi\\GDBqFpKb.mat",
+  "record_duration_s": 113.8701171875,
+  "known_gain_restore_s": 75.46923828125,
+  "logged_gain_transitions": [
+    {
+      "t_s": 0.0,
+      "gain": 1.0
+    },
+    {
+      "t_s": 50.22412109375,
+      "gain": 1.5
+    },
+    {
+      "t_s": 56.5205078125,
+      "gain": 2.0
+    },
+    {
+      "t_s": 75.46923828125,
+      "gain": 1.0
+    }
+  ],
+  "authority_at_restore": 0.2,
+  "measured_indicator_cap_s": 77.77685546875,
+  "measured_indicator_delay_s": 2.3076171875,
+  "no_evidence_starts_s": 78.40185546875,
+  "current": {
+    "t_to_90_from_reset_s": null,
+    "final_authority": 0.2,
+    "false_activations": 0
+  },
+  "cap_relative_evidence_recovery": {
+    "threshold": 0.6871067811865474,
+    "pre_reset_false_windows": [
+      [
+        64.400390625,
+        64.7763671875,
+        0.3759765625
+      ],
+      [
+        70.77685546875,
+        72.5263671875,
+        1.74951171875
+      ]
+    ],
+    "false_activations": 2,
+    "reason": "selected margin can equal the residual-branch cap while the coherent ST branch is unavailable"
+  },
+  "aggressive_blind_recovery": {
+    "rate_per_s": 1.6,
+    "delay_s": 0.5,
+    "t_to_90_from_reset_s": 3.9326171875,
+    "t_to_full_from_reset_s": 3.9326171875,
+    "false_activations": 1,
+    "pre_reset_no_evidence_windows": [
+      [
+        65.52685546875,
+        69.5263671875,
+        3.99951171875
+      ]
+    ]
+  },
+  "production_blind_fallback": {
+    "rate_per_s": 0.06,
+    "delay_s": 5.0,
+    "t_to_90_from_reset_s": 19.6826171875,
+    "t_to_full_from_reset_s": 21.3076171875,
+    "false_activations": 0
+  },
+  "supervised_nominal_reset": {
+    "immediate_step": {
+      "rate_per_s": 1000000000.0,
+      "delay_s": 0.0,
+      "t_to_90_from_reset_s": 0.125,
+      "t_to_full_from_reset_s": 0.125,
+      "false_activations": 0
+    },
+    "ramp_1_0_s": {
+      "rate_per_s": 0.8,
+      "delay_s": 0.0,
+      "t_to_90_from_reset_s": 0.875,
+      "t_to_full_from_reset_s": 1.0,
+      "false_activations": 0
+    },
+    "ramp_0_5_s": {
+      "rate_per_s": 1.6,
+      "delay_s": 0.0,
+      "t_to_90_from_reset_s": 0.5,
+      "t_to_full_from_reset_s": 0.5,
+      "false_activations": 0
+    },
+    "normal_test_suite_effect": "bit-identical when diagnostic_reset_enable is false"
+  },
+  "diagnostic_edge_fast_confirm_ramp": {
+    "edge_s": 75.46923828125,
+    "confirm_publications_s": [
+      75.52685546875,
+      75.65185546875,
+      75.77685546875
+    ],
+    "b_fast_at_confirm": [
+      0.7071067811865475,
+      0.7071067811865475,
+      0.7071067811865475
+    ],
+    "confirm_latency_s": 0.3076171875,
+    "ramp_duration_s": 0.5,
+    "t_to_90_from_edge_s": 0.8076171875,
+    "t_to_full_from_edge_s": 0.8076171875,
+    "full_authority_time_s": 76.27685546875,
+    "false_activations": 0,
+    "added_false_drops": 0,
+    "fast_only_pre_edge_eligible_windows": [
+      [
+        39.27685546875,
+        42.2763671875,
+        2.99951171875
+      ],
+      [
+        43.02685546875,
+        47.2763671875,
+        4.24951171875
+      ],
+      [
+        49.02685546875,
+        49.5263671875,
+        0.49951171875
+      ],
+      [
+        50.52685546875,
+        51.0263671875,
+        0.49951171875
+      ],
+      [
+        52.77685546875,
+        53.2763671875,
+        0.49951171875
+      ],
+      [
+        54.77685546875,
+        59.2763671875,
+        4.49951171875
+      ],
+      [
+        59.77685546875,
+        64.2763671875,
+        4.49951171875
+      ],
+      [
+        64.52685546875,
+        65.5263671875,
+        0.99951171875
+      ],
+      [
+        65.77685546875,
+        67.2763671875,
+        1.49951171875
+      ],
+      [
+        67.52685546875,
+        68.2763671875,
+        0.74951171875
+      ],
+      [
+        68.52685546875,
+        69.5263671875,
+        0.99951171875
+      ],
+      [
+        75.02685546875,
+        75.46875,
+        0.44189453125
+      ]
+    ],
+    "fast_only_pre_edge_eligible_count": 12,
+    "interpretation": "b_fast near cap is not unique; it is only a no-fast-fault guard after the known gain-return edge"
+  },
+  "recommendation": "arm on the configured diagnostic gain-return edge, require three clean fast publications, clear stale slow history, publish warm-up status, then ramp authority 0.2 to 1.0 in 0.5 s while retaining fast-trip priority"
+}

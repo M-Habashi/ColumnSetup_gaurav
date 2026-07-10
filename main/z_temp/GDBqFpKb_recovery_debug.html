@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GDBqFpKb FABLE recovery diagnosis</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#09090b; --panel:#111113; --panel2:#18181b; --ink:#f4f4f5;
+      --muted:#a1a1aa; --line:rgba(255,255,255,.11); --blue:#007ca8;
+      --copper:#ac6420; --green:#39bf5e; --red:#901500; --auth:#74058a;
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,"Segoe UI",Arial,sans-serif}
+    main{max-width:1180px;margin:0 auto;padding:38px 24px 64px} header{padding-bottom:25px;border-bottom:1px solid var(--line)}
+    h1{max-width:940px;margin:0 0 12px;font-size:clamp(31px,5vw,52px);line-height:1.03;letter-spacing:-.035em}
+    h2{margin:42px 0 14px;font-size:22px;letter-spacing:-.015em} h3{margin:0 0 8px;font-size:16px}
+    p{margin:0 0 12px} a{color:#7dd3fc} code,pre{font-family:"Cascadia Code",Consolas,monospace} code{color:#e7e5e4}
+    pre{margin:12px 0 0;padding:14px;overflow:auto;background:#0c0c0e;border:1px solid var(--line);border-radius:3px;color:#e7e5e4}
+    .status{display:inline-flex;align-items:center;gap:8px;margin-bottom:18px;color:#fdba74;font-size:13px;font-weight:650}
+    .status:before{content:"";width:8px;height:8px;background:var(--copper)} .lede{max-width:880px;color:var(--muted);font-size:18px}
+    .answer{margin-top:24px;padding:18px 20px;border-left:4px solid var(--green);background:var(--panel);font-size:17px}
+    .answer strong{color:#86efac}.facts{display:grid;grid-template-columns:repeat(4,1fr);margin-top:24px;border:1px solid var(--line);border-radius:3px}
+    .fact{padding:15px;border-right:1px solid var(--line)}.fact:last-child{border-right:0}.fact span{display:block;color:var(--muted);font-size:12px}.fact strong{display:block;margin-top:3px;font-size:18px}
+    .correction{margin-top:16px;padding:13px 15px;border:1px solid rgba(172,100,32,.58);background:rgba(172,100,32,.07);color:#fed7aa}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:3px}.card p,.muted{color:var(--muted)}
+    .equation{margin:12px 0;padding:15px;border:1px solid var(--line);background:#0c0c0e;font:600 16px/1.55 "Cascadia Code",Consolas,monospace}
+    .bad{color:#fca5a5}.good{color:#86efac}.timeline{padding:14px;border:1px solid var(--line);background:var(--panel);border-radius:3px;overflow-x:auto}
+    .timeline svg{display:block;min-width:930px;width:100%;height:auto}.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;color:var(--muted);font-size:13px}
+    .key{display:inline-flex;align-items:center;gap:7px}.key:before{content:"";width:22px;height:3px;background:currentColor}.k-gain{color:#71717a}.k-raw{color:#e4e4e7}.k-current{color:var(--auth)}.k-best{color:var(--copper)}
+    .table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line)}th,td{padding:10px 11px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+    th{background:var(--panel2);color:#d4d4d8;font-size:12px}td{color:#d4d4d8}tr:last-child td{border-bottom:0}.winner td{background:rgba(57,191,94,.055)}.reject{color:#fca5a5}.accept{color:#86efac}.nowrap{white-space:nowrap}
+    .steps{counter-reset:item;display:grid;gap:1px;border:1px solid var(--line);background:var(--line)}.step{counter-increment:item;display:grid;grid-template-columns:44px 1fr;gap:12px;padding:16px;background:var(--panel)}.step:before{content:counter(item,decimal-leading-zero);color:#fdba74;font:650 13px/1.55 "Cascadia Code",Consolas,monospace}
+    .callout{margin-top:14px;padding:14px 16px;border:1px solid rgba(57,191,94,.42);background:rgba(57,191,94,.055)}.warning{border-color:rgba(172,100,32,.58);background:rgba(172,100,32,.07)}
+    .flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:8px}.flow .node{padding:14px;border:1px solid var(--line);background:var(--panel)}.arrow{align-self:center;color:#fdba74;font-size:20px}
+    footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+    @media(max-width:780px){main{padding:26px 15px 44px}.facts,.grid{grid-template-columns:1fr}.fact{border-right:0;border-bottom:1px solid var(--line)}.fact:last-child{border-bottom:0}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg);justify-self:center}table{min-width:880px}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="status">FABLE-native diagnosis · GDB replay + ten-case audit</div>
+    <h1>The FABLE target does not need to be reachable for diagnostic recovery</h1>
+    <p class="lede">The delay is not caused by PID or phase lead. It comes from the FABLE authority law waiting for slow, gated <code>b_osi</code> evidence to satisfy an impossible upward threshold after the game returns to nominal.</p>
+    <div class="answer"><strong>Direct answer: no.</strong> A known diagnostic gain return must be able to restore committed authority <code>a</code> even when <code>target_outer_ncf</code> is above the attainable FABLE margin. Keep <code>b_st</code>, <code>b_res</code>, <code>b_fast</code>, and measured <code>b_osi</code> unchanged; add a narrowly armed <code>restore_pending</code> path to the authority supervisor.</div>
+    <div class="facts">
+      <div class="fact"><span>Exact gain restore</span><strong>75.469238 s</strong></div>
+      <div class="fact"><span>Saved committed a</span><strong>0.20 → never</strong></div>
+      <div class="fact"><span>Measured b_osi reaches cap</span><strong>77.776855 s</strong></div>
+      <div class="fact"><span>Candidate a = 1</span><strong class="good">76.276855 s</strong></div>
+    </div>
+    <div class="correction"><strong>Correction to the first report:</strong> <code>1/√2</code> is the configured software cap of the selected FABLE margin, not the mathematical maximum of the underlying chordal expression. Also, the exact gain-return time is 75.469238 s, so the measured slow-margin delay is 2.307617 s—not 2.78 s.</div>
+  </header>
+
+  <section>
+    <h2>Exact reason in FABLE terminology</h2>
+    <div class="grid">
+      <div class="card">
+        <h3><code>b_st</code> is stale, then unavailable</h3>
+        <p>After the gain returns 2→1, the coherent/excited-bin branch <code>b_st</code> still contains the damaged slow window. Through 77.277 s it is approximately 0.272 while <code>b_res = 0.707107</code>, so <code>b_slow = min(b_st,b_res)</code> remains low. The three-slow-hop median <code>b_osi</code> therefore cannot change immediately.</p>
+      </div>
+      <div class="card">
+        <h3>The evidence gate then blocks <code>valid_up</code></h3>
+        <p>At 77.776855 s, <code>b_st = NaN</code> and <code>b_res = 0.707107</code>, allowing <code>b_osi</code> to reach the configured cap. From 78.401855 s, the evidence gate makes <code>b_osi = NaN</code> and <code>valid_up = false</code> while not <code>g_armed</code>. The saved no-evidence branch holds <code>a</code> rather than recovering it.</p>
+      </div>
+    </div>
+    <div class="equation"><span class="bad">saved downward test:</span> min(b_osi,b_filt) &lt; 0.80 − 0.01<br><span class="bad">saved upward test:</span> b_filt ≥ 0.80 + 0.10 = 0.90<br><span class="good">FABLE cap:</span> cfg.cap = 1/√2 = 0.707107</div>
+    <div class="callout warning"><strong>Two independent blockers:</strong> the upward threshold 0.90 is above <code>cfg.cap</code>, and healthy evidence disappears before <code>b_filt</code>/<code>above_n</code> can complete. The only fast event in this record is <code>trip_reason = 1</code> at 64.402 s; <code>b_fast</code> is not used by the ordinary upward path. <code>regime_recal</code> is also not a plant-repair signal—it only handles changed input support and can undo a recent fast trip inside <code>trip_undo_s</code>.</div>
+  </section>
+
+  <section>
+    <h2>What each FABLE branch must continue to do</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Signal</th><th>Existing FABLE role</th><th>Policy in the fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>b_st</code></td><td>ST margin on coherent/excited bins; valid only when <code>st_valid</code>.</td><td class="accept">Unchanged. Preserve its calibration, rings, and measurement-only recovery role.</td></tr>
+          <tr><td><code>b_res</code></td><td>Residual/quiet-bin margin: cap while disengaged, residual-growth margin while <code>res_on</code>.</td><td class="accept">Unchanged. It remains essential where coherent-bin evidence is weak.</td></tr>
+          <tr><td><code>b_slow</code></td><td><code>min(b_st,b_res)</code>, including the existing all-NaN handling.</td><td class="accept">Unchanged.</td></tr>
+          <tr><td><code>b_osi</code></td><td>Median of <code>slow_hist</code> across three distinct slow updates, capped by <code>cfg.cap</code>.</td><td class="accept">Never synthesize a healthy value. Show <code>NaN / WARMING</code> while evidence refreshes.</td></tr>
+          <tr><td><code>b_fast</code></td><td>Short-memory ST margin; selected into <code>b_osi</code> only for <code>trip_reason = 2</code>.</td><td class="accept">Keep the fast CUSUM/trip path alive. After a diagnostic return, use publications only as permissive “no fast fault” checks.</td></tr>
+          <tr><td><code>a_cont</code>, <code>a</code></td><td>Continuous and committed authority governed by trip, cooldown, evidence, filtering, deadband, and commit states.</td><td>Only this supervisor receives the additive diagnostic-return state.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Exact record timeline and winning replay</h2>
+    <div class="timeline">
+      <svg viewBox="0 0 1050 286" role="img" aria-label="GDBqFpKb gain, raw indicator, current authority and supervised replay authority">
+        <g fill="none" stroke="#3f3f46" stroke-width="1"><path d="M76 38H1010M76 98H1010M76 158H1010M76 218H1010"/><path d="M76 24V235M309 24V235M543 24V235M776 24V235M1010 24V235" stroke-dasharray="3 5"/></g>
+        <g fill="#a1a1aa" font-family="Segoe UI,Arial" font-size="12"><text x="8" y="42">gain</text><text x="8" y="102">b_osi raw</text><text x="8" y="162">saved auth</text><text x="8" y="222">replay auth</text><text x="68" y="258">40 s</text><text x="301" y="258">60 s</text><text x="535" y="258">80 s</text><text x="768" y="258">100 s</text><text x="996" y="258">120 s</text></g>
+        <path d="M76 68H195V53H269V38H489V68H1010" fill="none" stroke="#71717a" stroke-width="3" stroke-dasharray="4 4"/>
+        <path d="M350 89L391 102L421 118L452 129L473 117L489 114L516 85L523 82" fill="none" stroke="#e4e4e7" stroke-width="3"/>
+        <path d="M76 138H366V158H369V178H374V198H1010" fill="none" stroke="#74058a" stroke-width="4"/>
+        <path d="M76 198H489V198H493V198L495 183L497 168L499 153L501 138H1010" fill="none" stroke="#ac6420" stroke-width="4"/>
+        <g fill="#f4f4f5" font-family="Segoe UI,Arial" font-size="12"><text x="436" y="28">75.469: known gain 2 → 1</text><text x="498" y="74">77.777: raw b_osi reaches cap</text><text x="501" y="133">78.402: raw b_osi → NaN</text><text x="503" y="229">76.277: 3 checks + ramp reaches 1</text></g>
+      </svg>
+      <div class="legend"><span class="key k-gain">logged diagnostic gain</span><span class="key k-raw">raw measured b_osi</span><span class="key k-current">saved authority</span><span class="key k-best">0.5 s supervised replay</span></div>
+    </div>
+    <p class="muted" style="margin-top:10px">The diagnostic gain is <code>result.Results</code> signal 21: <code>1 → 1.5</code> at 50.224121 s, <code>1.5 → 2</code> at 56.520508 s, then <code>2 → 1</code> at 75.469238 s.</p>
+  </section>
+
+  <section>
+    <h2>Offline replay comparison</h2>
+    <p class="muted">The replay reads the actual v7.3 MAT streams and changes only recovery logic. It is a fixed-record counterfactual, not a closed-loop plant simulation. Full metrics are in <a href="offline_replay_subagent_metrics.json">offline_replay_subagent_metrics.json</a>.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Candidate</th><th>Authority ≥ 0.90 after restore</th><th>Full authority</th><th>False pre-restore triggers</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Saved target-tracking law</td><td>Never</td><td>Never; final 0.20</td><td>0</td><td class="reject">Deadlocked</td></tr>
+          <tr><td>Target clamp only</td><td>Does not complete before gate blanks</td><td>Never in saved no-evidence branch</td><td>0</td><td class="reject">Insufficient</td></tr>
+          <tr><td>Cap-relative measured recovery, <code>b ≥ 0.6871</code></td><td>Would start before actual repair</td><td>Unsafe</td><td>2 windows: 64.400–64.776 and 70.777–72.526 s</td><td class="reject">Reject</td></tr>
+          <tr><td>Aggressive NaN/blind recovery</td><td>3.933 s</td><td>3.933 s</td><td>1: no-evidence interval 65.527–69.526 s while gain is abnormal</td><td class="reject">Reject</td></tr>
+          <tr><td>Production blind fallback, 5 s + 0.06/s</td><td>19.683 s</td><td>21.308 s</td><td>0 in this replay</td><td>Safe fallback, too slow</td></tr>
+          <tr><td>Supervised 1.0 s ramp</td><td>0.875 s</td><td>1.000 s</td><td>0</td><td>Acceptable</td></tr>
+          <tr class="winner"><td><strong>Gain edge + 3 clean fast checks + 0.5 s ramp</strong></td><td><strong>0.807617 s</strong></td><td><strong>0.807617 s</strong></td><td><strong>0</strong></td><td class="accept"><strong>Recommended</strong></td></tr>
+          <tr><td>Supervised 0.5 s ramp without confirmation</td><td>0.500 s</td><td>0.500 s</td><td>0</td><td>Fastest bumpless option</td></tr>
+          <tr><td>Immediate supervised step</td><td>0.125 s</td><td>0.125 s</td><td>0</td><td class="reject">Reject: 5× authority jump</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>Why the winner is defensible:</strong> the gain-return edge is external ground truth supplied by the diagnostic test. It arms three clean fast publications at 75.526855, 75.651855 and 75.776855 s; only then does the 0.5 s ramp begin. Emergency trips remain higher priority.</div>
+  </section>
+
+  <section>
+    <h2>Only changes needed</h2>
+    <div class="flow">
+      <div class="node"><strong>Gain return 2→1</strong><br><span class="muted">When diagnostic mode is enabled, arm <code>restore_pending</code>. This is not <code>regime_recal</code>.</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong>3 clean <code>b_fast</code> publications</strong><br><span class="muted">No <code>trip_reason</code>; then begin a bounded ramp of <code>a_cont</code>/<code>a</code>.</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><strong><code>a = 1</code></strong><br><span class="muted">Existing trip and downward authority paths remain higher priority.</span></div>
+    </div>
+    <div class="steps" style="margin-top:14px">
+      <div class="step"><div><strong>Keep the requested target, add a feasible decision reference.</strong><br><code>target_outer_ncf = 0.8</code> remains the requested/reported target. For authority decisions use <code>b_ref = min(target_outer_ncf, cfg.cap - up_deadband - 0.02)</code>. With current <code>up_deadband = 0.04</code>, <code>b_ref = 0.647107</code>. This prevents an immediate re-shed after supervised restoration. The saved record used <code>up_deadband = 0.10</code>; that is why its upward test was 0.90.</div></div>
+      <div class="step"><div><strong>Detect the configured nominal return.</strong><br>Add <code>diagnostic_restore_enable</code>, <code>diagnostic_gain</code> and <code>diagnostic_gain_nominal</code>. Do not hardcode 1; the saved run used 1, while other model configurations may use another nominal value.</div></div>
+      <div class="step"><div><strong>Confirm three clean fast publications.</strong><br>After—and only after—the known gain-return edge, require three consecutive fast updates with no trip. Treat <code>b_fast</code> as a permissive no-fast-fault check, not proof of healing: the replay found 12 pre-edge intervals that would satisfy the same fast-only condition.</div></div>
+      <div class="step"><div><strong>Do not reset the measurement branches.</strong><br>Preserve <code>b_st</code>/<code>b_res</code> calibration, baselines, spectral rings, and the <code>b_fast</code> CUSUM. Clear only stale selected aggregation and authority transient memory needed for a clean commit—such as <code>slow_hist</code>, <code>b_filt</code>, <code>below_n</code>, <code>above_n</code>, cooldown/latch counters, and the old shed target. Keep raw <code>b_osi = NaN</code>/<code>WARMING</code> until fresh evidence exists.</div></div>
+      <div class="step"><div><strong>Ramp authority bumplessly.</strong><br>At the 0.125 s update cadence, use <code>a = min(a_init, a + 1.6·0.125)</code>. Starting from 0.2 gives four updates: <code>0.2 → 0.4 → 0.6 → 0.8 → 1.0</code>. Confirmation plus ramp takes 0.807617 s in this record.</div></div>
+      <div class="step"><div><strong><code>trip_reason</code> always wins.</strong><br>A quiet-band burst (<code>trip_reason = 1</code>), fast FRF collapse (<code>trip_reason = 2</code>), or newly valid degradation cancels <code>restore_pending</code> within one update and executes the existing downward path.</div></div>
+      <div class="step"><div><strong>Default the feature off.</strong><br>When <code>diagnostic_restore_enable = 0</code>, the new branch is unreachable. Existing synthetic and physical-test behavior is therefore unchanged by construction.</div></div>
+    </div>
+    <pre><code>if trip_reason ~= 0 || fresh_degradation
+    restore_pending = false;
+    run_existing_drop_path();
+elseif diagnostic_restore_enable && gain_returned_to_nominal
+    restore_pending = true;
+    clean_fast_count = 0;
+elseif restore_pending && clean_fast_count &lt; 3 && b_fast_published
+    clean_fast_count = clean_fast_count + 1;
+elseif restore_pending && clean_fast_count >= 3
+    clear_stale_aggregation_and_authority_memory();
+    a_cont = min(a_init, a_cont + 1.6*dt_update);
+    a = commit_existing_way(a_cont);
+    restore_pending = a &lt; a_init;
+end</code></pre>
+  </section>
+
+  <section>
+    <h2>Why the diagnostic edge is additive, not a replacement</h2>
+    <div class="grid">
+      <div class="card"><h3>Autonomous cases still recover from measurements</h3><p>Cases 7 and 8 have no diagnostic gain event. Their recovery must remain entirely <code>b_st</code>/prediction based; the new branch is unreachable and their traces remain unchanged.</p></div>
+      <div class="card"><h3>A scalar cap is not proof of repair</h3><p><code>b_osi</code> reaches the cap in two pre-return windows, and the same three-clean-<code>b_fast</code> condition occurs 12 times before the gain edge. The known edge is what makes the confirmation safe in this diagnostic test.</p></div>
+    </div>
+    <div class="callout warning"><strong>Autonomous future extension:</strong> the fast path already computes newest-versus-slow FRF deviation and currently discards changes in the improving direction. Expose a symmetric <code>heal_reason</code>, confirm it for 2–3 steps, and abort on any existing trip. That design needs a new closed-loop replay because the required directional statistic was not logged in GDBqFpKb.</div>
+  </section>
+
+  <section>
+    <h2>Old implementation versus candidate: ten FABLE cases</h2>
+    <p class="muted">The archived <code>suite_runtime_sliced.mat</code> baseline was replayed with an isolated wrapper. Because none of the ten cases contains the diagnostic gain-return event, <code>restore_pending</code> activates zero times. Authority, <code>b_osi</code>, and trip outputs are therefore sample-for-sample identical. Full machine-readable results: <a href="diagnostic_restore_validation.json">diagnostic_restore_validation.json</a>.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Canonical case</th><th>FABLE behavior being exercised</th><th>Old</th><th>Candidate difference</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>healthy broadband</td><td><code>b_st</code> selected; <code>b_res</code> at cap; no fast trip</td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>2</td><td>intensity step</td><td><code>b_st</code> normalization; residual branch disengaged</td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>3</td><td>broadband damage</td><td><code>b_fast</code> type-2 trip, then <code>b_st</code>/<code>st_binding</code></td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>4</td><td>low-band damage</td><td>Intended <code>b_res</code> defense; archived run actually uses one type-2 fast trip</td><td class="reject">Pre-existing fail</td><td>0; same fail</td></tr>
+          <tr><td>5</td><td>silent</td><td>Evidence gate: <code>b_osi = NaN</code>, authority hold</td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>6</td><td>gradual softening</td><td>Slow <code>b_st</code> tracking without false fast trip</td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>7</td><td>damage then repair</td><td>Type-2 shed followed by measurement-only <code>b_st</code>/prediction recovery</td><td class="reject">Pre-existing fail: 0.625 s versus 0.5 s limit</td><td>0; same fail</td></tr>
+          <tr><td>8</td><td>starts damaged, improves</td><td>Pure <code>b_st</code>/prediction recovery; no diagnostic event</td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>9</td><td>healthy regime change</td><td><code>regime_recal</code>/gate prevents stale residual or fast effects</td><td class="accept">Pass</td><td>0; pass</td></tr>
+          <tr><td>10</td><td>transient pulse</td><td>Bounded fast trip, residual release, <code>b_st</code> recovery</td><td class="accept">Pass</td><td>0; pass</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>No-regression result:</strong> old = 8/10 and candidate = 8/10; maximum <code>|Δa| = 0</code> in every case, authority total variation is identical, and <code>b_osi</code>/trip streams are identical. The two failures already exist in the archived implementation and were not created or hidden by this change.</div>
+    <div class="callout warning"><strong>The ten-case harness needs revision before final production acceptance.</strong> Its built-in adapters currently return only four outputs, leaving stored <code>b_st</code>, <code>b_res</code>, and <code>b_fast</code> traces as <code>NaN</code>. Add these branch traces plus <code>decision</code> and <code>g_armed</code>; add a residual-only case that truly forces <code>res_on</code>; and run both canonical and production-configured suites. The archive predates current HEAD, so a fresh MATLAB-MCP baseline/candidate run remains mandatory.</div>
+  </section>
+
+  <section>
+    <h2>PID and phase-lead conclusion</h2>
+    <p>The model does not retune PID or phase lead during authority adaptation. <code>auth</code> from <code>Fable OSI + Auth</code> multiplies the displacement command in <code>Apply OSI gain</code> before saturation/MTS. PID and <code>pl_5k</code> remain static.</p>
+    <div class="grid">
+      <div class="card"><h3>Keep them unchanged for this fix</h3><p>Changing P, I, D or phase lead cannot change the state-machine conditions that hold on <code>NaN</code> or require <code>b_filt ≥ target + deadband</code>. It would change tracking and estimator excitation in every case.</p></div>
+      <div class="card"><h3>Robust redesign remains separate</h3><p>Existing studies show phase-lead changes are not monotonic across damage cases. The saved-lead/full-authority envelope includes very poor worst-case margins, while the robust candidate required authority attenuation and a significant tracking tradeoff. That is not a recovery-logic patch.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Implementation validation gates</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Gate</th><th>Required result</th></tr></thead>
+        <tbody>
+          <tr><td>GDB fixed-record replay</td><td>Gain return to full authority in ≤0.81 s with three fast checks; zero activation before 75.469238 s; no re-shed for 10 s unless a real trip/degradation is injected.</td></tr>
+          <tr><td>Trip during restore</td><td>Ramp cancels and downward action begins within one 0.125 s update.</td></tr>
+          <tr><td>Legacy ten-case replay</td><td class="accept">Verified: zero diagnostic activations; <code>a</code>, total variation, <code>b_osi</code>, and trip outputs unchanged in all cases.</td></tr>
+          <tr><td>Fresh current-HEAD suites</td><td>Still required through MATLAB MCP: canonical plus production configuration, with explicit <code>b_st</code>/<code>b_res</code>/<code>b_fast</code>/<code>decision</code>/<code>g_armed</code> outputs.</td></tr>
+          <tr><td>Runtime equivalence</td><td>Desktop and real-time implementations retain maximum absolute difference 0.</td></tr>
+          <tr><td>Bumpless command</td><td>Adjacent <code>dc</code> change remains inside the configured command slew/saturation limit and does not create a new <code>dm</code> transient.</td></tr>
+          <tr><td>Raw indicator semantics</td><td>After restoration, display <code>WARMING</code>/<code>known nominal restored</code>; never fabricate a measured 0.7071 value.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Evidence: actual streams from <code>saved_results/tests/tsting_osi/GDBqFpKb.mat</code>; complete source review of <code>fable_osi.m</code>, <code>fable_auth.m</code>, <code>fable_evidence_gate.m</code>, and <code>fable_synthetic_suite.m</code>; archived ten-case artifacts; and offline replay script <a href="validate_diagnostic_restore.py">validate_diagnostic_restore.py</a>. No PID/phase-lead parameter was changed, and no Speedgoat or actuator workflow was run. MATLAB MCP was unavailable, so this report does not claim a fresh current-HEAD MATLAB suite run.
+  </footer>
+</main>
+</body>
+</html>
