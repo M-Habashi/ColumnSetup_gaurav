@@ -46,8 +46,6 @@ try
     else
         plots.hs_comparison = compare_hs_response_to_reference([], recorded_data);
     end
-    disp('Hybrid Simulation Reference Comparison')
-    disp(plots.hs_comparison)
 catch ME
     fprintf('Comparison failed: %s\n', ME.message)
 end

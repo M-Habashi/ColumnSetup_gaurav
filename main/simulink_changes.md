@@ -1,5 +1,29 @@
 # Simulink Changes
 
+## Change 3 (2026-07-10): GPT-5.6 replaces FABLE on Speedgoat
+
+The `Fable OSI + Auth` MATLAB Function block is now `GPT-5.6 OSI + Auth`
+and calls `control_and_HS/OSI/gpt5_6_runtime.m`. Its seven compile-time
+parameters come from `prepare_gpt5_6_runtime.m`. The existing scalar signal
+inputs, nine diagnostic outputs, authority-gain connection, and File Log
+width are unchanged. The logging mux is named `Mux_gpt5_6_runtime`.
+
+GPT-5.6 is time-sliced over 32 base-rate ticks per 0.125 s update. The two
+1024-point FFTs run on separate ticks, and each of the 25 quiet-band fit
+candidates has its own tick. A two-window circular buffer preserves the
+exact update-boundary snapshot while new 2048 Hz samples arrive. Offline
+comparison against `gpt_osi` + `gpt_auth` was exact for `b_osi`, `b_st`, and
+authority; `b_res` agreed to floating-point roundoff.
+
+The OSI tap feedthrough gain now uses `gpt_dfm`, calculated by the new setup
+from the numerical-substructure Newmark effective stiffness. The three
+changed Simulink blocks (`GPT-5.6 OSI + Auth`, `Mux_gpt5_6_runtime`, and
+`OSI tap D-term gain`) are yellow.
+
+Target verification ran for 125 s with GPT-5.6 enabled. The 2048 Hz budget
+was 488.28 us; measured TETMax was 78.50 us and TETAvg was 53.79 us. This
+is 83.9% worst-case timing margin, with no overload or early stop.
+
 ## Change 2 (2026-07-03): Speedgoat overloading fix
 
 Reproduced and fixed the CPU overload that stopped the target when the

@@ -1270,9 +1270,12 @@ end
 
 designs = collectReportDesigns(problem, baseline, best);
 report = buildRobustReport(problem, designs);
+constraint_summary = robustConstraintSummary(config, problem, best);
 
 fprintf('\n--- Robustness report ---\n')
 disp(report.table)
+fprintf('\n--- Best constraint summary ---\n')
+disp(constraint_summary.table)
 if ~best.feasible
     fprintf(['NOTE: the targets (nominal %.4g / robust %.4g) were not ' ...
         'reached inside the bounds; the reported best minimizes the ' ...
@@ -1288,13 +1291,13 @@ history_table = sortrows(history_table, {'Feasible', 'Objective'}, ...
 
 saved_path = '';
 if config.save_results
-    saved_path = saveRobustPhaseLeadFile(project_root, config, best, ...
-        baseline, report, history_table);
+    saved_path = saveRobustPhaseLeadFile(project_root, config, ...
+        problem.nominal.pid_values, best, baseline, report, history_table);
     fprintf('\nSaved robust phase_lead result = %s\n', saved_path)
 end
 
 if config.plot_results
-    plotRobustResults(problem, report, state, best)
+    plotRobustResults(problem, report, state, best, constraint_summary)
 end
 
 if config.print_validation_tables && problem.has_damage_states
@@ -1310,6 +1313,9 @@ if config.print_validation_tables && problem.has_damage_states
     end
 end
 
+fprintf('\nPID gains used:\n')
+printPidGains('healthy', problem.nominal.pid_values)
+
 fprintf('\nTotal robust optimizer time: %.0f s (%d simulations)\n', ...
     toc(total_timer), state.sim_count)
 
@@ -1317,6 +1323,7 @@ result = struct( ...
     'best_phase_lead', best.phase_lead, ...
     'best_metrics', best.metrics, ...
     'best_robust', best.robust, ...
+    'constraint_summary', constraint_summary, ...
     'baseline_metrics', baseline.metrics, ...
     'baseline_robust', baseline.robust, ...
     'report', report, ...
@@ -1324,6 +1331,34 @@ result = struct( ...
     'config', config, ...
     'sim_count', state.sim_count, ...
     'saved_path', saved_path);
+end
+
+function printPidGains(label, pid_values)
+fprintf('  %s: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
+    label, pid_values.P, pid_values.I, pid_values.D, ...
+    pid_values.derivative_filter_N)
+end
+
+function summary = robustConstraintSummary(config, problem, best)
+names = ["Nominal NCF margin"; "Robust NCF margin"; ...
+    "Coupled-pole damping"; "Stability margin"; ...
+    "PID*H_dc_dm NCF margin"];
+targets = [config.target_ncf_margin; config.robust_ncf_target; ...
+    config.minimum_coupled_pole_damping; config.minimum_stability_margin; ...
+    NaN];
+actuator_response = squeeze(freqresp(problem.nominal.actuator_open_loop, ...
+    problem.nominal.margin_frequency_rad_s));
+actual = [best.robust.ncf_nominal; best.robust.ncf_worst; ...
+    best.metrics.coupled_min_damping; best.metrics.stability_margin];
+actual(end+1, 1) = ncfOfResponse(actuator_response);
+enforced = [true; true; true; true; false];
+passed = actual >= targets;
+passed(~enforced) = true;
+summary.table = table(names, targets, actual, enforced, passed, ...
+    'VariableNames', {'Constraint', 'Target', 'Achieved', 'Enforced', ...
+    'Passed'});
+summary.coupled_pole_damping_hz = ...
+    best.metrics.coupled_min_damping_hz;
 end
 
 function designs = collectReportDesigns(problem, baseline, best)
@@ -1487,7 +1522,7 @@ text = [text ')'];
 end
 
 function saved_path = saveRobustPhaseLeadFile(project_root, config, ...
-        best, baseline, report, history_table)
+        pid_values, best, baseline, report, history_table)
 phase_lead_dir = fullfile(project_root, 'saved_results', 'phase_lead');
 if ~exist(phase_lead_dir, 'dir')
     mkdir(phase_lead_dir)
@@ -1510,7 +1545,7 @@ optimization_result_table = history_table;
 phase_lead_label = 'robust';
 phase_lead_name = [name '.mat'];
 created_at = char(datetime('now', 'Format', 'yyyyMMdd_HHmmss'));
-save(saved_path, 'phase_lead_tf', 'phase_lead', 'metrics', ...
+save(saved_path, 'phase_lead_tf', 'phase_lead', 'metrics', 'pid_values', ...
     'phase_lead_label', 'phase_lead_name', 'created_at', 'config', ...
     'baseline_metrics', 'best_phase_lead', 'best_metrics', ...
     'recommended_phase_lead_override', 'robust_report_table', ...
@@ -1544,12 +1579,15 @@ end
 %% Plots
 %% ----------------------------------------------------------------------
 
-function plotRobustResults(problem, report, state, best)
+function plotRobustResults(problem, report, state, best, constraint_summary)
 colors = robustPlotColors();
 figures = gobjects(0);
 n_states = report.curves.n_states;
 
-% 1. NCF degradation along the damage path.
+% 1. Target versus achieved values for every hard optimization constraint.
+figures(end+1) = plotRobustConstraintSummary(constraint_summary, colors);
+
+% 2. NCF degradation along the damage path.
 if n_states > 0
     figures(end+1) = figure('Color', 'w', ...
         'Name', 'robust phase_lead: NCF vs damage fraction');
@@ -1576,7 +1614,7 @@ if n_states > 0
     legend('Location', 'best', 'Interpreter', 'none')
 end
 
-% 2. Phase lead frequency response.
+% 3. Phase lead frequency response.
 figures(end+1) = figure('Color', 'w', ...
     'Name', 'robust phase_lead: filter response');
 frequency_hz = logspace(log10(0.1), log10(200), 800).';
@@ -1626,7 +1664,7 @@ xlabel(phase_axis, 'Frequency (Hz)')
 legend(magnitude_axis, 'Location', 'best', 'Interpreter', 'none')
 title(layout, 'Phase lead prefilter G_T frequency response')
 
-% 3. NCF distance-to-critical-point vs frequency (healthy + each state).
+% 4. NCF distance-to-critical-point vs frequency (healthy + each state).
 figures(end+1) = figure('Color', 'w', ...
     'Name', 'robust phase_lead: NCF distance vs frequency');
 layout = tiledlayout(1 + n_states, 1, 'TileSpacing', 'compact', ...
@@ -1664,7 +1702,7 @@ xlabel(axis_handle, 'Frequency (Hz)')
 title(layout, ['NCF distance to the critical point ' ...
     '(margin = curve minimum)'])
 
-% 4. J4 vs worst-scenario NCF scatter of the simulated candidates.
+% 5. J4 vs worst-scenario NCF scatter of the simulated candidates.
 history = state.history;
 enabled = arrayfun(@(entry) entry.Gain > 0 ...
     && isfinite(entry.J4_raw_percent), history);
@@ -1698,6 +1736,43 @@ if ~isempty(history)
 end
 
 exportRobustFigures(problem.config, figures)
+end
+
+function figure_handle = plotRobustConstraintSummary(summary, colors)
+figure_handle = figure('Color', 'w', ...
+    'Name', 'robust phase_lead: constraint summary');
+layout = tiledlayout(2, 2, 'TileSpacing', 'compact', ...
+    'Padding', 'compact');
+constraint_table = summary.table(summary.table.Enforced, :);
+for constraint_id = 1:height(constraint_table)
+    axis_handle = nexttile;
+    target = constraint_table.Target(constraint_id);
+    actual = constraint_table.Achieved(constraint_id);
+    passed = constraint_table.Passed(constraint_id);
+    plotted_actual = actual;
+    if ~isfinite(plotted_actual)
+        plotted_actual = max(2*target, 1);
+    end
+    bar_handle = bar(axis_handle, [target, plotted_actual], ...
+        'FaceColor', 'flat');
+    bar_handle.CData = [0 0 0; ...
+        colors.green*double(passed) + colors.red*double(~passed)];
+    grid(axis_handle, 'on')
+    xticks(axis_handle, [1 2])
+    xticklabels(axis_handle, {'target', 'achieved'})
+    ylabel(axis_handle, 'margin')
+    actual_text = sprintf('%.4g', actual);
+    if ~isfinite(actual)
+        actual_text = 'Inf (no pole in damping band)';
+    end
+    if constraint_id == 3 && isfinite(summary.coupled_pole_damping_hz)
+        actual_text = sprintf('%s at %.4g Hz', actual_text, ...
+            summary.coupled_pole_damping_hz);
+    end
+    title(axis_handle, sprintf('%s\nactual = %s', ...
+        constraint_table.Constraint(constraint_id), actual_text))
+end
+title(layout, 'Final hard-constraint targets and achieved values')
 end
 
 function color = designColor(colors, design_id)

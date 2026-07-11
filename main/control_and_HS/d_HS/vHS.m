@@ -56,15 +56,6 @@ else
     [~, h_dc_dm_model_file, ~] = load_saved_result_file( ...
         project_root, 'exp_tf');
 end
-% Override the saved PID used to form PID_H_dc_dm = feedback(PID*H_dc_dm, 1).
-% Leave [] to use pid_values saved by sys_id.m.
-% Use struct('P', 0.6, 'I', 5, 'D', 0.0015, 'derivative_filter_N', 512)
-% or [0.6 5 0.0015 512] to test a different controller.
-% Command Window print after running vHS:
-% fprintf('P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, pid_h_dc_dm_values.derivative_filter_N)
-if ~exist('pid_gain_override', 'var')
-    pid_gain_override = [0.15 20 0.0015 512];
-end
 %% SAVED FEM AND HS SETUP
 if exist('fem_file_override', 'var') && ~isempty(fem_file_override)
     [fem, fem_file, ~] = loadFemDefinition(project_root, false, ...
@@ -90,6 +81,25 @@ if isfield(phase_lead_data, 'phase_lead')
     phase_lead = normalizePhaseLeadConfig(phase_lead_data.phase_lead);
 end
 phase_lead_enabled = isempty(phase_lead) || phase_lead.enabled;
+
+% By default, reproduce the PID used to design the saved phase lead.
+% Set pid_gain_override to replace it for this run.
+if ~exist('pid_gain_override', 'var') || isempty(pid_gain_override)
+    if isfield(phase_lead_data, 'pid_values')
+        pid_gain_override = phase_lead_data.pid_values;
+        pid_gain_source = 'phase_lead file';
+    elseif isfield(phase_lead_data, 'config') ...
+            && isfield(phase_lead_data.config, 'pid_gain_override') ...
+            && ~isempty(phase_lead_data.config.pid_gain_override)
+        pid_gain_override = phase_lead_data.config.pid_gain_override;
+        pid_gain_source = 'phase_lead config';
+    else
+        pid_gain_override = [];
+        pid_gain_source = 'exp_tf file (legacy phase_lead without PID)';
+    end
+else
+    pid_gain_source = 'workspace override';
+end
 
 hs.fem_file = fem_file;
 hs.specimen_file = specimen_file;
@@ -246,10 +256,6 @@ end
 fprintf('\n%s Hybrid Simulation partition\n', hs.earthquake_type);
 fprintf('FEM file: %s\n', fem_file);
 fprintf('H_dc_dm model file: %s\n', h_dc_dm_model_file);
-fprintf('PID_H_dc_dm gains: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
-    pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, pid_h_dc_dm_values.D, ...
-    pid_h_dc_dm_values.derivative_filter_N);
-fprintf('PID output scale: %.6g\n', pid_h_dc_dm_values.PID_scale);
 fprintf('phase_lead loaded: %s\n', phase_lead_file);
 if ~isempty(phase_lead) && phase_lead.enabled
     fprintf('phase_lead after numerical dd: %s\n', ...
@@ -467,6 +473,10 @@ auth_target_ncf = 0.6;
 fprintf(['Recommended auth_stability_factor for PID+H_dc_dm NCF %.3f: ' ...
     '%.4g (estimated NCF %.4g)\n'], auth_target_ncf, ...
     auth_stability_factor, auth_stability_ncf);
+fprintf('PID values used (%s): P = %.6g, I = %.6g, D = %.6g, N = %.6g; scale = %.6g\n', ...
+    pid_gain_source, pid_h_dc_dm_values.P, pid_h_dc_dm_values.I, ...
+    pid_h_dc_dm_values.D, pid_h_dc_dm_values.derivative_filter_N, ...
+    pid_h_dc_dm_values.PID_scale);
 
 function [PID_H_dc_dm, pid_values, model_file, actuator_open_loop] = ...
         loadPidHdcDmModel( ...

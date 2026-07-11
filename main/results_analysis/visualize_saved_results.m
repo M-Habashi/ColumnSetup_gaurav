@@ -12,6 +12,7 @@ summary = [];
 scriptFolder = fileparts(mfilename('fullpath'));
 projectFolder = fileparts(scriptFolder);
 addpath(fullfile(projectFolder, 'helpers', 'utils'))
+addpath(fullfile(projectFolder, 'control_and_HS', 'd_HS', 'utils_HS'))
 if nargin < 1 || isempty(result)
     [data, ~, selectedFileName] = load_saved_result_file( ...
         projectFolder, 'tests', false, '', false);
@@ -118,6 +119,9 @@ fprintf('dt:              %.6g s\n', dt);
 fprintf('RMS(%s - dm_filtfilt):   %.6g mm\n', trackingSignalName, rmsError);
 fprintf('===============================================================\n\n');
 
+[summary.validation_metrics, summary.stability_table] = ...
+    printHsValidation(result, projectFolder);
+
 figure('Name', resultName, 'WindowState', 'maximized');
 colors = getPlotColors();
 tPlot = t(plotIndex);
@@ -208,6 +212,89 @@ if hasTseEstimate
     ylabel('c (N s/m)')
     title('Online TSE Damping')
     linkaxes(ax_tse, 'x')
+end
+end
+
+function [validation_table, stability_table] = printHsValidation( ...
+        result, projectFolder)
+phase_lead_data = load(result.phase_lead_file, 'phase_lead_tf', ...
+    'phase_lead', 'pid_values', 'config');
+helpers = optimize_vHS_phase_lead_v2('helpers');
+config = helpers.default_config();
+config.earthquake_type = result.hs.earthquake_type;
+config.intensity_factor = result.hs.intensity_factor;
+config.time_scale_factor = result.hs.time_scale_factor;
+config.force_sign = result.hs.force_sign;
+config.sample_dt = result.dt;
+config.h_dc_dm_model_file = result.exp_tf_file;
+config.fem_file = result.hs.fem_file;
+config.specimen_file = phase_lead_data.config.specimen_file;
+config.pid_gain_override = phaseLeadPidValues(phase_lead_data);
+phase_lead = normalizePhaseLeadConfig(phase_lead_data.phase_lead);
+config.phase_lead_section_count = phase_lead.section_count;
+config.save_results = false;
+config = helpers.normalize_config(config);
+problem = helpers.prepare(projectFolder, config, 1);
+
+baseline = helpers.evaluate(problem, []);
+baseline_data = struct('t', problem.time, ...
+    'dm', baseline.signals.dm_sample, ...
+    'fm', baseline.signals.force_sample, ...
+    'fs', 1/problem.sample_dt, 'dt', problem.sample_dt, ...
+    'hs', problem.hs);
+[baseline_metrics, ~] = compare_hs_response_to_reference( ...
+    problem.fem, baseline_data, [], [], [], [], struct('plot', false));
+[control_metrics, ~] = compare_hs_response_to_reference( ...
+    problem.fem, result, [], [], [], [], struct('plot', false));
+
+validation_table = table(control_metrics.Properties.RowNames(:), ...
+    cellstr(control_metrics.Description), cellstr(control_metrics.Unit), ...
+    [NaN; NaN; NaN; baseline_metrics.Value(4:6); NaN], ...
+    control_metrics.Value, 'VariableNames', {'Metric', 'Description', ...
+    'Unit', 'SimulatedNumExp', 'MeasuredForceReplay'});
+if phase_lead.enabled
+    control_path_label = 'num*G_T*PID*H_{dc,dm}*exp';
+else
+    control_path_label = 'num*PID*H_{dc,dm}*exp';
+end
+fprintf('Control path: %s\n', control_path_label)
+disp(validation_table)
+printMeasuredDataMetrics(validation_table)
+
+phase_lead_tf_discrete = c2d(phase_lead_data.phase_lead_tf, ...
+    problem.sample_dt, 'tustin');
+stability_table = helpers.build_stability_table(problem, ...
+    phase_lead_tf_discrete, [0.1 80]);
+disp('Stability table')
+disp(stability_table)
+end
+
+function printMeasuredDataMetrics(metrics)
+fprintf('\nMeasured-data RTHS metrics (this test)\n')
+fprintf('  J1 tracking delay (dm vs d_n): %.3g ms\n', ...
+    metrics.MeasuredForceReplay(1))
+fprintf('  J2 tracking RMS (dm vs d_n):   %.3g %%\n', ...
+    metrics.MeasuredForceReplay(2))
+fprintf('  J3 tracking peak (dm vs d_n):  %.3g %%\n', ...
+    metrics.MeasuredForceReplay(3))
+fprintf(['  J4 floor 1 (logged fm -> x1_n vs x1_r): %.3g %%\n'], ...
+    metrics.MeasuredForceReplay(4))
+fprintf('  J5 floor 2 (logged fm -> x2_n vs x2_r): %.3g %%\n', ...
+    metrics.MeasuredForceReplay(5))
+fprintf('  J6 floor 3 (logged fm -> x3_n vs x3_r): %.3g %%\n', ...
+    metrics.MeasuredForceReplay(6))
+fprintf('  J7 interface NMSE (dm vs d_r): %.3g %%\n\n', ...
+    metrics.MeasuredForceReplay(7))
+end
+
+function pid_values = phaseLeadPidValues(phase_lead_data)
+if isfield(phase_lead_data, 'pid_values')
+    pid_values = phase_lead_data.pid_values;
+elseif isfield(phase_lead_data, 'config') ...
+        && ~isempty(phase_lead_data.config.pid_gain_override)
+    pid_values = phase_lead_data.config.pid_gain_override;
+else
+    pid_values = [];
 end
 end
 

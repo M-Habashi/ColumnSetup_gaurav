@@ -26,7 +26,8 @@ osi_override = struct( ...
     'band_hz', [2 100], ...
     'residual_band_hz', [28 44]);
 
-% Authority: target is the requested NCF margin; guard/deadband add safety
+% Authority: target is read from the saved test when available; this fallback
+% is used only for legacy results. guard/deadband add safety
 % margin and suppress small adjustments. rate and up_boost speed recovery;
 % max_step caps each update; a_min/a_max bound the allowed authority range.
 auth_override = struct( ...
@@ -53,6 +54,9 @@ else
     test_name = [test_name ext];
 end
 result = unwrapResult(data);
+if isfield(result, 'hs') && isfield(result.hs, 'target_outer_ncf')
+    auth_override.target = result.hs.target_outer_ncf;
+end
 if nargin < 2 || isempty(exp_tf_file)
     [model_data, exp_tf_file] = load_saved_result_file(project_folder, 'exp_tf');
 else
