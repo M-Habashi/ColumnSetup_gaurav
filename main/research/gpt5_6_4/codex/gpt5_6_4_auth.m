@@ -23,19 +23,17 @@ if ischar(varargin{1}) || isstring(varargin{1})
 end
 
 b = varargin{1};
-b_full = varargin{2};
 residual_weight = min(max(varargin{3}, 0), 1);
 state = varargin{4};
 prm = varargin{5};
 a0 = min(max(state.a, prm.a_min), prm.a_max);
 b_ref = prm.target+prm.guard*(1+residual_weight);
 e_raw = b-b_ref;
-e = sign(e_raw)*max(abs(e_raw)-prm.deadband*(1+residual_weight), 0);
-headroom = 1/sqrt(2)-b_ref;
-coherent = min(1, max(0, (0.60-residual_weight)/0.40));
-full_safe = min(1, max(0, (b_full-prm.target)/prm.guard));
-rate = prm.rate*sqrt(a0)*(1+coherent*full_safe*prm.up_boost* ...
-    (max(e, 0)/headroom)^2);
+deadband = prm.deadband*(1+residual_weight);
+e_margin = sign(e_raw)*max(abs(e_raw)-deadband, 0);
+recovery_weight = (b_ref*sqrt(2))^2;
+e = min(e_margin, 0)+recovery_weight*max(e_margin, 0);
+rate = prm.rate*sqrt(a0);
 log_a = log(a0)+rate*prm.dt_update*e;
 a_free = exp(min(max(log_a, log(prm.a_min)), log(prm.a_max)));
 a_next = a0+min(max(a_free-a0, -prm.max_step), prm.max_step);
@@ -50,7 +48,6 @@ prm = struct( ...
     'guard', 0.02, ...
     'deadband', 0.008, ...
     'rate', 5.0, ...
-    'up_boost', 400.0, ...
     'max_step', 0.05, ...
     'a_min', 0.20, ...
     'a_max', 1.0, ...

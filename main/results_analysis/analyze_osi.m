@@ -83,7 +83,7 @@ replay = gpt5_6('run', t, u_osi, dm, dt, loop_tf, ...
 replay.test_file = test_file;
 replay.exp_tf_file = exp_tf_file;
 
-plotReplay(test_name, t, dm, replay, a_acted, diagnosticGain(result, t));
+plotReplay(test_name, t, dm, result, replay, a_acted, diagnosticGain(result, t));
 fprintf('GPT 5.6 replay: %s | %d updates | target %.3f\n', ...
     test_name, numel(replay.tc), replay.cfg.auth.target)
 end
@@ -153,7 +153,7 @@ elseif isfield(result, 'diag_gain')
 end
 end
 
-function plotReplay(name, t, dm, replay, a_acted, diag)
+function plotReplay(name, t, dm, result, replay, a_acted, diag)
 colors = struct('black', [0 0 0], 'blue', [0 124 168]/255, ...
     'purple', [116 5 138]/255, 'copper', [172 100 32]/255, ...
     'green', [57 191 94]/255, 'red', [144 21 0]/255);
@@ -161,10 +161,22 @@ fig = figure('Name', [name ' - GPT 5.6 OSI'], 'Color', 'w', ...
     'Position', [80 80 1200 820]);
 tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact')
 
-ax(1) = nexttile;
-plot(t, dm, 'Color', colors.blue, 'LineWidth', 1, 'DisplayName', 'dm');
-styleAxis(gca); ylabel('dm (mm)'); title([name ' — GPT 5.6 OSI replay'], 'Interpreter', 'none')
-makeLegend(gca)
+ax(1) = nexttile; hold on
+h_disp = gobjects(0);
+if isfield(result, 'dd')
+    n = min(numel(t), numel(result.dd));
+    h_disp(end+1) = plot(t(1:n), result.dd(1:n), '--', 'Color', colors.black, ...
+        'LineWidth', 1.8, 'DisplayName', 'dd');
+end
+if isfield(result, 'dc')
+    n = min(numel(t), numel(result.dc));
+    h_disp(end+1) = plot(t(1:n), result.dc(1:n), 'Color', colors.copper, ...
+        'LineWidth', 1, 'DisplayName', 'dc');
+end
+h_disp(end+1) = plot(t, dm, 'Color', colors.blue, 'LineWidth', 1, ...
+    'DisplayName', 'dm');
+styleAxis(gca); ylabel('Displacement (mm)'); title([name ' — GPT 5.6 OSI replay'], 'Interpreter', 'none')
+makeLegend(gca, h_disp)
 
 ax(2) = nexttile; hold on
 h_st = plot(replay.tc, replay.b_st, 'Color', colors.blue, 'LineWidth', 1, ...

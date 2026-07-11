@@ -33,7 +33,6 @@ cfg = struct( ...
     'memory_s', 0.25, ...
     'margin_s', 0.15, ...
     'residual_s', 0.50, ...
-    'release_s', 20.0, ...
     'warm_s', 2.0, ...
     'band_hz', [2 100], ...
     'line_reject_hz', [58 62], ...
@@ -70,7 +69,7 @@ cfg.rho_grid = logspace(log10(0.5), log10(6), 25);
 cfg.spectral_alpha = 1-exp(-cfg.step_s/cfg.memory_s);
 cfg.margin_alpha = 1-exp(-cfg.step_s/cfg.margin_s);
 cfg.residual_alpha = 1-exp(-cfg.step_s/cfg.residual_s);
-cfg.release_alpha = 1-exp(-cfg.step_s/cfg.release_s);
+cfg.drive_alpha = 1-exp(-cfg.step_s/cfg.warm_s);
 cfg.power_floor = 10^(-cfg.power_floor_db/10);
 cfg.warm_steps = round(cfg.warm_s/cfg.step_s);
 end
@@ -83,10 +82,12 @@ state = struct( ...
     'samples_in', 0, ...
     'step_count', 0, ...
     'spectral_count', 0, ...
+    'drive', 0, ...
     'Suu', zeros(nf, 1), ...
     'Syy', zeros(nf, 1), ...
     'Syu', complex(zeros(nf, 1)), ...
     'log_rho', 0, ...
+    'rho_drive', 1, ...
     'b', cfg.cap, ...
     'a_cmd', 1.0);
 end
@@ -106,14 +107,14 @@ state.samples_in = min(cfg.segment_n, state.samples_in+n);
 state.step_count = state.step_count+1;
 
 activity = min(1, (rms(state.u)/cfg.quiet_rms)^4);
+state.drive = state.drive+cfg.drive_alpha*(activity-state.drive);
 a_now = min(max(state.a_cmd, 0.02), 1);
-Lprior = a_now*activity*cfg.L0;
+Lprior = a_now*cfg.L0;
 Tprior = Lprior./(1+Lprior);
 b_prior = minMasked(chordal(Lprior, cfg.cap), cfg.keep);
 
 if state.samples_in < cfg.segment_n
-    alpha = activity*cfg.margin_alpha+(1-activity)*cfg.release_alpha;
-    state.b = state.b+alpha*(b_prior-state.b);
+    state.b = state.b+activity*cfg.margin_alpha*(b_prior-state.b);
     b = state.b;
     info = makeInfo(b_prior, b_prior, b_prior, Tprior, Lprior, ...
         zeros(size(Tprior)), activity, 0, 1, cfg.nominal, cfg, state);
@@ -150,8 +151,11 @@ small = abs(den) < 0.02;
 den(small) = 0.02*exp(1i*angle(den(small)+eps));
 Lhat = Tuse./den;
 b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);
+full_coherent = minMasked(movmedian(chordal(min(1/a_now, 4)*Lhat, ...
+    cfg.cap), 3), cfg.keep);
 
 rho_best = 1;
+drive_ratio = 1;
 if state.step_count > cfg.warm_steps
     qobs = state.Syy./cfg.shape;
     qobs = qobs/max(median(qobs(cfg.res_keep)), eps);
@@ -168,26 +172,30 @@ if state.step_count > cfg.warm_steps
     Lmodel = a_now*cfg.L0;
     rho_drive = real(sum(weights.*conj(Lmodel).*Lhat))/ ...
         max(sum(weights.*abs(Lmodel).^2), eps);
+    rho_drive = max(rho_drive, eps);
+    drive_ratio = 1+state.drive*max(rho_drive/state.rho_drive-1, 0);
+    state.rho_drive = state.rho_drive+cfg.drive_alpha* ...
+        (rho_drive-state.rho_drive);
     coherent_weight = min(max(2*(rho_drive-1), 0), 1);
     shape_weight = coherent_weight+cfg.fit_floor*activity* ...
         (1-coherent_weight);
     rho_target = 1+shape_weight*(rho_best-1);
-    state.log_rho = state.log_rho+cfg.residual_alpha* ...
-        (log(rho_target)-state.log_rho);
+    dlog_rho = log(rho_target)-state.log_rho;
+    alpha_rho = activity*cfg.residual_alpha;
+    state.log_rho = state.log_rho+alpha_rho*dlog_rho;
 end
-rho = exp(state.log_rho);
+rho = exp(state.log_rho)*drive_ratio;
 b_res = minMasked(movmedian(chordal(a_now*rho*cfg.L0, cfg.cap), 3), ...
     cfg.keep);
 
-res_weight = activity*(1-mean(leverage(cfg.res_keep)))^2;
+res_weight = state.drive*(1-mean(leverage(cfg.res_keep)))^2;
 b_evid = b_st-res_weight*max(b_st-b_res, 0);
-b_raw = activity*b_evid+(1-activity)*cfg.cap;
-alpha = activity*cfg.margin_alpha+(1-activity)*cfg.release_alpha;
-state.b = state.b+alpha*(b_raw-state.b);
+w_mem = min(max(rho-1, 0), 1);
+b_idle = cfg.cap-w_mem*(cfg.cap-b_res);
+b_raw = activity*b_evid+(1-activity)*b_idle;
+state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
 b = min(max(state.b, 0), cfg.cap);
 
-full_coherent = minMasked(movmedian(chordal(min(1/a_now, 4)*Lhat, ...
-    cfg.cap), 3), cfg.keep);
 info = makeInfo(b_st, b_res, b_raw, Tuse, Lhat, confidence, activity, ...
     res_weight, rho_best, full_coherent, cfg, state);
 end
