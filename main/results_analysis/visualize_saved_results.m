@@ -217,8 +217,27 @@ end
 
 function [validation_table, stability_table] = printHsValidation( ...
         result, projectFolder)
-phase_lead_data = load(result.phase_lead_file, 'phase_lead_tf', ...
-    'phase_lead', 'pid_values', 'config');
+validation_table = [];
+stability_table = [];
+if ~isfield(result, 'hs') || ~isstruct(result.hs)
+    return
+end
+phase_lead_data = dependencyData(result, 'phase_lead', 'phase_lead_file');
+exp_tf_data = dependencyData(result, 'exp_tf', 'exp_tf_file');
+specimen_data = dependencyData(result, 'specimen', '');
+earthquake_data = dependencyData(result, 'earthquake', '');
+if isfield(result.hs, 'fem')
+    fem_data = result.hs.fem;
+else
+    fem_data = dependencyData(result, 'fem', '');
+end
+if isempty(phase_lead_data) || isempty(exp_tf_data) ...
+        || isempty(specimen_data) || isempty(fem_data) ...
+        || isempty(earthquake_data)
+    fprintf(['HS validation skipped: this result does not contain every ' ...
+        'embedded validation dependency.\n'])
+    return
+end
 helpers = optimize_vHS_phase_lead_v2('helpers');
 config = helpers.default_config();
 config.earthquake_type = result.hs.earthquake_type;
@@ -226,9 +245,10 @@ config.intensity_factor = result.hs.intensity_factor;
 config.time_scale_factor = result.hs.time_scale_factor;
 config.force_sign = result.hs.force_sign;
 config.sample_dt = result.dt;
-config.h_dc_dm_model_file = result.exp_tf_file;
-config.fem_file = result.hs.fem_file;
-config.specimen_file = phase_lead_data.config.specimen_file;
+config.h_dc_dm_model_data = exp_tf_data;
+config.fem_data = fem_data;
+config.specimen_data = specimen_data;
+config.earthquake_data = earthquake_data;
 config.pid_gain_override = phaseLeadPidValues(phase_lead_data);
 phase_lead = normalizePhaseLeadConfig(phase_lead_data.phase_lead);
 config.phase_lead_section_count = phase_lead.section_count;
@@ -267,6 +287,19 @@ stability_table = helpers.build_stability_table(problem, ...
     phase_lead_tf_discrete, [0.1 80]);
 disp('Stability table')
 disp(stability_table)
+end
+
+function data = dependencyData(result, dependencyName, pathField)
+data = [];
+if isfield(result, 'dependencies') ...
+        && isfield(result.dependencies, dependencyName)
+    data = result.dependencies.(dependencyName);
+    return
+end
+if ~isempty(pathField) && isfield(result, pathField) ...
+        && isfile(result.(pathField))
+    data = load(result.(pathField));
+end
 end
 
 function printMeasuredDataMetrics(metrics)

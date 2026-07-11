@@ -364,6 +364,11 @@ if exist('exp_tf_name', 'var')
     result.exp_tf_name = exp_tf_name;
 end
 result.git_provenance = get_git_provenance(projectFolder);
+[result, missing_dependencies] = embed_saved_result_dependencies( ...
+    result, projectFolder);
+assert(isempty(missing_dependencies), ...
+    'Saved result dependencies could not be embedded: %s', ...
+    strjoin(missing_dependencies, '; '))
 
 save(file_name, 'result', '-v7.3')
 

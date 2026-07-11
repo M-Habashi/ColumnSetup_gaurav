@@ -50,9 +50,14 @@ catch ME
     fprintf('Comparison failed: %s\n', ME.message)
 end
 
-if isfile(exp_tf_file)
+has_embedded_exp_tf = isfield(result, 'dependencies') ...
+    && isfield(result.dependencies, 'exp_tf');
+if has_embedded_exp_tf || isfile(exp_tf_file)
     try
-        if isempty(result_file)
+        if has_embedded_exp_tf
+            plots.osi_replay = analyze_osi(result, ...
+                result.dependencies.exp_tf);
+        elseif isempty(result_file)
             plots.osi_replay = analyze_osi(result, exp_tf_file);
         else
             plots.osi_replay = analyze_osi(result_file, exp_tf_file);

@@ -103,6 +103,10 @@ config = struct( ...
     'h_dc_dm_model_file', '', ...
     'fem_file', '', ...
     'specimen_file', '', ...
+    'h_dc_dm_model_data', [], ...
+    'fem_data', [], ...
+    'specimen_data', [], ...
+    'earthquake_data', [], ...
     'pid_gain_override', [0.15 20 0.0015 512], ...
     ... % --- goal
     'target_ncf_margin', 0.45, ...
@@ -251,7 +255,10 @@ hs = struct( ...
     'time_scale_factor', config.time_scale_factor, ...
     'force_sign', config.force_sign);
 
-if isempty(config.specimen_file)
+if ~isempty(config.specimen_data)
+    specimen = config.specimen_data;
+    specimen_file = '<embedded specimen>';
+elseif isempty(config.specimen_file)
     [specimen, specimen_file, ~] = load_saved_result_file( ...
         project_root, 'specimens', true);
 else
@@ -264,13 +271,19 @@ hs.specimen_file = specimen_file;
 
 [PID_H_dc_dm, pid_values, h_dc_dm_model_file, actuator_open_loop] = ...
     loadPidHdcDmModelV2(project_root, config.h_dc_dm_model_file, ...
-    config.pid_gain_override, config.sample_dt);
+    config.pid_gain_override, config.sample_dt, config.h_dc_dm_model_data);
 config.h_dc_dm_model_file = h_dc_dm_model_file;
 digital_controller = pid(pid_values.P, pid_values.I, pid_values.D, ...
     1/pid_values.derivative_filter_N, config.sample_dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 
-if isempty(config.fem_file)
+if ~isempty(config.fem_data)
+    fem = config.fem_data;
+    if isfield(fem, 'fem')
+        fem = fem.fem;
+    end
+    fem_file = '<embedded FEM>';
+elseif isempty(config.fem_file)
     [fem, fem_file, ~] = loadFemDefinition(project_root, true);
 elseif ~isfile(config.fem_file)
     warning('optimize_vHS_phase_lead_v2:MissingFemFile', ...
@@ -317,9 +330,13 @@ hs.ground_force_gain = -(hs.M*fem_num.influence(floor_dofs(:)));
 [hs.C, hs.damping] = femDampingMatrix(fem_ref, fem);
 hs.damping_ratio = hs.damping.target_ratio;
 
-earthquakes = load(fullfile(project_root, 'input_signals', ...
-    'earthquakes.mat'), hs.earthquake_type);
-earthquake = earthquakes.(hs.earthquake_type);
+if isempty(config.earthquake_data)
+    earthquakes = load(fullfile(project_root, 'input_signals', ...
+        'earthquakes.mat'), hs.earthquake_type);
+    earthquake = earthquakes.(hs.earthquake_type);
+else
+    earthquake = config.earthquake_data;
+end
 hs.time = earthquake(:, 1) - earthquake(1, 1);
 hs.ag = hs.intensity_factor*earthquake(:, 2);
 if record_fraction < 1
@@ -390,18 +407,25 @@ end
 
 function [PID_H_dc_dm, pid_values, model_file, actuator_open_loop] = ...
         loadPidHdcDmModelV2(project_root, model_file, ...
-        pid_gain_override, sample_time)
-if isempty(model_file)
+        pid_gain_override, sample_time, model)
+if nargin < 5
+    model = [];
+end
+if ~isempty(model)
+    model_file = '<embedded actuator model>';
+elseif isempty(model_file)
     [~, model_file, ~] = load_saved_result_file(project_root, 'exp_tf');
 end
-if ~any(strcmp({whos('-file', model_file).name}, 'H_dc_dm'))
+if isempty(model) && ~any(strcmp({whos('-file', model_file).name}, 'H_dc_dm'))
     error('optimize_vHS_phase_lead_v2:MissingHdcDmModel', ...
         ['No saved model file containing H_dc_dm was found. Run ' ...
         'control_and_HS\\b_system_id\\sys_id.m first, or choose a ' ...
         'different saved_results\\exp_tf file.'])
 end
 
-model = load(model_file, 'H_dc_dm', 'pid_values');
+if isempty(model)
+    model = load(model_file, 'H_dc_dm', 'pid_values');
+end
 H_dc_dm = model.H_dc_dm;
 if isfield(model, 'pid_values')
     pid_values = model.pid_values;

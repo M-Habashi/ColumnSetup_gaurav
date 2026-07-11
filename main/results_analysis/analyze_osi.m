@@ -58,7 +58,17 @@ if isfield(result, 'hs') && isfield(result.hs, 'target_outer_ncf')
     auth_override.target = result.hs.target_outer_ncf;
 end
 if nargin < 2 || isempty(exp_tf_file)
-    [model_data, exp_tf_file] = load_saved_result_file(project_folder, 'exp_tf');
+    if isfield(result, 'dependencies') ...
+            && isfield(result.dependencies, 'exp_tf')
+        model_data = result.dependencies.exp_tf;
+        exp_tf_file = '<embedded actuator model>';
+    else
+        [model_data, exp_tf_file] = load_saved_result_file( ...
+            project_folder, 'exp_tf');
+    end
+elseif isstruct(exp_tf_file)
+    model_data = exp_tf_file;
+    exp_tf_file = '<embedded actuator model>';
 else
     model_data = load(exp_tf_file);
 end
