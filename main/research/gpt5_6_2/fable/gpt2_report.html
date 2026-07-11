@@ -223,12 +223,56 @@ just spent 18 seconds measuring.</div>
 </div>
 <div class="note" id="gdbNote"></div>
 
-<h2>6 · Limitations &amp; deployment notes</h2>
+<h2>6 · Standard benchmark head-to-head: gpt5_6_2 vs the updated gpt5_6_4</h2>
+<div class="sub">
+  Both methods run unmodified through <code>research/osi_benchmark/run_osi_benchmark</code>
+  (closed loop, method defaults, <code>osi_calibration_test.mat</code>). The updated gpt5_6_4
+  (commit <code>78472c69</code>) adopted the rho memory-hold, the memory-aware idle limb, and a
+  ratio-based change detector — and now <b>passes all seven gates</b>. Same physics, two tunings
+  of the same idea: gpt5_6_4 trades margin depth for detection speed and recovery; gpt5_6_2
+  holds the target tighter and moves less.
+</div>
+<div class="chips" id="benchChips"></div>
+<div class="panel">
+  <h3>Scorecard (facts in parentheses)</h3>
+  <table id="benchTable"></table>
+</div>
+<div class="panel">
+  <h3>Closed-loop live scenario — both methods in charge</h3>
+  <div class="legend">
+    <span><span class="sw" style="border-color:var(--new)"></span>gpt5_6_2</span>
+    <span><span class="sw" style="border-color:var(--fable)"></span>gpt5_6_4 (updated)</span>
+    <span><span class="sw" style="border-color:var(--muted)"></span>diag gain ÷4</span>
+    <span><span class="sw dash" style="border-color:var(--crit)"></span>instability boundary a = g_crit/g</span>
+  </div>
+  <h3 style="margin-top:6px">Authority a(t)</h3>
+  <div id="benchAuth"></div>
+  <h3>True margin b<sub>true</sub>(g·a)</h3>
+  <div id="benchTrue"></div>
+  <h3>Actuator command |dc| rms</h3>
+  <div id="benchDc"></div>
+  <div class="hint">Drag to pan · wheel to zoom · double-click to reset. Both loops stay out of the
+  unstable region; the differences are HOW: gpt5_6_4 sheds deeper and earlier (b_true min 0.252 vs
+  0.211, S2 48.2 vs 34.1) but wanders more (travel 0.53 vs 0.19, S4 76.5 vs 91.6).</div>
+</div>
+<div class="panel">
+  <h3>GDBqFpKb — authority trajectories</h3>
+  <div class="legend">
+    <span><span class="sw" style="border-color:var(--new)"></span>gpt5_6_2</span>
+    <span><span class="sw" style="border-color:var(--fable)"></span>gpt5_6_4 (updated)</span>
+    <span><span class="sw" style="border-color:var(--muted)"></span>diag gain ÷4</span>
+  </div>
+  <div id="benchGdbA"></div>
+</div>
+<div class="note" id="benchNote"></div>
+
+<h2>7 · Limitations &amp; deployment notes</h2>
 <div class="cards" id="limitCards"></div>
 
 </div>
 <div class="tt" id="tt"></div>
 <script src="report_data.js"></script>
+<script src="bench_data.js"></script>
 <script>
 'use strict';
 const D = window.GPT2_DATA;
@@ -546,7 +590,79 @@ the gain-restore edge is <i>provably invisible</i> in this tap at deep shed (the
 ratio κ stays ≈ 1 across 75.5 s), so the memory can only leak out at τ = 150 s plus the careful climb.
 Same information, opposite priorities: GDB rewards blind speed; the live test punishes it with hardware.`;
 
-/* ---------- section 6: limitations ---------- */
+/* ---------- section 6: benchmark head-to-head ---------- */
+(function(){
+  const BD = window.BENCH_DATA;
+  if(!BD){ return; }
+  const m2 = BD.m2, m4 = BD.m4;
+  $('benchChips').innerHTML =
+    chipHtml(m2.composite.toFixed(1), 'gpt5_6_2 composite', m2.all_pass?'all 7 gates PASS':'GATED OUT', m2.all_pass?'ok':'bad') +
+    chipHtml(m4.composite.toFixed(1), 'gpt5_6_4 composite', m4.all_pass?'all 7 gates PASS':'GATED OUT', m4.all_pass?'ok':'bad') +
+    chipHtml(`${m2.emu.unstable_s.toFixed(0)}s / ${m4.emu.unstable_s.toFixed(0)}s`, 'unstable time (both)', 'closed-loop live scenario', 'ok') +
+    chipHtml(`${m2.emu.tail_max_a.toFixed(2)} / ${m4.emu.tail_max_a.toFixed(2)}`, 'end-hold max a', `limit ${(m2.emu.g_crit/3).toFixed(2)} (g_crit/3)`, 'ok');
+  const rows = [
+    ['S1 fabby (suite tracking)', m2.scores.S1_fabby, m4.scores.S1_fabby, ''],
+    ['S2 closed-loop tracking', m2.scores.S2_emu_tracking, m4.scores.S2_emu_tracking,
+      `b_true min ${0.211} vs ${0.252}`],
+    ['S3 edge detection', m2.scores.S3_detection, m4.scores.S3_detection,
+      '3/5 vs 4/5 gain rises within 2 s'],
+    ['S4 smoothness', m2.scores.S4_smoothness, m4.scores.S4_smoothness,
+      `travel ${m2.emu.travel.toFixed(2)} vs ${m4.emu.travel.toFixed(2)} (live run: ${m2.emu.travel_live.toFixed(2)})`],
+    ['S5 GDB recovery', m2.scores.S5_gdb_recovery, m4.scores.S5_gdb_recovery,
+      `${m2.gdb.recovery_s.toFixed(1)} s vs ${m4.gdb.recovery_s.toFixed(1)} s after restore`],
+    ['COMPOSITE', m2.composite, m4.composite, 'mean of S1–S5, gates all PASS for both']
+  ];
+  let h = `<tr><th>score</th><th class="num">gpt5_6_2</th><th class="num">gpt5_6_4</th><th>fact</th></tr>`;
+  for(const r of rows){
+    const b2 = r[1] >= r[2], last = r[0]==='COMPOSITE';
+    h += `<tr${last?' style="font-weight:650"':''}><td>${r[0]}</td>` +
+      `<td class="num" style="color:${b2?'var(--good)':'var(--ink)'}">${r[1].toFixed(1)}</td>` +
+      `<td class="num" style="color:${!b2?'var(--good)':'var(--ink)'}">${r[2].toFixed(1)}</td>` +
+      `<td class="small">${r[3]}</td></tr>`;
+  }
+  $('benchTable').innerHTML = h;
+  const bound = m2.emu.gain.map(g => Math.min(1.05, m2.emu.g_crit/g));
+  chart('benchAuth', {h:180, x0:0, x1:77, ymin:0, ymax:1.05, link:'bench',
+    series:[
+      {name:'boundary', t:m2.emu.t, v:bound, color:'--crit', w:1.4, dash:'5 4'},
+      {name:'gain÷4', t:m2.emu.t, v:m2.emu.gain.map(g=>g/4), color:'--muted', w:1.2, scale:4},
+      {name:'a 5_6_4', t:m4.emu.t, v:m4.emu.a, color:'--fable', w:2},
+      {name:'a 5_6_2', t:m2.emu.t, v:m2.emu.a, color:'--new', w:2.2}
+    ]});
+  chart('benchTrue', {h:160, x0:0, x1:77, ymin:0, ymax:0.72, link:'bench',
+    hlines:[{v:m2.emu.target, color:'var(--muted)', label:'target 0.35'}],
+    series:[
+      {name:'b_true 5_6_4', t:m4.emu.t, v:m4.emu.b_true, color:'--fable', w:2},
+      {name:'b_true 5_6_2', t:m2.emu.t, v:m2.emu.b_true, color:'--new', w:2.2}
+    ]});
+  chart('benchDc', {h:130, x0:0, x1:77, ymin:0, ymax:0.8, link:'bench',
+    series:[
+      {name:'|dc| 5_6_4', t:m4.emu.t, v:m4.emu.dc, color:'--fable', w:2},
+      {name:'|dc| 5_6_2', t:m2.emu.t, v:m2.emu.dc, color:'--new', w:2.2}
+    ]});
+  chart('benchGdbA', {h:160, x0:40, x1:m2.gdb.t[m2.gdb.t.length-1], ymin:0, ymax:1.05,
+    series:[
+      {name:'gain÷4', t:m2.gdb.t, v:m2.gdb.gain.map(g=>g/4), color:'--muted', w:1.2, scale:4},
+      {name:'a 5_6_4', t:m4.gdb.t, v:m4.gdb.a, color:'--fable', w:2},
+      {name:'a 5_6_2', t:m2.gdb.t, v:m2.gdb.a, color:'--new', w:2.2}
+    ]});
+  $('benchNote').innerHTML = `<b>Reading the head-to-head.</b> The updated gpt5_6_4 is a genuine fix —
+  it adopted the memory-hold (rho update gated by activity), the memory-aware idle limb, and a
+  ratio-based drive detector, and the closed loop now ends the test held at a ≈ 0.31 against the 3×
+  gain instead of climbing to 1.0. Its composite (${m4.composite.toFixed(1)}) edges out gpt5_6_2
+  (${m2.composite.toFixed(1)}) by detecting one more gain rise, tracking the fight window closer to
+  target, and recovering GDB 1.6 s sooner. gpt5_6_2 still wins where the priorities are strictest:
+  suite tracking (S1 ${m2.scores.S1_fabby.toFixed(1)} vs ${m4.scores.S1_fabby.toFixed(1)}, and
+  ${m4.fabby_cases.filter(x=>x<92).length} of gpt5_6_4's suite cases now sit below 92 vs
+  ${m2.fabby_cases.filter(x=>x<92).length} for gpt5_6_2) and authority calm (S4 91.6 vs 76.5 —
+  gpt5_6_4's drive-ratio multiplier is twitchier, 2.8× the travel during the fight). The remaining
+  structural difference: gpt5_6_4's memory has no leak (rho holds forever at idle until re-driven)
+  and no event-verified release — recovery from a cleared fault relies on re-excitation; gpt5_6_2
+  carries the τ=150 s leak, the release trips, and the grace window. Both are defensible; they
+  should converge in one merged tuning.`;
+})();
+
+/* ---------- section 7: limitations ---------- */
 $('limitCards').innerHTML = [
  ['Validate on osi_calibration_test.mat only','The corrected export of the 20260710_1845 run. Other exports of that run log dc AFTER the diagnostic gain — the old dc equals g × the correct one, so any method reading it "detects" the gain by reading the test knob. This OSI consumes only u_osi/dm (bit-identical in both files), so its results are unaffected; the properly logged dc also confirms the injection point (the plant receives g·dc).'],
  ['Deep-shed identifiability','At a ≈ 0.15–0.35 the margin curve saturates: healthy and damaged plants are observationally near-identical from the tap. Recovery from deep shed therefore rides on event evidence (trips/releases), the slow leak, or exogenous ground truth — physics, not a tuning choice.'],
