@@ -1,0 +1,39 @@
+GPT-5.6.2 STUDY
+Generated: 2026-07-11 16:10:24 *
+
+healthy_broadband            PASS
+[ok] median error 0.008 <= 0.06 | [ok] false-low 0.0% <= 2% | [ok] mean a 0.998 >= 0.92 | [ok] min a 0.93 >= 0.70 | [ok] no fast trips | [ok] true margin >= target-0.02
+
+intensity_step               PASS
+[ok] median error 0.005 <= 0.06 | [ok] false-low 0.0% <= 2% | [ok] mean a 1.000 >= 0.92 | [ok] min a 0.99 >= 0.70 | [ok] no fast trips | [ok] true margin >= target-0.02
+
+damage_step_broadband        PASS
+[ok] authority response 0.375 s <= 0.75 s | [ok] defended violations 0.0% | [ok] min a 0.39 < 0.90 | [ok] no pre-damage trips
+
+damage_step_lowband          PASS
+[ok] authority response 1.375 s <= 2.00 s | [ok] defended violations 0.0% | [ok] min a 0.33 < 0.90 | [ok] no pre-damage trips
+
+silent                       PASS
+[ok] authority never sheds | [ok] no alarms
+
+gradual_softening            PASS
+[ok] ramp violations 0.0% <= 2% | [ok] final a 0.45 <= 0.80 | [ok] settled error 0.024 <= 0.08 | [ok] no pre-ramp trips
+
+damage_then_repair           PASS
+[ok] damage response 0.500 s <= 0.5 s | [ok] damaged violations 0.0% | [ok] a(repair+60) 1.00 >= 0.65 | [ok] a(repair+105) 1.00 >= 0.75 | [ok] authority recovers | [ok] healthy recovery margin
+
+starts_damaged_improves      PASS
+[ok] damaged-start violations 0.0% | [ok] target error 0.006 <= 0.06 | [ok] authority below max while damaged | [ok] full authority 1.62 s <= 30 s
+
+regime_change_healthy        PASS
+[ok] false-low 0.0% <= 2% | [ok] no trips outside transition | [ok] late min a 0.95 >= 0.85
+
+transient_pulse              PASS
+[ok] trips confined to pulse | [ok] low duration 0.9 s <= 10 s | [ok] a(pulse+40) 1.00 >= 0.22 | [ok] final a 1.00 >= 0.5 | [ok] healthy post-pulse margin
+
+Suite: 10/10 PASS | fabby 94.02 (>92 PASS; old 94.77)
+GDB: idle PASS | quake 0.00s PASS | edges [3.88 0.25  NaN]s | recovery 11.62s tail 0.958 FAIL | trips 0
+Record edge 1 -> 1.5 @34.01s: new 2.11s, old NaNs
+Record edge 1.5 -> 2 @37.70s: new 2.05s, old 5.30s
+Record edge 2 -> 3 @44.96s: new NaNs, old 1.17s
+Emulation unstable time: old 13.38s -> new 0.00s | dc max old 8.71 -> new 0.51

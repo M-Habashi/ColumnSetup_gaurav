@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>GPT-5.6.4 OSI and authority study</title>
+  <style>
+    :root {
+      --page: #09090b;
+      --surface: #111113;
+      --surface-2: #18181b;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.24);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --plot: #ffffff;
+      --plot-ink: #171717;
+      --plot-muted: #646464;
+      --plot-grid: #e6e6e2;
+      --desired: #111111;
+      --command: #ac6420;
+      --measured: #007ca8;
+      --force: #74058a;
+      --original: #901500;
+      --proposed: #39bf5e;
+      --good: #54cf70;
+      --bad: #ff7369;
+      --pending: #d6a64b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--page); }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 64px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 920px;
+      margin-bottom: 10px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      font-weight: 720;
+    }
+
+    h2 {
+      margin: 42px 0 12px;
+      font-size: 23px;
+      line-height: 1.25;
+      letter-spacing: -0.015em;
+    }
+
+    h3 { font-size: 16px; }
+
+    p { color: #d4d4d8; }
+
+    code, .mono {
+      font-family: "Cascadia Code", Consolas, ui-monospace, monospace;
+      font-size: 0.92em;
+    }
+
+    .site-header {
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .intro {
+      max-width: 88ch;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .study-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 24px;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .study-status div { display: flex; gap: 7px; }
+    .study-status dt { margin: 0; }
+    .study-status dd { margin: 0; color: var(--text); font-weight: 650; }
+
+    .data-message {
+      display: none;
+      margin-top: 18px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 115, 105, 0.55);
+      border-radius: 4px;
+      color: #ffd4d0;
+      background: #1c1111;
+    }
+
+    .data-message.is-visible { display: block; }
+
+    .section-copy {
+      max-width: 90ch;
+      margin-bottom: 18px;
+      color: var(--muted);
+    }
+
+    .report-shell {
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    label.control-label {
+      display: grid;
+      gap: 5px;
+      min-width: min(460px, 100%);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    select, button {
+      min-height: 38px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: #0b0b0d;
+      color: var(--text);
+      font: inherit;
+    }
+
+    select { width: min(520px, 100%); padding: 7px 34px 7px 10px; }
+
+    button {
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+
+    button:hover, select:hover { border-color: rgba(255, 255, 255, 0.42); }
+
+    button:focus-visible, select:focus-visible, svg:focus-visible {
+      outline: 2px solid #8a8a8f;
+      outline-offset: 2px;
+    }
+
+    .interaction-note {
+      flex: 1 1 340px;
+      margin: 0 0 2px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .case-context {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+
+    .case-context h3 { margin: 0 0 4px; }
+    .case-context p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .case-facts {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: end;
+      gap: 8px 20px;
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .case-facts div { display: flex; gap: 6px; }
+    .case-facts dt { color: var(--muted); }
+    .case-facts dd { margin: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+
+    .plot-panel {
+      background: var(--plot);
+      color: var(--plot-ink);
+      border-bottom: 1px solid #cfcfca;
+    }
+
+    .plot-panel:last-child { border-bottom: 0; }
+
+    .plot-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 52px;
+      padding: 9px 14px;
+      border-bottom: 1px solid #deded9;
+    }
+
+    .plot-heading h3 { margin: 0; font-size: 14px; }
+    .plot-heading p { margin: 1px 0 0; color: var(--plot-muted); font-size: 11px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: end;
+      gap: 4px 13px;
+    }
+
+    .legend button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      padding: 3px 2px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #343434;
+      font-size: 11px;
+    }
+
+    .legend button:hover { color: #000; }
+    .legend button[aria-pressed="false"] { opacity: 0.38; text-decoration: line-through; }
+
+    .legend-swatch {
+      width: 20px;
+      height: 0;
+      border-top: 3px solid var(--series-color);
+    }
+
+    .legend-swatch.is-dashed { border-top-style: dashed; }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .chart-wrap svg {
+      display: block;
+      width: 100%;
+      height: 278px;
+      background: var(--plot);
+      touch-action: none;
+      user-select: none;
+      cursor: crosshair;
+    }
+
+    .chart-wrap svg.is-dragging { cursor: grabbing; }
+
+    .tooltip {
+      position: absolute;
+      z-index: 4;
+      display: none;
+      min-width: 190px;
+      max-width: 280px;
+      padding: 8px 9px;
+      border: 1px solid #b7b7b1;
+      border-radius: 3px;
+      background: #fffffc;
+      color: #242424;
+      font: 11px/1.4 "Cascadia Code", Consolas, monospace;
+      pointer-events: none;
+    }
+
+    .tooltip.is-visible { display: block; }
+    .tooltip-time { margin-bottom: 4px; color: #111; font-weight: 700; }
+    .tooltip-row { display: flex; justify-content: space-between; gap: 14px; }
+    .tooltip-label { color: #555; }
+    .tooltip-value { color: #111; font-variant-numeric: tabular-nums; }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    td:nth-child(n + 2), th:nth-child(n + 2) { text-align: right; }
+    tr:last-child td { border-bottom: 0; }
+
+    .pass { color: var(--good); font-weight: 700; }
+    .fail { color: var(--bad); font-weight: 700; }
+    .pending { color: var(--pending); font-weight: 700; }
+
+    .notes-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .notes-layout article { padding: 16px 18px; }
+    .notes-layout article + article { border-left: 1px solid var(--border); }
+    .notes-layout h3 { margin-bottom: 9px; }
+    .notes-layout ul { margin: 0; padding-left: 20px; }
+    .notes-layout li { margin: 6px 0; color: #d4d4d8; }
+
+    footer {
+      margin-top: 42px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+      main { width: min(100% - 20px, 1440px); padding-top: 24px; }
+      .interaction-note { flex-basis: 100%; text-align: left; }
+      .case-context { display: block; }
+      .case-facts { justify-content: start; margin-top: 10px; }
+      .plot-heading { display: block; }
+      .legend { justify-content: start; margin-top: 7px; }
+      .notes-layout { grid-template-columns: 1fr; }
+      .notes-layout article + article { border-left: 0; border-top: 1px solid var(--border); }
+    }
+
+    @media (max-width: 560px) {
+      main { width: calc(100% - 12px); }
+      .controls { align-items: stretch; }
+      label.control-label { min-width: 100%; }
+      select { width: 100%; }
+      .chart-wrap svg { height: 242px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="site-header">
+    <h1>GPT-5.6.4 OSI and authority study</h1>
+    <p class="intro">Original and proposed estimators are compared on the same ten FABLE cases and two experimental tests, with tracking, NCF margin, and controller authority kept on one synchronized time axis.</p>
+    <dl class="study-status" aria-label="Study status">
+      <div><dt>Data</dt><dd id="dataStatus">Loading</dd></div>
+      <div><dt>Cases</dt><dd id="caseCount">—</dd></div>
+      <div><dt>Canonical suite</dt><dd id="canonicalStatus">—</dd></div>
+      <div><dt>Fabby score</dt><dd id="scoreStatus">—</dd></div>
+      <div><dt>Overall</dt><dd id="overallStatus">—</dd></div>
+    </dl>
+    <div class="data-message" id="dataMessage" role="status"></div>
+  </header>
+
+  <section aria-labelledby="comparisonTitle">
+    <h2 id="comparisonTitle">Twelve-case comparison</h2>
+    <p class="section-copy">Select a case, then hover any plot for synchronized values. Use the mouse wheel to zoom in time, drag to pan, double-click to reset, and click a legend entry to hide or restore that trace.</p>
+
+    <div class="report-shell">
+      <div class="controls">
+        <label class="control-label" for="caseSelect">
+          Case
+          <select id="caseSelect" aria-label="Choose one of the twelve study cases"></select>
+        </label>
+        <button id="resetView" type="button">Reset time view</button>
+        <p class="interaction-note" id="viewStatus">Shared time view</p>
+      </div>
+
+      <div class="case-context">
+        <div>
+          <h3 id="caseTitle">Waiting for report data</h3>
+          <p id="caseSource">Run the study to generate <code>report_data.js</code>.</p>
+        </div>
+        <dl class="case-facts" id="caseFacts"></dl>
+      </div>
+
+      <div id="plotStack">
+        <article class="plot-panel" aria-labelledby="trackingHeading">
+          <div class="plot-heading">
+            <div>
+              <h3 id="trackingHeading">1 · Displacement and tracking</h3>
+              <p>Desired, command, measured, and comparable original/proposed responses</p>
+            </div>
+            <div class="legend" id="trackingLegend" aria-label="Tracking trace visibility"></div>
+          </div>
+          <div class="chart-wrap" id="trackingChart">
+            <svg tabindex="0" role="img" aria-label="Displacement and tracking comparison"></svg>
+            <div class="tooltip" role="status"></div>
+          </div>
+        </article>
+
+        <article class="plot-panel" aria-labelledby="osiHeading">
+          <div class="plot-heading">
+            <div>
+              <h3 id="osiHeading">2 · Normalized coprime-factor margin</h3>
+              <p>Original and proposed OSI with reference and proposed estimator constituents</p>
+            </div>
+            <div class="legend" id="osiLegend" aria-label="NCF margin trace visibility"></div>
+          </div>
+          <div class="chart-wrap" id="osiChart">
+            <svg tabindex="0" role="img" aria-label="Original and proposed NCF margin comparison"></svg>
+            <div class="tooltip" role="status"></div>
+          </div>
+        </article>
+
+        <article class="plot-panel" aria-labelledby="authorityHeading">
+          <div class="plot-heading">
+            <div>
+              <h3 id="authorityHeading">3 · Authority and diagnostic gain</h3>
+              <p>Authority uses the left scale; diagnostic gain uses the right scale</p>
+            </div>
+            <div class="legend" id="authorityLegend" aria-label="Authority trace visibility"></div>
+          </div>
+          <div class="chart-wrap" id="authorityChart">
+            <svg tabindex="0" role="img" aria-label="Original and proposed authority with diagnostic gain"></svg>
+            <div class="tooltip" role="status"></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="acceptanceTitle">
+    <h2 id="acceptanceTitle">Acceptance</h2>
+    <p class="section-copy">The table is populated directly from the generated study summary. Experimental edge latencies are reported as context; the pass flag also includes the associated stability checks.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Requirement</th><th>Measured</th><th>Acceptance</th><th>Status</th></tr>
+        </thead>
+        <tbody id="acceptanceBody">
+          <tr><td>Report data</td><td>Not loaded</td><td>Generated study</td><td class="pending">PENDING</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="findingsTitle">
+    <h2 id="findingsTitle">Findings and method</h2>
+    <div class="notes-layout">
+      <article>
+        <h3>Findings</h3>
+        <ul id="findingsList">
+          <li>Quantified findings will appear when <code>report_data.js</code> is loaded.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>How to read the comparison</h3>
+        <ul>
+          <li>Original and proposed traces use the same case input and time base.</li>
+          <li>The coherent and residual curves expose the proposed OSI evidence without adding another display-time decision rule.</li>
+          <li>Diagnostic gain is context, not a substitute for measured stability evidence; its separate scale preserves authority detail.</li>
+          <li>Unavailable arrays are omitted rather than replaced with zeros.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <footer>Offline report for <code>research/gpt5_6_4/codex</code> · generated <span id="generatedAt">—</span></footer>
+</main>
+
+<script src="report_data.js"></script>
+<script src="report_ui.js"></script>
+</body>
+</html>

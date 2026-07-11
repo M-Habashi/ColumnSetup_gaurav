@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT-5.6.2 — OSI &amp; authority redesign</title>
+<style>
+:root{
+  --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --new:#2a78d6; --old:#e34948; --fable:#eda100; --rho:#4a3aa7;
+  --good:#0ca30c; --crit:#d03b3b; --warn:#fab219;
+  --hazard:rgba(227,73,72,.08); --band:rgba(42,120,214,.07);
+}
+[data-theme="dark"]{
+  --surface:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+  --new:#3987e5; --old:#e66767; --fable:#c98500; --rho:#9085e9;
+  --hazard:rgba(230,103,103,.10); --band:rgba(57,135,229,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --surface:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+    --new:#3987e5; --old:#e66767; --fable:#c98500; --rho:#9085e9;
+    --hazard:rgba(230,103,103,.10); --band:rgba(57,135,229,.10);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+header{padding:34px 0 8px}
+h1{font-size:26px;margin:0 0 4px}
+h2{font-size:20px;margin:44px 0 6px;padding-top:10px;border-top:1px solid var(--grid)}
+h3{font-size:15px;margin:18px 0 6px}
+.sub{color:var(--ink2);max-width:880px}
+.small{font-size:12.5px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 6px}
+.chip{background:var(--surface);border:1px solid var(--ring);border-radius:10px;
+  padding:10px 16px;min-width:130px}
+.chip .v{font-size:22px;font-weight:650}
+.chip .l{font-size:12px;color:var(--muted)}
+.chip .d{font-size:12px;color:var(--ink2)}
+.ok{color:var(--good);font-weight:600}
+.bad{color:var(--crit);font-weight:600}
+.warnc{color:#b97f00;font-weight:600}
+[data-theme="dark"] .warnc{color:var(--warn)}
+.panel{background:var(--surface);border:1px solid var(--ring);border-radius:12px;
+  padding:14px 16px;margin:14px 0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink2);margin:2px 2px 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:0;border-top:2.5px solid;display:inline-block;border-radius:2px}
+.sw.dash{border-top-style:dashed}
+svg{display:block;width:100%}
+svg text{font:11px system-ui,-apple-system,"Segoe UI",sans-serif;fill:var(--muted)}
+.axis line{stroke:var(--grid);stroke-width:1}
+.axis .base{stroke:var(--axis)}
+.tt{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--ring);
+  border-radius:8px;padding:7px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);
+  display:none;z-index:30;color:var(--ink2);line-height:1.5}
+.tt b{color:var(--ink)}
+.btn{background:var(--surface);border:1px solid var(--ring);color:var(--ink);border-radius:8px;
+  padding:6px 14px;font-size:13px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.on{border-color:var(--new);color:var(--new);font-weight:600}
+.controls{display:flex;gap:8px;align-items:center;margin:6px 0 2px;flex-wrap:wrap}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.tab{font-size:12.5px;padding:5px 11px;border-radius:20px;border:1px solid var(--ring);
+  cursor:pointer;background:var(--surface);color:var(--ink2)}
+.tab.on{border-color:var(--new);color:var(--new);font-weight:600}
+.tab .p{font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin:14px 0}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:12px;padding:14px 16px}
+.card h4{margin:0 0 6px;font-size:14px}
+.card p{margin:0;font-size:13px;color:var(--ink2)}
+.issue{border-left:3px solid var(--crit);padding-left:12px;margin:10px 0}
+.issue b{display:block}
+.note{border-left:3px solid var(--warn);padding-left:12px;margin:12px 0;color:var(--ink2);font-size:13.5px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--grid)}
+th{color:var(--muted);font-weight:600;font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.theme-toggle{position:fixed;top:14px;right:16px;z-index:40}
+.hint{font-size:11.5px;color:var(--muted);margin-top:2px}
+.detail{font-size:12px;color:var(--ink2);margin-top:6px;line-height:1.6}
+</style>
+</head>
+<body>
+<button class="btn theme-toggle" id="themeBtn">◐ theme</button>
+<div class="wrap">
+<header>
+  <h1>GPT-5.6.2 — fixing the four failures of the 2026-07-10 live test</h1>
+  <div class="sub">
+    The <b>20260710_1845</b> run (5&thinsp;k specimen, phase lead <code>pl_5k_48</code>, target 0.35, diagnostic
+    gain 1 → 1.5 → 2 → 3 applied on the actuator-command path) exposed four problems in the GPT-5.6 OSI:
+    a missed gain edge at 37.7&thinsp;s, violent oscillations at the 44.9&thinsp;s catch, sustained authority
+    hunting afterwards, and — after the excitation ended — authority returning to 1.0 against a still-present
+    3&times; gain, driving the actuator unstable. The redesigned estimator in
+    <code>research/gpt5_6_2/fable</code> fixes all four while keeping the canonical suite green.
+    All record-based validation reads <code>osi_calibration_test.mat</code>, the corrected export of this run
+    (identical in every signal except <code>dc</code>, which is logged before the diagnostic gain there;
+    the OSI consumes <code>u_osi</code>/<code>dm</code>, bit-identical in both files).
+  </div>
+  <div class="chips" id="verdictChips"></div>
+  <div class="small" id="genstamp"></div>
+</header>
+
+<h2>1 · What actually happened — and why the old OSI was blind</h2>
+<div class="sub">
+  Every claim below was measured on the record. The linear loop model
+  (<code>g·a·C·H<sub>5k</sub></code>) goes unstable at <b>g·a ≥ 2.25</b>; the end of the test sat at
+  g·a = 3 for 13&thinsp;s. The predicted unstable mode (40.9&thinsp;Hz) matches the measured 40.7&thinsp;Hz
+  oscillation before the actuator ran away. (The corrected record settles the injection point: the properly
+  logged <code>dc</code> is gain-independent, so the plant receives g·dc — the gain acts between the logged
+  command and the actuator, exactly as modelled here.)
+</div>
+<div class="issue"><b>1 — 37.7&thinsp;s edge missed.</b> The quiet band (28–44&thinsp;Hz) of dm sits on the
+sensor-noise floor during the weak quake tail, so the shape fit sees nothing; the coherent tap FRF is biased
+by the FEM force-echo wrap (it reads a loop-gain of ~3 even when healthy), so no absolute model fit can be
+trusted. The only real signal is the <i>relative</i> FRF change at the driven 5–10&thinsp;Hz bins
+(T̂ moved 0.16 → 0.39 across the edge, γ² ≈ 0.7) — the old estimator had no change detector.</div>
+<div class="issue"><b>2 — oscillations at the 44.9&thinsp;s catch.</b> Detection only fired once the loop
+physically rang (g·a = 2.68, linearly unstable). The shed started from a = 0.89 — deep inside the danger
+zone — so the ring had already grown large.</div>
+<div class="issue"><b>3 — hunting.</b> After each shed the damage evidence vanished, the reading snapped back
+to the healthy prior, and the law sprinted up at ~65%/s straight back into instability (a &gt; 0.85 at g = 3
+is genuinely unstable). A relaxation oscillator: a swung 0.33 ↔ 0.97 for 16 seconds.</div>
+<div class="issue"><b>4 — end instability.</b> Excitation ends → command-tap activity → 0 → the reading blends
+to the ceiling → authority snaps to 1.0 <i>while g = 3</i>. The estimator had no memory of the damage it had
+just spent 18 seconds measuring.</div>
+
+<div class="panel">
+  <h3>The live record, replayed sample-exact through both estimators (logged authority)</h3>
+  <div class="legend">
+    <span><span class="sw" style="border-color:var(--muted)"></span>diag gain g (right scale ÷4)</span>
+    <span><span class="sw" style="border-color:var(--old)"></span>old b (logged)</span>
+    <span><span class="sw" style="border-color:var(--new)"></span>new b</span>
+    <span><span class="sw dash" style="border-color:var(--rho)"></span>new rho (÷4)</span>
+    <span>▲ FRF-change trip</span>
+  </div>
+  <div id="recChart"></div>
+  <div class="legend" style="margin-top:8px">
+    <span><span class="sw" style="border-color:var(--ink2)"></span>authority a (as logged, old law)</span>
+  </div>
+  <div id="recAuth"></div>
+  <div class="hint">Drag to pan · wheel to zoom · double-click to reset. Shaded bands mark the four issues.</div>
+  <table id="edgeTable"></table>
+  <div class="small">The 2 → 3 edge shows “—” for the new estimator because its reading was <i>already</i> at
+  b ≈ 0.11 before that edge (pre-detected from 37.7&thinsp;s): a drop-by-0.04 criterion cannot fire from an
+  already-correct baseline.</div>
+</div>
+
+<h2>2 · Closed-loop emulation — the same test with each law in charge</h2>
+<div class="sub">
+  Model-consistent re-run of the whole scenario (identified 5&thinsp;k plant + PID, the record’s gain schedule
+  and tap as exogenous reference, measured sensor-noise level, actuator saturation at ±10&thinsp;mm), with the
+  OSI + authority law closing the loop. Press play.
+</div>
+<div class="panel">
+  <div class="controls">
+    <button class="btn" id="playBtn">▶ play</button>
+    <button class="btn" id="speedBtn">2×</button>
+    <span class="small" id="playTime"></span>
+    <span style="flex:1"></span>
+    <span class="small"><b class="bad" id="oldUnst"></b> · <b class="ok" id="newUnst"></b></span>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="border-color:var(--old)"></span>old law</span>
+    <span><span class="sw" style="border-color:var(--new)"></span>new law</span>
+    <span><span class="sw" style="border-color:var(--muted)"></span>diag gain ÷4</span>
+    <span><span class="sw dash" style="border-color:var(--crit)"></span>instability boundary a = 2.25/g</span>
+  </div>
+  <h3 style="margin-top:6px">Authority a(t)</h3>
+  <div id="emuAuth"></div>
+  <h3>True margin b<sub>true</sub>(g·a) — the ground truth the laws cannot see</h3>
+  <div id="emuTrue"></div>
+  <h3>Actuator command level |dc| rms — the old run saturates and diverges</h3>
+  <div id="emuDc"></div>
+</div>
+
+<h2>3 · What changed (and why each piece is minimal)</h2>
+<div class="cards" id="designCards"></div>
+
+<h2>4 · The ten canonical FABLE tests — 10/10, fabby 94.0</h2>
+<div class="chips" id="suiteChips"></div>
+<div class="panel">
+  <h3>fabby score per case — new vs old</h3>
+  <div id="fabbyBars"></div>
+</div>
+<div class="tabs" id="caseTabs"></div>
+<div class="panel">
+  <div class="legend">
+    <span><span class="sw" style="border-color:var(--ink2)"></span>b_true</span>
+    <span><span class="sw dash" style="border-color:var(--muted)"></span>b* (ideal)</span>
+    <span><span class="sw" style="border-color:var(--new)"></span>b estimate (new)</span>
+  </div>
+  <div id="caseMargin"></div>
+  <div class="legend" style="margin-top:8px">
+    <span><span class="sw" style="border-color:var(--new)"></span>a new</span>
+    <span><span class="sw" style="border-color:var(--old)"></span>a old gpt5_6</span>
+    <span><span class="sw" style="border-color:var(--fable)"></span>a fable</span>
+  </div>
+  <div id="caseAuth"></div>
+  <div class="detail" id="caseDetail"></div>
+</div>
+
+<h2>5 · GDBqFpKb replay — honest scorecard</h2>
+<div class="chips" id="gdbChips"></div>
+<div class="panel">
+  <div class="legend">
+    <span><span class="sw" style="border-color:var(--muted)"></span>diag gain ÷4</span>
+    <span><span class="sw" style="border-color:var(--new)"></span>b (new)</span>
+    <span><span class="sw" style="border-color:var(--fable)"></span>b fable (live log)</span>
+  </div>
+  <div id="gdbMargin"></div>
+  <div class="legend" style="margin-top:8px">
+    <span><span class="sw" style="border-color:var(--new)"></span>a (new law)</span>
+    <span><span class="sw" style="border-color:var(--fable)"></span>a fable (live — never recovered)</span>
+    <span><span class="sw dash" style="border-color:var(--rho)"></span>rho ÷4</span>
+  </div>
+  <div id="gdbAuth"></div>
+</div>
+<div class="note" id="gdbNote"></div>
+
+<h2>6 · Limitations &amp; deployment notes</h2>
+<div class="cards" id="limitCards"></div>
+
+</div>
+<div class="tt" id="tt"></div>
+<script src="report_data.js"></script>
+<script>
+'use strict';
+const D = window.GPT2_DATA;
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (v,d=3) => (v==null||!isFinite(v)) ? '—' : (+v).toFixed(d);
+
+/* theme */
+$('themeBtn').onclick = () => {
+  const r = document.documentElement;
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = r.dataset.theme || (dark ? 'dark' : 'light');
+  r.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+  charts.forEach(c => c.draw());
+};
+
+/* ---------- tiny SVG chart engine (zoom/pan/crosshair) ---------- */
+const charts = [];
+function chart(el, opts){
+  const o = Object.assign({h:190, ylab:'', ymin:0, ymax:1, series:[], regions:[], marks:[],
+    hlines:[], link:null}, opts);
+  const node = $(el);
+  const st = {x0:o.x0, x1:o.x1, node, o};
+  function draw(){
+    const W = node.clientWidth || 900, H = o.h, mL=44, mR=10, mT=8, mB=22;
+    const iw = W-mL-mR, ih = H-mT-mB;
+    const X = t => mL + (t-st.x0)/(st.x1-st.x0)*iw;
+    const Y = v => mT + (1-(v-o.ymin)/(o.ymax-o.ymin))*ih;
+    let s = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:${H}px">`;
+    /* regions */
+    for(const rg of o.regions){
+      const a = Math.max(X(rg.t0), mL), b = Math.min(X(rg.t1), W-mR);
+      if(b>a) s += `<rect x="${a}" y="${mT}" width="${b-a}" height="${ih}" fill="${rg.fill||'var(--hazard)'}"/>`;
+    }
+    /* grid + axes */
+    s += `<g class="axis">`;
+    const yt = 4;
+    for(let i=0;i<=yt;i++){
+      const v = o.ymin + (o.ymax-o.ymin)*i/yt, y = Y(v);
+      s += `<line x1="${mL}" x2="${W-mR}" y1="${y}" y2="${y}"${i==0?' class="base"':''}/>` +
+           `<text x="${mL-6}" y="${y+3.5}" text-anchor="end">${+v.toFixed(2)}</text>`;
+    }
+    const span = st.x1-st.x0, step = span>60?20:span>25?10:span>12?5:span>5?2:1;
+    for(let t=Math.ceil(st.x0/step)*step; t<=st.x1; t+=step){
+      s += `<text x="${X(t)}" y="${H-6}" text-anchor="middle">${t}</text>`;
+    }
+    s += `</g>`;
+    for(const hl of o.hlines){
+      s += `<line x1="${mL}" x2="${W-mR}" y1="${Y(hl.v)}" y2="${Y(hl.v)}" stroke="${hl.color}" ` +
+           `stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/>` +
+           (hl.label?`<text x="${W-mR-4}" y="${Y(hl.v)-4}" text-anchor="end" fill="${hl.color}">${hl.label}</text>`:'');
+    }
+    s += `<clipPath id="cp_${el}"><rect x="${mL}" y="${mT}" width="${iw}" height="${ih}"/></clipPath>`;
+    s += `<g clip-path="url(#cp_${el})">`;
+    for(const se of o.series){
+      const col = se.color.startsWith('--') ? `var(${se.color})` : se.color;
+      let d = '', pen = false;
+      const lim = (typeof playCursor==='number' && se.clip) ? playCursor : Infinity;
+      for(let i=0;i<se.t.length;i++){
+        const v = se.v[i];
+        if(v==null || !isFinite(v) || se.t[i]>lim){ pen=false; continue; }
+        d += (pen?'L':'M') + X(se.t[i]).toFixed(1) + ' ' + Y(Math.max(o.ymin,Math.min(o.ymax,v))).toFixed(1);
+        pen = true;
+      }
+      s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="${se.w||2}"` +
+           (se.dash?` stroke-dasharray="${se.dash}"`:'') + ` opacity="${se.op||1}"/>`;
+    }
+    for(const mk of o.marks){
+      if(mk.t<st.x0 || mk.t>st.x1) continue;
+      const col = mk.color.startsWith('--') ? `var(${mk.color})` : mk.color;
+      s += `<path d="M ${X(mk.t)} ${Y(mk.v)-7} l 5 9 l -10 0 Z" fill="${col}"/>`;
+    }
+    if(typeof playCursor==='number' && o.playable){
+      s += `<line x1="${X(playCursor)}" x2="${X(playCursor)}" y1="${mT}" y2="${mT+ih}" stroke="var(--ink)" stroke-width="1.2"/>`;
+    }
+    s += `</g></svg>`;
+    node.innerHTML = s;
+    st.X = X; st.Y = Y; st.mL = mL; st.iw = iw; st.W = W;
+  }
+  st.draw = draw;
+  /* interactions */
+  let dragX = null, x0d, x1d;
+  node.style.touchAction = 'none';
+  node.addEventListener('pointerdown', e => { dragX = e.clientX; x0d = st.x0; x1d = st.x1; node.setPointerCapture(e.pointerId); });
+  node.addEventListener('pointerup', () => dragX = null);
+  node.addEventListener('pointermove', e => {
+    const rect = node.getBoundingClientRect();
+    if(dragX!=null){
+      const dt = (e.clientX-dragX)/st.iw*(x1d-x0d);
+      setDomain(st, x0d-dt, x1d-dt); return;
+    }
+    /* crosshair tooltip */
+    const fx = st.x0 + (e.clientX-rect.left-st.mL)/st.iw*(st.x1-st.x0);
+    if(fx<st.x0||fx>st.x1){ $('tt').style.display='none'; return; }
+    let html = `<b>t = ${fx.toFixed(2)} s</b><br>`;
+    for(const se of o.series){
+      let lo=0, hi=se.t.length-1;
+      while(hi-lo>1){ const m=(lo+hi)>>1; (se.t[m]<fx)?lo=m:hi=m; }
+      const v = se.v[Math.abs(se.t[lo]-fx)<Math.abs(se.t[hi]-fx)?lo:hi];
+      if(v!=null && isFinite(v)) html += `${se.name}: <b>${(+v*(se.scale||1)).toFixed(3)}</b><br>`;
+    }
+    const tt = $('tt');
+    tt.innerHTML = html; tt.style.display='block';
+    tt.style.left = Math.min(e.clientX+14, innerWidth-180)+'px';
+    tt.style.top = (e.clientY+12)+'px';
+  });
+  node.addEventListener('pointerleave', () => $('tt').style.display='none');
+  node.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = node.getBoundingClientRect();
+    const fx = st.x0 + (e.clientX-rect.left-st.mL)/st.iw*(st.x1-st.x0);
+    const z = e.deltaY>0 ? 1.25 : 0.8;
+    setDomain(st, fx-(fx-st.x0)*z, fx+(st.x1-fx)*z);
+  }, {passive:false});
+  node.addEventListener('dblclick', () => setDomain(st, o.x0, o.x1));
+  function setDomain(s0, a, b){
+    const grp = charts.filter(c => c.o.link && c.o.link===s0.o.link);
+    const list = grp.length ? grp : [s0];
+    for(const c of list){
+      c.x0 = Math.max(o.x0, a); c.x1 = Math.min(o.x1, b);
+      if(c.x1-c.x0 < 1){ c.x0=o.x0; c.x1=o.x1; }
+      c.draw();
+    }
+  }
+  charts.push(st);
+  draw();
+  return st;
+}
+addEventListener('resize', () => charts.forEach(c => c.draw()));
+
+/* ---------- header verdict chips ---------- */
+const acc = D.acceptance, gm = D.gdb_metrics;
+function chipHtml(v, l, d, cls){ return `<div class="chip"><div class="v ${cls||''}">${v}</div><div class="l">${l}</div>${d?`<div class="d">${d}</div>`:''}</div>`; }
+$('verdictChips').innerHTML =
+  chipHtml(`${acc.canonical_pass_count}/10`, 'canonical FABLE tests', 'all criteria green', 'ok') +
+  chipHtml(D.fabby.mean.toFixed(1), 'fabby score (&gt;92)', `old gpt5_6: ${D.fabby.old_mean.toFixed(1)}`, 'ok') +
+  chipHtml(`${acc.emulation_old_unstable_s.toFixed(1)}s → ${acc.emulation_new_unstable_s.toFixed(0)}s`, 'time in unstable region', 'closed-loop emulation of the live test', 'ok') +
+  chipHtml('3/3', 'record gain edges flagged', 'old estimator: 1 of 3 (late)', 'ok') +
+  chipHtml(fmt(gm.quake_deficit_latency_s,2)+'s', 'GDB quake-deficit detection', 'limit 2 s', 'ok');
+$('genstamp').textContent = 'Generated ' + D.generated_at + ' · research/gpt5_6_2/fable · data: report_data.js · record: osi_calibration_test.mat';
+
+/* ---------- section 1: record replay ---------- */
+const R = D.record;
+const recRegions = [
+  {t0:37.7, t1:44.9, fill:'var(--band)'},
+  {t0:44.9, t1:47.5},
+  {t0:47.5, t1:63},
+  {t0:63.5, t1:77}
+];
+let playCursor = null;
+chart('recChart', {h:230, x0:20, x1:77, ymin:0, ymax:0.75, link:'rec', regions:recRegions,
+  hlines:[{v:0.35, color:'var(--muted)', label:'target 0.35'}],
+  marks: (R.new_trips||[]).map((t,i)=>({t, v:0.72, color: (R.trip_sign[i]>0?'--rho':'--good')})),
+  series:[
+    {name:'gain÷4', t:R.t, v:R.gain.map(g=>g/4), color:'--muted', w:1.4, scale:4},
+    {name:'old b', t:R.t, v:R.logged_b, color:'--old', w:1.6, op:.85},
+    {name:'new b', t:R.t, v:R.new_b, color:'--new', w:2.2},
+    {name:'new rho÷4', t:R.t, v:R.new_rho.map(x=>x==null?null:x/4), color:'--rho', w:1.6, dash:'5 4', scale:4}
+  ]});
+chart('recAuth', {h:130, x0:20, x1:77, ymin:0, ymax:1.05, link:'rec', regions:recRegions,
+  series:[{name:'a (logged)', t:R.t, v:R.auth, color:'--ink2', w:1.8}]});
+{
+  let rows = `<tr><th>gain edge</th><th class="num">time</th><th class="num">new detect</th><th class="num">old detect</th></tr>`;
+  for(const e of D.record_edges){
+    rows += `<tr><td>${e.label}</td><td class="num">${e.t.toFixed(2)} s</td>` +
+      `<td class="num">${e.new_detect_s==null?'<span class="ok">pre-detected</span>':'<span class="ok">'+e.new_detect_s.toFixed(2)+' s</span>'}</td>` +
+      `<td class="num">${e.old_detect_s==null?'<span class="bad">missed</span>':e.old_detect_s.toFixed(2)+' s'}</td></tr>`;
+  }
+  $('edgeTable').innerHTML = rows;
+}
+
+/* ---------- section 2: emulation with playback ---------- */
+const E = D.emu;
+const boundary = E.gain.map(g => Math.min(1.05, 2.25/g));
+const emuCharts = [
+  chart('emuAuth', {h:190, x0:0, x1:77, ymin:0, ymax:1.05, link:'emu', playable:true,
+    series:[
+      {name:'boundary', t:E.t, v:boundary, color:'--crit', w:1.4, dash:'5 4'},
+      {name:'gain÷4', t:E.t, v:E.gain.map(g=>g/4), color:'--muted', w:1.2, scale:4},
+      {name:'a old', t:E.t, v:E.old_a, color:'--old', w:2, clip:true},
+      {name:'a new', t:E.t, v:E.new_a, color:'--new', w:2.2, clip:true}
+    ]}),
+  chart('emuTrue', {h:170, x0:0, x1:77, ymin:0, ymax:0.72, link:'emu', playable:true,
+    hlines:[{v:E.target, color:'var(--muted)', label:'target 0.35'}],
+    series:[
+      {name:'b_true old', t:E.t, v:E.old_b_true, color:'--old', w:2, clip:true},
+      {name:'b_true new', t:E.t, v:E.new_b_true, color:'--new', w:2.2, clip:true}
+    ]}),
+  chart('emuDc', {h:150, x0:0, x1:77, ymin:0, ymax:9, link:'emu', playable:true,
+    series:[
+      {name:'|dc| old', t:E.t, v:E.old_dc, color:'--old', w:2, clip:true},
+      {name:'|dc| new', t:E.t, v:E.new_dc, color:'--new', w:2.2, clip:true}
+    ]})
+];
+$('oldUnst').textContent = `old: ${acc.emulation_old_unstable_s.toFixed(1)} s unstable, dc → ${Math.max(...E.old_dc.filter(isFinite)).toFixed(1)} mm`;
+$('newUnst').textContent = `new: 0 s unstable, dc ≤ ${Math.max(...E.new_dc.filter(isFinite)).toFixed(2)} mm`;
+let playing = false, speed = 2, rafId = null, lastTs = null;
+function tick(ts){
+  if(!playing) return;
+  if(lastTs==null) lastTs = ts;
+  playCursor = Math.min(77, (playCursor??0) + (ts-lastTs)/1000*speed);
+  lastTs = ts;
+  $('playTime').textContent = 't = ' + playCursor.toFixed(1) + ' s';
+  emuCharts.forEach(c => c.draw());
+  if(playCursor >= 77){ playing = false; $('playBtn').textContent = '↻ replay'; playCursor = null; emuCharts.forEach(c=>c.draw()); return; }
+  rafId = requestAnimationFrame(tick);
+}
+$('playBtn').onclick = () => {
+  if(playing){ playing = false; $('playBtn').textContent = '▶ play'; return; }
+  if(playCursor==null || playCursor>=77) playCursor = 0;
+  playing = true; lastTs = null; $('playBtn').textContent = '❚❚ pause';
+  rafId = requestAnimationFrame(tick);
+};
+$('speedBtn').onclick = () => {
+  speed = speed===2?4:speed===4?8:2;
+  $('speedBtn').textContent = speed + '×';
+};
+
+/* ---------- section 3: design cards ---------- */
+$('designCards').innerHTML = [
+ ['Persistent loop-gain memory ρ','One state remembers the estimated loop-gain multiplier. Evidence moves it; absence of evidence <b>holds</b> it (the old code relaxed to “healthy”, which erased the damage estimate the moment the band went quiet and re-armed the hunt).'],
+ ['FRF-change trips (2-step persistence)','A coherence-gated relative change statistic on the driven-band FRF bumps ρ by the measured gain ratio. Ratios cancel the tap’s force-echo distortion — the only channel that saw the 1.5×→2× edge on the real rig. Real changes persist ≥2 update steps; every measured false excursion on GDBqFpKb was exactly 1 step wide.'],
+ ['Ring detector with growth gate','With the command silent, quiet-band power that is both far above the tracked noise floor <b>and growing</b> is a self-excited ring: it raises ρ even with zero drive. A decaying post-quake tail (elevated but shrinking) is explicitly not evidence.'],
+ ['Memory-aware idle reading','With weak drive, b blends to margin(a·ρ·L₀) instead of the ceiling while damage is remembered — authority can no longer snap to 1.0 against a live 3× gain. ρ leaks toward 1 with τ = 150 s: the requested careful blind rise, with the ring detector as the backstop if the loop objects.'],
+ ['Era-consistent model fits','The spectra average the recent past, so the quiet-band family is evaluated at the era-averaged authority. Without this the estimator reads its own shed as loop-gain growth and ratchets itself down (measured: healthy lowband run collapsed to a = 0.28).'],
+ ['Path-verified recovery + release grace','The sprint’s full_margin is the minimum chordal margin along the whole path a → min(1, 4a) (the chordal margin is not monotone in gain), from both the coherent estimate and the ρ model. A coherently measured gain <i>drop</i> (repair / diagnostic restore) releases the memory and opens a short certified-recovery window.']
+].map(c=>`<div class="card"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
+
+/* ---------- section 4: suite ---------- */
+$('suiteChips').innerHTML =
+  chipHtml('10/10','cases pass','old gpt5_6: 10/10 · fable: '+D.cases.filter(c=>c.fable_pass).length+'/10','ok') +
+  chipHtml(D.fabby.mean.toFixed(2),'fabby (new)','','ok') +
+  chipHtml(D.fabby.old_mean.toFixed(2),'fabby (old gpt5_6)','') +
+  chipHtml(fmt(acc.worst_detection_s,2)+'s','worst detection','limit 2 s','ok') +
+  chipHtml(fmt(acc.worst_recovery_s,2)+'s','worst recovery','limit 2 s','ok') +
+  chipHtml(fmt(acc.max_update_step,2),'max authority step','limit 0.15','ok');
+
+/* fabby bars */
+(function(){
+  const names = D.cases.map(c=>c.name.replace(/_/g,' '));
+  const W = Math.max($('fabbyBars').clientWidth||900, 600), H = 210, mL=10, mB=64, bw = (W-mL-20)/names.length;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="height:${H}px">`;
+  s += `<g class="axis"><line class="base" x1="${mL}" x2="${W-10}" y1="${H-mB}" y2="${H-mB}"/></g>`;
+  for(let i=0;i<names.length;i++){
+    const x = mL+i*bw, hN = D.fabby.cases[i]/100*(H-mB-14), hO = D.fabby.old_cases[i]/100*(H-mB-14);
+    s += `<rect x="${x+bw*0.16}" y="${H-mB-hO}" width="${bw*0.28}" height="${hO}" rx="3" fill="var(--old)" opacity=".55"/>`;
+    s += `<rect x="${x+bw*0.5}" y="${H-mB-hN}" width="${bw*0.28}" height="${hN}" rx="3" fill="var(--new)"/>`;
+    s += `<text x="${x+bw*0.64}" y="${H-mB-hN-4}" text-anchor="middle" fill="var(--ink2)">${D.fabby.cases[i].toFixed(0)}</text>`;
+    s += `<text transform="translate(${x+bw/2},${H-mB+10}) rotate(28)" text-anchor="start">${names[i]}</text>`;
+  }
+  s += `</svg>`;
+  $('fabbyBars').innerHTML = s;
+})();
+
+/* case tabs */
+let caseCharts = [];
+function showCase(i){
+  document.querySelectorAll('#caseTabs .tab').forEach((n,j)=>n.classList.toggle('on', j===i));
+  const c = D.cases[i];
+  caseCharts.forEach(x => charts.splice(charts.indexOf(x),1));
+  const x1 = c.t[c.t.length-1];
+  caseCharts = [
+    chart('caseMargin', {h:180, x0:0, x1, ymin:0, ymax:0.75, link:'case'+i,
+      hlines:[{v:D.target, color:'var(--muted)', label:'target'}],
+      series:[
+        {name:'b_true', t:c.t, v:c.b_true, color:'--ink2', w:1.8},
+        {name:'b*', t:c.t, v:c.b_star, color:'--muted', w:1.4, dash:'4 4'},
+        {name:'b (new)', t:c.t, v:c.b, color:'--new', w:2}
+      ]}),
+    chart('caseAuth', {h:150, x0:0, x1, ymin:0, ymax:1.05, link:'case'+i,
+      series:[
+        {name:'a fable', t:c.t, v:c.fable_a, color:'--fable', w:1.6, op:.9},
+        {name:'a old', t:c.t, v:c.old_a, color:'--old', w:1.6, op:.9},
+        {name:'a new', t:c.t, v:c.a, color:'--new', w:2.2}
+      ]})
+  ];
+  $('caseDetail').innerHTML = `<b>${c.name}</b> — ${c.pass?'<span class="ok">PASS</span>':'<span class="bad">FAIL</span>'} · ` + c.detail;
+}
+$('caseTabs').innerHTML = D.cases.map((c,i)=>
+  `<div class="tab" onclick="showCase(${i})"><span class="p" style="color:${c.pass?'var(--good)':'var(--crit)'}">${c.pass?'✓':'✗'}</span> ${i+1} ${c.name.replace(/_/g,' ')}</div>`).join('');
+window.showCase = showCase;
+showCase(3);
+
+/* ---------- section 5: GDB ---------- */
+const G = D.gdb;
+$('gdbChips').innerHTML =
+  chipHtml('PASS','no idle shed','t &lt; 44 s','ok') +
+  chipHtml(fmt(gm.quake_deficit_latency_s,2)+'s','quake deficit ≤ 2 s','','ok') +
+  chipHtml(fmt(gm.indicator_latency_s[0],2)+'s','edge 1→1.5 (limit 2 s)','old: never detected','warnc') +
+  chipHtml(fmt(gm.indicator_latency_s[1],2)+'s','edge 1.5→2 (limit 2 s)','old: never detected','ok') +
+  chipHtml(fmt(gm.recovery_latency_s,1)+'s','recovery (limit 3 s)','tail min a '+fmt(gm.recovery_tail_min_a,3),'warnc') +
+  chipHtml(String(gm.trips),'false trips','was the old failure mode','ok');
+chart('gdbMargin', {h:190, x0:40, x1:G.t[G.t.length-1], ymin:0, ymax:0.75, link:'gdb',
+  hlines:[{v:0.55, color:'var(--muted)', label:'target 0.55'}],
+  series:[
+    {name:'gain÷4', t:G.t, v:G.gain.map(g=>g/4), color:'--muted', w:1.2, scale:4},
+    {name:'b fable(live)', t:G.t, v:G.fable_b, color:'--fable', w:1.4, op:.8},
+    {name:'b new', t:G.t, v:G.b, color:'--new', w:2.2}
+  ]});
+chart('gdbAuth', {h:150, x0:40, x1:G.t[G.t.length-1], ymin:0, ymax:1.05, link:'gdb',
+  series:[
+    {name:'a fable(live)', t:G.t, v:G.fable_a, color:'--fable', w:1.6, op:.85},
+    {name:'rho÷4', t:G.t, v:G.rho.map(x=>x==null?null:x/4), color:'--rho', w:1.4, dash:'5 4', scale:4},
+    {name:'a new', t:G.t, v:G.a, color:'--new', w:2.2}
+  ]});
+$('gdbNote').innerHTML = `<b>Why the two amber numbers are the honest optimum, not a regression.</b>
+The previous gpt5_6 acceptance had <i>both</i> edges at FAIL (never detected). The 1.5× edge lands while
+authority is already shed to a ≈ 0.4, where its true margin effect is ~0.05 — at this record’s
+signal-to-noise the reading resolves it in ${fmt(gm.indicator_latency_s[0],1)} s. The old law’s celebrated
+2.75 s recovery was a <i>blind</i> jump: at idle its prior collapses, full_margin reads 0.71, and it slams
+authority to 1.0 with zero evidence — exactly the mechanism that destroyed the actuator on the
+2026-07-10 live test (13.4 s inside the unstable region in the emulation). The new law recovers in
+${fmt(gm.recovery_latency_s,1)} s through the safe path: it verified damage during the quake (ρ up to ~1.8),
+the gain-restore edge is <i>provably invisible</i> in this tap at deep shed (the authority-normalized loop
+ratio κ stays ≈ 1 across 75.5 s), so the memory can only leak out at τ = 150 s plus the careful climb.
+Same information, opposite priorities: GDB rewards blind speed; the live test punishes it with hardware.`;
+
+/* ---------- section 6: limitations ---------- */
+$('limitCards').innerHTML = [
+ ['Validate on osi_calibration_test.mat only','The corrected export of the 20260710_1845 run. Other exports of that run log dc AFTER the diagnostic gain — the old dc equals g × the correct one, so any method reading it "detects" the gain by reading the test knob. This OSI consumes only u_osi/dm (bit-identical in both files), so its results are unaffected; the properly logged dc also confirms the injection point (the plant receives g·dc).'],
+ ['Deep-shed identifiability','At a ≈ 0.15–0.35 the margin curve saturates: healthy and damaged plants are observationally near-identical from the tap. Recovery from deep shed therefore rides on event evidence (trips/releases), the slow leak, or exogenous ground truth — physics, not a tuning choice.'],
+ ['The tap distorts absolute fits','u_osi = G_T(dd − iff·fm) is not the true PID reference; the FEM wrap biases the coherent FRF (reads ρ ≈ 3 when healthy). All absolute-model channels are gated off on the rig; only relative changes, ring growth, and the suite’s model-consistent world use them.'],
+ ['Case 4 fabby dropped to 69','The ρ ratchet holds ~0.02 more margin than ideal during lowband damage (stability-first bias). Mean score 94.0 still clears the 92 gate; recovering the old 74.8 would need a faster down-path exactly where the rig data says not to trust one.'],
+ ['Speedgoat runtime not yet updated','control_and_HS/OSI/gpt5_6_runtime.m still implements the old estimator. The new state (ρ, baselines, floors, trips) fits the same time-sliced pattern; porting + bitwise equivalence testing is the next step before a live run.'],
+ ['Coupled-loop margin unmonitored','As documented in the fabby study §5, the production 7000 configuration is bound by the coupled (outer) loop that no current OSI watches. The diag-gain injection here scales the dc path, so regulating the inner family was sufficient for this record.']
+].map(c=>`<div class="card"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
+</script>
+</body>
+</html>

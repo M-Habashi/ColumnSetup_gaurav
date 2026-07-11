@@ -1,0 +1,9 @@
+GPT-5.6.4 Codex validation
+Generated: 2026-07-11 15:29:01
+FABLE: 10/10 pass
+Fabby score: 93.314 (> 92)
+GDB pass: 1 | edge latencies: [1.875 1] s | recovery 2.875 s
+Calibration pass: 1 | requested-edge latencies: [1.25 1.125] s
+Calibration max authority step: original 0.150, proposed 0.011
+Calibration final proposed authority: 0.888
+All pass: 1
