@@ -55,16 +55,18 @@ detector_max = 2.0;      % NEW. Ceiling on the fast drive-ratio kick on rho.
                          % limits how hard one detection event can shed the
                          % authority; raise for harder first response, lower
                          % for calmer authority.
-rho_leak_s = 2.0;        % NEW. Idle decay time constant [s] of the damage
+rho_leak_s = 10.0;       % NEW. Idle decay time constant [s] of the damage
                          % memory. With no drive rho leaks toward healthy, b
                          % rises, and the authority climbs back blind (no
                          % safety evidence). Shorter = faster recovery but
                          % the memory of a still-present fault fades equally
                          % fast; longer = safer hold, slower blind rise.
-                         % Benchmark 2026-07-12: 2 s fails the stability
-                         % gates on osi_calibration_test (8.5 s unstable
-                         % after the quake fades); >= 20 s passes, 40 s is
-                         % the recommended safe minimum.
+                         % Benchmark 2026-07-12: 2-10 s fail the stability
+                         % gates on osi_calibration_test (unstable after
+                         % the quake fades with the gain held); >= 20 s
+                         % passes, 40 s is the recommended safe minimum.
+                         % 10 s is safe only when the fault is removed
+                         % before the excitation stops.
 
 %% Category C - Authority Law (gpt5_6_4_auth)
 target_outer_ncf = 0.55; % Regulated NCF margin setpoint. The auth factor is

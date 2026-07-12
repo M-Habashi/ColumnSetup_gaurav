@@ -87,14 +87,15 @@ hs = struct( ...
     ... %   longer = safer hold, slower blind recovery. Leak acts only when
     ... %   idle — during drive the measured fit owns rho.
     ... %   MEASURED CAVEAT (2026-07-12 benchmark, osi_calibration_test):
-    ... %   at 2 s the closed-loop replay re-enters the unstable region for
-    ... %   8.5 s after the quake fades (authority rails to 1.0 with the
+    ... %   leaks of 2-10 s re-enter the unstable region after the quake
+    ... %   fades (10 s: 3.9 s unstable, authority rails to 1.0 with the
     ... %   diagnostic gain still 3 — the 2026-07-10 failure mode). Values
     ... %   >= 20 s pass all stability gates; 40 s is the recommended safe
-    ... %   minimum. 2 s kept per Habashi's decision 2026-07-12.
+    ... %   minimum. 10 s chosen by Habashi 2026-07-12: safe ONLY when the
+    ... %   fault/diagnostic gain is removed before the excitation stops.
     'gpt5_6_override', struct('osi', struct( ...
     'detector_max', 2.0, ...
-    'rho_leak_s', 2.0)), ...
+    'rho_leak_s', 10.0)), ...
     'osi_branch_split_hz', [], ... % Used only if branch bands are empty.
     'osi_st_branch_hz', [2 10], ...
     'osi_residual_branch_hz', [30 80]);

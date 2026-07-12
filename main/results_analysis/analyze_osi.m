@@ -16,7 +16,8 @@ addpath(genpath(fullfile(project_folder, 'control_and_HS', 'OSI')))
 % memory_s, margin_s, and residual_s are exponential memories: increasing
 % them smooths their respective terms and delays their response.
 % quiet_rms is the command activity threshold: increasing it makes quiet
-% data less influential; residual_band_hz chooses the quiet-band model fit.
+% data less influential. Frequency bands use the canonical estimator defaults
+% in gpt5_6_4_osi.m unless they are intentionally overridden here.
 % detector_max caps the fast drive-ratio kick on rho (needs 2 consecutive
 % hot updates); rho_leak_s is the idle decay time of the damage memory —
 % shorter recovers authority faster after quiet but forgets real faults
@@ -30,9 +31,7 @@ osi_override = struct( ...
     'quiet_rms', 0.06, ...
     'fit_floor', 0.175, ...
     'detector_max', 2.0, ...
-    'rho_leak_s', 2.0, ...
-    'band_hz', [2 100], ...
-    'residual_band_hz', [28 44]);
+    'rho_leak_s', 10.0);
 
 % Authority: target is read from the saved test when available; this fallback
 % is used only for legacy results. guard/deadband add safety

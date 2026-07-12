@@ -36,7 +36,7 @@ function result = run_osi_benchmark(osi_fn, auth_fn, label)
 %
 % HARD GATES (all must pass; each is a measurable fact):
 %   G1 canonical suite 10/10   (OSI_tests/fable/fable_synthetic_suite)
-%   G2 fabby score > 92        (research/fable_2/fabby_score ground truth)
+%   G2 fabby_score_1 > 92      (research/fable_2/fabby_score ground truth)
 %   G3 closed-loop live scenario: 0 s with g*a >= g_crit, where g_crit is
 %      COMPUTED from the identified model (first g destabilizing
 %      feedback(g*C*H5k)) - not a chosen number
@@ -49,9 +49,16 @@ function result = run_osi_benchmark(osi_fn, auth_fn, label)
 %      method's own declared max_step
 %
 % SCORES (0-100 each, formulas printed in the scorecard and README):
-%   S1 fabby            - established suite tracking metric
-%   S2 emu_tracking     - fabby formula applied to the closed-loop live
-%                         scenario against model ground truth
+%   fabby_score_1       - established suite tracking metric: estimation
+%                         quality on the 10 synthetic cases against model
+%                         ground truth (unsafe-side error x3, scale 0.10)
+%   fabby_score_2       - the SAME error metric applied to the closed-loop
+%                         live scenario (osi_calibration_test.mat):
+%                         regulation quality of the true margin against the
+%                         ideal setpoint b* = max(target, b_true at a=1).
+%                         Per-sample saturated (each update loses at most
+%                         its share of the 0.10 scale) so it stays
+%                         informative even when a stability gate fails
 %   S3 detection        - fraction of the five diagnostic-gain rises
 %                         (three live, two GDB) reflected in the reading
 %                         within 2 s (pre-depressed readings count: the
@@ -62,7 +69,7 @@ function result = run_osi_benchmark(osi_fn, auth_fn, label)
 %   S5 gdb_recovery     - linear from 3 s (=100, the canonical
 %                         requirement) to 20 s (=0, the post-restore
 %                         window the record offers) after the gain restore
-%   composite           - mean of S1..S5, reported ONLY if all gates pass
+%   composite           - mean of the five, reported ONLY if all gates pass
 
 assert(nargin >= 3 && ischar(label) || isstring(label), ...
     'Usage: run_osi_benchmark(@osi_fn, @auth_fn, ''label'')')
@@ -99,7 +106,7 @@ gdb = gdbReplay(project, pv, osi_fn, auth_fn);
 %% ---- gates ----------------------------------------------------------------
 gates = struct( ...
     'G1_suite_10_of_10', nnz([suite.cases.pass]) == 10, ...
-    'G2_fabby_gt_92', fab.mean_score > 92, ...
+    'G2_fabby_1_gt_92', fab.mean_score > 92, ...
     'G3_zero_unstable_time', emu.unstable_time_s == 0, ...
     'G4_end_hold', emu.tail_max_a < emu.g_crit/3, ...
     'G5_gdb_no_idle_shed', gdb.no_idle_shed, ...
@@ -112,8 +119,8 @@ all_gates = all(struct2array(gates));
 %% ---- scores ---------------------------------------------------------------
 det_lat = [emu.edge_latency_s(:); gdb.edge_latency_s(:)];
 scores = struct( ...
-    'S1_fabby', fab.mean_score, ...
-    'S2_emu_tracking', emu.tracking_score, ...
+    'fabby_score_1', fab.mean_score, ...
+    'fabby_score_2', emu.tracking_score, ...
     'S3_detection', 100*mean(isfinite(det_lat) & det_lat <= 2), ...
     'S4_smoothness', 100*min(max(1 - emu.travel/emu.travel_live, 0), 1), ...
     'S5_gdb_recovery', 100*min(max((20 - gdb.recovery_latency_s)/(20 - 3), 0), 1));
@@ -126,8 +133,8 @@ for i = 1:numel(gate_names)
     fprintf('  %-24s %s\n', gate_names{i}, passText(gates.(gate_names{i})))
 end
 fprintf('  ------------------------------------------\n')
-fprintf('  S1 fabby           %6.1f   (suite tracking, >92 required)\n', scores.S1_fabby)
-fprintf('  S2 emu tracking    %6.1f   (closed-loop live scenario)\n', scores.S2_emu_tracking)
+fprintf('  fabby_score_1      %6.1f   (suite estimation, >92 required)\n', scores.fabby_score_1)
+fprintf('  fabby_score_2      %6.1f   (closed-loop regulation on osi_calibration_test)\n', scores.fabby_score_2)
 fprintf('  S3 detection       %6.1f   (%d/%d gain rises within 2 s)\n', ...
     scores.S3_detection, nnz(isfinite(det_lat) & det_lat <= 2), numel(det_lat))
 fprintf('  S4 smoothness      %6.1f   (travel %.2f vs live %.2f)\n', ...
@@ -256,7 +263,11 @@ b_star = max(target, b_full);
 mask = tc > 4 & isfinite(bT);
 err = bT - b_star;
 w = ones(size(err)); w(err < 0) = 3;
-tracking = 100*max(0, 1 - mean(w(mask).*abs(err(mask)))/0.10);
+% Per-sample saturation: each update can lose at most its own share of the
+% 0.10 error scale, so a bounded catastrophic stretch costs its duration
+% instead of zeroing the whole score. The stretch itself is judged by
+% G3/G4; this score stays informative even when a hard gate fails.
+tracking = 100*(1 - mean(min(w(mask).*abs(err(mask))/0.10, 1)));
 
 % detection: in a CLOSED loop good regulation keeps b at the target, so an
 % edge counts as detected if the reading falls 0.04 below its healthy level
