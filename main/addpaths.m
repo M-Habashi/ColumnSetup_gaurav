@@ -15,4 +15,5 @@ for i = 1:numel(excluded)
 end
 
 addpath(strjoin(project_folders, pathsep));
+addpath(fullfile(project_root, 'control_and_HS', 'OSI'), '-begin');
 end

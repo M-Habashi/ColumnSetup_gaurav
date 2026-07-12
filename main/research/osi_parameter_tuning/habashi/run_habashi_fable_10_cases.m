@@ -1,6 +1,8 @@
 %% Run Habashi Parameters On The 10 Fable Synthetic Cases
 % Runs the fable synthetic suite once with the editable "new" parameters
-% and once with the current implementation parameters.
+% and once with the current implementation parameters. Both run the
+% canonical GPT-5.6.4 implementation (control_and_HS/OSI/gpt5_6_4_osi.m
+% + gpt5_6_4_auth.m).
 
 clear; close all; clc
 
@@ -14,8 +16,8 @@ addpath(fullfile(projectFolder, 'OSI_tests', 'fable'))
 [new_params, current_params] = habashi_osi_parameter_sets(projectFolder);
 
 case_ids = 1:10;
-new_method = localFableMethod('habashi_new');
-current_method = localFableMethod('habashi_current');
+new_method = localGptMethod('habashi_new');
+current_method = localGptMethod('habashi_current');
 
 fprintf('\nRunning 10 fable synthetic cases with NEW parameters...\n')
 new_suite = fable_synthetic_suite( ...
@@ -55,42 +57,35 @@ save(fullfile(results_dir, 'habashi_fable_10_cases.mat'), ...
 fprintf('\nSaved: %s\n', fullfile(results_dir, ...
     'habashi_fable_10_cases.mat'))
 
-function method = localFableMethod(name)
+function method = localGptMethod(name)
 method = struct('name', name, 'block_n', 256, ...
-    'init', @localInitFable, 'step', @localStepFable);
+    'init', @localInitGpt, 'step', @localStepGpt);
 end
 
-function ctx = localInitFable(dt, L0, target, cm)
-ovr = cm.osi_override;
-if ~isfield(ovr, 'threshold') || isempty(ovr.threshold)
-    ovr.threshold = target;
-end
-cfg = fable_osi('config', dt, L0, ovr);
+function ctx = localInitGpt(dt, L0, target, cm)
+cfg = gpt5_6_4_osi('config', dt, L0, cm.osi_override);
 aovr = cm.auth_override;
 aovr.target = target;
-if ~isfield(aovr, 'dt_update') || isempty(aovr.dt_update)
-    aovr.dt_update = cfg.step_s;
-end
-prm = fable_auth('params', aovr);
+aovr.dt_update = cfg.step_s;
+prm = gpt5_6_4_auth('params', aovr);
 ctx = struct('cfg', cfg, ...
-    'state', fable_osi('state', cfg), ...
+    'state', gpt5_6_4_osi('state', cfg), ...
     'prm', prm, ...
-    'ast', fable_auth('state', prm), ...
+    'ast', gpt5_6_4_auth('state', prm), ...
     'a_last', prm.a_init);
 end
 
-function [ctx, b, a, trip, extra] = localStepFable(ctx, dd_blk, dm_blk)
+function [ctx, b, a, trip, extra] = localStepGpt(ctx, dd_blk, dm_blk)
 ctx.state.a_cmd = ctx.a_last;
-[b, ctx.state, info] = fable_osi(dd_blk, dm_blk, ctx.cfg, ctx.state);
-[a, ctx.ast, decision] = fable_auth(b, info.st_valid, info.trip_reason, ...
-    info.b_fast, info.pred_margin, info.pred_valid, info.alpha_grid, ...
-    ctx.ast, ctx.prm, info.st_binding, info.regime_recal);
+[b, ctx.state, info] = gpt5_6_4_osi(dd_blk, dm_blk, ctx.cfg, ctx.state);
+[a, ctx.ast] = gpt5_6_4_auth(b, info.full_margin, ...
+    info.residual_weight, ctx.ast, ctx.prm);
 ctx.a_last = a;
-trip = info.trip_reason;
-extra = struct('b_st', info.ncf_st, ...
-    'b_res', info.ncf_res, ...
-    'b_fast', info.b_fast, ...
-    'decision', decision);
+trip = 0;
+extra = struct('b_st', info.b_st, ...
+    'b_res', info.b_res, ...
+    'b_fast', NaN, ...
+    'decision', 0);
 end
 
 function auth_override = localAuthForSuite(params)

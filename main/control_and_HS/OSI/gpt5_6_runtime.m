@@ -1,7 +1,7 @@
 function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, ...
     decision, g_armed] = gpt5_6_runtime(dd, dm, en, gpts, gptw, ...
     gptbins, gptrho, gptauth, ~, ~)
-%GPT5_6_RUNTIME Time-sliced Simulink/Speedgoat GPT-5.6 implementation.
+%GPT5_6_RUNTIME Time-sliced Simulink/Speedgoat GPT-5.6.4 implementation.
 % Called at 2048 Hz with scalar displacement samples. Each 0.125 s update
 % is spread over 32 ticks: window/FFT work occupies four separate ticks,
 % spectral work two ticks, and the 25 residual-fit candidates one tick
@@ -9,8 +9,8 @@ function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, ...
 
 %#codegen
 persistent c raw_u raw_y raw_pos samples_in sample_phase step_count ...
-    spectral_count Suu Syy Syu log_rho b_state a_state phase W ...
-    out_b out_st out_res out_auth out_valid out_dec
+    spectral_count Suu Syy Syu drive log_rho rho_drive ratio_prev ...
+    b_state a_state phase W out_b out_st out_res out_auth out_valid out_dec
 
 PUBLISH_PHASE = 32;
 if isempty(raw_pos)
@@ -27,15 +27,18 @@ if isempty(raw_pos)
     Suu = zeros(c.nf, 1);
     Syy = zeros(c.nf, 1);
     Syu = complex(zeros(c.nf, 1));
+    drive = 0;
     log_rho = 0;
+    rho_drive = 1;
+    ratio_prev = 0;
     b_state = c.cap;
-    a_state = gptauth(9);
+    a_state = gptauth(8);
     phase = 0;
     W = initWork(c);
     out_b = c.cap;
     out_st = c.cap;
     out_res = c.cap;
-    out_auth = gptauth(9);
+    out_auth = gptauth(8);
     out_valid = 0;
     out_dec = 0;
 end
@@ -50,7 +53,7 @@ if pause_enable
     samples_in = 0;
     sample_phase = 0;
     phase = 0;
-    auth = publishedAuth(en_active, out_auth, gptauth(9));
+    auth = publishedAuth(en_active, out_auth, gptauth(8));
     [b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
         diagnostics(out_b, out_st, out_res, out_valid, out_dec);
     return
@@ -84,7 +87,8 @@ elseif phase > 0
     if ph == 1
         [W.wu, mean_u2] = windowedTail(raw_u, W.snap_pos, c.window);
         W.activity = min(1, (sqrt(mean_u2)/c.quiet_rms)^4);
-        W.Lprior = W.a_now*W.activity*c.L0;
+        drive = drive + c.drive_alpha*(W.activity - drive);
+        W.Lprior = W.a_now*c.L0;
         W.Tprior = W.Lprior./(1 + W.Lprior);
         W.b_prior = minMasked(chordal(W.Lprior, c.cap), c.keep);
         W.b_st = W.b_prior;
@@ -130,6 +134,9 @@ elseif phase > 0
             end
             W.Lhat = Tuse./den;
             W.b_st = minMasked(movMedian3(chordal(W.Lhat, c.cap)), c.keep);
+            full_curve = movMedian3(chordal( ...
+                min(1/W.a_now, 4)*W.Lhat, c.cap));
+            W.b_full = minMasked(full_curve, c.keep);
         end
     elseif ph == 6
         if W.do_spectrum && step_count > c.warm_steps
@@ -150,28 +157,42 @@ elseif phase > 0
         end
     elseif ph == PUBLISH_PHASE
         if W.do_spectrum
+            drive_ratio = 1;
             if step_count > c.warm_steps
                 weights = W.confidence.^2;
                 Lmodel = W.a_now*c.L0;
-                rho_drive = real(sum(weights.*conj(Lmodel).*W.Lhat))/ ...
+                rho_current = real(sum(weights.*conj(Lmodel).*W.Lhat))/ ...
                     max(sum(weights.*abs(Lmodel).^2), eps);
-                shape_weight = min(max(2*(rho_drive - 1), 0), 1);
+                rho_current = max(rho_current, eps);
+                raw_kick = max(rho_current/rho_drive - 1, 0);
+                kick = min(min(raw_kick, ratio_prev), c.detector_max - 1);
+                ratio_prev = raw_kick;
+                drive_ratio = 1 + drive*kick;
+                rho_drive = rho_drive + c.drive_alpha*(rho_current - rho_drive);
+                coherent_weight = min(max(2*(rho_current - 1), 0), 1);
+                shape_weight = coherent_weight + c.fit_floor*W.activity* ...
+                    (1 - coherent_weight);
                 rho_target = 1 + shape_weight*(W.best_rho - 1);
-                log_rho = log_rho + c.residual_alpha* ...
+                log_rho = log_rho + W.activity*c.residual_alpha* ...
                     (log(rho_target) - log_rho);
-                W.b_res = minMasked(movMedian3(chordal( ...
-                    W.a_now*exp(log_rho)*c.L0, c.cap)), c.keep);
             end
-            W.res_weight = W.activity* ...
+            log_rho = log_rho*(1 - c.leak_alpha*(1 - W.activity));
+            rho = exp(log_rho)*drive_ratio;
+            W.b_res = minMasked(movMedian3(chordal( ...
+                W.a_now*rho*c.L0, c.cap)), c.keep);
+            W.res_weight = drive* ...
                 (1 - meanMasked(W.leverage, c.res_keep))^2;
             b_evid = W.b_st - W.res_weight*max(W.b_st - W.b_res, 0);
-            b_raw = W.activity*b_evid + (1 - W.activity)*c.cap;
-            full_curve = movMedian3(chordal(min(1/W.a_now, 4)*W.Lhat, c.cap));
-            W.b_full = minMasked(full_curve, c.keep);
+            memory_weight = min(max(rho - 1, 0), 1);
+            b_idle = c.cap - memory_weight*(c.cap - W.b_res);
+            b_raw = W.activity*b_evid + (1 - W.activity)*b_idle;
+            b_state = min(max(b_state + c.margin_alpha* ...
+                (b_raw - b_state), 0), c.cap);
         else
             b_raw = W.b_prior;
+            b_state = min(max(b_state + W.activity*c.margin_alpha* ...
+                (b_raw - b_state), 0), c.cap);
         end
-        b_state = min(max(b_state + c.margin_alpha*(b_raw - b_state), 0), c.cap);
         a_old = a_state;
         a_state = authorityStep(b_state, W.b_full, W.res_weight, a_state, gptauth);
         out_b = b_state;
@@ -183,7 +204,7 @@ elseif phase > 0
     end
 end
 
-auth = publishedAuth(en_active, out_auth, gptauth(9));
+auth = publishedAuth(en_active, out_auth, gptauth(8));
 [b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
     diagnostics(out_b, out_st, out_res, out_valid, out_dec);
 end
@@ -194,7 +215,9 @@ c = struct('dt', s(1), 'fs', s(2), 'step_n', round(s(3)), ...
     'margin_alpha', s(6), 'residual_alpha', s(7), ...
     'power_floor', s(8), 'quiet_rms', s(9), 'cap', s(10), ...
     'warm_steps', round(s(11)), 'nf', round(s(12)), ...
-    'nominal', s(13), 'nrho', round(s(14)), 'window', w, ...
+    'nominal', s(13), 'nrho', round(s(14)), ...
+    'drive_alpha', s(15), 'fit_floor', s(16), ...
+    'leak_alpha', s(17), 'detector_max', s(18), 'window', w, ...
     'bin', round(bins(:, 1)), 'keep', bins(:, 2) ~= 0, ...
     'res_keep', bins(:, 3) ~= 0, ...
     'L0', complex(bins(:, 4), bins(:, 5)), 'shape', bins(:, 6), ...
@@ -282,19 +305,17 @@ end
 y = y/max(n, 1);
 end
 
-function a = authorityStep(b, b_full, rw, a, p)
-a0 = min(max(a, p(7)), p(8));
+function a = authorityStep(b, ~, rw, a, p)
+a0 = min(max(a, p(6)), p(7));
 rw = min(max(rw, 0), 1);
 b_ref = p(1) + p(2)*(1 + rw);
 e_raw = b - b_ref;
-e = sign(e_raw)*max(abs(e_raw) - p(3)*(1 + rw), 0);
-headroom = 1/sqrt(2) - b_ref;
-coherent = min(1, max(0, (0.60 - rw)/0.40));
-full_safe = min(1, max(0, (b_full - p(1))/p(2)));
-rate = p(4)*sqrt(a0)*(1 + coherent*full_safe*p(5)* ...
-    (max(e, 0)/headroom)^2);
-a_free = exp(min(max(log(a0) + rate*p(10)*e, log(p(7))), log(p(8))));
-a = a0 + min(max(a_free - a0, -p(6)), p(6));
+e_margin = sign(e_raw)*max(abs(e_raw) - p(3)*(1 + rw), 0);
+recovery_weight = (b_ref*sqrt(2))^2;
+e = min(e_margin, 0) + recovery_weight*max(e_margin, 0);
+rate = p(4)*sqrt(a0);
+a_free = exp(min(max(log(a0) + rate*p(9)*e, log(p(6))), log(p(7))));
+a = a0 + min(max(a_free - a0, -p(5)), p(5));
 end
 
 function a = publishedAuth(en, a_state, a_init)

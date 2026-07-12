@@ -1,8 +1,10 @@
-# GPT-5.6 Speedgoat runtime
+# GPT-5.6.4 Speedgoat runtime
 
-`gpt5_6_runtime.m` is the real-time implementation of the desktop
-`research/gpt5_6/gpt_osi.m` and `gpt_auth.m` algorithms. The main script
-builds its fixed-size parameters with `prepare_gpt5_6_runtime.m`.
+`gpt5_6_runtime.m` is the real-time implementation of the canonical
+`gpt5_6_4_osi.m` and `gpt5_6_4_auth.m` algorithms. The main script builds
+its fixed-size parameters with `prepare_gpt5_6_runtime.m`. The legacy
+function and workspace-variable names remain unchanged so the existing
+Speedgoat model can use GPT-5.6.4 without an `.slx` edit.
 
 ## Scheduling
 
@@ -24,7 +26,7 @@ configuration, or surrounding-model change.
 ## Verification order
 
 1. Compare the scheduled output at tick `k*step_n + 32` with the desktop
-   `gpt_osi` + `gpt_auth` output for update `k`.
+   `gpt5_6_4_osi` + `gpt5_6_4_auth` output for update `k`.
 2. Compile `gpt5_6_runtime.m` with all parameter arrays as
    `coder.Constant` values.
 3. Update the diagram and run `slbuild('model_ColumnSetup_00')` from a fully

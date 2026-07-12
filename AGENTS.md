@@ -17,6 +17,7 @@
 - Every time an HTML file is created or edited, load and follow the `uncodixify` skill, then run its validator on the changed HTML until it exits successfully.
 - When the user asks to commit and push, do not run unit tests or other validation checks. Review the diff only to choose a proper commit message, then commit the full requested worktree and push it.
 - For plots, use this color guidance: desired displacement uses black with a thick dashed line, command displacement uses Copperwood `#AC6420`, measured displacement uses blue `#007CA8`, and force uses purple `#74058A`. Other available palette colors are green `#39BF5E` and red `#901500`.
+- Always try to keep each signal's plot color and line style consistent across the repository. Before plotting a signal, search for existing plots of that signal and reuse their established styling; for example, reuse the existing `fm` force color and solid/dashed style when adding another `fm` plot.
 - Do not run physical Speedgoat/actuator workflows for discussion-only prompts unless the user explicitly requests it.
 - Minimize code changes and prefer compact, direct code.
 - Do not add unnecessary verification, error handling, or edge-case studies. Assume the user is an engineer who can handle default MATLAB errors.

@@ -1,6 +1,14 @@
 function out = plot_habashi_osi_parameter_comparison(data, data_file, ...
         new_params, current_params)
-%PLOT_HABASHI_OSI_PARAMETER_COMPARISON Replay and plot fable OSI tuning.
+%PLOT_HABASHI_OSI_PARAMETER_COMPARISON Replay and plot GPT-5.6.4 tuning.
+% Replays a saved test record through the deployed Speedgoat runtime
+% (gpt5_6_runtime.m, parameters packed by prepare_gpt5_6_runtime.m) once
+% with the editable "new" parameters and once with the "current"
+% implementation defaults, then overlays margins and authority.
+%
+% The OSI drive tap is u_osi when the record provides it (the runtime's dd
+% input on the rig); plain dd is force-echo biased and used only as a
+% fallback for legacy records.
 
 if nargin == 0
     script_root = fileparts(mfilename('fullpath'));
@@ -8,7 +16,6 @@ if nargin == 0
     addpath(projectFolder)
     addpath(genpath(fullfile(projectFolder, 'helpers')))
     addpath(genpath(fullfile(projectFolder, 'control_and_HS', 'OSI')))
-    addpath(fullfile(projectFolder, 'OSI_tests', 'fable'))
 
     [new_params, current_params] = habashi_osi_parameter_sets(projectFolder);
     [data, data_file] = load_saved_result_file(projectFolder, 'tests');
@@ -21,11 +28,10 @@ projectFolder = new_params.projectFolder;
 addpath(projectFolder)
 addpath(genpath(fullfile(projectFolder, 'helpers')))
 addpath(genpath(fullfile(projectFolder, 'control_and_HS', 'OSI')))
-addpath(fullfile(projectFolder, 'OSI_tests', 'fable'))
 
 record = localExtractRecord(data);
-new_replay = localReplayFable(record, new_params);
-current_replay = localReplayFable(record, current_params);
+new_replay = localReplayGpt(record, new_params);
+current_replay = localReplayGpt(record, current_params);
 fig = localPlot(record, data_file, new_replay, current_replay, ...
     new_params, current_params);
 
@@ -43,23 +49,30 @@ if isfield(data, 'result') && isstruct(data.result)
     data = data.result;
 end
 
-if all(isfield(data, {'dd', 'dm'}))
+if isfield(data, 'u_osi') && isfield(data, 'dm')
+    dd = data.u_osi(:);          % the runtime's dd input on the rig
+    dm = data.dm(:);
+    dd_source = 'u_osi';
+elseif all(isfield(data, {'dd', 'dm'}))
     dd = data.dd(:);
     dm = data.dm(:);
-    if isfield(data, 't') && numel(data.t) == numel(dm)
-        t = data.t(:);
-    elseif isfield(data, 'tt') && numel(data.tt) == numel(dm)
-        t = data.tt(:);
-    else
-        t = [];
-    end
+    dd_source = 'dd (legacy fallback, force-echo biased)';
 else
     sig = data.logsout.FileLogSignals{1}.Values;
     names = localSignalNames(sig);
-    dd = sig.Data(:, localSignalIndex(names, 'dd', 1));
+    dd = sig.Data(:, localSignalIndex(names, 'u_osi', ...
+        localSignalIndex(names, 'dd', 1)));
     dm = sig.Data(:, localSignalIndex(names, 'dm', 3));
-    t = sig.Time(:);
+    dd_source = 'logsout';
 end
+if isfield(data, 't') && numel(data.t) == numel(dm)
+    t = data.t(:);
+elseif isfield(data, 'tt') && numel(data.tt) == numel(dm)
+    t = data.tt(:);
+else
+    t = [];
+end
+fprintf('OSI drive tap: %s\n', dd_source)
 
 if isfield(data, 'dt') && ~isempty(data.dt)
     dt = data.dt;
@@ -149,66 +162,55 @@ if isfield(data, 'logsout')
 end
 end
 
-function replay = localReplayFable(record, prm)
+function replay = localReplayGpt(record, prm)
 hs = struct('exp_tf_file', prm.exp_tf_file, ...
     'target_outer_ncf', prm.target_outer_ncf, ...
     'osi_gain_min', prm.osi_gain_min, ...
     'osi_gain_initial', prm.osi_gain_initial, ...
-    'fable_osi_override', prm.osi_override, ...
-    'fable_auth_override', prm.auth_override, ...
-    'fable_pred_enable', prm.fable_pred_enable);
-if isfield(prm, 'gate_override') && ~isempty(prm.gate_override)
-    hs.fable_gate_override = prm.gate_override;
-end
-setup = prepare_fable_runtime(prm.projectFolder, record.dt, hs);
+    'gpt5_6_override', struct('osi', prm.osi_override, ...
+    'auth', prm.auth_override));
+setup = prepare_gpt5_6_runtime(prm.projectFolder, record.dt, hs);
 
 dd = record.dd(:);
 dm = record.dm(:);
 t = record.t(:);
 step_n = setup.cfg.step_n;
-N = floor(min(numel(dd), numel(dm))/step_n)*step_n;
-half = round(step_n/2);
-n_step = floor((N - half)/step_n);
+publish_ticks = setup.publish_ticks;
+N = min(numel(dd), numel(dm));
+n_step = floor((N - publish_ticks)/step_n);
 
 tc = NaN(n_step, 1);
 b_osi = NaN(n_step, 1);
 b_st = NaN(n_step, 1);
 b_res = NaN(n_step, 1);
-b_fast = NaN(n_step, 1);
 auth = NaN(n_step, 1);
-trip_reason = zeros(n_step, 1);
 valid = false(n_step, 1);
 decision = zeros(n_step, 1);
 
-clear fable_osi_runtime
-fprintf('Replaying %s parameters through fable_osi_runtime ...\n', prm.name)
-k = 0;
+clear gpt5_6_runtime
+fprintf('Replaying %s parameters through gpt5_6_runtime ...\n', prm.name)
 for i = 1:N
-    [ai, bi, bsti, bresi, bfi, tri, vi, di] = fable_osi_runtime( ...
-        dd(i), dm(i), 1, setup.fbls, setup.fblw, setup.fblbins, ...
-        setup.fblfw, setup.fblfbins, setup.fblag, setup.fbla);
-    if i > half && mod(i - half, step_n) == 0 && k < n_step
-        k = k + 1;
-        tc(k) = t(i - half);
+    [ai, bi, bsti, bresi, ~, ~, vi, di] = gpt5_6_runtime( ...
+        dd(i), dm(i), 1, setup.gpts, setup.gptw, setup.gptbins, ...
+        setup.gptrho, setup.gptauth, 0, 0);
+    k = (i - publish_ticks)/step_n;
+    if k >= 1 && k == round(k) && k <= n_step
+        tc(k) = t(min(i, numel(t)));
         auth(k) = ai;
         b_osi(k) = bi;
         b_st(k) = bsti;
         b_res(k) = bresi;
-        b_fast(k) = bfi;
-        trip_reason(k) = tri;
         valid(k) = vi ~= 0;
         decision(k) = di;
     end
 end
-clear fable_osi_runtime
+clear gpt5_6_runtime
 
 replay = struct('tc', tc, ...
     'auth', auth, ...
     'b_osi', b_osi, ...
     'b_st', b_st, ...
     'b_res', b_res, ...
-    'b_fast', b_fast, ...
-    'trip_reason', trip_reason, ...
     'valid', valid, ...
     'decision', decision, ...
     'setup', setup);
@@ -217,22 +219,18 @@ end
 function fig = localPlot(record, data_file, new_replay, current_replay, ...
         new_params, current_params)
 blue = [0 124 168]/255;
-copper = [172 100 32]/255;
 green = [57 191 94]/255;
 red = [144 21 0]/255;
 purple = [116 5 138]/255;
 black = [0 0 0];
 gray = [0.45 0.45 0.45];
-trip_new_color = red;
-trip_current_color = black;
 
 [~, record_name] = fileparts(data_file);
-n_fast_new = nnz(new_replay.trip_reason ~= 0);
-n_fast_current = nnz(current_replay.trip_reason ~= 0);
-n_emergency_new = localEmergencyDropCount(new_replay);
-n_emergency_current = localEmergencyDropCount(current_replay);
+travel_new = sum(abs(diff(new_replay.auth(isfinite(new_replay.auth)))));
+travel_current = sum(abs(diff( ...
+    current_replay.auth(isfinite(current_replay.auth)))));
 fig = figure('Color', 'w', 'Position', [80 80 1200 820], ...
-    'Name', ['Habashi OSI tuning - ' record_name], ...
+    'Name', ['Habashi GPT-5.6.4 tuning - ' record_name], ...
     'NumberTitle', 'off');
 tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact')
 
@@ -242,10 +240,8 @@ plot(ax1, record.t(1:stride:end), record.dm(1:stride:end), ...
     'Color', blue, 'LineWidth', 1)
 grid(ax1, 'on')
 ylabel(ax1, 'dm (mm)', 'Interpreter', 'none')
-title(ax1, sprintf(['%s | fast trips new/current: %d/%d | ', ...
-    'emergency drops new/current: %d/%d'], record_name, n_fast_new, ...
-    n_fast_current, n_emergency_new, n_emergency_current), ...
-    'Interpreter', 'none')
+title(ax1, sprintf('%s | authority travel new/current: %.2f/%.2f', ...
+    record_name, travel_new, travel_current), 'Interpreter', 'none')
 
 ax2 = nexttile;
 hold(ax2, 'on')
@@ -255,13 +251,8 @@ localPlotPair(ax2, new_replay.tc, new_replay.b_st, ...
     current_replay.tc, current_replay.b_st, 'b_st', green, false)
 localPlotPair(ax2, new_replay.tc, new_replay.b_res, ...
     current_replay.tc, current_replay.b_res, 'b_res', red, false)
-localPlotPair(ax2, new_replay.tc, new_replay.b_fast, ...
-    current_replay.tc, current_replay.b_fast, 'b_fast', copper, false)
-localPlotFastTripLines(ax2, new_replay, 'new', '-', trip_new_color)
-localPlotFastTripLines(ax2, current_replay, 'current', '--', ...
-    trip_current_color)
-localPlotEmergencyDropLines(ax2, new_replay, 'new', '-', purple)
-localPlotEmergencyDropLines(ax2, current_replay, 'current', '--', gray)
+yline(ax2, new_params.target_outer_ncf, ':', 'Color', gray, ...
+    'LineWidth', 1.4, 'DisplayName', 'target')
 grid(ax2, 'on')
 ylabel(ax2, 'OSI margin', 'Interpreter', 'none')
 legend2 = legend(ax2, 'Location', 'best', 'Interpreter', 'none');
@@ -272,13 +263,6 @@ hold(ax3, 'on')
 localPlotPair(ax3, new_replay.tc, new_replay.auth, ...
     current_replay.tc, current_replay.auth, 'authority factor', ...
     purple, true)
-localPlotFastTripLines(ax3, new_replay, 'new', '-', trip_new_color)
-localPlotFastTripLines(ax3, current_replay, 'current', '--', ...
-    trip_current_color)
-localPlotFastTrips(ax3, new_replay, 'new', 'v', trip_new_color)
-localPlotFastTrips(ax3, current_replay, 'current', 'x', trip_current_color)
-localPlotEmergencyDrops(ax3, new_replay, 'new', 's', purple)
-localPlotEmergencyDrops(ax3, current_replay, 'current', 'd', gray)
 if ~isempty(record.command_gain)
     plot(ax3, record.t, record.command_gain, ':', 'Color', gray, ...
         'LineWidth', 1.4, 'DisplayName', 'dc gain (logged)')
@@ -299,31 +283,14 @@ fprintf('  new target/current target: %.6g / %.6g\n', ...
 fprintf('  new min authority/current min authority: %.6g / %.6g\n', ...
     min(new_replay.auth, [], 'omitnan'), ...
     min(current_replay.auth, [], 'omitnan'))
-fprintf('  new fast trips/current fast trips: %d / %d\n', ...
-    n_fast_new, n_fast_current)
-fprintf('  new emergency drops/current emergency drops: %d / %d\n', ...
-    n_emergency_new, n_emergency_current)
+fprintf('  new authority travel/current authority travel: %.3g / %.3g\n', ...
+    travel_new, travel_current)
 fprintf('  dc gain logged: %d\n', ~isempty(record.command_gain))
-localPrintDropAnalysis('new', new_replay, new_params)
-localPrintDropAnalysis('current', current_replay, current_params)
+localPrintDropAnalysis('new', new_replay)
+localPrintDropAnalysis('current', current_replay)
 end
 
-function n = localEmergencyDropCount(replay)
-n = nnz(localEmergencyDropIndex(replay));
-end
-
-function idx = localEmergencyDropIndex(replay)
-emergency = replay.decision(:) == 2 ...
-    & isfinite(replay.tc(:)) ...
-    & isfinite(replay.auth(:));
-if isempty(emergency)
-    idx = emergency;
-    return
-end
-idx = emergency & ~[false; emergency(1:end-1)];
-end
-
-function localPrintDropAnalysis(label, replay, params)
+function localPrintDropAnalysis(label, replay)
 auth = replay.auth(:);
 da = [NaN; diff(auth)];
 idx = find(isfinite(da) & da <= -0.05, 1);
@@ -331,114 +298,10 @@ if isempty(idx)
     fprintf('  %s first drop: none >= 0.05 authority units\n', label)
     return
 end
-
-target = params.target_outer_ncf;
-sev_frac = 0.60;
-if isfield(params.auth_override, 'sev_frac') ...
-        && ~isempty(params.auth_override.sev_frac)
-    sev_frac = params.auth_override.sev_frac;
-end
-sev_limit = sev_frac*target;
-decision = replay.decision(idx);
-trip_reason = replay.trip_reason(idx);
-b = replay.b_osi(idx);
-
-if decision == 4 || trip_reason ~= 0
-    cause = sprintf('fast trip, trip_reason=%g', trip_reason);
-elseif decision == 2
-    cause = sprintf('severe margin shed: b_osi %.3g < %.3g', ...
-        b, sev_limit);
-elseif decision == 1
-    cause = sprintf('confirmed low-margin shed: b_osi %.3g < target %.3g', ...
-        b, target);
-elseif decision == 3
-    cause = 'recovery step';
-else
-    cause = sprintf('decision %g', decision);
-end
-
-fprintf(['  %s first drop: t=%.3f s, auth %.3g -> %.3g, ', ...
-    'decision=%g, %s\n'], label, replay.tc(idx), auth(idx-1), ...
-    auth(idx), decision, cause)
-fprintf(['    margins at drop: b_osi=%.3g, b_st=%.3g, ', ...
-    'b_res=%.3g, b_fast=%.3g\n'], replay.b_osi(idx), ...
-    replay.b_st(idx), replay.b_res(idx), replay.b_fast(idx))
-end
-
-function localPlotFastTripLines(ax, replay, label, line_style, color)
-t_trip = replay.tc(replay.trip_reason ~= 0 & isfinite(replay.tc));
-if isempty(t_trip)
-    return
-end
-t_trip = unique(t_trip(:)');
-yl = ylim(ax);
-for i = 1:numel(t_trip)
-    if i == 1
-        display_name = ['fast trip line ' label];
-        handle_visibility = 'on';
-    else
-        display_name = '';
-        handle_visibility = 'off';
-    end
-    plot(ax, [t_trip(i) t_trip(i)], yl, line_style, ...
-        'Color', color, ...
-        'LineWidth', 1.4, ...
-        'DisplayName', display_name, ...
-        'HandleVisibility', handle_visibility)
-end
-ylim(ax, yl)
-end
-
-function localPlotFastTrips(ax, replay, label, marker, color)
-idx = replay.trip_reason ~= 0 & isfinite(replay.tc) & isfinite(replay.auth);
-if ~any(idx)
-    return
-end
-plot(ax, replay.tc(idx), replay.auth(idx), marker, ...
-    'Color', color, ...
-    'MarkerFaceColor', color, ...
-    'LineStyle', 'none', ...
-    'MarkerSize', 9, ...
-    'LineWidth', 1.8, ...
-    'DisplayName', ['fast trip ' label])
-end
-
-function localPlotEmergencyDropLines(ax, replay, label, line_style, color)
-t_drop = replay.tc(localEmergencyDropIndex(replay));
-if isempty(t_drop)
-    return
-end
-t_drop = unique(t_drop(:)');
-yl = ylim(ax);
-for i = 1:numel(t_drop)
-    if i == 1
-        display_name = ['emergency drop line ' label];
-        handle_visibility = 'on';
-    else
-        display_name = '';
-        handle_visibility = 'off';
-    end
-    plot(ax, [t_drop(i) t_drop(i)], yl, line_style, ...
-        'Color', color, ...
-        'LineWidth', 1.4, ...
-        'DisplayName', display_name, ...
-        'HandleVisibility', handle_visibility)
-end
-ylim(ax, yl)
-end
-
-function localPlotEmergencyDrops(ax, replay, label, marker, color)
-idx = localEmergencyDropIndex(replay);
-if ~any(idx)
-    return
-end
-plot(ax, replay.tc(idx), replay.auth(idx), marker, ...
-    'Color', color, ...
-    'MarkerFaceColor', 'w', ...
-    'LineStyle', 'none', ...
-    'MarkerSize', 9, ...
-    'LineWidth', 1.8, ...
-    'DisplayName', ['emergency drop ' label])
+fprintf('  %s first drop: t=%.3f s, auth %.3g -> %.3g\n', ...
+    label, replay.tc(idx), auth(idx-1), auth(idx))
+fprintf('    margins at drop: b_osi=%.3g, b_st=%.3g, b_res=%.3g\n', ...
+    replay.b_osi(idx), replay.b_st(idx), replay.b_res(idx))
 end
 
 function localPlotPair(ax, t_new, y_new, t_current, y_current, ...
