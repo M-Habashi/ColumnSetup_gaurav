@@ -60,11 +60,11 @@ hs = struct( ...
     'phase_lead', 'pl_5k_48.mat'), ...
     'earthquake_type', 'el_centro', ... % Field name in input_signals/earthquakes.mat.
     'intensity_factor', 0.04, ...   % Earthquake acceleration multiplier.
-    'time_scale_factor', 10.0, ...  % >1 stretches earthquake time; dt is unchanged.
+    'time_scale_factor', 5.0, ...  % >1 stretches earthquake time; dt is unchanged.
     'force_sign', 1.0, ...         % Use -1 only if force calibration requires it.
     'osi_gain_initial', 1.0, ...
     'osi_gain_min', 0.2, ...
-    'target_outer_ncf', 0.5, ... % SOL_OSI regulated NCF target.
+    'target_outer_ncf', 0.3, ... % SOL_OSI regulated NCF target.
     ... % Canonical OSI settings are defined once in sol_osi.m.
     'osi_branch_split_hz', [], ... % Used only if branch bands are empty.
     'osi_st_branch_hz', [2 10], ...
@@ -185,7 +185,7 @@ hs_ag = hs.ag;
 hs_time_scale_factor_codegen = hs.time_scale_factor;
 hs_force_sign_codegen = hs.force_sign;
 
-gpt5_6_setup = prepare_gpt5_6_runtime(projectFolder, dt, hs);
+gpt5_6_setup = prepare_gpt5_6_runtime(projectFolder, dt, hs, pid_values);
 exp_tf_file = gpt5_6_setup.exp_tf_file;
 exp_tf_name = gpt5_6_setup.exp_tf_name;
 fprintf('exp_tf loaded: %s\n', exp_tf_file)
