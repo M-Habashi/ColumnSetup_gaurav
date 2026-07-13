@@ -64,38 +64,8 @@ hs = struct( ...
     'force_sign', 1.0, ...         % Use -1 only if force calibration requires it.
     'osi_gain_initial', 1.0, ...
     'osi_gain_min', 0.2, ...
-    'target_outer_ncf', 0.45, ... % GPT-5.6.4 regulated NCF target.
-    ...
-    ... % GPT-5.6.4 merged-tuning parameters (see gpt5_6_4_osi.m):
-    ... % detector_max — ceiling on the fast drive-ratio detector. When the
-    ... %   coherent loop gain suddenly reads hotter than its own slow
-    ... %   average, the OSI multiplies its damage memory (rho) up by that
-    ... %   ratio, instantly depressing the margin b, and the authority law
-    ... %   sheds gain in response. detector_max caps that multiplier (2.0 =
-    ... %   at most a doubling of rho per event) so a noisy spectral window
-    ... %   cannot slam the authority; the kick also needs two consecutive
-    ... %   hot updates (0.25 s) before it acts. Larger = harder/faster
-    ... %   sheds at real damage edges; smaller = calmer authority but
-    ... %   weaker first response.
-    ... % rho_leak_s — blind-forgiveness time constant of the damage memory.
-    ... %   With no excitation the OSI has no evidence, so rho decays toward
-    ... %   healthy (1) with this time constant; the margin b then rises and
-    ... %   the authority climbs back at its rate limit. Shorter = faster
-    ... %   authority recovery after quiet periods but the memory of a real
-    ... %   fault fades equally fast (risk: re-entering an unstable region
-    ... %   while a held diagnostic gain / real damage is still present);
-    ... %   longer = safer hold, slower blind recovery. Leak acts only when
-    ... %   idle — during drive the measured fit owns rho.
-    ... %   MEASURED CAVEAT (2026-07-12 benchmark, osi_calibration_test):
-    ... %   leaks of 2-10 s re-enter the unstable region after the quake
-    ... %   fades (10 s: 3.9 s unstable, authority rails to 1.0 with the
-    ... %   diagnostic gain still 3 — the 2026-07-10 failure mode). Values
-    ... %   >= 20 s pass all stability gates; 40 s is the recommended safe
-    ... %   minimum. 10 s chosen by Habashi 2026-07-12: safe ONLY when the
-    ... %   fault/diagnostic gain is removed before the excitation stops.
-    'gpt5_6_override', struct('osi', struct( ...
-    'detector_max', 2.0, ...
-    'rho_leak_s', 10.0)), ...
+    'target_outer_ncf', 0.45, ... % SOL_OSI regulated NCF target.
+    ... % Canonical OSI settings are defined once in sol_osi.m.
     'osi_branch_split_hz', [], ... % Used only if branch bands are empty.
     'osi_st_branch_hz', [2 10], ...
     'osi_residual_branch_hz', [30 80]);
@@ -219,7 +189,7 @@ gpt5_6_setup = prepare_gpt5_6_runtime(projectFolder, dt, hs);
 exp_tf_file = gpt5_6_setup.exp_tf_file;
 exp_tf_name = gpt5_6_setup.exp_tf_name;
 fprintf('exp_tf loaded: %s\n', exp_tf_file)
-fprintf(['GPT-5.6.4 setup: step %.3g s, target %.3g, initial %.3g, ' ...
+fprintf(['SOL_OSI setup: step %.3g s, target %.3g, initial %.3g, ' ...
     'minimum %.3g, publish delay %d ticks\n'], gpt5_6_setup.cfg.step_s, ...
     gpt5_6_setup.target_outer_ncf, gpt5_6_setup.gain_initial, ...
     gpt5_6_setup.gain_min, gpt5_6_setup.publish_ticks)

@@ -1,10 +1,10 @@
-# GPT-5.6.4 Speedgoat runtime
+# SOL_OSI Speedgoat runtime
 
 `gpt5_6_runtime.m` is the real-time implementation of the canonical
-`gpt5_6_4_osi.m` and `gpt5_6_4_auth.m` algorithms. The main script builds
+`sol_osi.m` and `gpt5_6_4_auth.m` algorithms. The main script builds
 its fixed-size parameters with `prepare_gpt5_6_runtime.m`. The legacy
 function and workspace-variable names remain unchanged so the existing
-Speedgoat model can use GPT-5.6.4 without an `.slx` edit.
+Speedgoat model can use SOL_OSI without an `.slx` edit.
 
 ## Scheduling
 
@@ -13,8 +13,8 @@ The base rate is 2048 Hz (488.28 us per tick). A GPT update begins every
 
 - phase 1: snapshot-boundary command window and prior calculation;
 - phases 2 and 4: separate 1024-point command and response FFTs;
-- phase 5: spectral update and coherent margin;
-- phase 6: quiet-band observation normalization;
+- phase 5: healthy-reference capture, spectral update, and coherent margin;
+- phase 6: healthy-reference ratio and recovery hysteresis;
 - phases 7-31: one residual-fit gain candidate per tick;
 - phase 32: residual/full margin, authority update, and atomic publish.
 
@@ -26,7 +26,7 @@ configuration, or surrounding-model change.
 ## Verification order
 
 1. Compare the scheduled output at tick `k*step_n + 32` with the desktop
-   `gpt5_6_4_osi` + `gpt5_6_4_auth` output for update `k`.
+   `sol_osi` + `gpt5_6_4_auth` output for update `k`.
 2. Compile `gpt5_6_runtime.m` with all parameter arrays as
    `coder.Constant` values.
 3. Update the diagram and run `slbuild('model_ColumnSetup_00')` from a fully

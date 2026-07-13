@@ -1,7 +1,7 @@
 function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, ...
     decision, g_armed] = gpt5_6_runtime(dd, dm, en, gpts, gptw, ...
     gptbins, gptrho, gptauth, ~, ~)
-%GPT5_6_RUNTIME Time-sliced Simulink/Speedgoat GPT-5.6.4 implementation.
+%GPT5_6_RUNTIME Time-sliced Simulink/Speedgoat SOL_OSI implementation.
 % Called at 2048 Hz with scalar displacement samples. Each 0.125 s update
 % is spread over 32 ticks: window/FFT work occupies four separate ticks,
 % spectral work two ticks, and the 25 residual-fit candidates one tick
@@ -9,7 +9,8 @@ function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, ...
 
 %#codegen
 persistent c raw_u raw_y raw_pos samples_in sample_phase step_count ...
-    spectral_count Suu Syy Syu drive log_rho rho_drive ratio_prev ...
+    spectral_count Suu Syy Syu q_ref_samples q_ref q_ref_count ...
+    reference_ratio memory_released drive log_rho rho_drive ratio_prev ...
     b_state a_state phase W out_b out_st out_res out_auth out_valid out_dec
 
 PUBLISH_PHASE = 32;
@@ -27,6 +28,11 @@ if isempty(raw_pos)
     Suu = zeros(c.nf, 1);
     Syy = zeros(c.nf, 1);
     Syu = complex(zeros(c.nf, 1));
+    q_ref_samples = zeros(c.nf, 3);
+    q_ref = zeros(c.nf, 1);
+    q_ref_count = 0;
+    reference_ratio = 1;
+    memory_released = false;
     drive = 0;
     log_rho = 0;
     rho_drive = 1;
@@ -112,6 +118,16 @@ elseif phase > 0
             pu = abs(W.U).^2;
             py = abs(W.Y).^2;
             cyu = W.Y.*conj(W.U);
+            if q_ref_count < 3 && mod(step_count, c.reference_stride) == 0
+                q_ref_count = q_ref_count + 1;
+                q_ref_samples(:, q_ref_count) = py./c.shape;
+                if q_ref_count == 3
+                    for i = 1:c.nf
+                        q_ref(i) = median3(q_ref_samples(i, 1), ...
+                            q_ref_samples(i, 2), q_ref_samples(i, 3));
+                    end
+                end
+            end
             if spectral_count == 0
                 Suu = pu; Syy = py; Syu = cyu;
             else
@@ -141,13 +157,35 @@ elseif phase > 0
     elseif ph == 6
         if W.do_spectrum && step_count > c.warm_steps
             W.qobs = Syy./c.shape;
-            W.qobs = W.qobs/max(medianMasked(W.qobs, c.res_keep), eps);
+            if q_ref_count == 3
+                W.qobs = W.qobs./max(q_ref, eps);
+                reference_ratio = medianMasked(W.qobs, c.res_keep);
+                if memory_released
+                    if reference_ratio > c.memory_reengage_ratio
+                        memory_released = false;
+                    end
+                elseif reference_ratio < c.memory_release_ratio
+                    memory_released = true;
+                end
+                level = medianMasked(W.qobs, c.res_keep)^ ...
+                    c.reference_level_beta;
+                W.qobs = W.qobs/max(level, eps);
+            else
+                W.qobs = W.qobs/max( ...
+                    medianMasked(W.qobs, c.res_keep), eps);
+            end
         end
     elseif ph >= 7 && ph < 7 + c.nrho
         if W.do_spectrum && step_count > c.warm_steps
             k = ph - 6;
             qmod = abs((1 + c.L0)./(1 + W.a_now*gptrho(k)*c.L0)).^2;
-            qmod = qmod/max(medianMasked(qmod, c.res_keep), eps);
+            if q_ref_count == 3
+                level = medianMasked(qmod, c.res_keep)^ ...
+                    c.reference_level_beta;
+                qmod = qmod/max(level, eps);
+            else
+                qmod = qmod/max(medianMasked(qmod, c.res_keep), eps);
+            end
             err = abs(log(max(W.qobs, eps)) - log(max(qmod, eps)));
             loss = medianMasked(err, c.res_keep);
             if loss < W.best_loss
@@ -170,7 +208,12 @@ elseif phase > 0
                 drive_ratio = 1 + drive*kick;
                 rho_drive = rho_drive + c.drive_alpha*(rho_current - rho_drive);
                 coherent_weight = min(max(2*(rho_current - 1), 0), 1);
-                shape_weight = coherent_weight + c.fit_floor*W.activity* ...
+                level_weight = max(1-c.level_fit_start_ratio/ ...
+                    max(reference_ratio, eps), 0);
+                effective_fit_floor = c.fit_floor + ...
+                    c.level_fit_gain*level_weight;
+                shape_weight = coherent_weight + ...
+                    effective_fit_floor*W.activity* ...
                     (1 - coherent_weight);
                 rho_target = 1 + shape_weight*(W.best_rho - 1);
                 log_rho = log_rho + W.activity*c.residual_alpha* ...
@@ -183,7 +226,9 @@ elseif phase > 0
             W.res_weight = drive* ...
                 (1 - meanMasked(W.leverage, c.res_keep))^2;
             b_evid = W.b_st - W.res_weight*max(W.b_st - W.b_res, 0);
-            memory_weight = min(max(rho - 1, 0), 1);
+            memory_gain = c.residual_memory_gain;
+            if memory_released, memory_gain = 1; end
+            memory_weight = min(max(memory_gain*(rho - 1), 0), 1);
             b_idle = c.cap - memory_weight*(c.cap - W.b_res);
             b_raw = W.activity*b_evid + (1 - W.activity)*b_idle;
             b_state = min(max(b_state + c.margin_alpha* ...
@@ -217,7 +262,12 @@ c = struct('dt', s(1), 'fs', s(2), 'step_n', round(s(3)), ...
     'warm_steps', round(s(11)), 'nf', round(s(12)), ...
     'nominal', s(13), 'nrho', round(s(14)), ...
     'drive_alpha', s(15), 'fit_floor', s(16), ...
-    'leak_alpha', s(17), 'detector_max', s(18), 'window', w, ...
+    'leak_alpha', s(17), 'detector_max', s(18), ...
+    'reference_stride', round(s(19)), ...
+    'reference_level_beta', s(20), 'residual_memory_gain', s(21), ...
+    'memory_release_ratio', s(22), 'memory_reengage_ratio', s(23), ...
+    'level_fit_gain', s(24), 'level_fit_start_ratio', s(25), ...
+    'window', w, ...
     'bin', round(bins(:, 1)), 'keep', bins(:, 2) ~= 0, ...
     'res_keep', bins(:, 3) ~= 0, ...
     'L0', complex(bins(:, 4), bins(:, 5)), 'shape', bins(:, 6), ...

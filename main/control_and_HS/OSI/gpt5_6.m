@@ -1,5 +1,5 @@
 function out = gpt5_6(command, varargin)
-%GPT5_6 Canonical offline GPT-5.6.4 OSI and authority replay.
+%GPT5_6 Canonical offline SOL_OSI and authority replay.
 %   cfg = gpt5_6('config', dt, initial_loop_tf, override)
 %   out = gpt5_6('run', t, u_osi, dm, dt, initial_loop_tf, override, a)
 %   The optional a is the authority that acted during an open-loop replay.
@@ -7,7 +7,7 @@ function out = gpt5_6(command, varargin)
 switch lower(command)
     case 'config'
         override = optional(varargin, 3, struct());
-        out = struct('osi', gpt5_6_4_osi('config', varargin{1}, ...
+        out = struct('osi', sol_osi('config', varargin{1}, ...
             varargin{2}, fieldOr(override, 'osi', struct())), ...
             'auth', gpt5_6_4_auth('params', ...
             fieldOr(override, 'auth', struct())));
@@ -24,7 +24,7 @@ function out = runReplay(t, u, dm, dt, initial_loop_tf, override, a_acted)
 if nargin < 6 || isempty(override), override = struct(); end
 if nargin < 7, a_acted = []; end
 cfg = gpt5_6('config', dt, initial_loop_tf, override);
-osi_state = gpt5_6_4_osi('state', cfg.osi);
+osi_state = sol_osi('state', cfg.osi);
 auth_state = gpt5_6_4_auth('state', cfg.auth);
 n = min([numel(t), numel(u), numel(dm)]);
 n_step = floor(n/cfg.osi.step_n);
@@ -40,7 +40,7 @@ for k = 1:n_step
     else
         osi_state.a_cmd = a_acted(ii(1));
     end
-    [out.b(k), osi_state, info] = gpt5_6_4_osi( ...
+    [out.b(k), osi_state, info] = sol_osi( ...
         u(ii), dm(ii), cfg.osi, osi_state);
     [auth_state.a, auth_state, auth_info] = gpt5_6_4_auth( ...
         out.b(k), info.full_margin, info.residual_weight, ...

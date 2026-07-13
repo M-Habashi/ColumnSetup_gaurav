@@ -4,7 +4,7 @@ function [new_params, current_params] = habashi_osi_parameter_sets(projectFolder
 % replay) or run_habashi_fable_10_cases (synthetic suite). "current" is the
 % canonical implementation with its built-in defaults, so every comparison
 % is new-tuning vs what the rig runs today. Both sets execute the SAME
-% implementation: control_and_HS/OSI/gpt5_6_4_osi.m + gpt5_6_4_auth.m.
+% implementation: control_and_HS/OSI/sol_osi.m + gpt5_6_4_auth.m.
 
 if nargin < 1 || isempty(projectFolder)
     script_root = fileparts(mfilename('fullpath'));
@@ -15,7 +15,7 @@ end
 exp_tf_file = fullfile(projectFolder, 'saved_results', 'exp_tf', ...
     'tf_sp1_5000_20260627_233333.mat');
 
-%% Category A - Spectral Estimator (gpt5_6_4_osi)
+%% Category A - Spectral Estimator (sol_osi)
 step_s = 0.125;          % OSI update period [s]. Faster reacts sooner but
                          % each spectrum sees less data; must divide segment_s.
 segment_s = 0.5;         % FFT window length [s]. Longer = finer frequency
@@ -40,7 +40,7 @@ quiet_rms = 0.06;        % Drive level [mm rms] that counts as "active".
                          % Below it the OSI holds memory instead of fitting
                          % (and the rho leak takes over).
 
-%% Category B - Damage Memory And Fit (gpt5_6_4_osi)
+%% Category B - Damage Memory And Fit (sol_osi)
 residual_s = 0.50;       % Time constant [s] of the rho memory update while
                          % driven. Shorter locks onto damage faster but
                          % follows fit noise more.
@@ -129,7 +129,7 @@ new_params = struct( ...
     'osi_override', new_osi, ...
     'auth_override', new_auth);
 
-% Canonical implementation defaults (gpt5_6_4_osi/gpt5_6_4_auth 'config'
+% Canonical implementation defaults (sol_osi/gpt5_6_4_auth 'config'
 % and 'params' with empty overrides) — what main_ColumnSetup deploys when
 % hs.gpt5_6_override is empty.
 current_params = struct( ...

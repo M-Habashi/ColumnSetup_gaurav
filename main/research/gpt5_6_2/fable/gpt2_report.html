@@ -223,14 +223,19 @@ just spent 18 seconds measuring.</div>
 </div>
 <div class="note" id="gdbNote"></div>
 
-<h2>6 · Standard benchmark head-to-head: gpt5_6_2 vs the updated gpt5_6_4</h2>
+<h2>6 · Standard benchmark head-to-head: gpt5_6_2 vs gpt5_6_4 vs sol_osi</h2>
 <div class="sub">
-  Both methods run unmodified through <code>research/osi_benchmark/run_osi_benchmark</code>
-  (closed loop, method defaults, <code>osi_calibration_test.mat</code>). The updated gpt5_6_4
-  (commit <code>78472c69</code>) adopted the rho memory-hold, the memory-aware idle limb, and a
-  ratio-based change detector — and now <b>passes all seven gates</b>. Same physics, two tunings
-  of the same idea: gpt5_6_4 trades margin depth for detection speed and recovery; gpt5_6_2
-  holds the target tighter and moves less.
+  All methods run unmodified through <code>research/osi_benchmark/run_osi_benchmark</code>
+  (closed loop, method defaults, <code>osi_calibration_test.mat</code>; scores renamed 2026-07-12:
+  <b>fabby_score_1</b> = suite estimation, <b>fabby_score_2</b> = closed-loop regulation).
+  The updated gpt5_6_4 adopted the rho memory-hold, idle limb, and ratio detector.
+  <b>sol_osi rev 2</b> (<code>research/gpt5_6_4/sol_osi</code>) adds a fixed healthy spectral
+  reference captured in the first 1.5 s, a 32× idle-memory gain with a <b>release
+  hysteresis</b> (release below 0.6× the reference, re-engage above 1.4×), and a level-driven
+  fit floor. It is the <b>new composite leader (74.1)</b>: the only candidate that passes all
+  gates <i>with the fast 10 s leak</i>, the only one to detect all five gain rises, and — fixed
+  in rev 2 — it now recovers after the GDB restore, though slowly (13.5 s vs the 3 s
+  requirement; shaded region below marks that lag, still its weakest score).
 </div>
 <div class="chips" id="benchChips"></div>
 <div class="panel">
@@ -238,10 +243,11 @@ just spent 18 seconds measuring.</div>
   <table id="benchTable"></table>
 </div>
 <div class="panel">
-  <h3>Closed-loop live scenario — both methods in charge</h3>
+  <h3>Closed-loop live scenario — each method in charge</h3>
   <div class="legend">
     <span><span class="sw" style="border-color:var(--new)"></span>gpt5_6_2</span>
     <span><span class="sw" style="border-color:var(--fable)"></span>gpt5_6_4 (updated)</span>
+    <span><span class="sw" style="border-color:var(--rho)"></span>sol_osi</span>
     <span><span class="sw" style="border-color:var(--muted)"></span>diag gain ÷4</span>
     <span><span class="sw dash" style="border-color:var(--crit)"></span>instability boundary a = g_crit/g</span>
   </div>
@@ -251,18 +257,22 @@ just spent 18 seconds measuring.</div>
   <div id="benchTrue"></div>
   <h3>Actuator command |dc| rms</h3>
   <div id="benchDc"></div>
-  <div class="hint">Drag to pan · wheel to zoom · double-click to reset. Both loops stay out of the
-  unstable region; the differences are HOW: gpt5_6_4 sheds deeper and earlier (b_true min 0.252 vs
-  0.211, S2 48.2 vs 34.1) but wanders more (travel 0.53 vs 0.19, S4 76.5 vs 91.6).</div>
+  <div class="hint">Drag to pan · wheel to zoom · double-click to reset. All three loops stay out
+  of the unstable region; the differences are HOW: gpt5_6_4 and sol_osi shed deeper and earlier,
+  gpt5_6_2 holds the target tightest and moves least; sol_osi is the calmest of the 5_6_4 family
+  and the only one to catch the 37.70 s edge.</div>
 </div>
 <div class="panel">
-  <h3>GDBqFpKb — authority trajectories</h3>
+  <h3>GDBqFpKb — authority trajectories · <span style="color:var(--crit)">shaded = sol_osi's recovery lag</span></h3>
   <div class="legend">
     <span><span class="sw" style="border-color:var(--new)"></span>gpt5_6_2</span>
     <span><span class="sw" style="border-color:var(--fable)"></span>gpt5_6_4 (updated)</span>
+    <span><span class="sw" style="border-color:var(--rho)"></span>sol_osi</span>
     <span><span class="sw" style="border-color:var(--muted)"></span>diag gain ÷4</span>
+    <span><span class="sw dash" style="border-color:var(--good)"></span>recovery threshold a = 0.95</span>
   </div>
   <div id="benchGdbA"></div>
+  <div class="hint" id="benchGdbHint"></div>
 </div>
 <div class="note" id="benchNote"></div>
 
@@ -594,31 +604,34 @@ Same information, opposite priorities: GDB rewards blind speed; the live test pu
 (function(){
   const BD = window.BENCH_DATA;
   if(!BD){ return; }
-  const m2 = BD.m2, m4 = BD.m4;
+  const m2 = BD.m2, m4 = BD.m4, sol = BD.sol;
+  const detN = m => [...m.emu.edge_lat, ...m.gdb.edge_lat].filter(x => x!=null && x<=2).length;
+  const recTxt = m => m.gdb.recovery_s==null ? 'never' : m.gdb.recovery_s.toFixed(1)+' s';
   $('benchChips').innerHTML =
     chipHtml(m2.composite.toFixed(1), 'gpt5_6_2 composite', m2.all_pass?'all 7 gates PASS':'GATED OUT', m2.all_pass?'ok':'bad') +
     chipHtml(m4.composite.toFixed(1), 'gpt5_6_4 composite', m4.all_pass?'all 7 gates PASS':'GATED OUT', m4.all_pass?'ok':'bad') +
-    chipHtml(`${m2.emu.unstable_s.toFixed(0)}s / ${m4.emu.unstable_s.toFixed(0)}s`, 'unstable time (both)', 'closed-loop live scenario', 'ok') +
-    chipHtml(`${m2.emu.tail_max_a.toFixed(2)} / ${m4.emu.tail_max_a.toFixed(2)}`, 'end-hold max a', `limit ${(m2.emu.g_crit/3).toFixed(2)} (g_crit/3)`, 'ok');
+    chipHtml(sol.composite.toFixed(1), 'sol_osi rev 2 composite', sol.all_pass?'all 7 gates PASS · new leader':'GATED OUT', sol.all_pass?'ok':'bad') +
+    chipHtml(`${detN(sol)}/5`, 'sol_osi edge detection', 'only method to catch all five rises', 'ok') +
+    chipHtml(recTxt(sol), 'sol_osi GDB recovery', 'was never (rev 1) · requirement 3 s', 'warnc') +
+    chipHtml(`${sol.emu.tail_max_a.toFixed(2)}`, 'sol_osi end-hold max a', `passes limit ${(sol.emu.g_crit/3).toFixed(2)} WITH the 10 s leak`, 'ok');
   const rows = [
-    ['S1 fabby (suite tracking)', m2.scores.S1_fabby, m4.scores.S1_fabby, ''],
-    ['S2 closed-loop tracking', m2.scores.S2_emu_tracking, m4.scores.S2_emu_tracking,
-      `b_true min ${0.211} vs ${0.252}`],
-    ['S3 edge detection', m2.scores.S3_detection, m4.scores.S3_detection,
-      '3/5 vs 4/5 gain rises within 2 s'],
-    ['S4 smoothness', m2.scores.S4_smoothness, m4.scores.S4_smoothness,
-      `travel ${m2.emu.travel.toFixed(2)} vs ${m4.emu.travel.toFixed(2)} (live run: ${m2.emu.travel_live.toFixed(2)})`],
-    ['S5 GDB recovery', m2.scores.S5_gdb_recovery, m4.scores.S5_gdb_recovery,
-      `${m2.gdb.recovery_s.toFixed(1)} s vs ${m4.gdb.recovery_s.toFixed(1)} s after restore`],
-    ['COMPOSITE', m2.composite, m4.composite, 'mean of S1–S5, gates all PASS for both']
+    ['fabby_score_1 (suite estimation)', m2.scores.fabby_score_1, m4.scores.fabby_score_1, sol.scores.fabby_score_1, ''],
+    ['fabby_score_2 (closed-loop regulation)', m2.scores.fabby_score_2, m4.scores.fabby_score_2, sol.scores.fabby_score_2,
+      `b_true min ${m2.emu.b_true_min.toFixed(2)} / ${m4.emu.b_true_min.toFixed(2)} / ${sol.emu.b_true_min.toFixed(2)}`],
+    ['S3 edge detection', m2.scores.S3_detection, m4.scores.S3_detection, sol.scores.S3_detection,
+      `${detN(m2)}/5, ${detN(m4)}/5, ${detN(sol)}/5 gain rises within 2 s`],
+    ['S4 smoothness', m2.scores.S4_smoothness, m4.scores.S4_smoothness, sol.scores.S4_smoothness,
+      `travel ${m2.emu.travel.toFixed(2)} / ${m4.emu.travel.toFixed(2)} / ${sol.emu.travel.toFixed(2)} (live run: ${m2.emu.travel_live.toFixed(2)})`],
+    ['S5 GDB recovery', m2.scores.S5_gdb_recovery, m4.scores.S5_gdb_recovery, sol.scores.S5_gdb_recovery,
+      `${recTxt(m2)} / ${recTxt(m4)} / <b style="color:var(--crit)">${recTxt(sol)}</b> after restore`],
+    ['COMPOSITE', m2.composite, m4.composite, sol.composite, 'mean of the five; all three pass every gate']
   ];
-  let h = `<tr><th>score</th><th class="num">gpt5_6_2</th><th class="num">gpt5_6_4</th><th>fact</th></tr>`;
+  let h = `<tr><th>score</th><th class="num">gpt5_6_2</th><th class="num">gpt5_6_4</th><th class="num">sol_osi</th><th>fact</th></tr>`;
   for(const r of rows){
-    const b2 = r[1] >= r[2], last = r[0]==='COMPOSITE';
+    const vals = [r[1], r[2], r[3]], best = Math.max(...vals), last = r[0]==='COMPOSITE';
     h += `<tr${last?' style="font-weight:650"':''}><td>${r[0]}</td>` +
-      `<td class="num" style="color:${b2?'var(--good)':'var(--ink)'}">${r[1].toFixed(1)}</td>` +
-      `<td class="num" style="color:${!b2?'var(--good)':'var(--ink)'}">${r[2].toFixed(1)}</td>` +
-      `<td class="small">${r[3]}</td></tr>`;
+      vals.map(v => `<td class="num" style="color:${v===best?'var(--good)':'var(--ink)'}">${v.toFixed(1)}</td>`).join('') +
+      `<td class="small">${r[4]}</td></tr>`;
   }
   $('benchTable').innerHTML = h;
   const bound = m2.emu.gain.map(g => Math.min(1.05, m2.emu.g_crit/g));
@@ -627,39 +640,57 @@ Same information, opposite priorities: GDB rewards blind speed; the live test pu
       {name:'boundary', t:m2.emu.t, v:bound, color:'--crit', w:1.4, dash:'5 4'},
       {name:'gain÷4', t:m2.emu.t, v:m2.emu.gain.map(g=>g/4), color:'--muted', w:1.2, scale:4},
       {name:'a 5_6_4', t:m4.emu.t, v:m4.emu.a, color:'--fable', w:2},
+      {name:'a sol', t:sol.emu.t, v:sol.emu.a, color:'--rho', w:2},
       {name:'a 5_6_2', t:m2.emu.t, v:m2.emu.a, color:'--new', w:2.2}
     ]});
   chart('benchTrue', {h:160, x0:0, x1:77, ymin:0, ymax:0.72, link:'bench',
     hlines:[{v:m2.emu.target, color:'var(--muted)', label:'target 0.35'}],
     series:[
       {name:'b_true 5_6_4', t:m4.emu.t, v:m4.emu.b_true, color:'--fable', w:2},
+      {name:'b_true sol', t:sol.emu.t, v:sol.emu.b_true, color:'--rho', w:2},
       {name:'b_true 5_6_2', t:m2.emu.t, v:m2.emu.b_true, color:'--new', w:2.2}
     ]});
   chart('benchDc', {h:130, x0:0, x1:77, ymin:0, ymax:0.8, link:'bench',
     series:[
       {name:'|dc| 5_6_4', t:m4.emu.t, v:m4.emu.dc, color:'--fable', w:2},
+      {name:'|dc| sol', t:sol.emu.t, v:sol.emu.dc, color:'--rho', w:2},
       {name:'|dc| 5_6_2', t:m2.emu.t, v:m2.emu.dc, color:'--new', w:2.2}
     ]});
-  chart('benchGdbA', {h:160, x0:40, x1:m2.gdb.t[m2.gdb.t.length-1], ymin:0, ymax:1.05,
+  const gEnd = m2.gdb.t[m2.gdb.t.length-1];
+  const solRecEnd = sol.gdb.recovery_s==null ? gEnd : sol.gdb.restore_s + sol.gdb.recovery_s;
+  chart('benchGdbA', {h:190, x0:40, x1:gEnd, ymin:0, ymax:1.05,
+    regions:[{t0:sol.gdb.restore_s, t1:solRecEnd, fill:'var(--hazard)'}],
+    hlines:[{v:0.95, color:'var(--good)', label:'recovery threshold 0.95'}],
     series:[
       {name:'gain÷4', t:m2.gdb.t, v:m2.gdb.gain.map(g=>g/4), color:'--muted', w:1.2, scale:4},
       {name:'a 5_6_4', t:m4.gdb.t, v:m4.gdb.a, color:'--fable', w:2},
+      {name:'a sol', t:sol.gdb.t, v:sol.gdb.a, color:'--rho', w:2.4},
       {name:'a 5_6_2', t:m2.gdb.t, v:m2.gdb.a, color:'--new', w:2.2}
     ]});
-  $('benchNote').innerHTML = `<b>Reading the head-to-head.</b> The updated gpt5_6_4 is a genuine fix —
-  it adopted the memory-hold (rho update gated by activity), the memory-aware idle limb, and a
-  ratio-based drive detector, and the closed loop now ends the test held at a ≈ 0.31 against the 3×
-  gain instead of climbing to 1.0. Its composite (${m4.composite.toFixed(1)}) edges out gpt5_6_2
-  (${m2.composite.toFixed(1)}) by detecting one more gain rise, tracking the fight window closer to
-  target, and recovering GDB 1.6 s sooner. gpt5_6_2 still wins where the priorities are strictest:
-  suite tracking (S1 ${m2.scores.S1_fabby.toFixed(1)} vs ${m4.scores.S1_fabby.toFixed(1)}, and
-  ${m4.fabby_cases.filter(x=>x<92).length} of gpt5_6_4's suite cases now sit below 92 vs
-  ${m2.fabby_cases.filter(x=>x<92).length} for gpt5_6_2) and authority calm (S4 91.6 vs 76.5 —
-  gpt5_6_4's drive-ratio multiplier is twitchier, 2.8× the travel during the fight). The remaining
-  structural difference: gpt5_6_4's memory has no leak (rho holds forever at idle until re-driven)
-  and no event-verified release — recovery from a cleared fault relies on re-excitation; gpt5_6_2
-  carries the τ=150 s leak, the release trips, and the grace window. Both are defensible; they
-  should converge in one merged tuning.`;
+  $('benchGdbHint').innerHTML = `<b style="color:var(--crit)">The shaded region
+  (${sol.gdb.restore_s.toFixed(1)}–${solRecEnd.toFixed(1)} s) is sol_osi's recovery lag — its one
+  remaining weak spot.</b> The diagnostic gain is restored to 1 at ${sol.gdb.restore_s.toFixed(1)} s;
+  gpt5_6_4 crosses the 0.95 threshold in ${recTxt(m4)} and gpt5_6_2 in ${recTxt(m2)}, while
+  sol_osi's release hysteresis (quiet-band power must fall below 0.6× its healthy reference before
+  the 32× memory pin lets go) takes ${recTxt(sol)} — against the 3 s canonical requirement, hence
+  S5 ${sol.scores.S5_gdb_recovery.toFixed(1)}, its lowest score. Rev 1 never released at all
+  (S5 = 0); the hysteresis fixed that while keeping the wide safety margin on the release decision.`;
+  $('benchNote').innerHTML = `<b>Reading the three-way comparison.</b> sol_osi rev 2 is the new
+  composite leader (${sol.composite.toFixed(1)} vs ${m4.composite.toFixed(1)} for gpt5_6_4,
+  ${m2.composite.toFixed(1)} for gpt5_6_2, and 73.6 for the best merged-leak tuning). Three results
+  stand out: it is the only candidate that passes the stability gates with the fast 10 s memory
+  leak (end-hold a ${sol.emu.tail_max_a.toFixed(2)} &lt; ${(sol.emu.g_crit/3).toFixed(2)} — the
+  healthy-reference level fit plus the gained idle memory keep the idle reading regulated on the
+  damage model even as the memory fades); it is the first to detect all five gain rises (S3 100,
+  including the 37.70 s edge at ${sol.emu.edge_lat[1]==null?'—':sol.emu.edge_lat[1].toFixed(2)+' s'}
+  that every other method missed); and it is the calmest of the 5_6_4 family (S4
+  ${sol.scores.S4_smoothness.toFixed(1)}). Remaining caveats before deployment: the recovery lag in
+  the shaded region above (13.5 s vs 3 s — the release hysteresis is deliberately wide); the healthy
+  reference is still captured blind in the first 1.5 s (no activity gate — an idle or damaged start
+  poisons it; the folder's own README requires a reset on pause); the record offers only ~14 s of
+  held-gain quiet after the quake, so longer holds ride on the untested re-engage path; and there is
+  no Speedgoat runtime port yet. Verdict: rev 2 answered the main objection — what remains is
+  hardening (activity-gated reference capture, pause reset, runtime port), not redesign.`;
 })();
 
 /* ---------- section 7: limitations ---------- */
@@ -668,7 +699,7 @@ $('limitCards').innerHTML = [
  ['Deep-shed identifiability','At a ≈ 0.15–0.35 the margin curve saturates: healthy and damaged plants are observationally near-identical from the tap. Recovery from deep shed therefore rides on event evidence (trips/releases), the slow leak, or exogenous ground truth — physics, not a tuning choice.'],
  ['The tap distorts absolute fits','u_osi = G_T(dd − iff·fm) is not the true PID reference; the FEM wrap biases the coherent FRF (reads ρ ≈ 3 when healthy). All absolute-model channels are gated off on the rig; only relative changes, ring growth, and the suite’s model-consistent world use them.'],
  ['Case 4 fabby dropped to 69','The ρ ratchet holds ~0.02 more margin than ideal during lowband damage (stability-first bias). Mean score 94.0 still clears the 92 gate; recovering the old 74.8 would need a faster down-path exactly where the rig data says not to trust one.'],
- ['Speedgoat runtime not yet updated','control_and_HS/OSI/gpt5_6_runtime.m still implements the old estimator. The new state (ρ, baselines, floors, trips) fits the same time-sliced pattern; porting + bitwise equivalence testing is the next step before a live run.'],
+ ['Speedgoat runtime now runs GPT-5.6.4','control_and_HS/OSI/gpt5_6_runtime.m was re-sliced to the promoted gpt5_6_4 (with the detector clamp + rho leak) on 2026-07-12 and verified tick-equivalent to the desktop implementation (max diff 6e-16 over the full record). A slbuild rebuild is still required before flashing (parameter vectors changed size), and sol_osi has no runtime port.'],
  ['Coupled-loop margin unmonitored','As documented in the fabby study §5, the production 7000 configuration is bound by the coupled (outer) loop that no current OSI watches. The diag-gain injection here scales the dc path, so regulating the inner family was sufficient for this record.']
 ].map(c=>`<div class="card"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
 </script>

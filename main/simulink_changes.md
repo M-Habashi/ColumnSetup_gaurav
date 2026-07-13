@@ -1,5 +1,14 @@
 # Simulink Changes
 
+## Change 4 (2026-07-12): SOL_OSI promoted without an SLX edit
+
+`gpt5_6_runtime.m` now implements the canonical `sol_osi.m` healthy
+reference, recovery hysteresis, residual-memory gain, and high-level fit.
+`prepare_gpt5_6_runtime.m` packs the added scalar parameters into `gpts`.
+Legacy runtime and workspace names are retained, so the existing MATLAB
+Function block and `.slx` interface are unchanged. Desktop/runtime replay
+agrees to floating-point roundoff.
+
 ## Change 3 (2026-07-10): GPT-5.6 replaces FABLE on Speedgoat
 
 The `Fable OSI + Auth` MATLAB Function block is now `GPT-5.6 OSI + Auth`

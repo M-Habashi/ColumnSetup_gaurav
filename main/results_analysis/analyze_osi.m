@@ -1,5 +1,5 @@
 function replay = analyze_osi(test_file, exp_tf_file)
-%% Analyze GPT-5.6.4 OSI replay from a saved test result.
+%% Analyze the canonical SOL_OSI replay from a saved test result.
 % Selects saved_results/tests with the standard numbered picker when a test
 % path is not supplied. The actuator model is read from the test's embedded
 % dependencies unless an explicit model is supplied. Edit the parameters
@@ -16,29 +16,17 @@ addpath(genpath(fullfile(project_folder, 'control_and_HS', 'OSI')))
 % memory_s, margin_s, and residual_s are exponential memories: increasing
 % them smooths their respective terms and delays their response.
 % quiet_rms is the command activity threshold: increasing it makes quiet
-% data less influential. Frequency bands use the canonical estimator defaults
-% in gpt5_6_4_osi.m unless they are intentionally overridden here.
-% detector_max caps the fast drive-ratio kick on rho (needs 2 consecutive
-% hot updates); rho_leak_s is the idle decay time of the damage memory —
-% shorter recovers authority faster after quiet but forgets real faults
-% equally fast.
-osi_override = struct( ...
-    'step_s', 0.125, ...
-    'segment_s', 0.5, ...
-    'memory_s', 0.25, ...
-    'margin_s', 0.15, ...
-    'residual_s', 0.50, ...
-    'quiet_rms', 0.06, ...
-    'fit_floor', 0.175, ...
-    'detector_max', 2.0, ...
-    'rho_leak_s', 10.0);
+% data less influential. Canonical values, including all frequency bands,
+% healthy-reference memory, recovery hysteresis, and high-level fit logic,
+% are defined once in sol_osi.m. Add only deliberate experiment overrides.
+osi_override = struct();
 
 % Authority: target is read from the saved test when available; this fallback
 % is used only for legacy results. guard/deadband add safety
 % margin and suppress small adjustments. rate controls the log-integral
 % response; max_step caps each update; a_min/a_max bound the authority range.
 auth_override = struct( ...
-    'target', 0.55, ...
+    'target', 0.35, ...
     'guard', 0.02, ...
     'deadband', 0.008, ...
     'rate', 5.0, ...
@@ -79,16 +67,17 @@ end
 assert(isfield(model_data, 'H_dc_dm'), ...
     'The selected system-ID file must contain H_dc_dm.')
 
-[t, u_osi, dm, dt] = replaySignals(result);
+[t, u_osi, dm, dt, sample_index] = replaySignals(result);
 loop_tf = makeLoop(model_data, dt);
-a_acted = loggedAuthority(result, numel(t));
+a_acted = loggedAuthority(result, sample_index);
 replay = gpt5_6('run', t, u_osi, dm, dt, loop_tf, ...
     struct('osi', osi_override, 'auth', auth_override), a_acted);
 replay.test_file = test_file;
 replay.exp_tf_file = exp_tf_file;
 
-plotReplay(test_name, t, dm, result, replay, a_acted, diagnosticGain(result, t));
-fprintf('GPT-5.6.4 replay: %s | %d updates | target %.3f\n', ...
+plotReplay(test_name, t, dm, result, replay, a_acted, ...
+    diagnosticGain(result, t, sample_index), sample_index);
+fprintf('SOL_OSI replay: %s | %d updates | target %.3f\n', ...
     test_name, numel(replay.tc), replay.cfg.auth.target)
 end
 
@@ -100,7 +89,7 @@ else
 end
 end
 
-function [t, u, dm, dt] = replaySignals(result)
+function [t, u, dm, dt, sample_index] = replaySignals(result)
 assert(isfield(result, 't') && isfield(result, 'dm'), ...
     'The selected test must contain t and dm.')
 if isfield(result, 'u_osi')
@@ -110,7 +99,17 @@ elseif isfield(result, 'dd')
 else
     error('analyze_osi:MissingInput', 'The selected test must contain u_osi or dd.')
 end
-t = result.t(:); dm = result.dm(:);
+t_all = result.t(:);
+dm_all = result.dm(:);
+n = min([numel(t_all), numel(u), numel(dm_all)]);
+sample_index = (1:n).';
+if isfield(result, 'dd_pause_enable_log')
+    first_active = find(result.dd_pause_enable_log(1:n) == 0, 1);
+    if ~isempty(first_active), sample_index = sample_index(first_active:end); end
+end
+t = t_all(sample_index);
+u = u(sample_index);
+dm = dm_all(sample_index);
 if isfield(result, 'dt')
     dt = result.dt;
 else
@@ -136,50 +135,54 @@ end
 loop_tf = controller*plant;
 end
 
-function a = loggedAuthority(result, n)
+function a = loggedAuthority(result, sample_index)
 a = [];
 for name = {'auth', 'osi_gain', 'auth_factor'}
-    if isfield(result, name{1}) && numel(result.(name{1})) >= n
-        a = result.(name{1})(1:n);
+    if isfield(result, name{1}) && ...
+            numel(result.(name{1})) >= sample_index(end)
+        values = result.(name{1});
+        a = values(sample_index);
         return
     end
 end
 end
 
-function diag = diagnosticGain(result, t)
+function diag = diagnosticGain(result, t, sample_index)
 diag = struct('t', [], 'value', []);
-if isfield(result, 'Results') && size(result.Results, 2) >= 21
-    n = min(numel(t), size(result.Results, 1));
-    diag.t = t(1:n); diag.value = result.Results(1:n, 21);
-elseif isfield(result, 'diag_gain')
-    n = min(numel(t), numel(result.diag_gain));
-    diag.t = t(1:n); diag.value = result.diag_gain(1:n);
+if isfield(result, 'Results') && size(result.Results, 2) >= 21 && ...
+        size(result.Results, 1) >= sample_index(end)
+    diag.t = t;
+    diag.value = result.Results(sample_index, 21);
+elseif isfield(result, 'diag_gain') && ...
+        numel(result.diag_gain) >= sample_index(end)
+    diag.t = t;
+    diag.value = result.diag_gain(sample_index);
 end
 end
 
-function plotReplay(name, t, dm, result, replay, a_acted, diag)
+function plotReplay(name, t, dm, result, replay, a_acted, diag, sample_index)
 colors = struct('black', [0 0 0], 'blue', [0 124 168]/255, ...
     'purple', [116 5 138]/255, 'copper', [172 100 32]/255, ...
     'green', [57 191 94]/255, 'red', [144 21 0]/255);
-fig = figure('Name', [name ' - GPT-5.6.4 OSI'], 'Color', 'w', ...
+fig = figure('Name', [name ' - SOL_OSI'], 'Color', 'w', ...
     'Position', [80 80 1200 820]);
 tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact')
 
 ax(1) = nexttile; hold on
 h_disp = gobjects(0);
 if isfield(result, 'dd')
-    n = min(numel(t), numel(result.dd));
-    h_disp(end+1) = plot(t(1:n), result.dd(1:n), '--', 'Color', colors.black, ...
+    h_disp(end+1) = plot(t, result.dd(sample_index), '--', ...
+        'Color', colors.black, ...
         'LineWidth', 1.8, 'DisplayName', 'dd');
 end
 if isfield(result, 'dc')
-    n = min(numel(t), numel(result.dc));
-    h_disp(end+1) = plot(t(1:n), result.dc(1:n), 'Color', colors.copper, ...
+    h_disp(end+1) = plot(t, result.dc(sample_index), ...
+        'Color', colors.copper, ...
         'LineWidth', 1, 'DisplayName', 'dc');
 end
 h_disp(end+1) = plot(t, dm, 'Color', colors.blue, 'LineWidth', 1, ...
     'DisplayName', 'dm');
-styleAxis(gca); ylabel('Displacement (mm)'); title([name ' — GPT-5.6.4 OSI replay'], 'Interpreter', 'none')
+styleAxis(gca); ylabel('Displacement (mm)'); title([name ' — SOL_OSI replay'], 'Interpreter', 'none')
 makeLegend(gca, h_disp)
 
 ax(2) = nexttile; hold on

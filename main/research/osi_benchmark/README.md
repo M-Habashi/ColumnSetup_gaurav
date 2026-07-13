@@ -115,7 +115,24 @@ different questions:
 | merged tuning, rho_leak_s = 150 s | ALL PASS | 92.4 | 61.9 | 73.6 |
 | merged tuning, rho_leak_s = 40 s | ALL PASS | 92.4 | 57.7 | 72.8 |
 | merged tuning, rho_leak_s = 10 s (shipped default) | **G3/G4 FAIL** | 92.4 | 54.3 | gated out (73.1) |
+| **sol_osi canonical (healthy reference + hysteresis + level fit)** | ALL PASS | 92.7 | 57.9 | **74.1** |
 | gpt5_6 baseline | **G3/G4 FAIL** | 94.8 | 43.3 | gated out (73.1) |
+
+sol_osi (control_and_HS/OSI/sol_osi.m, 2026-07-12 update) is the current
+composite leader. It is the only candidate that passes the stability gates
+WITH the fast 10 s leak (tail a 0.660 < 0.736: its 32x idle memory gain
+keeps b_idle pinned to the rho model while the memory decays), the only one
+to detect all five gain rises (S3 = 100, including the 37.70 s edge every
+other method missed), and — new in rev 2 — its memory-release hysteresis
+(release below 0.6x the healthy reference, re-engage above 1.4x) restores
+GDB recovery (13.5 s, S5 38.2; rev 1 never recovered, S5 = 0, composite
+66.2). Its level-dependent fit activates only above 4x healthy corrected
+power and keeps the highlighted maximum at 0.347753. Remaining weaknesses:
+recovery is still its lowest score (13.5 s vs
+the 3 s requirement), the healthy reference is captured blind in the first
+1.5 s (no activity gate), and the record offers only ~14 s of held-gain quiet
+so longer holds are unexercised. The time-sliced runtime is now ported in
+control_and_HS/OSI/gpt5_6_runtime.m.
 
 The baseline row shows why the gates exist: its would-be composite matches
 the shipped default's, but it spends 13+ s inside the unstable region — the
