@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOL-OSI — measuring the distance to instability, live</title>
+<style>
+/* ============================================================
+   SOL-OSI course module — white, minimal, portrait-first.
+   Ink on paper; one working accent (cobalt); red reserved
+   for the critical point −1. All math is hand-set HTML.
+   ============================================================ */
+:root{
+  --paper:#ffffff;
+  --wash:#f6f7fa;
+  --ink:#16181f;
+  --ink2:#565b68;
+  --ink3:#8a8f9c;
+  --hair:#e7e9ef;
+  --acc:#3b4fd9;        /* cobalt — drive signal u, margin b, UI accent */
+  --acc-soft:#eef0fc;
+  --teal:#0b9b84;       /* measured response y */
+  --amber:#c2410c;      /* estimates: T-hat, L-hat, rho */
+  --red:#d92d20;        /* the critical point −1 and instability only */
+  --serif:Georgia,'Times New Roman',Times,serif;
+  --grot:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --mono:Consolas,'Cascadia Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:17px/1.68 var(--serif);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+::selection{background:var(--acc-soft)}
+
+/* ---- layout ---- */
+.col{max-width:680px;margin:0 auto;padding:0 22px}
+section{padding:3.2rem 0 1.6rem}
+p{margin:0 0 1.05em}
+a{color:var(--acc);text-decoration:none;border-bottom:1px solid var(--acc-soft)}
+a:hover{border-bottom-color:var(--acc)}
+strong{font-weight:600}
+
+/* ---- progress bar ---- */
+#progress{position:fixed;top:0;left:0;height:2px;width:0;background:var(--acc);z-index:50}
+
+/* ---- typography ---- */
+.eyebrow{
+  font:600 11px/1 var(--grot);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--acc);margin:0 0 .9rem;
+}
+h1{
+  font:600 clamp(2rem,7vw,2.9rem)/1.14 var(--grot);
+  letter-spacing:-.02em;margin:.2rem 0 1rem;
+}
+h2{
+  font:600 clamp(1.35rem,4.5vw,1.7rem)/1.22 var(--grot);
+  letter-spacing:-.015em;margin:0 0 1.1rem;
+}
+h3{font:600 1.02rem/1.3 var(--grot);margin:1.8rem 0 .7rem}
+.lede{font-size:1.12rem;color:var(--ink2)}
+.section-mark{
+  font:600 11px/1 var(--grot);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink3);display:flex;align-items:center;gap:.7em;margin:0 0 1rem;
+}
+.section-mark::after{content:"";flex:1;height:1px;background:var(--hair)}
+.section-mark b{color:var(--acc);font-weight:600}
+
+/* ---- signal colors used in prose and math ---- */
+.cu{color:var(--acc)}      /* drive u, margin b */
+.cy{color:var(--teal)}     /* response y */
+.ce{color:var(--amber)}    /* estimated quantities */
+.cr{color:var(--red)}      /* −1, instability */
+
+/* ============ hand-set math ============ */
+.mx{font-family:Cambria,'STIX Two Text',var(--serif);font-style:italic;white-space:nowrap}
+.eq.wrapeq{white-space:normal}
+.eq.wrapeq .mx{display:inline-block;margin:.15em .55em}
+.mx .up{font-style:normal}        /* operators, digits, function names */
+.mx sub,.mx sup{font-size:.68em;font-style:italic;line-height:0}
+.mx sub.up,.mx sup.up{font-style:normal}
+.mx .bar{text-decoration:overline}
+.eq{
+  display:block;text-align:center;margin:1.5rem 0;
+  font-size:1.16rem;overflow-x:auto;overflow-y:hidden;padding:.2rem 0;
+}
+.eq .mx{white-space:nowrap}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;
+    text-align:center;margin:0 .18em;line-height:1.25}
+.fr .nu{padding:0 .3em .1em}
+.fr .de{border-top:1px solid currentColor;padding:.12em .3em 0}
+.sq{display:inline-flex;align-items:baseline;margin:0 .12em}
+.sq::before{content:"\221A";font-style:normal;transform:translateY(.06em)}
+.sq .un{border-top:1px solid currentColor;padding:.05em .25em 0 .12em}
+.pr{font-style:normal;font-size:1.25em;vertical-align:-.08em}  /* big parens */
+.mag::before,.mag::after{content:"|";font-style:normal;padding:0 .05em}
+
+/* derivations reveal step by step */
+.derive{margin:1.6rem 0;padding:0;list-style:none}
+.derive li{
+  display:grid;grid-template-columns:1fr;gap:.15rem;
+  padding:.55rem 0;border-bottom:1px dashed var(--hair);
+}
+.derive li:last-child{border-bottom:0}
+.derive .note{font:400 .82rem/1.5 var(--grot);color:var(--ink3)}
+.derive .eq{margin:.15rem 0;text-align:left}
+.derive li.key .eq{color:var(--ink)}
+.derive li.key{border-left:3px solid var(--acc);padding-left:.9rem;border-bottom:0;
+  background:var(--acc-soft)}
+
+/* boxed result */
+.result{
+  margin:1.8rem 0;padding:1.1rem 1.2rem;border:1px solid var(--hair);
+  border-left:3px solid var(--acc);background:var(--wash);border-radius:0 8px 8px 0;
+}
+.result .eq{margin:.4rem 0}
+.result .cap{font:600 11px/1 var(--grot);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acc)}
+
+/* ---- scroll reveal ---- */
+.rv{opacity:0;transform:translateY(14px);
+    transition:opacity .6s ease,transform .6s ease}
+.rv.on{opacity:1;transform:none}
+.derive li{opacity:0;transform:translateY(10px);
+    transition:opacity .55s ease,transform .55s ease}
+.derive.on li{opacity:1;transform:none}
+.derive.on li:nth-child(1){transition-delay:.05s}
+.derive.on li:nth-child(2){transition-delay:.35s}
+.derive.on li:nth-child(3){transition-delay:.65s}
+.derive.on li:nth-child(4){transition-delay:.95s}
+.derive.on li:nth-child(5){transition-delay:1.25s}
+.derive.on li:nth-child(6){transition-delay:1.55s}
+@media (prefers-reduced-motion:reduce){
+  .rv,.derive li{opacity:1;transform:none;transition:none}
+  #hero-locus path{stroke-dashoffset:0 !important;animation:none !important}
+}
+
+/* ---- expandable terms & code ---- */
+details{margin:1.1rem 0;border:1px solid var(--hair);border-radius:8px;overflow:hidden}
+details summary{
+  cursor:pointer;padding:.6rem .9rem;font:600 .85rem/1.4 var(--grot);
+  color:var(--ink2);list-style:none;display:flex;align-items:center;gap:.6em;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"+";font-weight:600;color:var(--acc);
+  width:1em;text-align:center;flex:none}
+details[open] summary::before{content:"–"}
+details .body{padding:.2rem .95rem .9rem;font-size:.95rem;color:var(--ink2)}
+details.term{background:var(--wash);border-style:dashed}
+details.term summary{color:var(--acc)}
+details.code{background:#fbfbfd}
+details.code summary::after{
+  content:"MATLAB";margin-left:auto;font:600 10px/1 var(--mono);
+  letter-spacing:.1em;color:var(--ink3);border:1px solid var(--hair);
+  padding:.25em .5em;border-radius:4px;
+}
+pre{
+  margin:.4rem 0 .6rem;padding:.8rem .95rem;overflow-x:auto;
+  font:12.5px/1.6 var(--mono);color:var(--ink);
+  background:var(--wash);border-radius:6px;
+}
+pre .ln{color:var(--ink3);user-select:none;display:inline-block;
+  width:2.6em;text-align:right;margin-right:1em}
+pre .cm{color:var(--ink3)}
+code{font:.86em var(--mono);background:var(--wash);
+  padding:.1em .35em;border-radius:4px}
+.code-note{font:400 .82rem/1.55 var(--grot);color:var(--ink3);margin:.2rem 0 .4rem}
+
+/* ---- figures & charts ---- */
+figure{margin:1.8rem 0}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font:400 .82rem/1.55 var(--grot);color:var(--ink3);
+  margin-top:.55rem;text-align:left}
+.chart-wrap{position:relative}
+.tip{
+  position:absolute;pointer-events:none;background:var(--ink);color:#fff;
+  font:600 11px/1.5 var(--grot);padding:.4em .6em;border-radius:6px;
+  transform:translate(-50%,-130%);white-space:nowrap;opacity:0;transition:opacity .12s;
+  z-index:5;
+}
+.tip small{display:block;font-weight:400;color:#cfd3de}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;margin:.5rem 0 0;
+  font:600 11.5px/1 var(--grot);color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:.45em}
+.legend i{width:14px;height:0;border-top:2.5px solid;border-radius:2px}
+
+/* ---- interactive panels ---- */
+.panel{
+  border:1px solid var(--hair);border-radius:12px;padding:1.1rem 1.1rem 1rem;
+  margin:1.8rem 0;background:var(--paper);
+  box-shadow:0 1px 2px rgba(22,24,31,.04),0 8px 28px -18px rgba(22,24,31,.15);
+}
+.panel .cap{font:600 11px/1 var(--grot);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acc);margin:0 0 .8rem;display:block}
+.controls{display:flex;flex-wrap:wrap;gap:.9rem 1.6rem;margin:.6rem 0 .9rem}
+.ctrl{flex:1 1 200px;min-width:180px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;
+  font:600 12px/1.4 var(--grot);color:var(--ink2);margin-bottom:.3rem}
+.ctrl output{font:600 13px/1 var(--mono);color:var(--acc)}
+input[type=range]{width:100%;accent-color:var(--acc);height:22px;margin:0}
+.readout{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem}
+.readout .stat{
+  flex:1 1 30%;min-width:120px;background:var(--wash);border-radius:8px;
+  padding:.55rem .7rem;
+}
+.readout .stat b{display:block;font:600 1.15rem/1.2 var(--grot);letter-spacing:-.01em}
+.readout .stat span{font:600 10.5px/1.4 var(--grot);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink3)}
+button.play{
+  font:600 13px/1 var(--grot);color:#fff;background:var(--acc);border:0;
+  border-radius:999px;padding:.6em 1.3em;cursor:pointer;
+}
+button.play:hover{background:#2f40b8}
+
+/* ---- quiz ---- */
+.quiz{
+  border:1px solid var(--hair);border-radius:12px;margin:2.2rem 0;
+  overflow:hidden;background:var(--wash);
+}
+.quiz header{
+  display:flex;align-items:center;gap:.7em;padding:.8rem 1.1rem;
+  border-bottom:1px solid var(--hair);
+}
+.quiz header .cap{font:600 11px/1 var(--grot);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acc)}
+.quiz header .sw{margin-left:auto;display:inline-flex;align-items:center;gap:.5em;
+  font:600 11px/1 var(--grot);color:var(--ink3);cursor:pointer;user-select:none}
+.quiz header .sw input{accent-color:var(--acc)}
+.q{padding:1rem 1.1rem .4rem}
+.q+.q{border-top:1px dashed var(--hair)}
+.q p{font:400 .98rem/1.55 var(--serif);margin:0 0 .6rem}
+.q .opts{display:grid;gap:.45rem;margin-bottom:.9rem}
+.q .opts button{
+  text-align:left;font:400 .92rem/1.5 var(--serif);color:var(--ink);
+  background:var(--paper);border:1px solid var(--hair);border-radius:8px;
+  padding:.55rem .8rem;cursor:pointer;transition:border-color .15s;
+}
+.q .opts button:hover{border-color:var(--acc)}
+.q .opts button.sel{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.quiz.show .opts button.correct{border-color:var(--teal);
+  box-shadow:inset 0 0 0 1px var(--teal);background:#f2fbf9}
+.quiz.show .opts button.sel:not(.correct){border-color:var(--red);
+  box-shadow:inset 0 0 0 1px var(--red);background:#fdf3f2}
+.q .why{display:none;font:400 .85rem/1.6 var(--grot);color:var(--ink2);
+  background:var(--paper);border-left:3px solid var(--teal);
+  padding:.5rem .8rem;margin:0 0 1rem;border-radius:0 6px 6px 0}
+.quiz.show .q .why{display:block}
+
+/* ---- hero ---- */
+#hero{padding:4.2rem 0 2.6rem}
+#hero .meta{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.4rem 0 0}
+#hero .meta span{
+  font:600 11px/1 var(--grot);letter-spacing:.06em;color:var(--ink2);
+  border:1px solid var(--hair);border-radius:999px;padding:.5em .9em;
+}
+#hero-locus{margin:2.2rem 0 0}
+.route{margin:2.4rem 0 0;padding:1.2rem 0 0;border-top:1px solid var(--hair)}
+.route ol{margin:.6rem 0 0;padding:0;list-style:none;
+  display:grid;grid-template-columns:1fr 1fr;gap:.25rem 1.6rem}
+.route li a{display:block;font:400 .92rem/1.9 var(--grot);color:var(--ink2);
+  border-bottom:0}
+.route li a:hover{color:var(--acc)}
+.route li a b{font:600 .8em var(--mono);color:var(--ink3);margin-right:.6em}
+@media (max-width:520px){.route ol{grid-template-columns:1fr}}
+
+/* ---- symbol table ---- */
+.symtab{overflow-x:auto;margin:1.4rem 0}
+.symtab table{border-collapse:collapse;width:100%;min-width:540px;
+  font:400 .88rem/1.5 var(--grot)}
+.symtab th{font:600 10.5px/1 var(--grot);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--ink)}
+.symtab td{padding:.45rem .7rem;border-bottom:1px solid var(--hair);vertical-align:top}
+.symtab td:first-child{font-family:var(--serif);font-style:italic;font-size:1rem}
+.symtab td code{white-space:nowrap}
+
+footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--hair);
+  font:400 .85rem/1.7 var(--grot);color:var(--ink3)}
+
+/* keyboard focus */
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<!-- ================= HERO ================= -->
+<header id="hero" class="col">
+  <p class="eyebrow">Course module · Real-time hybrid simulation</p>
+  <h1>SOL&#8209;OSI: a loop that measures its own distance to instability</h1>
+  <p class="lede">A servo-hydraulic control loop is running an experiment at
+  2048&nbsp;samples per second. Somewhere inside it, eight times a second, a
+  small algorithm answers one question: <em>how close are we to going
+  unstable&nbsp;— right now?</em> This module derives that algorithm,
+  SOL&#8209;OSI, equation by equation, from the loop you already know to the
+  number it publishes.</p>
+
+  <figure id="hero-locus">
+    <svg id="heroSvg" viewBox="0 0 640 380" role="img"
+         aria-label="Nyquist locus of the measured loop, drawn live, with the critical point minus one marked"></svg>
+    <figcaption>The frequency response of the real loop in this codebase
+    (PID&nbsp;×&nbsp;column plant <code>H_dc_dm</code>, 2–100&nbsp;Hz), drawn in the
+    complex plane. The <span class="cr">red ×</span> is the critical point
+    −1. SOL&#8209;OSI is, at heart, a live measurement of the gap between this
+    curve and that point.</figcaption>
+  </figure>
+
+  <div class="meta">
+    <span>audience · graduate</span>
+    <span>loop rate · 2048 Hz</span>
+    <span>update rate · 8 / s</span>
+    <span>source · sol_osi.m</span>
+  </div>
+
+  <nav class="route rv">
+    <p class="eyebrow" style="color:var(--ink3)">The route</p>
+    <ol>
+      <li><a href="#s1"><b>01</b>The experiment that must not break</a></li>
+      <li><a href="#s2"><b>02</b>The loop on paper</a></li>
+      <li><a href="#s3"><b>03</b>Closing the loop</a></li>
+      <li><a href="#s4"><b>04</b>Distance to instability</a></li>
+      <li><a href="#s5"><b>05</b>Listening to the loop</a></li>
+      <li><a href="#s6"><b>06</b>How much do we trust it?</a></li>
+      <li><a href="#s7"><b>07</b>The quiet branch</a></li>
+      <li><a href="#s8"><b>08</b>One number</a></li>
+      <li><a href="#s9"><b>09</b>Acting on it: authority</a></li>
+      <li><a href="#s10"><b>10</b>Symbols ↔ code</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ================= S1 ================= -->
+<section id="s1" class="col">
+  <p class="section-mark"><b>01</b> Setting</p>
+  <h2>The experiment that must not break</h2>
+
+  <p class="rv">In a <strong>real-time hybrid simulation</strong> (RTHS), half of a
+  structure exists as software and half as hardware. A finite-element model of a
+  building computes, in real time, how a floor should move during an earthquake.
+  A hydraulic actuator then imposes that motion on a physical column specimen in
+  the lab, measures the force the column pushes back with, and feeds that force
+  into the model. Software and steel take turns, thousands of times per second.</p>
+
+  <details class="term rv"><summary>What exactly is “hybrid” about it?</summary>
+    <div class="body">A pure simulation trusts a numerical model of the column; a
+    pure shake-table test needs the whole building built. RTHS splits the
+    difference: the hard to model part (a column that may crack, yield, or wear)
+    is physical, and everything else is numerical. The cost is that the two halves
+    are joined by a feedback loop that runs through real actuators with real
+    dynamics — and that loop can go unstable even when both halves are
+    individually fine.</div>
+  </details>
+
+  <p class="rv">Inside the machinery sits an ordinary servo loop. A controller
+  receives a <strong>displacement command</strong> and drives the actuator so that
+  the <strong>measured displacement</strong> tracks it. Two recorded signals are all
+  SOL&#8209;OSI ever sees:</p>
+
+  <figure class="rv">
+    <svg viewBox="0 0 640 210" role="img" aria-label="Block diagram: command u enters a summing junction, error goes through controller C and plant H to produce measured output y, which feeds back">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#565b68"/>
+        </marker>
+      </defs>
+      <g font-family="Segoe UI,system-ui,sans-serif" font-size="14">
+        <!-- command -->
+        <line x1="20" y1="105" x2="106" y2="105" stroke="#565b68" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="44" y="92" fill="#3b4fd9" font-style="italic" font-family="Georgia,serif" font-size="17">u</text>
+        <text x="20" y="130" fill="#8a8f9c" font-size="11.5">command (dd)</text>
+        <!-- sum -->
+        <circle cx="120" cy="105" r="13" fill="none" stroke="#16181f" stroke-width="1.5"/>
+        <text x="112" y="96" fill="#16181f" font-size="12">+</text>
+        <text x="126" y="132" fill="#16181f" font-size="12">−</text>
+        <!-- error arrow -->
+        <line x1="133" y1="105" x2="196" y2="105" stroke="#565b68" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="156" y="92" fill="#16181f" font-style="italic" font-family="Georgia,serif" font-size="17">e</text>
+        <!-- C block -->
+        <rect x="200" y="80" width="120" height="50" rx="8" fill="#eef0fc" stroke="#3b4fd9" stroke-width="1.5"/>
+        <text x="260" y="101" text-anchor="middle" fill="#16181f" font-style="italic" font-family="Georgia,serif" font-size="17">C(s)</text>
+        <text x="260" y="120" text-anchor="middle" fill="#565b68" font-size="11">PID controller</text>
+        <!-- arrow -->
+        <line x1="320" y1="105" x2="384" y2="105" stroke="#565b68" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- H block -->
+        <rect x="388" y="80" width="140" height="50" rx="8" fill="#fff" stroke="#16181f" stroke-width="1.5"/>
+        <text x="458" y="101" text-anchor="middle" fill="#16181f" font-style="italic" font-family="Georgia,serif" font-size="17">H(s)</text>
+        <text x="458" y="120" text-anchor="middle" fill="#565b68" font-size="11">actuator + column</text>
+        <!-- output -->
+        <line x1="528" y1="105" x2="616" y2="105" stroke="#565b68" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="576" y="92" fill="#0b9b84" font-style="italic" font-family="Georgia,serif" font-size="17">y</text>
+        <text x="540" y="130" fill="#8a8f9c" font-size="11.5">measured (dm)</text>
+        <!-- feedback -->
+        <polyline points="560,105 560,175 120,175 120,118" fill="none" stroke="#565b68" stroke-width="1.5" marker-end="url(#arr)"/>
+        <circle cx="560" cy="105" r="3" fill="#565b68"/>
+        <text x="330" y="192" fill="#8a8f9c" font-size="11.5">unity feedback</text>
+      </g>
+    </svg>
+    <figcaption>The inner servo loop. SOL-OSI taps two signals: the drive
+    <span class="mx cu">u</span> (called <code>dd</code> in the code) and the measured
+    displacement <span class="mx cy">y</span> (called <code>dm</code>).</figcaption>
+  </figure>
+
+  <p class="rv">Here is the danger. The column specimen <em>changes during the
+  test</em> — that is the point of testing it. Damage shifts its stiffness and
+  damping, which shifts the loop’s dynamics, which erodes its stability margin.
+  If the loop crosses into instability, the actuator oscillates violently and the
+  specimen — possibly months of preparation — is destroyed by the test equipment
+  rather than tested by it.</p>
+
+  <p class="rv">So we want an <strong>online stability indicator</strong> (OSI): a
+  number <span class="mx"><b>b</b></span>, recomputed every 0.125&nbsp;s from
+  <span class="mx cu">u</span> and <span class="mx cy">y</span> alone, that measures how far
+  the loop currently is from instability. Large <span class="mx"><b>b</b></span>:
+  comfortable. Falling <span class="mx"><b>b</b></span>: the loop is drifting toward
+  the edge, and a supervisor should gently turn the experiment down before physics
+  turns it off. SOL&#8209;OSI is the estimator of <span class="mx"><b>b</b></span>;
+  the supervisor is the <em>authority regulator</em> we meet at the end.</p>
+
+  <details class="code rv"><summary>The whole contract, in code</summary>
+    <div class="body">
+    <p class="code-note">Everything this module derives lives in one function with
+    a three-call interface — configure, initialize, then step it forward with
+    256 fresh samples of each signal (0.125&nbsp;s at 2048&nbsp;Hz):</p>
+<pre><span class="ln">1</span>function [out, state, info] = sol_osi(varargin)
+<span class="ln">2</span><span class="cm">%SOL_OSI Healthy-reference two-branch NCF-margin estimator.</span>
+<span class="ln">3</span><span class="cm">%   cfg = sol_osi('config', dt, initial_loop_tf, override)</span>
+<span class="ln">4</span><span class="cm">%   state = sol_osi('state', cfg)</span>
+<span class="ln">5</span><span class="cm">%   [b, state, info] = sol_osi(dd, dm, cfg, state)</span></pre>
+    <p class="code-note">File: <code>control_and_HS/OSI/sol_osi.m</code>. The
+    returned <code>b</code> is the stability margin; <code>info</code> carries
+    diagnostics we will meet along the way.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ================= S2 ================= -->
+<section id="s2" class="col">
+  <p class="section-mark"><b>02</b> The model</p>
+  <h2>The loop on paper</h2>
+
+  <p class="rv">Start from what you know. Each block in the diagram is a
+  <strong>transfer function</strong>: the ratio of output to input in the Laplace
+  domain, <span class="mx">G(s) = Y(s)/U(s)</span>. Evaluating it on the imaginary
+  axis, <span class="mx">s = j&omega;</span>, gives the frequency response — a complex
+  number per frequency whose magnitude is gain and whose angle is phase shift.</p>
+
+  <p class="rv">The controller in this rig is the classic PID with a filtered
+  derivative, with the exact constants used on the hardware:</p>
+
+  <span class="eq rv wrapeq"><span class="mx">
+    C(s) <span class="up">=</span> P <span class="up">+</span>
+    <span class="fr"><span class="nu">I</span><span class="de">s</span></span>
+    <span class="up">+</span> D<span class="up">&thinsp;</span>
+    <span class="fr"><span class="nu">N&thinsp;s</span><span class="de">s <span class="up">+</span> N</span></span></span>
+    <span class="mx"><span class="up">P = 0.15,&ensp; I = 20,&ensp; D = 0.0015,&ensp; N = 512</span>
+  </span></span>
+
+  <p class="rv">The plant <span class="mx">H(s)</span> — hydraulic actuator, servo
+  valve, and the column itself, from displacement command to measured
+  displacement — is not written down from first principles. It was
+  <strong>identified</strong> from measurements on the rig and stored in the codebase
+  as <code>H_dc_dm</code> (the 7k column model). Multiplying the two blocks that the
+  signal passes through gives the <strong>open-loop transfer function</strong>, the
+  single object the whole module revolves around:</p>
+
+  <div class="result rv"><span class="cap">The object of study</span>
+    <span class="eq"><span class="mx">
+      L<sub>0</sub>(j&omega;) <span class="up">=</span> C(j&omega;)&thinsp;H(j&omega;)
+    </span></span>
+    <p style="margin:0;font-size:.92rem;color:var(--ink2)">the loop as designed,
+    while the specimen is still healthy. The subscript 0 marks this as the
+    <em>reference</em> loop — SOL-OSI carries it as prior knowledge.</p>
+  </div>
+
+  <p class="rv">SOL-OSI never works with a formula for
+  <span class="mx">L<sub>0</sub></span>. At configuration time it samples the
+  frequency response on a fixed grid: the band <strong>2–100&nbsp;Hz</strong> in steps
+  of 2&nbsp;Hz — 50 complex numbers. Two sub-bands get special treatment:
+  <strong>58–62&nbsp;Hz is masked out</strong> (mains electrical interference lives
+  there, and a stability estimator should not be fooled by the power grid), and
+  <strong>28–44&nbsp;Hz</strong> is reserved as the <em>residual fit band</em> for
+  Section&nbsp;07. Below is the actual magnitude data from the rig:</p>
+
+  <figure class="panel rv">
+    <span class="cap">Measured frequency response — this rig</span>
+    <div class="chart-wrap" id="bodeChart"></div>
+    <div class="legend">
+      <span><i style="color:var(--teal)"></i>|H| plant</span>
+      <span><i style="color:var(--amber)"></i>|C| PID</span>
+      <span><i style="color:var(--acc)"></i>|L₀| = |C·H|</span>
+    </div>
+    <figcaption>Magnitudes of <span class="mx">H</span>, <span class="mx">C</span> and
+    <span class="mx">L<sub>0</sub></span> on SOL-OSI’s 2&nbsp;Hz grid. Shaded strip:
+    the rejected 58–62&nbsp;Hz mains band. Dotted strip: the 28–44&nbsp;Hz residual
+    band. Hover for values. Note the resonance near 30&nbsp;Hz — the column’s
+    dominant mode, where the loop gain peaks.</figcaption>
+  </figure>
+
+  <details class="code rv"><summary>Where the grid and L₀ are built</summary>
+    <div class="body">
+<pre><span class="ln">62</span>f = (0:cfg.segment_n/2)'*cfg.fs/cfg.segment_n;
+<span class="ln">63</span>cfg.bin = find(f &gt;= cfg.band_hz(1) &amp; f &lt;= cfg.band_hz(2));
+<span class="ln">64</span>cfg.freq_hz = f(cfg.bin);
+<span class="ln">65</span>cfg.keep = ~(cfg.freq_hz &gt;= cfg.line_reject_hz(1) &amp; ...
+<span class="ln">66</span>    cfg.freq_hz &lt;= cfg.line_reject_hz(2));
+<span class="ln">72</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));</pre>
+    <p class="code-note">Config constants: <code>band_hz = [2 100]</code>,
+    <code>line_reject_hz = [58 62]</code>, <code>residual_band_hz = [28 44]</code>.
+    The caller passes <code>initial_loop_tf = C*H_dc_dm</code> — see
+    <code>prepare_gpt5_6_runtime.m</code>, line 45.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ================= S3 ================= -->
+<section id="s3" class="col">
+  <p class="section-mark"><b>03</b> Two lines of algebra</p>
+  <h2>Closing the loop</h2>
+
+  <p class="rv">The loop is closed, so the signals we record are <em>closed-loop</em>
+  signals. Before we can measure anything we need the map from command
+  <span class="mx cu">u</span> to measurement <span class="mx cy">y</span>. Follow the
+  block diagram around once — each line below is one substitution:</p>
+
+  <ol class="derive">
+    <li>
+      <span class="note">The error is what enters the controller: command minus measurement.</span>
+      <span class="eq"><span class="mx">e <span class="up">=</span> <span class="cu">u</span> <span class="up">−</span> <span class="cy">y</span></span></span>
+    </li>
+    <li>
+      <span class="note">The measurement is the error pushed through both blocks, C then H — that product is L.</span>
+      <span class="eq"><span class="mx"><span class="cy">y</span> <span class="up">=</span> C&thinsp;H&thinsp;e <span class="up">=</span> L&thinsp;e <span class="up">=</span> L&thinsp;(<span class="cu">u</span> <span class="up">−</span> <span class="cy">y</span>)</span></span>
+    </li>
+    <li>
+      <span class="note">Collect the y terms on the left.</span>
+      <span class="eq"><span class="mx">(<span class="up">1 +</span> L)&thinsp;<span class="cy">y</span> <span class="up">=</span> L&thinsp;<span class="cu">u</span></span></span>
+    </li>
+    <li class="key">
+      <span class="note">Divide. The closed-loop transfer function from command to measurement:</span>
+      <span class="eq"><span class="mx">
+        T <span class="up">=</span>
+        <span class="fr"><span class="nu"><span class="cy">y</span></span><span class="de"><span class="cu">u</span></span></span>
+        <span class="up">=</span>
+        <span class="fr"><span class="nu">L</span><span class="de"><span class="up">1 +</span> L</span></span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">And the error itself obeys a twin formula — divide line 3’s logic into line 1:</span>
+      <span class="eq"><span class="mx">
+        S <span class="up">=</span>
+        <span class="fr"><span class="nu">e</span><span class="de"><span class="cu">u</span></span></span>
+        <span class="up">=</span>
+        <span class="fr"><span class="nu"><span class="up">1</span></span><span class="de"><span class="up">1 +</span> L</span></span>
+        <span class="up">,&emsp;</span> S <span class="up">+</span> T <span class="up">=</span> <span class="up">1</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <p class="rv"><span class="mx">T</span> is the <strong>complementary
+  sensitivity</strong> — how faithfully <span class="mx cy">y</span> tracks
+  <span class="mx cu">u</span>. <span class="mx">S</span> is the
+  <strong>sensitivity</strong> — how much of the command leaks into the error, and,
+  just as important for us, how much the loop <em>amplifies disturbances</em>
+  injected at the output. Both formulas are evaluated frequency by frequency:
+  plug in the complex number <span class="mx">L(j&omega;)</span>, get complex
+  <span class="mx">T(j&omega;)</span> and <span class="mx">S(j&omega;)</span>.</p>
+
+  <details class="term rv"><summary>Why “sensitivity”? And why do we care about 1 + L?</summary>
+    <div class="body">
+      <p>The name is historical: <span class="mx">S</span> measures how sensitive the
+      closed loop is to small changes in the plant. But look at the denominator
+      shared by both formulas: <span class="mx"><span class="up">1 +</span> L(j&omega;)</span>.
+      If at some frequency <span class="mx">L(j&omega;) = <span class="cr">−1</span></span>,
+      that denominator is zero — infinite amplification. The loop rings at that
+      frequency without any input: <strong>instability</strong>.</p>
+      <p>So all questions about stability become questions about how close
+      <span class="mx">L(j&omega;)</span> comes to the point
+      <span class="mx cr">−1</span> in the complex plane. Keep that thought — it is
+      the entire next section.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ===== check 1 ===== -->
+<div class="col">
+<div class="quiz rv" id="quiz1">
+  <header><span class="cap">Check yourself · 1</span>
+    <label class="sw"><input type="checkbox" class="showans"> show answers</label>
+  </header>
+  <div class="q" data-a="1">
+    <p>At 30&nbsp;Hz the loop gain of this rig peaks. If damage makes the column
+    softer and the loop gain at 30&nbsp;Hz <em>grows</em>, the denominator
+    1&nbsp;+&nbsp;L(j&omega;) there…</p>
+    <div class="opts">
+      <button>…always grows too, since L got bigger.</button>
+      <button>…can shrink toward zero, if the larger L lands closer to −1.</button>
+      <button>…is unaffected; only the numerator of T changes.</button>
+    </div>
+    <p class="why">1 + L is a <em>complex</em> sum. A bigger |L| moves the point
+    further from the origin, but whether it moves toward or away from −1 depends
+    on its phase. Gain growth at a phase near 180° is exactly the dangerous
+    direction.</p>
+  </div>
+  <div class="q" data-a="2">
+    <p>You command <span class="mx cu">u</span> at a frequency where
+    |L(j&omega;)| is very large. The tracking T = L/(1+L) is then…</p>
+    <div class="opts">
+      <button>…very small: large loop gain suppresses the output.</button>
+      <button>…about −1: the loop inverts the command.</button>
+      <button>…about 1: the measurement follows the command almost exactly.</button>
+    </div>
+    <p class="why">For |L| ≫ 1, L/(1+L) ≈ 1: high loop gain means tight tracking.
+    Correspondingly S = 1/(1+L) ≈ 0 — almost no error. That trade is what the
+    controller gain buys.</p>
+  </div>
+</div>
+</div>
+
+<!-- ================= S4 ================= -->
+<section id="s4" class="col">
+  <p class="section-mark"><b>04</b> The central idea</p>
+  <h2>Distance to instability</h2>
+
+  <p class="rv">Section 03 ended with the observation that instability means
+  <span class="mx">L(j&omega;)</span> touching <span class="mx cr">−1</span>. The most
+  natural margin, then, is simply a distance in the complex plane, computed at
+  every grid frequency:</p>
+
+  <span class="eq rv"><span class="mx">
+    d(&omega;) <span class="up">=</span> <span class="mag"><span class="up">1 +</span> L(j&omega;)</span>
+  </span></span>
+
+  <p class="rv">This is a fine start — it is exactly the distance from the Nyquist
+  curve to the critical point, and its reciprocal is the peak of
+  |<span class="mx">S</span>|. But it has a flaw for a <em>monitor</em>: it treats
+  all parts of the plane unequally. Out where |<span class="mx">L</span>| is huge,
+  the curve can swing by whole units of distance while the loop’s behavior barely
+  changes; near the origin, a small step is a big deal. A margin that will be
+  compared against one fixed threshold for the whole test needs a distance that
+  weighs every neighborhood fairly.</p>
+
+  <p class="rv">The fix is to measure distance on a <em>normalized</em> version of
+  the plane. Divide out the size of the points involved:</p>
+
+  <ol class="derive">
+    <li>
+      <span class="note">The chordal distance between two complex numbers z₁ and z₂ shrinks each leg by its own magnitude scale:</span>
+      <span class="eq"><span class="mx">
+        c(z<sub>1</sub>, z<sub>2</sub>) <span class="up">=</span>
+        <span class="fr"><span class="nu"><span class="mag">z<sub>1</sub> <span class="up">−</span> z<sub>2</sub></span></span>
+        <span class="de"><span class="sq"><span class="un"><span class="up">1 +</span> <span class="mag">z<sub>1</sub></span><sup class="up">2</sup></span></span><span class="sq"><span class="un"><span class="up">1 +</span> <span class="mag">z<sub>2</sub></span><sup class="up">2</sup></span></span></span></span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Set z₁ = L(jω) and z₂ = −1. The second root becomes √2, a constant:</span>
+      <span class="eq"><span class="mx">
+        c<span class="pr">(</span>L, <span class="cr">−1</span><span class="pr">)</span> <span class="up">=</span>
+        <span class="fr"><span class="nu"><span class="mag"><span class="up">1 +</span> L(j&omega;)</span></span>
+        <span class="de"><span class="sq"><span class="un"><span class="up">2</span><span class="pr">(</span><span class="up">1 +</span> <span class="mag">L(j&omega;)</span><sup class="up">2</sup><span class="pr">)</span></span></span></span></span>
+      </span></span>
+    </li>
+    <li class="key">
+      <span class="note">This is SOL-OSI’s per-frequency margin, capped at its own largest possible value:</span>
+      <span class="eq"><span class="mx">
+        b(&omega;) <span class="up">=</span> <span class="up">min</span><span class="pr">(</span>
+        <span class="fr"><span class="nu"><span class="mag"><span class="up">1 +</span> L</span></span>
+        <span class="de"><span class="sq"><span class="un"><span class="up">2&thinsp;</span>(<span class="up">1 +</span> <span class="mag">L</span><sup class="up">2</sup>)</span></span></span></span>,&ensp;
+        <span class="fr"><span class="nu"><span class="up">1</span></span><span class="de"><span class="sq"><span class="un"><span class="up">2</span></span></span></span></span>
+        <span class="pr">)</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <details class="term rv"><summary>Where does the chordal formula come from? (the sphere picture)</summary>
+    <div class="body">
+      <p>Imagine a unit sphere resting on the complex plane and project every
+      point of the plane onto it from the north pole (stereographic projection).
+      Distant points crowd together near the pole; points near the origin map
+      near the south pole almost undistorted. The chordal distance
+      <span class="mx">c(z<sub>1</sub>, z<sub>2</sub>)</span> is the straight-line
+      chord between the two projected points — which is exactly why enormous
+      |L| swings stop mattering: on the sphere they barely move.</p>
+      <p>This same metric underlies the <em>&nu;-gap</em> and the normalized-coprime-factor
+      (NCF) robustness theory of Vinnicombe — the reason the codebase calls
+      <span class="mx">b</span> an “NCF margin.” For this module you only need the
+      operational meaning: <strong>chordal distance from the loop to −1, so that one
+      threshold is fair at every frequency</strong>.</p>
+    </div>
+  </details>
+
+  <p class="rv">Two consequences of the formula are worth pausing on. First, the
+  cap: when the loop is switched off entirely, <span class="mx">L = <span class="up">0</span></span>,
+  the distance to −1 is <span class="mx"><span class="up">1/</span><span class="sq"><span class="un"><span class="up">2</span></span></span> &approx; <span class="up">0.707</span></span> — no loop can
+  ever be “safer” than no loop, so <span class="mx">b</span> lives in
+  <span class="mx up">[0, 0.707]</span>. Second, the loop is only as safe as its worst
+  frequency, so the published margin takes the <strong>minimum across the grid</strong>,
+  skipping the masked mains bins:</p>
+
+  <div class="result rv"><span class="cap">The number SOL-OSI publishes</span>
+    <span class="eq"><span class="mx">
+      b <span class="up">=</span> <span class="up">min</span><sub class="up">&omega; &isin; keep</sub>&ensp; b(&omega;)
+    </span></span>
+    <p style="margin:0;font-size:.92rem;color:var(--ink2)">For this rig’s healthy
+    loop the value is <span class="mx">b<sub>0</sub> <span class="up">= 0.3447</span></span>,
+    at the worst bin near the column resonance. Watch it move below.</p>
+  </div>
+
+  <p class="rv">Everything after this section is bookkeeping in service of one
+  question: <em>what is the actual, current</em> <span class="mx">L(j&omega;)</span>
+  <em>to feed into this formula?</em> Before that, get a feel for the geometry.
+  The explorer below applies two knobs to the real loop: a gain
+  <span class="mx">a</span> (the “authority” — Section&nbsp;09 will turn this knob
+  automatically) and a factor <span class="mx ce">&rho;</span> standing for
+  damage-induced loop-gain change:</p>
+
+  <div class="panel rv" id="explorer">
+    <span class="cap">Explore · the chordal margin of the real loop &nbsp;a·ρ·L₀</span>
+    <div class="controls">
+      <div class="ctrl">
+        <label>authority a <output id="aOut">1.00</output></label>
+        <input type="range" id="aSlider" min="0.2" max="1" step="0.01" value="1">
+      </div>
+      <div class="ctrl">
+        <label>damage gain ρ <output id="rOut">1.00</output></label>
+        <input type="range" id="rSlider" min="-0.301" max="0.778" step="0.001" value="0">
+      </div>
+    </div>
+    <div class="chart-wrap" id="nyqChart"></div>
+    <div class="chart-wrap" id="bwChart" style="margin-top:.6rem"></div>
+    <div class="readout">
+      <div class="stat"><span>margin b</span><b id="bOut" style="color:var(--acc)">0.345</b></div>
+      <div class="stat"><span>worst bin</span><b id="fOut">38 Hz</b></div>
+      <div class="stat"><span>|1+L| there</span><b id="dOut">0.55</b></div>
+    </div>
+    <figcaption style="margin-top:.7rem;font:400 .82rem/1.55 var(--grot);color:var(--ink3)">
+    Top: the loop’s locus in the complex plane; the dashed segment is the gap
+    between the <span style="color:var(--acc)">worst-frequency point</span> and
+    <span class="cr">−1</span>. Bottom: the margin b(&omega;) across the band; its
+    minimum is the published b. Push ρ up and watch the resonance bulge reach
+    toward −1; pull authority a down and watch the whole locus contract toward
+    the origin — margin recovered by turning the loop down.</figcaption>
+  </div>
+
+  <details class="code rv"><summary>The margin, in four lines</summary>
+    <div class="body">
+<pre><span class="ln">293</span>function b = chordal(L, cap)
+<span class="ln">294</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
+<span class="ln">295</span>end
+<span class="ln">297</span>function y = minMasked(x, mask)
+<span class="ln">298</span>y = min(x(mask));
+<span class="ln">299</span>end</pre>
+    <p class="code-note">With <code>cap = 1/sqrt(2)</code> from the config. The
+    healthy reference value is precomputed at line 75:
+    <code>cfg.nominal = min(cfg.nominal_curve.*cfg.keep + cfg.cap*(~cfg.keep))</code>.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ===== check 2 ===== -->
+<div class="col">
+<div class="quiz rv" id="quiz2">
+  <header><span class="cap">Check yourself · 2</span>
+    <label class="sw"><input type="checkbox" class="showans"> show answers</label>
+  </header>
+  <div class="q" data-a="0">
+    <p>Why does SOL-OSI use the chordal distance instead of the plain distance
+    |1 + L|?</p>
+    <div class="opts">
+      <button>So that one fixed alarm threshold is equally meaningful whether |L| is large or small.</button>
+      <button>Because |1 + L| cannot be computed from sampled data.</button>
+      <button>Because the chordal distance is always larger, giving earlier warnings.</button>
+    </div>
+    <p class="why">Both are computable; the chordal version is |1+L| divided by a
+    size normalization. That normalization is what lets a single threshold (and a
+    single target for the regulator) serve the entire frequency band and the
+    whole range of loop gains.</p>
+  </div>
+  <div class="q" data-a="2">
+    <p>In the explorer, reducing the authority a always increased the margin b.
+    Why?</p>
+    <div class="opts">
+      <button>Lower a speeds up the controller, improving phase margin.</button>
+      <button>Lower a shifts the resonance to a masked frequency bin.</button>
+      <button>Lower a scales the whole locus toward the origin, and the origin is the farthest point from −1 (chordally) a loop can reach.</button>
+    </div>
+    <p class="why">a multiplies L. As a → 0 the locus contracts to the origin,
+    where the chordal distance to −1 is the cap 1/√2 ≈ 0.707. That monotone
+    lever is exactly what makes authority a usable safety valve.</p>
+  </div>
+</div>
+</div>
+
+<!-- ================= S5 ================= -->
+<section id="s5" class="col">
+  <p class="section-mark"><b>05</b> Measurement</p>
+  <h2>Listening to the loop</h2>
+
+  <p class="rv">The formula for <span class="mx">b</span> wants
+  <span class="mx">L(j&omega;)</span> — the loop as it is <em>now</em>, damage
+  included. That must come from the two live signals. SOL-OSI processes them in
+  small blocks: every <strong>0.125&nbsp;s</strong> it receives 256 fresh samples and
+  updates a sliding <strong>0.5&nbsp;s buffer</strong> (1024 samples) of each signal.
+  The buffer, not the block, is what gets analyzed — a 0.5&nbsp;s window is what
+  sets the 2&nbsp;Hz frequency grid you have already seen
+  (<span class="mx up">&Delta;f = 1/0.5&nbsp;s = 2&nbsp;Hz</span>).</p>
+
+  <p class="rv">Each analysis starts by tapering the buffer with a
+  <strong>Hann window</strong> and taking the FFT of both signals:</p>
+
+  <ol class="derive">
+    <li>
+      <span class="note">The window fades the buffer in and out so the FFT does not see false jumps at the buffer edges (spectral leakage):</span>
+      <span class="eq"><span class="mx">
+        w[n] <span class="up">=</span> <span class="up">0.5 − 0.5 cos</span>
+        <span class="pr">(</span><span class="fr"><span class="nu"><span class="up">2</span>&pi;n</span><span class="de">N <span class="up">− 1</span></span></span><span class="pr">)</span>
+        <span class="up">,&emsp;</span> N <span class="up">= 1024</span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Transform the windowed signals; keep only the 2–100 Hz bins:</span>
+      <span class="eq"><span class="mx">
+        <span class="cu">U<sub>k</sub></span> <span class="up">=</span> <span class="up">FFT</span>{w&thinsp;·&thinsp;<span class="cu">u</span>}<span class="up">&thinsp;|</span><sub class="up">k</sub>
+        <span class="up">,&emsp;</span>
+        <span class="cy">Y<sub>k</sub></span> <span class="up">=</span> <span class="up">FFT</span>{w&thinsp;·&thinsp;<span class="cy">y</span>}<span class="up">&thinsp;|</span><sub class="up">k</sub>
+      </span></span>
+    </li>
+    <li class="key">
+      <span class="note">From the pair, form three real-time statistics per bin — two powers and one cross term:</span>
+      <span class="eq"><span class="mx">
+        p<sub>u</sub> <span class="up">=</span> <span class="mag"><span class="cu">U<sub>k</sub></span></span><sup class="up">2</sup>
+        <span class="up">,&emsp;</span>
+        p<sub>y</sub> <span class="up">=</span> <span class="mag"><span class="cy">Y<sub>k</sub></span></span><sup class="up">2</sup>
+        <span class="up">,&emsp;</span>
+        c<sub>yu</sub> <span class="up">=</span> <span class="cy">Y<sub>k</sub></span>&thinsp;<span class="cu">U<sub>k</sub></span><sup class="up">*</sup>
+      </span></span>
+    </li>
+  </ol>
+
+  <details class="term rv"><summary>What is the cross-spectrum c<sub>yu</sub> really measuring?</summary>
+    <div class="body">
+      <p><span class="mx">c<sub>yu</sub> = <span class="cy">Y</span><span class="cu">U</span><sup class="up">*</sup></span>
+      multiplies the output bin by the <em>conjugate</em> of the input bin. Its
+      magnitude is large only when both signals have energy at that frequency;
+      its <em>angle</em> is the phase of Y relative to U. So it is the raw
+      material of a transfer-function measurement: “how much of Y lines up with
+      U, and at what phase.” Noise in Y that is unrelated to U points in random
+      directions and averages toward zero — which is exactly the property the
+      next steps exploit.</p>
+    </div>
+  </details>
+
+  <p class="rv">One 0.5&nbsp;s window is far too noisy to trust. The classical
+  remedy is to average many windows; the real-time remedy is an
+  <strong>exponentially weighted moving average</strong> (EWMA) — a one-line filter
+  that keeps a running mean which gently forgets the past:</p>
+
+  <div class="result rv"><span class="cap">The workhorse update, used seven times in SOL-OSI</span>
+    <span class="eq"><span class="mx">
+      <span class="bar">x</span> <span class="up">&larr;</span> <span class="bar">x</span> <span class="up">+</span> &alpha;&thinsp;(x<sub class="up">new</sub> <span class="up">−</span> <span class="bar">x</span>)
+      <span class="up">,&emsp;</span>
+      &alpha; <span class="up">=</span> <span class="up">1 −</span> e<sup>−&Delta;t/&tau;</sup>
+    </span></span>
+    <p style="margin:0;font-size:.92rem;color:var(--ink2)">&Delta;t = 0.125&nbsp;s is
+    the update interval; the memory time constant &tau; sets the personality:
+    small &tau; reacts fast but stays noisy, large &tau; is calm but late.</p>
+  </div>
+
+  <p class="rv">Applied to the three statistics with
+  <span class="mx">&tau; <span class="up">= 0.25 s</span></span>
+  (so <span class="mx">&alpha; <span class="up">= 1 − e<sup>−0.5</sup> = 0.393</span></span>),
+  this yields the smoothed <strong>auto-spectra and cross-spectrum</strong> that every
+  later formula consumes:</p>
+
+  <span class="eq rv wrapeq"><span class="mx">
+    <span class="bar">S</span><sub>uu</sub> <span class="up">&larr;</span> <span class="bar">S</span><sub>uu</sub> <span class="up">+</span> &alpha;(p<sub>u</sub> <span class="up">−</span> <span class="bar">S</span><sub>uu</sub>)</span>
+    <span class="mx"><span class="bar">S</span><sub>yy</sub> <span class="up">&larr;</span> <span class="bar">S</span><sub>yy</sub> <span class="up">+</span> &alpha;(p<sub>y</sub> <span class="up">−</span> <span class="bar">S</span><sub>yy</sub>)</span>
+    <span class="mx"><span class="bar">S</span><sub>yu</sub> <span class="up">&larr;</span> <span class="bar">S</span><sub>yu</sub> <span class="up">+</span> &alpha;(c<sub>yu</sub> <span class="up">−</span> <span class="bar">S</span><sub>yu</sub>)
+  </span></span>
+
+  <div class="panel rv" id="ewmaPanel">
+    <span class="cap">Explore · one knob, one personality</span>
+    <div class="controls">
+      <div class="ctrl">
+        <label>memory τ <output id="tauOut">0.25 s</output></label>
+        <input type="range" id="tauSlider" min="0.05" max="2" step="0.05" value="0.25">
+      </div>
+    </div>
+    <div class="chart-wrap" id="ewmaChart"></div>
+    <figcaption style="margin-top:.7rem;font:400 .82rem/1.55 var(--grot);color:var(--ink3)">
+    A noisy measurement steps up at t = 1 s (gray dots). The EWMA (cobalt) chases
+    it with time constant τ. SOL-OSI runs several of these at once, each tuned to
+    its job: spectra τ = 0.25 s, the published margin τ = 0.15 s, the damage
+    memory τ = 0.5 s, slow context τ = 2 s, idle forgetting τ = 10 s.</figcaption>
+  </div>
+
+  <p class="rv">One more scalar is computed per block, and it will gate almost
+  everything downstream. The estimator asks: <em>is there any excitation to learn
+  from at all?</em></p>
+
+  <span class="eq rv"><span class="mx">
+    activity <span class="up">=</span> <span class="up">min</span><span class="pr">(</span><span class="up">1</span>,&ensp;
+    <span class="pr">(</span><span class="fr"><span class="nu"><span class="up">rms</span>(<span class="cu">u</span>)</span><span class="de"><span class="up">0.06</span></span></span><span class="pr">)</span><sup class="up">4</sup>
+    <span class="pr">)</span>
+  </span></span>
+
+  <p class="rv">The fourth power makes this a soft switch: drive comfortably above
+  the quiet threshold 0.06 and activity saturates at 1; drive below it and
+  activity plunges toward 0. When the room is quiet, spectral estimates are
+  meaningless — and SOL-OSI will refuse to update its beliefs from them.</p>
+
+  <details class="code rv"><summary>Buffers, FFT, smoothing, activity</summary>
+    <div class="body">
+<pre><span class="ln">121</span>state.u = [state.u(n+1:end); dd];
+<span class="ln">122</span>state.y = [state.y(n+1:end); dm];
+<span class="ln">126</span>activity = min(1, (rms(state.u)/cfg.quiet_rms)^4);
+<span class="ln">141</span>Uall = fft(state.u.*cfg.window);
+<span class="ln">142</span>Yall = fft(state.y.*cfg.window);
+<span class="ln">145</span>pu = abs(U).^2;
+<span class="ln">146</span>py = abs(Y).^2;
+<span class="ln">147</span>cyu = Y.*conj(U);
+<span class="ln">160</span>    q = cfg.spectral_alpha;
+<span class="ln">161</span>    state.Suu = state.Suu+q*(pu-state.Suu);
+<span class="ln">162</span>    state.Syy = state.Syy+q*(py-state.Syy);
+<span class="ln">163</span>    state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
+    <p class="code-note">All the α values are precomputed in config (lines 78–82),
+    e.g. <code>cfg.spectral_alpha = 1-exp(-cfg.step_s/cfg.memory_s)</code>. The
+    quiet threshold is <code>cfg.quiet_rms = 0.06</code>.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ================= S6 ================= -->
+<section id="s6" class="col">
+  <p class="section-mark"><b>06</b> The coherent branch</p>
+  <h2>How much do we trust what we hear?</h2>
+
+  <p class="rv">With smoothed spectra in hand, the closed-loop transfer function
+  has a classical estimator — divide the cross-spectrum by the input power,
+  bin by bin:</p>
+
+  <span class="eq rv"><span class="mx">
+    <span class="ce">T&#770;<sub>k</sub></span> <span class="up">=</span>
+    <span class="fr"><span class="nu"><span class="bar">S</span><sub>yu</sub></span><span class="de"><span class="bar">S</span><sub>uu</sub></span></span>
+  </span></span>
+
+  <p class="rv">(Statisticians call this the H1 estimator; it is the least-squares
+  fit of <span class="mx cy">Y</span> on <span class="mx cu">U</span>.) The trouble is
+  that <span class="mx ce">T&#770;</span> is only as good as the data behind it. At a
+  frequency where the drive has no energy, or where the output is mostly noise,
+  <span class="mx ce">T&#770;</span> is garbage — and one garbage bin, pushed through
+  the min in Section 04, could fake an emergency. SOL-OSI therefore scores every
+  bin before using it.</p>
+
+  <h3 class="rv">Score 1 — coherence: does y actually follow u?</h3>
+
+  <span class="eq rv"><span class="mx">
+    &gamma;<sup class="up">2</sup><sub>k</sub> <span class="up">=</span>
+    <span class="fr"><span class="nu"><span class="mag"><span class="bar">S</span><sub>yu</sub></span><sup class="up">2</sup></span>
+    <span class="de"><span class="bar">S</span><sub>uu</sub>&thinsp;<span class="bar">S</span><sub>yy</sub></span></span>
+    &ensp;<span class="up">&isin; [0, 1]</span>
+  </span></span>
+
+  <details class="term rv"><summary>Why does γ² measure trust?</summary>
+    <div class="body">
+      <p>Coherence is the frequency-domain cousin of a squared correlation
+      coefficient. If <span class="mx cy">y</span> at bin k is purely a filtered copy
+      of <span class="mx cu">u</span>, the cross terms line up perfectly and
+      γ² = 1. If <span class="mx cy">y</span> at that bin is dominated by
+      something else — sensor noise, mains hum, the specimen creaking on its
+      own — the cross-spectrum averages toward zero while the auto-spectra stay
+      large, and γ² falls toward 0. It is a per-frequency answer to “is this bin
+      of <span class="ce">T&#770;</span> a measurement or a hallucination?”</p>
+    </div>
+  </details>
+
+  <h3 class="rv">Score 2 — leverage: was there drive there at all?</h3>
+
+  <span class="eq rv"><span class="mx">
+    p<sub class="up">rel</sub> <span class="up">=</span>
+    <span class="fr"><span class="nu"><span class="bar">S</span><sub>uu</sub></span><span class="de"><span class="up">max</span><sub>k</sub>&thinsp;<span class="bar">S</span><sub>uu</sub></span></span>
+    <span class="up">,&emsp;</span>
+    leverage <span class="up">=</span>
+    <span class="fr"><span class="nu">p<sub class="up">rel</sub></span><span class="de">p<sub class="up">rel</sub> <span class="up">+</span> <span class="up">10</span><sup class="up">−3</sup></span></span>
+  </span></span>
+
+  <p class="rv">Bins more than 30&nbsp;dB below the strongest bin (the
+  <code>power_floor</code>) earn leverage near 0. Combining both scores with the
+  block-level activity gate gives each bin its <strong>confidence</strong>:</p>
+
+  <span class="eq rv"><span class="mx">
+    confidence<sub>k</sub> <span class="up">=</span> activity&thinsp;·&thinsp;&gamma;<sup class="up">2</sup><sub>k</sub>&thinsp;·&thinsp;leverage<sub>k</sub>
+    &ensp;<span class="up">&isin; [0, 1]</span>
+  </span></span>
+
+  <h3 class="rv">Believing data exactly as much as it deserves</h3>
+
+  <p class="rv">Here is the move that makes SOL-OSI robust rather than merely
+  optimistic. It refuses to choose between measurement and prior knowledge — it
+  <em>blends</em> them, per bin, by confidence. The prior is the healthy loop scaled
+  by the current authority, <span class="mx">L<sub class="up">prior</sub> <span class="up">=</span> a&thinsp;L<sub>0</sub></span>,
+  pushed through Section 03’s formula to get
+  <span class="mx">T<sub class="up">prior</sub> = L<sub class="up">prior</sub>/(1+L<sub class="up">prior</sub>)</span>:</p>
+
+  <ol class="derive">
+    <li class="key">
+      <span class="note">Confidence-weighted blend — full trust uses the measurement, zero trust falls back to the prior:</span>
+      <span class="eq"><span class="mx">
+        T<sub class="up">use</sub> <span class="up">=</span> confidence&thinsp;·&thinsp;<span class="ce">T&#770;</span>
+        <span class="up">+</span> (<span class="up">1 −</span> confidence)&thinsp;·&thinsp;T<sub class="up">prior</sub>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Invert Section 03 to recover the loop itself (guarding the denominator away from zero, |1 − T| ≥ 0.02):</span>
+      <span class="eq"><span class="mx">
+        <span class="ce">L&#770;</span> <span class="up">=</span>
+        <span class="fr"><span class="nu">T<sub class="up">use</sub></span><span class="de"><span class="up">1 −</span> T<sub class="up">use</sub></span></span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Feed it to the chordal margin; a 3-bin moving median knocks out single-bin outliers before the min:</span>
+      <span class="eq"><span class="mx">
+        b<sub class="up">st</sub> <span class="up">=</span> <span class="up">min</span><sub class="up">keep</sub>&ensp;
+        <span class="up">movmedian</span><sub class="up">3</sub><span class="pr">(</span>
+        c<span class="pr">(</span><span class="ce">L&#770;</span>, <span class="cr">−1</span><span class="pr">)</span><span class="pr">)</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <p class="rv">This <span class="mx">b<sub class="up">st</sub></span> is the
+  <strong>coherent branch</strong>: the best margin estimate available <em>when the
+  loop is well excited</em>. Its failure mode is equally clear — under weak drive,
+  confidence collapses everywhere, <span class="mx">T<sub class="up">use</sub></span>
+  degenerates to the prior, and <span class="mx">b<sub class="up">st</sub></span> can
+  only repeat what it already believed. Damage that whispers instead of shouting
+  needs a different listener.</p>
+
+  <div class="panel rv" id="blendPanel">
+    <span class="cap">Explore · the confidence blend at one frequency sweep</span>
+    <div class="controls">
+      <div class="ctrl">
+        <label>overall confidence <output id="cOut">0.80</output></label>
+        <input type="range" id="cSlider" min="0" max="1" step="0.01" value="0.8">
+      </div>
+    </div>
+    <div class="chart-wrap" id="blendChart"></div>
+    <div class="legend">
+      <span><i style="color:var(--amber)"></i>|T̂| raw estimate (noisy)</span>
+      <span><i style="color:var(--ink3);border-top-style:dashed"></i>|T_prior| from a·L₀</span>
+      <span><i style="color:var(--acc)"></i>|T_use| blended</span>
+    </div>
+    <figcaption style="margin-top:.7rem;font:400 .82rem/1.55 var(--grot);color:var(--ink3)">
+    A synthetic noisy measurement of |T| over the band (the true loop here is
+    ρ = 1.6, while the prior still believes ρ = 1). At high confidence the blend
+    follows the measurement and discovers the damage; slide confidence down and
+    watch the estimate surrender to the prior — the honest thing to do when the
+    data is uninformative.</figcaption>
+  </div>
+
+  <details class="code rv"><summary>Coherence → confidence → blend → margin</summary>
+    <div class="body">
+<pre><span class="ln">167</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
+<span class="ln">168</span>p_rel = state.Suu/max(max(state.Suu), eps);
+<span class="ln">169</span>leverage = p_rel./(p_rel+cfg.power_floor);
+<span class="ln">170</span>confidence = activity*gamma2.*leverage;
+<span class="ln">171</span>That = state.Syu./max(state.Suu, eps);
+<span class="ln">172</span>Tuse = confidence.*That+(1-confidence).*Tprior;
+<span class="ln">173</span>den = 1-Tuse;
+<span class="ln">174</span>small = abs(den) &lt; 0.02;
+<span class="ln">175</span>den(small) = 0.02*exp(1i*angle(den(small)+eps));
+<span class="ln">176</span>Lhat = Tuse./den;
+<span class="ln">177</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);</pre>
+    <p class="code-note">The prior comes from lines 128–130:
+    <code>a_now = min(max(state.a_cmd, 0.02), 1)</code>,
+    <code>Lprior = a_now*cfg.L0</code>, <code>Tprior = Lprior./(1+Lprior)</code>.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ===== check 3 ===== -->
+<div class="col">
+<div class="quiz rv" id="quiz3">
+  <header><span class="cap">Check yourself · 3</span>
+    <label class="sw"><input type="checkbox" class="showans"> show answers</label>
+  </header>
+  <div class="q" data-a="1">
+    <p>At bin k the drive has strong energy and γ²ₖ = 0.95, but the experiment
+    has just gone quiet, so activity = 0.05. The blend T_use at that bin is…</p>
+    <div class="opts">
+      <button>…mostly the measurement T̂: coherence is what matters.</button>
+      <button>…mostly the prior: confidence = activity · γ² · leverage ≈ 0.05.</button>
+      <button>…exactly halfway between measurement and prior.</button>
+    </div>
+    <p class="why">Confidence is a product of three gates. A high γ² computed
+    from stale, fading spectra should not be trusted, and the activity factor is
+    what enforces that: any single gate near zero pulls the whole product down.</p>
+  </div>
+  <div class="q" data-a="0">
+    <p>Why does the coherent branch take a 3-bin moving median of the chordal
+    curve before the minimum?</p>
+    <div class="opts">
+      <button>One corrupted bin would otherwise directly set the published minimum.</button>
+      <button>To smooth the curve for prettier plotting.</button>
+      <button>To widen the frequency band being monitored.</button>
+    </div>
+    <p class="why">min is the most outlier-sensitive statistic there is — it
+    hands the microphone to the single worst bin. The median-of-3 requires at
+    least two neighboring bins to agree before a dip can become the minimum.</p>
+  </div>
+</div>
+</div>
+
+<!-- ================= S7 ================= -->
+<section id="s7" class="col">
+  <p class="section-mark"><b>07</b> The quiet branch</p>
+  <h2>Hearing damage in the noise floor</h2>
+
+  <p class="rv">Suppose the drive is weak — the earthquake record is between
+  pulses, activity is low, the coherent branch has gone deaf. The loop is still
+  <em>running</em>, and its output still contains a faint hiss: sensor noise,
+  ambient vibration, tiny disturbances entering everywhere. That hiss is not
+  useless. Section 03 told us that disturbances at the output are shaped by the
+  sensitivity — the noise floor of <span class="mx cy">y</span> carries the
+  fingerprint of <span class="mx"><span class="mag"><span class="up">1/(1 +</span> L<span class="up">)</span></span></span>.
+  As the loop creeps toward instability, <span class="mx"><span class="up">1 +</span> L</span>
+  shrinks at the dangerous frequencies and the noise floor there <strong>bulges</strong>.
+  The quiet branch is built to hear that bulge.</p>
+
+  <h3 class="rv">Step 1 — normalize away the healthy shape</h3>
+
+  <ol class="derive">
+    <li>
+      <span class="note">Divide the measured output spectrum by the healthy sensitivity shape, precomputed from L₀:</span>
+      <span class="eq"><span class="mx">
+        q<sub class="up">obs</sub> <span class="up">=</span>
+        <span class="fr"><span class="nu"><span class="bar">S</span><sub>yy</sub></span>
+        <span class="de"><span class="mag"><span class="up">1/(1 +</span> L<sub>0</sub><span class="up">)</span></span><sup class="up">2</sup></span></span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Calibrate against this specimen’s own healthy noise: the median of the first three half-second windows becomes a per-bin reference, and everything after is measured relative to it:</span>
+      <span class="eq"><span class="mx">
+        q<sub class="up">obs</sub> <span class="up">&larr;</span>
+        <span class="fr"><span class="nu">q<sub class="up">obs</sub></span><span class="de">q<sub class="up">ref</sub></span></span>
+        <span class="up">,&emsp;</span>
+        q<sub class="up">ref</sub> <span class="up">=</span> <span class="up">median of first 3 windows</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <p class="rv">If the loop still matches its healthy self,
+  <span class="mx">q<sub class="up">obs</sub> &approx; <span class="up">1</span></span>
+  at every bin. Any systematic deviation is evidence. The branch summarizes the
+  level in the 28–44&nbsp;Hz fit band (chosen around the column resonance, where
+  sensitivity changes show first) as the <code>reference_ratio</code> — you will
+  meet it again as a safety interlock.</p>
+
+  <h3 class="rv">Step 2 — ask which damage would explain it</h3>
+
+  <p class="rv">Now the model from the explorer earns its keep. Suppose damage
+  acts as a loop-gain factor <span class="mx ce">&rho;</span>, so the true loop is
+  <span class="mx">a&thinsp;<span class="ce">&rho;</span>&thinsp;L<sub>0</sub></span>. Then
+  the noise floor should have risen by the ratio of old to new sensitivity:</p>
+
+  <span class="eq rv"><span class="mx">
+    q<sub class="up">mod</sub>(<span class="ce">&rho;</span>) <span class="up">=</span>
+    <span class="fr">
+      <span class="nu"><span class="mag"><span class="up">1 +</span> L<sub>0</sub></span><sup class="up">2</sup></span>
+      <span class="de"><span class="mag"><span class="up">1 +</span> a&thinsp;<span class="ce">&rho;</span>&thinsp;L<sub>0</sub></span><sup class="up">2</sup></span>
+    </span>
+  </span></span>
+
+  <p class="rv">SOL-OSI evaluates this on a fixed grid of 25 candidate
+  <span class="mx ce">&rho;</span> values, logarithmically spaced from 0.5 to 6, and
+  scores each against the observation with a deliberately unglamorous loss —
+  the <strong>median absolute log-error over the fit band</strong>:</p>
+
+  <div class="result rv"><span class="cap">The fit</span>
+    <span class="eq"><span class="mx">
+      <span class="ce">&rho;</span><sub class="up">best</sub> <span class="up">=</span>
+      <span class="up">arg&thinsp;min</span><sub class="up">&rho; &isin; grid</sub>&ensp;
+      <span class="up">median</span><sub class="up">fit band</sub>
+      <span class="mag"><span class="up">log</span>&thinsp;q<sub class="up">obs</sub> <span class="up">−</span> <span class="up">log</span>&thinsp;q<sub class="up">mod</sub>(<span class="ce">&rho;</span>)</span>
+    </span></span>
+    <p style="margin:0;font-size:.92rem;color:var(--ink2)">Median, not mean: a few
+    contaminated bins cannot drag the answer. Log, not linear: a noise floor 2×
+    too high and one 2× too low are equally wrong.</p>
+  </div>
+
+  <div class="panel rv" id="lossPanel">
+    <span class="cap">Explore · fitting ρ to a noisy noise floor</span>
+    <div class="controls">
+      <div class="ctrl">
+        <label>true damage ρ* <output id="rtOut">2.00</output></label>
+        <input type="range" id="rtSlider" min="-0.301" max="0.778" step="0.001" value="0.301">
+      </div>
+      <div class="ctrl">
+        <label>measurement noise <output id="nzOut">±20%</output></label>
+        <input type="range" id="nzSlider" min="0" max="0.6" step="0.05" value="0.2">
+      </div>
+    </div>
+    <div class="chart-wrap" id="lossChart"></div>
+    <figcaption style="margin-top:.7rem;font:400 .82rem/1.55 var(--grot);color:var(--ink3)">
+    The loss over the 25-point ρ grid, for a synthetic q_obs generated at ρ* and
+    corrupted with noise. The <span style="color:var(--amber)">marked minimum</span>
+    is ρ_best. Notice how the valley stays anchored near ρ* even with heavy
+    noise — the median’s doing — and how it flattens as ρ* → 1: small damage is
+    genuinely harder to localize.</figcaption>
+  </div>
+
+  <h3 class="rv">Step 3 — believe it slowly, forget it slowly</h3>
+
+  <p class="rv">A raw <span class="mx ce">&rho;</span><sub class="up">best</sub> every
+  0.125&nbsp;s would be jumpy, so the branch keeps a <strong>damage memory</strong>: a
+  smoothed log-domain state <span class="mx"><span class="up">log&thinsp;</span><span class="bar">&rho;</span></span>
+  that moves toward the fit only in proportion to how much evidence the block
+  carried, and leaks back toward health when there is no evidence at all:</p>
+
+  <ol class="derive">
+    <li>
+      <span class="note">Pull toward the fitted target (shape_weight ∈ [0,1] scores how decisively the evidence points at a gain change — it grows with the coherent branch’s own drive estimate and with extreme level growth):</span>
+      <span class="eq"><span class="mx">
+        <span class="up">log&thinsp;</span><span class="bar">&rho;</span> <span class="up">&larr;</span>
+        <span class="up">log&thinsp;</span><span class="bar">&rho;</span> <span class="up">+</span>
+        activity&thinsp;&alpha;<sub class="up">res</sub>&thinsp;
+        <span class="pr">(</span><span class="up">log&thinsp;</span>&rho;<sub class="up">target</sub> <span class="up">−</span> <span class="up">log&thinsp;</span><span class="bar">&rho;</span><span class="pr">)</span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Blind forgiveness — with no drive there is no evidence either way, so the memory decays toward ρ = 1 with a 10 s time constant:</span>
+      <span class="eq"><span class="mx">
+        <span class="up">log&thinsp;</span><span class="bar">&rho;</span> <span class="up">&larr;</span>
+        <span class="up">log&thinsp;</span><span class="bar">&rho;</span>&thinsp;
+        <span class="pr">(</span><span class="up">1 −</span> &alpha;<sub class="up">leak</sub>(<span class="up">1 −</span> activity)<span class="pr">)</span>
+      </span></span>
+    </li>
+    <li class="key">
+      <span class="note">The working damage estimate, including a fast “kick” detector explained below:</span>
+      <span class="eq"><span class="mx">
+        <span class="ce">&rho;</span> <span class="up">=</span> e<sup><span class="up">log&thinsp;</span><span class="bar">&rho;</span></sup> ·&thinsp;drive_ratio
+      </span></span>
+    </li>
+    <li>
+      <span class="note">And the branch’s margin: the healthy loop, re-scaled by what we currently believe about authority and damage, through the same chordal formula:</span>
+      <span class="eq"><span class="mx">
+        b<sub class="up">res</sub> <span class="up">=</span> <span class="up">min</span><sub class="up">keep</sub>&ensp;
+        <span class="up">movmedian</span><sub class="up">3</sub><span class="pr">(</span>
+        c<span class="pr">(</span>a&thinsp;<span class="ce">&rho;</span>&thinsp;L<sub>0</sub>, <span class="cr">−1</span><span class="pr">)</span><span class="pr">)</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <details class="term rv"><summary>What is the “kick” (drive_ratio), and why gate it on two windows?</summary>
+    <div class="body">
+      <p>Besides the noise-floor fit, the branch projects the coherent branch’s
+      <span class="mx ce">L&#770;</span> onto the model direction to get an
+      instantaneous gain read,
+      <span class="mx">&rho;<sub class="up">drive</sub> = <span class="up">Re</span>&thinsp;&Sigma;w&thinsp;L<sub class="up">model</sub><sup class="up">*</sup><span class="ce">L&#770;</span> / &Sigma;w&thinsp;<span class="mag">L<sub class="up">model</sub></span><sup class="up">2</sup></span>
+      with weights <span class="mx">w = confidence<sup class="up">2</sup></span>. A sudden
+      jump of this read above its own slow average is an <em>edge</em> — damage
+      arriving right now. The kick multiplies ρ by (1 + excursion) immediately,
+      without waiting for the slow memory.</p>
+      <p>But a single noisy 0.125&nbsp;s window could fake such a jump. So the code
+      takes the <strong>minimum of the current and previous excursion</strong>: a real
+      edge persists for two consecutive windows and passes with one update of
+      extra latency; a one-window fluke is zeroed by the min. The kick is also
+      clamped (<code>detector_max = 2</code>) so no single detector can more than
+      double ρ.</p>
+    </div>
+  </details>
+
+  <details class="term rv"><summary>The healthy-reference interlock (release / re-engage)</summary>
+    <div class="body">
+      <p>The reference_ratio from Step 1 doubles as a hysteresis switch. If
+      corrected quiet power falls below <strong>0.6×</strong> the healthy reference,
+      the specimen is convincingly quiet again and the amplified idle memory
+      (next section) is <em>released</em>; it re-engages only after power climbs
+      back above <strong>1.4×</strong>. The wide gap is deliberate: strong evidence to
+      forgive, strong evidence to re-accuse — no flapping in between. On top of
+      this, when quiet power exceeds <strong>4×</strong> healthy, the fit is allowed to
+      weigh absolute level (not just shape) more heavily, by raising the fit
+      floor smoothly by up to 0.28 (<code>level_fit_gain</code>).</p>
+    </div>
+  </details>
+
+  <details class="code rv"><summary>The quiet branch, condensed</summary>
+    <div class="body">
+<pre><span class="ln">184</span>qobs = state.Syy./cfg.shape;
+<span class="ln">186</span>    qobs = qobs./max(state.q_ref, eps);
+<span class="ln">187</span>    state.reference_ratio = median(qobs(cfg.res_keep));
+<span class="ln">202</span>qmod = abs((1+cfg.L0)./(1+a_now*cfg.rho_grid(k)*cfg.L0)).^2;
+<span class="ln">209</span>loss(k) = median(abs(log(max(qobs(cfg.res_keep), eps))- ...
+<span class="ln">210</span>    log(max(qmod(cfg.res_keep), eps))));
+<span class="ln">212</span>[~, kbest] = min(loss);
+<span class="ln">216</span>rho_drive = real(sum(weights.*conj(Lmodel).*Lhat))/ ...
+<span class="ln">217</span>    max(sum(weights.*abs(Lmodel).^2), eps);
+<span class="ln">223</span>raw_kick = max(rho_drive/state.rho_drive-1, 0);
+<span class="ln">224</span>kick = min(min(raw_kick, state.ratio_prev), cfg.detector_max-1);
+<span class="ln">238</span>state.log_rho = state.log_rho+alpha_rho*dlog_rho;
+<span class="ln">243</span>state.log_rho = state.log_rho*(1-cfg.leak_alpha*(1-activity));
+<span class="ln">244</span>rho = exp(state.log_rho)*drive_ratio;
+<span class="ln">245</span>b_res = minMasked(movmedian(chordal(a_now*rho*cfg.L0, cfg.cap), 3), ...
+<span class="ln">246</span>    cfg.keep);</pre>
+    <p class="code-note"><code>cfg.shape = max(abs(1./(1+cfg.L0)).^2, eps)</code>
+    (line 76); <code>cfg.rho_grid = logspace(log10(0.5), log10(6), 25)</code>
+    (line 77). The healthy reference q_ref is collected at lines 148–154.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ================= S8 ================= -->
+<section id="s8" class="col">
+  <p class="section-mark"><b>08</b> Fusion</p>
+  <h2>One number</h2>
+
+  <p class="rv">SOL-OSI now holds two opinions:
+  <span class="mx">b<sub class="up">st</sub></span>, sharp but drive-hungry, and
+  <span class="mx">b<sub class="up">res</sub></span>, coarse but awake in the quiet.
+  The fusion logic asks one question — <em>who is in a position to know?</em> —
+  and answers it differently for driven and idle moments.</p>
+
+  <h3 class="rv">While driven: let the pessimist veto the optimist</h3>
+
+  <ol class="derive">
+    <li>
+      <span class="note">How blind is the coherent branch inside the residual band right now? (drive is the slow-averaged activity)</span>
+      <span class="eq"><span class="mx">
+        w<sub class="up">res</sub> <span class="up">=</span> drive&thinsp;·&thinsp;
+        <span class="pr">(</span><span class="up">1 −</span> <span class="up">mean</span><sub class="up">fit band</sub>&thinsp;leverage<span class="pr">)</span><sup class="up">2</sup>
+      </span></span>
+    </li>
+    <li class="key">
+      <span class="note">The residual branch may only pull the margin DOWN, and only by as much as the coherent branch is blind:</span>
+      <span class="eq"><span class="mx">
+        b<sub class="up">evid</sub> <span class="up">=</span> b<sub class="up">st</sub>
+        <span class="up">−</span> w<sub class="up">res</sub>&thinsp;
+        <span class="up">max</span><span class="pr">(</span>b<sub class="up">st</sub> <span class="up">−</span> b<sub class="up">res</sub>, <span class="up">0</span><span class="pr">)</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <p class="rv">Note the asymmetry: <span class="mx">b<sub class="up">res</sub></span>
+  can never <em>raise</em> the margin above the coherent estimate. A safety monitor
+  accepts bad news on thin evidence and good news only on strong evidence.</p>
+
+  <h3 class="rv">While idle: report what memory justifies</h3>
+
+  <span class="eq rv wrapeq"><span class="mx">
+    w<sub class="up">mem</sub> <span class="up">=</span> <span class="up">clip</span><sub class="up">[0,1]</sub>
+    <span class="pr">(</span><span class="up">32</span>&thinsp;(<span class="ce">&rho;</span> <span class="up">− 1</span>)<span class="pr">)</span></span>
+    <span class="mx">b<sub class="up">idle</sub> <span class="up">=</span>
+    <span class="fr"><span class="nu"><span class="up">1</span></span><span class="de"><span class="sq"><span class="un"><span class="up">2</span></span></span></span></span>
+    <span class="up">−</span> w<sub class="up">mem</sub>&thinsp;
+    <span class="pr">(</span><span class="fr"><span class="nu"><span class="up">1</span></span><span class="de"><span class="sq"><span class="un"><span class="up">2</span></span></span></span></span> <span class="up">−</span> b<sub class="up">res</sub><span class="pr">)</span>
+  </span></span>
+
+  <p class="rv">With no drive and no damage memory
+  (<span class="mx"><span class="ce">&rho;</span> &approx; <span class="up">1</span></span>), the honest
+  idle answer is the cap — an unexcited loop shows no evidence of danger. But the
+  gain of 32 makes the memory extraordinarily sticky: a remembered
+  <span class="mx"><span class="ce">&rho;</span></span> only 3% above 1 already pins
+  <span class="mx">b<sub class="up">idle</sub></span> fully to
+  <span class="mx">b<sub class="up">res</sub></span>. Damage seen once is not forgotten
+  just because the room went quiet — unless the healthy-reference interlock from
+  Section&nbsp;07 has released it (then the gain drops to 1).</p>
+
+  <h3 class="rv">Blend, smooth, clamp</h3>
+
+  <div class="result rv"><span class="cap">The published margin</span>
+    <span class="eq"><span class="mx">
+      b<sub class="up">raw</sub> <span class="up">=</span> activity&thinsp;·&thinsp;b<sub class="up">evid</sub>
+      <span class="up">+</span> (<span class="up">1 −</span> activity)&thinsp;·&thinsp;b<sub class="up">idle</sub>
+    </span></span>
+    <span class="eq"><span class="mx">
+      <span class="bar">b</span> <span class="up">&larr;</span> <span class="bar">b</span> <span class="up">+</span>
+      &alpha;<sub class="up">margin</sub>&thinsp;(b<sub class="up">raw</sub> <span class="up">−</span> <span class="bar">b</span>)
+      <span class="up">,&emsp;</span>
+      b <span class="up">=</span> <span class="up">clip</span><sub class="up">[0,&thinsp;0.707]</sub>&thinsp;<span class="bar">b</span>
+    </span></span>
+    <p style="margin:0;font-size:.92rem;color:var(--ink2)">One last EWMA
+    (&tau; = 0.15&nbsp;s — the fastest in the estimator, because this is the safety
+    output) and the number is on the wire, 8 times per second.</p>
+  </div>
+
+  <details class="code rv"><summary>Fusion, verbatim</summary>
+    <div class="body">
+<pre><span class="ln">248</span>res_weight = state.drive*(1-mean(leverage(cfg.res_keep)))^2;
+<span class="ln">249</span>b_evid = b_st-res_weight*max(b_st-b_res, 0);
+<span class="ln">250</span>memory_gain = cfg.residual_memory_gain;
+<span class="ln">251</span>if state.memory_released
+<span class="ln">252</span>    memory_gain = 1;
+<span class="ln">253</span>end
+<span class="ln">254</span>w_mem = min(max(memory_gain*(rho-1), 0), 1);
+<span class="ln">255</span>b_idle = cfg.cap-w_mem*(cfg.cap-b_res);
+<span class="ln">256</span>b_raw = activity*b_evid+(1-activity)*b_idle;
+<span class="ln">257</span>state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
+<span class="ln">258</span>b = min(max(state.b, 0), cfg.cap);</pre>
+    </div>
+  </details>
+</section>
+
+<!-- ===== check 4 ===== -->
+<div class="col">
+<div class="quiz rv" id="quiz4">
+  <header><span class="cap">Check yourself · 4</span>
+    <label class="sw"><input type="checkbox" class="showans"> show answers</label>
+  </header>
+  <div class="q" data-a="2">
+    <p>The coherent branch says b_st = 0.40; the quiet branch says
+    b_res = 0.25; the coherent branch has excellent leverage in the fit band
+    (mean ≈ 1). What does b_evid do?</p>
+    <div class="opts">
+      <button>Drops to 0.25 — the safety monitor always takes the worst case.</button>
+      <button>Averages to 0.325.</button>
+      <button>Stays ≈ 0.40 — with full leverage, w_res ≈ 0 and the veto is inactive.</button>
+    </div>
+    <p class="why">The veto weight w_res = drive·(1 − mean leverage)² measures the
+    coherent branch’s <em>blindness</em>. When the coherent branch can genuinely see
+    the fit band, its opinion stands; the quiet branch only takes over territory
+    the coherent branch cannot patrol.</p>
+  </div>
+  <div class="q" data-a="1">
+    <p>Why does the idle margin default to the cap 1/√2 rather than to the last
+    driven estimate?</p>
+    <div class="opts">
+      <button>Because the loop is switched off when idle.</button>
+      <button>Because with ρ ≈ 1 remembered and no fresh evidence, claiming danger would be unfounded — while any remembered ρ &gt; 1 immediately re-imposes b_res via the ×32 memory weight.</button>
+      <button>Because the cap is the average of all possible margins.</button>
+    </div>
+    <p class="why">The design splits “no evidence” from “evidence of damage.”
+    Pure quiet with a clean memory reads as safe; quiet with a damage memory
+    reads as exactly the remembered damage. The ×32 gain makes the second case
+    dominate at the slightest remembered ρ.</p>
+  </div>
+</div>
+</div>
+
+<!-- ================= S9 ================= -->
+<section id="s9" class="col">
+  <p class="section-mark"><b>09</b> Closing the outer loop</p>
+  <h2>Acting on it: the authority regulator</h2>
+
+  <p class="rv">A margin nobody acts on is a seismograph in an empty room. The
+  companion function <code>gpt5_6_4_auth.m</code> turns <span class="mx">b</span> into
+  the knob you already used in the explorer: the <strong>authority</strong>
+  <span class="mx">a &isin; <span class="up">[0.2, 1]</span></span>, a gain applied to
+  the loop. This is itself a feedback controller — a slow, deliberate outer loop
+  wrapped around the estimator — and its target is a margin, not a position:</p>
+
+  <ol class="derive">
+    <li>
+      <span class="note">The reference margin, nudged up when the quiet branch is doing the talking (rw = residual weight from Section 08):</span>
+      <span class="eq"><span class="mx">
+        b<sub class="up">ref</sub> <span class="up">=</span> <span class="up">0.55</span> <span class="up">+</span> <span class="up">0.02</span>&thinsp;(<span class="up">1 +</span> rw)
+      </span></span>
+    </li>
+    <li>
+      <span class="note">The error, with a deadband so the authority does not fidget over noise-sized deviations:</span>
+      <span class="eq"><span class="mx">
+        e<sub class="up">m</sub> <span class="up">=</span> <span class="up">sign</span>(b <span class="up">−</span> b<sub class="up">ref</sub>)&thinsp;·&thinsp;
+        <span class="up">max</span><span class="pr">(</span><span class="mag">b <span class="up">−</span> b<sub class="up">ref</sub></span> <span class="up">−</span> <span class="up">0.008</span>(<span class="up">1 +</span> rw), <span class="up">0</span><span class="pr">)</span>
+      </span></span>
+    </li>
+    <li>
+      <span class="note">Asymmetry: shedding authority (e &lt; 0) acts at full strength; restoring it (e &gt; 0) is scaled by ≈ 0.65 — fast to retreat, careful to advance:</span>
+      <span class="eq"><span class="mx">
+        e <span class="up">=</span> <span class="up">min</span>(e<sub class="up">m</sub>, <span class="up">0</span>)
+        <span class="up">+</span> (b<sub class="up">ref</sub><span class="sq"><span class="un"><span class="up">2</span></span></span>)<sup class="up">2</sup>&thinsp;
+        <span class="up">max</span>(e<sub class="up">m</sub>, <span class="up">0</span>)
+      </span></span>
+    </li>
+    <li class="key">
+      <span class="note">Integrate in the log domain — so a step from 1.0 to 0.9 and from 0.4 to 0.36 are the same size move — then clamp the range and the per-update slew:</span>
+      <span class="eq wrapeq"><span class="mx">
+        <span class="up">log&thinsp;</span>a <span class="up">&larr;</span> <span class="up">log&thinsp;</span>a
+        <span class="up">+</span> <span class="up">5</span><span class="sq"><span class="un">a</span></span>&thinsp;&Delta;t&thinsp;e</span>
+        <span class="mx"><span class="mag">&Delta;a</span> <span class="up">&le; 0.05</span></span>
+        <span class="mx">a &isin; <span class="up">[0.2, 1]</span>
+      </span></span>
+    </li>
+  </ol>
+
+  <p class="rv">And here the story closes on itself: the new
+  <span class="mx">a</span> is handed back to the estimator, which uses it in the
+  prior <span class="mx">L<sub class="up">prior</sub> = a&thinsp;L<sub>0</sub></span>, in the
+  damage model <span class="mx">q<sub class="up">mod</sub></span>, and in
+  <span class="mx">b<sub class="up">res</sub></span>. The estimator knows about the
+  regulator’s own moves — otherwise it would diagnose its own medicine as a
+  change in the patient.</p>
+
+  <div class="panel rv" id="simPanel">
+    <span class="cap">Simulate · a damage event, end to end</span>
+    <div class="controls">
+      <div class="ctrl">
+        <label>damage severity ρ<sub>max</sub> <output id="dmgOut">2.2</output></label>
+        <input type="range" id="dmgSlider" min="1.2" max="4" step="0.1" value="2.2">
+      </div>
+      <div class="ctrl" style="flex:0 0 auto;display:flex;align-items:flex-end">
+        <button class="play" id="simPlay">Replay</button>
+      </div>
+    </div>
+    <div class="chart-wrap" id="simChartB"></div>
+    <div class="chart-wrap" id="simChartA" style="margin-top:.5rem"></div>
+    <figcaption style="margin-top:.7rem;font:400 .82rem/1.55 var(--grot);color:var(--ink3)">
+    A 40 s scenario at the real update rate (8/s), starting from the regulator’s
+    healthy equilibrium: even undamaged, this loop at full gain only reaches
+    b = 0.345, so the regulator permanently trades some authority (a ≈ 0.5)
+    to hold the target margin. Damage ρ ramps in at t = 8 s, holds, and is
+    repaired at t = 25 s. Top: the margin b (cobalt) versus the regulator’s
+    reference b_ref (dashed) — when damage drags b below the reference, the
+    regulator sheds further until the margin is restored. Bottom: the authority
+    a. Note the asymmetry: the retreat is fast; after the repair, a climbs back
+    with visible caution (log-domain rate × 0.65 recovery weight, 0.05 slew
+    cap). The margin here is the idealized b = min c(a·ρ·L₀, −1) smoothed by
+    the estimator’s τ = 0.15 s filter.</figcaption>
+  </div>
+
+  <details class="code rv"><summary>The regulator, verbatim</summary>
+    <div class="body">
+<pre><span class="ln">30</span>b_ref = prm.target+prm.guard*(1+residual_weight);
+<span class="ln">31</span>e_raw = b-b_ref;
+<span class="ln">32</span>deadband = prm.deadband*(1+residual_weight);
+<span class="ln">33</span>e_margin = sign(e_raw)*max(abs(e_raw)-deadband, 0);
+<span class="ln">34</span>recovery_weight = (b_ref*sqrt(2))^2;
+<span class="ln">35</span>e = min(e_margin, 0)+recovery_weight*max(e_margin, 0);
+<span class="ln">36</span>rate = prm.rate*sqrt(a0);
+<span class="ln">37</span>log_a = log(a0)+rate*prm.dt_update*e;
+<span class="ln">38</span>a_free = exp(min(max(log_a, log(prm.a_min)), log(prm.a_max)));
+<span class="ln">39</span>a_next = a0+min(max(a_free-a0, -prm.max_step), prm.max_step);</pre>
+    <p class="code-note">File: <code>control_and_HS/OSI/gpt5_6_4_auth.m</code>.
+    Defaults: <code>target = 0.55</code>, <code>guard = 0.02</code>,
+    <code>deadband = 0.008</code>, <code>rate = 5</code>, <code>max_step = 0.05</code>,
+    <code>a ∈ [0.2, 1]</code>. Deployments may override the target — the outer
+    RTHS configuration in this repo uses <code>target_outer_ncf = 0.45</code>.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ===== check 5 ===== -->
+<div class="col">
+<div class="quiz rv" id="quiz5">
+  <header><span class="cap">Check yourself · 5</span>
+    <label class="sw"><input type="checkbox" class="showans"> show answers</label>
+  </header>
+  <div class="q" data-a="0">
+    <p>Why must the estimator be told the current authority a (via
+    L_prior = a·L₀) instead of always comparing against the original L₀?</p>
+    <div class="opts">
+      <button>Otherwise the regulator’s own gain reduction would look exactly like a plant change, and the loop could talk itself into shedding forever.</button>
+      <button>Because L₀ becomes numerically singular for a &lt; 1.</button>
+      <button>It doesn’t need to — the two are equivalent.</button>
+    </div>
+    <p class="why">A shed to a = 0.5 halves the apparent loop gain. An estimator
+    ignorant of that would fit ρ ≈ 0.5, misread the sensitivity shape, and its
+    margin would no longer describe the loop actually running. Self-awareness of
+    the actuator’s own moves is what keeps the outer loop honest.</p>
+  </div>
+  <div class="q" data-a="1">
+    <p>The regulator integrates in log a with rate 5√a. Compared with a plain
+    linear integrator on a, this choice mainly buys…</p>
+    <div class="opts">
+      <button>…a faster response at low authority, since √a shrinks there.</button>
+      <button>…proportional moves: each update changes a by a <em>percentage</em>, so behavior is consistent whether a is near 1 or near 0.2.</button>
+      <button>…the ability for a to become negative during aggressive shedding.</button>
+    </div>
+    <p class="why">d(log a) = da/a — equal steps in log a are equal <em>relative</em>
+    changes. The clamp to [0.2, 1] and the 0.05 slew cap then bound the absolute
+    move. (And exp(log a) can never go negative, which is a nice bonus.)</p>
+  </div>
+</div>
+</div>
+
+<!-- ================= S10 ================= -->
+<section id="s10" class="col">
+  <p class="section-mark"><b>10</b> Reference</p>
+  <h2>Symbols ↔ code</h2>
+
+  <p class="rv">Every quantity in this module, its home in
+  <code>sol_osi.m</code> / <code>gpt5_6_4_auth.m</code>, and where it was introduced:</p>
+
+  <div class="symtab rv">
+  <table>
+    <tr><th>symbol</th><th>code</th><th>meaning</th><th>§</th></tr>
+    <tr><td><span class="cu">u</span>, <span class="cy">y</span></td><td><code>dd</code>, <code>dm</code></td><td>drive command and measured displacement</td><td>01</td></tr>
+    <tr><td>L₀</td><td><code>cfg.L0</code></td><td>healthy loop C·H_dc_dm on the 2 Hz grid</td><td>02</td></tr>
+    <tr><td>T, S</td><td>—</td><td>closed-loop tracking and sensitivity</td><td>03</td></tr>
+    <tr><td>b(ω), b</td><td><code>chordal()</code>, <code>state.b</code></td><td>chordal margin per bin; published minimum</td><td>04</td></tr>
+    <tr><td>c(z₁,z₂)</td><td>—</td><td>chordal distance; cap = 1/√2</td><td>04</td></tr>
+    <tr><td>S̄uu, S̄yy, S̄yu</td><td><code>state.Suu/Syy/Syu</code></td><td>EWMA auto/cross spectra, τ = 0.25 s</td><td>05</td></tr>
+    <tr><td>α = 1−e^(−Δt/τ)</td><td><code>cfg.*_alpha</code></td><td>EWMA gains for all time constants</td><td>05</td></tr>
+    <tr><td>activity</td><td><code>activity</code></td><td>soft drive gate, (rms u / 0.06)⁴ clipped</td><td>05</td></tr>
+    <tr><td>γ²</td><td><code>gamma2</code></td><td>coherence — per-bin trust in T̂</td><td>06</td></tr>
+    <tr><td>leverage</td><td><code>leverage</code></td><td>relative input power above 30 dB floor</td><td>06</td></tr>
+    <tr><td><span class="ce">T̂</span>, <span class="ce">L̂</span></td><td><code>That</code>, <code>Lhat</code></td><td>H1 estimate; blended loop estimate</td><td>06</td></tr>
+    <tr><td>b_st</td><td><code>b_st</code></td><td>coherent-branch margin</td><td>06</td></tr>
+    <tr><td>q_obs, q_ref</td><td><code>qobs</code>, <code>state.q_ref</code></td><td>shape-corrected noise floor; healthy reference</td><td>07</td></tr>
+    <tr><td><span class="ce">ρ</span>, ρ_best</td><td><code>rho</code>, <code>rho_best</code></td><td>damage loop-gain factor; grid fit</td><td>07</td></tr>
+    <tr><td>ρ_drive, kick</td><td><code>rho_drive</code>, <code>kick</code></td><td>projection detector and 2-window edge kick</td><td>07</td></tr>
+    <tr><td>b_res</td><td><code>b_res</code></td><td>quiet-branch margin from a·ρ·L₀</td><td>07</td></tr>
+    <tr><td>w_res, b_evid</td><td><code>res_weight</code>, <code>b_evid</code></td><td>blindness-weighted downward veto</td><td>08</td></tr>
+    <tr><td>w_mem, b_idle</td><td><code>w_mem</code>, <code>b_idle</code></td><td>×32 damage-memory weight; idle margin</td><td>08</td></tr>
+    <tr><td>a</td><td><code>state.a_cmd</code> / <code>state.a</code></td><td>authority — loop gain knob, [0.2, 1]</td><td>09</td></tr>
+    <tr><td>b_ref, e</td><td><code>b_ref</code>, <code>e</code></td><td>margin reference; deadbanded asymmetric error</td><td>09</td></tr>
+  </table>
+  </div>
+
+  <h3 class="rv">Provenance</h3>
+  <p class="rv" style="font-size:.95rem;color:var(--ink2)">The frequency-response
+  data embedded in this page (all charts) was exported from the repository with
+  MATLAB: <code>C = pid(0.15, 20, 0.0015, 1/512, dt)</code> discretized ForwardEuler
+  at <code>dt = 1/2048 s</code>, multiplied by the identified plant
+  <code>H_dc_dm</code> from the canonical record
+  <code>saved_results/tests/gpt5_6_tests/20260710_1845_…mat</code>, sampled on
+  <code>cfg.freq_hz</code> exactly as <code>sol_osi('config', …)</code> does. Raw
+  export: <code>l0_data.json</code> beside this file. The implementation lives at
+  <code>control_and_HS/OSI/sol_osi.m</code> (estimator) and
+  <code>control_and_HS/OSI/gpt5_6_4_auth.m</code> (authority); the benchmark and
+  validation notes are in <code>research/gpt5_6_4/sol_osi/README.md</code>.</p>
+</section>
+
+<footer>
+  <div class="col">
+    SOL-OSI course module · built from the live implementation, July 2026.
+    Interactive figures use the measured 7k column loop; simulations are
+    idealized as noted in their captions.
+  </div>
+</footer>
+
+<script>
+/* ================= embedded data: the real 7k loop ================= */
+const SOL = {
+  dt: 0.00048828125, fs: 2048, cap: 0.707107, nominal: 0.3447,
+  pid: {P: 0.15, I: 20, D: 0.0015, N: 512},
+  f: [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,98,100],
+  L0re: [-0.059058,-0.053548,-0.044498,-0.032142,-0.01687,0.00067917,0.019482,0.037907,0.053392,0.062015,0.058102,0.034299,-0.01686,-0.098688,-0.20413,-0.3134,-0.40195,-0.45402,-0.46838,-0.45338,-0.41955,-0.37552,-0.3271,-0.27784,-0.22972,-0.18381,-0.14062,-0.10036,-0.063076,-0.028726,0.0027829,0.031563,0.057735,0.081422,0.10274,0.12179,0.13866,0.15341,0.16607,0.17661,0.18493,0.19077,0.19375,0.19316,0.1879,0.17624,0.15564,0.12263,0.073315,0.0055749],
+  L0im: [-1.6218,-0.79931,-0.52203,-0.3834,-0.30303,-0.25502,-0.22914,-0.22115,-0.22939,-0.25308,-0.29087,-0.33891,-0.38843,-0.42434,-0.42823,-0.38793,-0.30699,-0.20313,-0.096689,-0.0014518,0.076858,0.1378,0.18332,0.216,0.23827,0.25218,0.25934,0.26105,0.2583,0.25186,0.24236,0.23028,0.21601,0.19984,0.18201,0.16268,0.14194,0.11984,0.096359,0.071406,0.044822,0.016374,-0.014239,-0.047368,-0.083335,-0.12226,-0.16368,-0.20573,-0.24384,-0.2692],
+  Hre: [1.019,1.0031,0.97548,0.93455,0.87772,0.80136,0.70046,0.56841,0.39694,0.17676,-0.10017,-0.43508,-0.81231,-1.1878,-1.4888,-1.6422,-1.6186,-1.4507,-1.204,-0.9379,-0.68905,-0.47323,-0.2937,-0.14785,-0.031034,0.061618,0.13447,0.19119,0.23477,0.2676,0.29161,0.30832,0.31896,0.32448,0.32566,0.32307,0.31715,0.30821,0.29638,0.28168,0.26393,0.24278,0.21757,0.18735,0.15069,0.1057,0.05001,-0.018694,-0.10118,-0.1933],
+  Him: [-0.13184,-0.26477,-0.39984,-0.53796,-0.6798,-0.82552,-0.97434,-1.1238,-1.2682,-1.397,-1.4915,-1.5227,-1.4526,-1.2464,-0.89789,-0.45348,-0.0015928,0.37501,0.63746,0.78967,0.85624,0.86429,0.83562,0.78551,0.72394,0.65714,0.58893,0.52155,0.4563,0.39384,0.33449,0.27834,0.22533,0.17528,0.128,0.083233,0.040704,0.00011999,-0.03882,-0.076422,-0.11298,-0.14875,-0.18392,-0.21848,-0.2521,-0.28375,-0.31118,-0.32998,-0.33261,-0.30833],
+  Cre: [0.14552,0.14673,0.14875,0.15155,0.15512,0.15946,0.16452,0.17029,0.17674,0.18384,0.19154,0.19983,0.20865,0.21796,0.22774,0.23794,0.24851,0.25943,0.27064,0.28211,0.29381,0.30569,0.31772,0.32987,0.34211,0.3544,0.36673,0.37905,0.39135,0.40361,0.4158,0.4279,0.43991,0.45179,0.46355,0.47516,0.48661,0.4979,0.50902,0.51996,0.53071,0.54127,0.55164,0.56181,0.57178,0.58155,0.59112,0.60048,0.60965,0.61861],
+  Cim: [-1.5727,-0.75813,-0.47419,-0.32302,-0.2251,-0.15397,-0.098279,-0.052403,-0.013219,0.021132,0.051821,0.079623,0.10507,0.12853,0.15028,0.17052,0.18942,0.20708,0.2236,0.23907,0.25356,0.26711,0.27978,0.29162,0.30266,0.31294,0.3225,0.33137,0.33959,0.34718,0.35417,0.36059,0.36647,0.37184,0.37671,0.38112,0.38509,0.38864,0.3918,0.39457,0.397,0.39909,0.40087,0.40235,0.40354,0.40448,0.40517,0.40563,0.40587,0.40591],
+  keep: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  resKeep: [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+};
+const NB = SOL.f.length;
+const P = {acc:'#3b4fd9', teal:'#0b9b84', amber:'#c2410c', red:'#d92d20',
+           ink:'#16181f', ink2:'#565b68', ink3:'#8a8f9c', hair:'#e7e9ef',
+           wash:'#f6f7fa', accSoft:'#eef0fc'};
+const NS = 'http://www.w3.org/2000/svg';
+
+/* ================= tiny helpers ================= */
+function E(tag, attrs, parent){
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(el);
+  return el;
+}
+function txt(parent, x, y, s, opts={}){
+  const t = E('text', Object.assign({x, y,
+    'font-family':'Segoe UI,system-ui,sans-serif',
+    'font-size':opts.fs||10.5, fill:opts.fill||P.ink3,
+    'text-anchor':opts.anchor||'start',
+    'font-weight':opts.fw||400}, opts.attrs||{}), parent);
+  t.textContent = s; return t;
+}
+function chordal(re, im){                      // b(ω) per bin, capped
+  const out = new Array(NB);
+  for (let k=0;k<NB;k++){
+    const m2 = re[k]*re[k]+im[k]*im[k];
+    out[k] = Math.min(Math.hypot(1+re[k], im[k])/Math.sqrt(2*(1+m2)), SOL.cap);
+  }
+  return out;
+}
+function med(arr){
+  const s = [...arr].sort((x,y)=>x-y), n = s.length;
+  return n%2 ? s[(n-1)/2] : 0.5*(s[n/2-1]+s[n/2]);
+}
+function minMasked(x){
+  let m = Infinity, ki = 0;
+  for (let k=0;k<NB;k++) if (SOL.keep[k] && x[k]<m){ m = x[k]; ki = k; }
+  return [m, ki];
+}
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const fmt = (v,d=2)=>Number(v).toFixed(d);
+
+/* generic chart frame */
+function frame(el, W, H, xdom, ydom, opts={}){
+  el.innerHTML = '';
+  const svg = E('svg', {viewBox:`0 0 ${W} ${H}`, role:'img',
+    'aria-label':opts.label||'chart'});
+  el.appendChild(svg);
+  const padL = opts.padL??46, padR = opts.padR??14,
+        padT = opts.padT??12, padB = opts.padB??30;
+  const ylog = !!opts.ylog;
+  const xr = v => padL + (v-xdom[0])/(xdom[1]-xdom[0])*(W-padL-padR);
+  const yv = v => ylog ? Math.log10(v) : v;
+  const yr = v => H-padB - (yv(v)-yv(ydom[0]))/(yv(ydom[1])-yv(ydom[0]))*(H-padT-padB);
+  const g = E('g', {}, svg);
+  (opts.bands||[]).forEach(b=>{
+    E('rect',{x:xr(b.x0), y:padT, width:xr(b.x1)-xr(b.x0),
+      height:H-padT-padB, fill:b.fill, opacity:b.op??1}, g);
+    if (b.label) txt(g, (xr(b.x0)+xr(b.x1))/2, padT+11, b.label,
+      {anchor:'middle', fs:9.5});
+  });
+  (opts.yticks||[]).forEach(t=>{
+    E('line',{x1:padL, x2:W-padR, y1:yr(t), y2:yr(t),
+      stroke:P.hair,'stroke-width':1}, g);
+    txt(g, padL-7, yr(t)+3.5, String(t), {anchor:'end'});
+  });
+  (opts.xticks||[]).forEach(t=>{
+    txt(g, xr(t), H-padB+16, String(t), {anchor:'middle'});
+    E('line',{x1:xr(t), x2:xr(t), y1:H-padB, y2:H-padB+4,
+      stroke:P.ink3,'stroke-width':1}, g);
+  });
+  E('line',{x1:padL, x2:W-padR, y1:H-padB, y2:H-padB,
+    stroke:P.ink2,'stroke-width':1}, g);
+  if (opts.xlabel) txt(g, W-padR, H-6, opts.xlabel, {anchor:'end', fs:10});
+  if (opts.ylabel) txt(g, padL, padT-2, opts.ylabel, {fs:10, anchor:'start'});
+  const plot = E('g', {}, svg);
+  return {svg, plot, xr, yr, W, H, padT, padB, padL, padR};
+}
+function polyline(f, xs, ys, color, width=2.5, dash=null, parent=null){
+  let d = '';
+  for (let k=0;k<xs.length;k++){
+    d += (k? 'L':'M') + f.xr(xs[k]).toFixed(1) + ' ' + f.yr(ys[k]).toFixed(1);
+  }
+  return E('path',{d, fill:'none', stroke:color, 'stroke-width':width,
+    'stroke-linecap':'round','stroke-linejoin':'round',
+    ...(dash?{'stroke-dasharray':dash}:{})}, parent||f.plot);
+}
+/* hover tooltip: ref.pts = [{px,py,html}] in viewBox coords */
+function hoverify(wrapEl, svg, ref, VBW, VBH){
+  let tip = wrapEl.querySelector('.tip');
+  if (!tip){
+    tip = document.createElement('div');
+    tip.className = 'tip'; wrapEl.appendChild(tip);
+  }
+  svg.style.touchAction = 'pan-y';
+  svg.addEventListener('pointermove', e=>{
+    const r = svg.getBoundingClientRect();
+    const vx = (e.clientX-r.left)/r.width*VBW;
+    let best = null, bd = 1e9;
+    for (const p of ref.pts){
+      const d = Math.abs(p.px-vx);
+      if (d<bd){ bd = d; best = p; }
+    }
+    if (!best || bd>60){ tip.style.opacity = 0; return; }
+    tip.innerHTML = best.html;
+    tip.style.left = (best.px/VBW*100)+'%';
+    tip.style.top = (best.py/VBH*100)+'%';
+    tip.style.opacity = 1;
+  });
+  svg.addEventListener('pointerleave', ()=> tip.style.opacity = 0);
+}
+
+/* ================= hero: animated Nyquist locus ================= */
+(function hero(){
+  const svg = document.getElementById('heroSvg');
+  const W = 640, H = 380, x0 = -1.42, x1 = 0.78, y0 = -1.06, y1 = 0.235;
+  const xr = v => (v-x0)/(x1-x0)*W;
+  const yr = v => H - (v-y0)/(y1-y0)*H;
+  const clip = E('clipPath',{id:'heroClip'}, E('defs',{},svg));
+  E('rect',{x:0,y:0,width:W,height:H}, clip);
+  const g = E('g',{'clip-path':'url(#heroClip)'}, svg);
+  E('line',{x1:xr(0),x2:xr(0),y1:0,y2:H,stroke:P.hair}, g);
+  E('line',{x1:0,x2:W,y1:yr(0),y2:yr(0),stroke:P.hair}, g);
+  txt(g, xr(0)+6, 14, 'Im', {fs:11}); txt(g, W-24, yr(0)-7, 'Re', {fs:11});
+  let d = '';
+  for (let k=0;k<NB;k++)
+    d += (k?'L':'M')+xr(SOL.L0re[k]).toFixed(1)+' '+yr(SOL.L0im[k]).toFixed(1);
+  const path = E('path',{d, fill:'none', stroke:P.acc,'stroke-width':2.6,
+    'stroke-linecap':'round','stroke-linejoin':'round'}, g);
+  const [b0, ki] = minMasked(chordal(SOL.L0re, SOL.L0im));
+  const late = E('g',{opacity:0, style:'transition:opacity .8s ease 2.3s'}, g);
+  E('line',{x1:xr(-1),y1:yr(0),x2:xr(SOL.L0re[ki]),y2:yr(SOL.L0im[ki]),
+    stroke:P.acc,'stroke-width':1.6,'stroke-dasharray':'5 5'}, late);
+  E('circle',{cx:xr(SOL.L0re[ki]),cy:yr(SOL.L0im[ki]),r:5,fill:P.acc,
+    stroke:'#fff','stroke-width':1.5}, late);
+  txt(late,(xr(-1)+xr(SOL.L0re[ki]))/2, (yr(0)+yr(SOL.L0im[ki]))/2-10,
+    'b₀ = '+fmt(b0,3)+' · '+SOL.f[ki]+' Hz',
+    {fill:P.acc, fw:600, fs:12, anchor:'middle'});
+  const m = E('g',{}, svg);
+  const cx = xr(-1), cy = yr(0);
+  E('line',{x1:cx-7,y1:cy-7,x2:cx+7,y2:cy+7,stroke:P.red,'stroke-width':2.4}, m);
+  E('line',{x1:cx-7,y1:cy+7,x2:cx+7,y2:cy-7,stroke:P.red,'stroke-width':2.4}, m);
+  txt(m, cx, cy+24, '−1', {fill:P.red, fw:600, fs:14, anchor:'middle'});
+  txt(g, xr(SOL.L0re[0])+8, yr(SOL.L0im[0])-6, '2 Hz', {fs:10});
+  txt(g, xr(SOL.L0re[NB-1])-4, yr(SOL.L0im[NB-1])-9, '100 Hz', {fs:10});
+  const len = path.getTotalLength();
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+  path.style.transition = 'stroke-dashoffset 2.4s cubic-bezier(.4,0,.2,1) .3s';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    path.style.strokeDashoffset = 0; late.setAttribute('opacity',1);
+  }));
+})();
+
+/* ================= S2: Bode chart ================= */
+(function bode(){
+  const el = document.getElementById('bodeChart');
+  const f = frame(el, 640, 300, [2,100], [0.15,2.2], {ylog:true,
+    yticks:[0.2,0.5,1,2], xticks:[2,20,40,60,80,100],
+    xlabel:'frequency (Hz)', ylabel:'|·| (log)',
+    label:'Magnitude of plant, controller and loop across 2 to 100 hertz',
+    bands:[{x0:58,x1:62,fill:P.hair,op:.7,label:'mains'},
+           {x0:28,x1:44,fill:P.accSoft,op:.7,label:'residual band'}]});
+  const mag = (re,im)=>re.map((v,k)=>Math.hypot(v,im[k]));
+  const mH = mag(SOL.Hre,SOL.Him), mC = mag(SOL.Cre,SOL.Cim),
+        mL = mag(SOL.L0re,SOL.L0im);
+  polyline(f, SOL.f, mH, P.teal);
+  polyline(f, SOL.f, mC, P.amber);
+  polyline(f, SOL.f, mL, P.acc);
+  txt(f.plot, f.xr(100)-4, f.yr(mH[NB-1])+14, '|H|', {fill:P.teal, fw:600, anchor:'end', fs:11.5});
+  txt(f.plot, f.xr(100)-4, f.yr(mC[NB-1])-8, '|C|', {fill:P.amber, fw:600, anchor:'end', fs:11.5});
+  txt(f.plot, f.xr(100)-4, f.yr(mL[NB-1])+16, '|L₀|', {fill:P.acc, fw:600, anchor:'end', fs:11.5});
+  const ref = {pts: SOL.f.map((fr,k)=>({px:f.xr(fr), py:f.yr(mL[k]),
+    html:`${fr} Hz<span class="chart-meta">|H| ${fmt(mH[k])} · |C| ${fmt(mC[k])} · |L₀| ${fmt(mL[k])}</span>`}))};
+  hoverify(el, f.svg, ref, 640, 300);
+})();
+
+/* ================= S4: explorer ================= */
+(function explorer(){
+  const nyqEl = document.getElementById('nyqChart');
+  const bwEl = document.getElementById('bwChart');
+  const aS = document.getElementById('aSlider'), rS = document.getElementById('rSlider');
+  const aOut = document.getElementById('aOut'), rOut = document.getElementById('rOut');
+  const bOut = document.getElementById('bOut'), fOut = document.getElementById('fOut'),
+        dOut = document.getElementById('dOut');
+  const W = 640, H = 440, x0 = -1.95, x1 = 0.75;
+  const yspan = (x1-x0)*H/W, ymid = -0.42;
+  const y0 = ymid-yspan/2, y1 = ymid+yspan/2;
+  const bref = {pts:[]}, nref = {pts:[]};
+
+  function draw(){
+    const a = parseFloat(aS.value), rho = Math.pow(10, parseFloat(rS.value));
+    aOut.textContent = fmt(a); rOut.textContent = fmt(rho);
+    const g = a*rho;
+    const re = SOL.L0re.map(v=>v*g), im = SOL.L0im.map(v=>v*g);
+    const bw = chordal(re, im);
+    const [bmin, ki] = minMasked(bw);
+    /* --- Nyquist pane --- */
+    nyqEl.querySelectorAll('svg').forEach(s=>s.remove());
+    const svg = E('svg',{viewBox:`0 0 ${W} ${H}`, role:'img',
+      'aria-label':'Nyquist locus of the scaled loop with chord to minus one'});
+    nyqEl.appendChild(svg);
+    const defs = E('defs',{},svg);
+    const cp = E('clipPath',{id:'nyqClip'},defs);
+    E('rect',{x:1,y:1,width:W-2,height:H-2},cp);
+    const xr = v=>(v-x0)/(x1-x0)*W, yr = v=>H-(v-y0)/(y1-y0)*H;
+    E('rect',{x:0,y:0,width:W,height:H,fill:'#fff',stroke:P.hair},svg);
+    const gg = E('g',{'clip-path':'url(#nyqClip)'},svg);
+    E('line',{x1:xr(0),x2:xr(0),y1:0,y2:H,stroke:P.hair},gg);
+    E('line',{x1:0,x2:W,y1:yr(0),y2:yr(0),stroke:P.hair},gg);
+    txt(gg, xr(0)+5, 13, 'Im', {fs:10.5}); txt(gg, W-22, yr(0)-6, 'Re', {fs:10.5});
+    let dh='';
+    for (let k=0;k<NB;k++) dh += (k?'L':'M')+xr(SOL.L0re[k]).toFixed(1)+' '+yr(SOL.L0im[k]).toFixed(1);
+    E('path',{d:dh,fill:'none',stroke:P.hair,'stroke-width':2},gg);
+    txt(gg, xr(SOL.L0re[24])+6, yr(SOL.L0im[24])+14, 'healthy L₀', {fs:9.5});
+    let dc='';
+    for (let k=0;k<NB;k++) dc += (k?'L':'M')+xr(re[k]).toFixed(1)+' '+yr(im[k]).toFixed(1);
+    E('path',{d:dc,fill:'none',stroke:P.acc,'stroke-width':2.6,
+      'stroke-linecap':'round','stroke-linejoin':'round'},gg);
+    E('line',{x1:xr(-1),y1:yr(0),x2:xr(re[ki]),y2:yr(im[ki]),
+      stroke:P.acc,'stroke-width':1.5,'stroke-dasharray':'5 5'},gg);
+    E('circle',{cx:xr(re[ki]),cy:yr(im[ki]),r:5,fill:P.acc,stroke:'#fff','stroke-width':1.5},gg);
+    txt(gg, xr(re[ki])+9, yr(im[ki])+4, SOL.f[ki]+' Hz', {fill:P.acc, fw:600, fs:11});
+    const cx = xr(-1), cy = yr(0);
+    E('line',{x1:cx-6,y1:cy-6,x2:cx+6,y2:cy+6,stroke:P.red,'stroke-width':2.2},svg);
+    E('line',{x1:cx-6,y1:cy+6,x2:cx+6,y2:cy-6,stroke:P.red,'stroke-width':2.2},svg);
+    txt(svg, cx, cy+22, '−1', {fill:P.red, fw:600, fs:13, anchor:'middle'});
+    nref.pts = SOL.f.map((fr,k)=>({px:xr(re[k]), py:yr(im[k]),
+      html:`${fr} Hz<span class="chart-meta">L = ${fmt(re[k])} ${im[k]<0?'−':'+'} ${fmt(Math.abs(im[k]))}j · b ${fmt(bw[k],3)}</span>`}));
+    hoverify(nyqEl, svg, nref, W, H);
+    /* --- b(ω) pane --- */
+    const fb = frame(bwEl, 640, 190, [2,100], [0,0.78], {
+      yticks:[0,0.2,0.4,0.6], xticks:[2,20,40,60,80,100],
+      xlabel:'frequency (Hz)', ylabel:'b(ω)',
+      label:'Chordal margin versus frequency with minimum marked',
+      bands:[{x0:58,x1:62,fill:P.hair,op:.7}]});
+    E('line',{x1:fb.xr(2),x2:fb.xr(100),y1:fb.yr(SOL.cap),y2:fb.yr(SOL.cap),
+      stroke:P.ink3,'stroke-dasharray':'3 4','stroke-width':1},fb.plot);
+    txt(fb.plot, fb.xr(100), fb.yr(SOL.cap)-5, 'cap 1/√2', {anchor:'end', fs:9.5});
+    polyline(fb, SOL.f, bw, P.acc);
+    E('circle',{cx:fb.xr(SOL.f[ki]),cy:fb.yr(bmin),r:5,fill:P.amber,
+      stroke:'#fff','stroke-width':1.5},fb.plot);
+    txt(fb.plot, fb.xr(SOL.f[ki]), fb.yr(bmin)+18, 'b = '+fmt(bmin,3),
+      {fill:P.amber, fw:600, fs:11.5, anchor:'middle'});
+    bref.pts = SOL.f.map((fr,k)=>({px:fb.xr(fr), py:fb.yr(bw[k]),
+      html:`${fr} Hz<span class="chart-meta">b(ω) = ${fmt(bw[k],3)}${SOL.keep[k]?'':' (masked)'}</span>`}));
+    hoverify(bwEl, fb.svg, bref, 640, 190);
+    /* --- readouts --- */
+    bOut.textContent = fmt(bmin,3);
+    fOut.textContent = SOL.f[ki]+' Hz';
+    dOut.textContent = fmt(Math.hypot(1+re[ki], im[ki]),3);
+  }
+  aS.addEventListener('input', draw); rS.addEventListener('input', draw);
+  draw();
+})();
+
+/* ================= S5: EWMA demo ================= */
+(function ewma(){
+  const el = document.getElementById('ewmaChart');
+  const tS = document.getElementById('tauSlider'), tOut = document.getElementById('tauOut');
+  const dt = 0.125, T = 5, n = Math.round(T/dt)+1;
+  const rnd = mulberry32(20260715);
+  const t = [], meas = [];
+  for (let k=0;k<n;k++){
+    t.push(k*dt);
+    const base = (k*dt>=1)? 2 : 1;
+    meas.push(base + (rnd()*2-1)*0.28);
+  }
+  function draw(){
+    const tau = parseFloat(tS.value);
+    tOut.textContent = fmt(tau,2)+' s';
+    const al = 1-Math.exp(-dt/tau);
+    const sm = []; let x = meas[0];
+    for (let k=0;k<n;k++){ x = x + al*(meas[k]-x); sm.push(x); }
+    const f = frame(el, 640, 200, [0,T], [0.4,2.6], {
+      yticks:[0.5,1,1.5,2,2.5], xticks:[0,1,2,3,4,5],
+      xlabel:'time (s)', ylabel:'value',
+      label:'Noisy step measurement and its exponentially weighted moving average'});
+    E('line',{x1:f.xr(1),x2:f.xr(1),y1:f.yr(2.6),y2:f.yr(0.4),
+      stroke:P.hair,'stroke-width':1,'stroke-dasharray':'3 4'},f.plot);
+    for (let k=0;k<n;k++)
+      E('circle',{cx:f.xr(t[k]),cy:f.yr(meas[k]),r:2.6,fill:P.ink3,opacity:.55},f.plot);
+    polyline(f, t, sm, P.acc);
+    txt(f.plot, f.xr(1)+5, f.yr(2.5), 'step', {fs:9.5});
+    txt(f.plot, f.xr(T)-4, f.yr(sm[n-1])-8,
+      'α = '+fmt(al,3), {fill:P.acc, fw:600, anchor:'end', fs:11});
+  }
+  tS.addEventListener('input', draw);
+  draw();
+})();
+
+/* ================= S6: confidence blend demo ================= */
+(function blend(){
+  const el = document.getElementById('blendChart');
+  const cS = document.getElementById('cSlider'), cOut = document.getElementById('cOut');
+  const rhoTrue = 1.6;
+  function Tof(g){
+    const re = [], im = [];
+    for (let k=0;k<NB;k++){
+      const lr = g*SOL.L0re[k], li = g*SOL.L0im[k];
+      const dr = 1+lr, di = li, d2 = dr*dr+di*di;
+      re.push((lr*dr+li*di)/d2); im.push((li*dr-lr*di)/d2);
+    }
+    return [re, im];
+  }
+  const [Ttr, Tti] = Tof(rhoTrue), [Tpr, Tpi] = Tof(1);
+  const rnd = mulberry32(4210);
+  const Thr = [], Thi = [];
+  for (let k=0;k<NB;k++){
+    Thr.push(Ttr[k] + (rnd()*2-1)*0.22);
+    Thi.push(Tti[k] + (rnd()*2-1)*0.22);
+  }
+  function draw(){
+    const c = parseFloat(cS.value);
+    cOut.textContent = fmt(c);
+    const mag = (re,im)=>re.map((v,k)=>Math.hypot(v,im[k]));
+    const mTh = mag(Thr,Thi), mTp = mag(Tpr,Tpi);
+    const mUse = SOL.f.map((_,k)=>Math.hypot(
+      c*Thr[k]+(1-c)*Tpr[k], c*Thi[k]+(1-c)*Tpi[k]));
+    const f = frame(el, 640, 240, [2,100], [0,1.45], {
+      yticks:[0,0.5,1], xticks:[2,20,40,60,80,100],
+      xlabel:'frequency (Hz)', ylabel:'|T|',
+      label:'Blend of noisy transfer function estimate with the prior',
+      bands:[{x0:58,x1:62,fill:P.hair,op:.7}]});
+    polyline(f, SOL.f, mTh, P.amber, 1.8);
+    polyline(f, SOL.f, mTp, P.ink3, 1.8, '4 4');
+    polyline(f, SOL.f, mUse, P.acc, 2.8);
+  }
+  cS.addEventListener('input', draw);
+  draw();
+})();
+
+/* ================= S7: rho-fit loss demo ================= */
+(function loss(){
+  const el = document.getElementById('lossChart');
+  const rtS = document.getElementById('rtSlider'), rtOut = document.getElementById('rtOut');
+  const nzS = document.getElementById('nzSlider'), nzOut = document.getElementById('nzOut');
+  const grid = [];
+  for (let i=0;i<25;i++)
+    grid.push(Math.pow(10, Math.log10(0.5)+i*(Math.log10(6)-Math.log10(0.5))/24));
+  const resIdx = SOL.resKeep.map((v,k)=>v?k:-1).filter(k=>k>=0);
+  function qmod(rho){
+    return resIdx.map(k=>{
+      const n2 = Math.pow(Math.hypot(1+SOL.L0re[k], SOL.L0im[k]),2);
+      const d2 = Math.pow(Math.hypot(1+rho*SOL.L0re[k], rho*SOL.L0im[k]),2);
+      return n2/Math.max(d2,1e-12);
+    });
+  }
+  function draw(){
+    const rt = Math.pow(10, parseFloat(rtS.value));
+    const nz = parseFloat(nzS.value);
+    rtOut.textContent = fmt(rt); nzOut.textContent = '±'+Math.round(nz*100)+'%';
+    const rnd = mulberry32(777);
+    const qo = qmod(rt).map(v=>v*Math.exp((rnd()*2-1)*nz));
+    const L = grid.map(r=>{
+      const qm = qmod(r);
+      return med(qo.map((v,i)=>Math.abs(
+        Math.log(Math.max(v,1e-12))-Math.log(Math.max(qm[i],1e-12)))));
+    });
+    let ib = 0; L.forEach((v,i)=>{ if (v<L[ib]) ib = i; });
+    const ymax = Math.max(...L)*1.15+1e-6;
+    const lx = grid.map(r=>Math.log10(r));
+    const H = 220;
+    const f = frame(el, 640, H, [Math.log10(0.5), Math.log10(6)], [0, ymax], {
+      yticks:[0, Math.round(ymax*50)/100, Math.round(ymax*100)/100],
+      xticks:[], xlabel:'candidate ρ (log scale)', ylabel:'loss',
+      label:'Median absolute log error of the noise floor fit across candidate rho values'});
+    [0.5,1,2,3,6].forEach(v=>{
+      txt(f.plot, f.xr(Math.log10(v)), H-30+16, String(v), {anchor:'middle'});
+      E('line',{x1:f.xr(Math.log10(v)),x2:f.xr(Math.log10(v)),y1:H-30,y2:H-30+4,
+        stroke:P.ink3,'stroke-width':1},f.plot);
+    });
+    E('line',{x1:f.xr(Math.log10(rt)),x2:f.xr(Math.log10(rt)),
+      y1:f.yr(ymax),y2:f.yr(0),stroke:P.ink3,'stroke-dasharray':'3 4'},f.plot);
+    txt(f.plot, f.xr(Math.log10(rt))+5, f.yr(ymax)+10, 'ρ* (truth)', {fs:9.5});
+    polyline(f, lx, L, P.acc);
+    E('circle',{cx:f.xr(lx[ib]),cy:f.yr(L[ib]),r:5.5,fill:P.amber,
+      stroke:'#fff','stroke-width':1.5},f.plot);
+    txt(f.plot, f.xr(lx[ib]), f.yr(L[ib])-12,
+      'ρ_best = '+fmt(grid[ib]), {fill:P.amber, fw:600, fs:11.5, anchor:'middle'});
+  }
+  rtS.addEventListener('input', draw); nzS.addEventListener('input', draw);
+  draw();
+})();
+
+/* ================= S9: authority simulation ================= */
+(function sim(){
+  const elB = document.getElementById('simChartB'), elA = document.getElementById('simChartA');
+  const dS = document.getElementById('dmgSlider'), dOut = document.getElementById('dmgOut');
+  const btn = document.getElementById('simPlay');
+  const dt = 0.125, T = 40, n = Math.round(T/dt)+1;
+  const prm = {target:0.55, guard:0.02, deadband:0.008, rate:5, max_step:0.05,
+               a_min:0.2, a_max:1};
+  const alM = 1-Math.exp(-0.125/0.15);
+  let anim = null;
+  function rhoAt(t, rmax){
+    if (t<8) return 1;
+    if (t<12) return 1+(rmax-1)*(t-8)/4;
+    if (t<25) return rmax;
+    if (t<27) return rmax+(1-rmax)*(t-25)/2;
+    return 1;
+  }
+  function step(a, best, rho){
+    const re = SOL.L0re.map(v=>v*a*rho), im = SOL.L0im.map(v=>v*a*rho);
+    const [btrue] = minMasked(chordal(re, im));
+    best = best + alM*(btrue-best);
+    const a0 = Math.min(Math.max(a, prm.a_min), prm.a_max);
+    const b_ref = prm.target + prm.guard;
+    const e_raw = best - b_ref;
+    const e_m = Math.sign(e_raw)*Math.max(Math.abs(e_raw)-prm.deadband, 0);
+    const rec = Math.pow(b_ref*Math.SQRT2, 2);
+    const e = Math.min(e_m,0) + rec*Math.max(e_m,0);
+    const log_a = Math.log(a0) + prm.rate*Math.sqrt(a0)*dt*e;
+    const a_free = Math.exp(Math.min(Math.max(log_a, Math.log(prm.a_min)),
+      Math.log(prm.a_max)));
+    a = a0 + Math.min(Math.max(a_free-a0, -prm.max_step), prm.max_step);
+    return [a, best];
+  }
+  function run(rmax){
+    const ts = [], bs = [], as = [];
+    let a = 1, best = SOL.nominal;
+    // settle at the healthy equilibrium before t = 0 so the scenario
+    // starts where the regulator would actually hold this loop
+    for (let k=0;k<400;k++) [a, best] = step(a, best, 1);
+    for (let k=0;k<n;k++){
+      const t = k*dt, rho = rhoAt(t, rmax);
+      [a, best] = step(a, best, rho);
+      ts.push(t); bs.push(best); as.push(a);
+    }
+    return {ts, bs, as, b_ref: prm.target+prm.guard};
+  }
+  function draw(progress){
+    const rmax = parseFloat(dS.value);
+    dOut.textContent = fmt(rmax,1);
+    const r = run(rmax);
+    const kEnd = Math.max(2, Math.round(n*progress));
+    const bands = [{x0:8, x1:27, fill:'#fdf1ec', op:1, label:'damage present'}];
+    const fB = frame(elB, 640, 200, [0,T], [0.2,0.75], {
+      yticks:[0.3,0.45,0.55,0.7], xticks:[0,10,20,30,40],
+      xlabel:'time (s)', ylabel:'margin b', bands,
+      label:'Estimated margin over time during a damage event'});
+    E('line',{x1:fB.xr(0),x2:fB.xr(T),y1:fB.yr(r.b_ref),y2:fB.yr(r.b_ref),
+      stroke:P.ink3,'stroke-dasharray':'4 4','stroke-width':1.2},fB.plot);
+    txt(fB.plot, fB.xr(T)-4, fB.yr(r.b_ref)-6, 'b_ref = '+fmt(r.b_ref),
+      {anchor:'end', fs:10});
+    polyline(fB, r.ts.slice(0,kEnd), r.bs.slice(0,kEnd), P.acc);
+    const fA = frame(elA, 640, 160, [0,T], [0.15,1.08], {
+      yticks:[0.2,0.5,1], xticks:[0,10,20,30,40],
+      xlabel:'time (s)', ylabel:'authority a',
+      bands:[{x0:8,x1:27,fill:'#fdf1ec',op:1}],
+      label:'Authority over time responding to the margin'});
+    polyline(fA, r.ts.slice(0,kEnd), r.as.slice(0,kEnd), P.teal);
+    if (kEnd>=n){
+      const ref = {pts: r.ts.filter((_,k)=>k%4===0).map(t=>{
+        const k = Math.round(t/dt);
+        return {px:fB.xr(t), py:fB.yr(r.bs[k]),
+          html:`t = ${fmt(t,1)} s<span class="chart-meta">b ${fmt(r.bs[k],3)} · a ${fmt(r.as[k],2)} · ρ ${fmt(rhoAt(t,rmax),2)}</span>`};
+      })};
+      hoverify(elB, fB.svg, ref, 640, 200);
+    }
+  }
+  function play(){
+    if (anim) cancelAnimationFrame(anim);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches){ draw(1); return; }
+    const t0 = performance.now(), dur = 2200;
+    (function step(now){
+      const p = Math.min(1, (now-t0)/dur);
+      draw(p);
+      if (p<1) anim = requestAnimationFrame(step); else anim = null;
+    })(t0);
+  }
+  dS.addEventListener('input', ()=>draw(1));
+  btn.addEventListener('click', play);
+  draw(1);
+  const io = new IntersectionObserver(es=>{
+    es.forEach(en=>{ if (en.isIntersecting){ play(); io.disconnect(); } });
+  }, {threshold:0.35});
+  io.observe(document.getElementById('simPanel'));
+})();
+
+/* ================= scroll reveal, quiz, progress ================= */
+(function ui(){
+  const io = new IntersectionObserver(es=>{
+    es.forEach(en=>{
+      if (en.isIntersecting){ en.target.classList.add('on'); io.unobserve(en.target); }
+    });
+  }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.rv,.derive').forEach(el=>io.observe(el));
+
+  document.querySelectorAll('.quiz').forEach(qz=>{
+    qz.querySelectorAll('.q').forEach(q=>{
+      const correct = parseInt(q.dataset.a, 10);
+      q.querySelectorAll('.opts button').forEach((b,i)=>{
+        if (i===correct) b.classList.add('correct');
+        b.addEventListener('click', ()=>{
+          q.querySelectorAll('.opts button').forEach(x=>x.classList.remove('sel'));
+          b.classList.add('sel');
+        });
+      });
+    });
+    qz.querySelector('.showans').addEventListener('change', e=>{
+      qz.classList.toggle('show', e.target.checked);
+    });
+  });
+
+  const bar = document.getElementById('progress');
+  addEventListener('scroll', ()=>{
+    const h = document.documentElement;
+    bar.style.width = (h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+  }, {passive:true});
+})();
+</script>
+
+
+</body>
+</html>
