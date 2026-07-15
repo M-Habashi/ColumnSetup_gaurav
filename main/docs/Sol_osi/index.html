@@ -103,8 +103,8 @@
     .notation-key div:last-child { border-right: 0; }
     .notation-key span { display: block; color: var(--muted); font-size: 0.72rem; }
     .notation-key strong { font-family: 'STIX Two Text', Cambria, var(--serif); font-size: 1.05rem; font-style: italic; }
-    .step { transform: translateY(18px); transition: transform 500ms ease; }
-    .step.visible { transform: none; }
+    .step { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease-out, transform 700ms ease-out; }
+    .step.visible { opacity: 1; transform: none; }
 
     .equation {
       margin: 28px 0;
@@ -266,7 +266,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      .step { transform: none; transition: none; }
+      .step { opacity: 1; transform: none; transition: none; }
     }
   </style>
 </head>
@@ -342,7 +342,7 @@
         </div>
 
         <div class="step">
-          <p>The PID and plant multiply to form the <strong>open-loop transfer function</strong>. The adaptive factor $\alpha\in[0,1]$ scales the controller’s influence.</p>
+          <p>The PID and plant multiply to form the <strong>open-loop transfer function</strong>. The adaptive factor $\alpha\in[0.02,1]$ scales the controller’s influence; $\alpha=1.00$ means full PID gain.</p>
           <div class="equation accent">
             \[L(s,\alpha,k)=\alpha\,C(s)\,H(s,k)\]
             <span class="label">In the code, the healthy full-gain loop corresponds to $L_0(s)=C(s)H(s,7\mathrm{k})$.</span>
@@ -450,10 +450,10 @@
           <p>One window is noisy, so each spectrum is <button class="term" aria-expanded="false">exponentially smoothed</button>.</p>
           <div class="definition">Exponential smoothing combines the newest value with the previous estimate. It is a compact memory: recent windows matter most, but older windows do not disappear instantly.</div>
           <div class="equation accent">
-            \[S_{uu}[n]=S_{uu}[n-1]+\sigma_s\bigl(p_u[n]-S_{uu}[n-1]\bigr)\]
-            \[S_{yy}[n]=S_{yy}[n-1]+\sigma_s\bigl(p_y[n]-S_{yy}[n-1]\bigr)\]
-            \[S_{yu}[n]=S_{yu}[n-1]+\sigma_s\bigl(c_{yu}[n]-S_{yu}[n-1]\bigr)\]
-            <span class="label">$n$ is the current time step and $n-1$ is the previous step. The spectral smoothing factor used here is $\sigma_s=0.39$.</span>
+            \[S_{uu}[n]=S_{uu}[n-1]+\eta_s\bigl(p_u[n]-S_{uu}[n-1]\bigr)\]
+            \[S_{yy}[n]=S_{yy}[n-1]+\eta_s\bigl(p_y[n]-S_{yy}[n-1]\bigr)\]
+            \[S_{yu}[n]=S_{yu}[n-1]+\eta_s\bigl(c_{yu}[n]-S_{yu}[n-1]\bigr)\]
+            <span class="label">$n$ is the current time step and $n-1$ is the previous step. The spectral smoothing factor used here is $\eta_s=0.39$.</span>
           </div>
         </div>
 
@@ -463,7 +463,7 @@
             <g id="smoothGrid"></g><text x="20" y="138" text-anchor="middle" transform="rotate(-90 20 138)">|U|²</text><path id="rawTrace" class="line-7"></path><g id="rawPoints"></g><path id="smoothTrace" class="line-5"></path>
           </svg>
           <div class="controls">
-            <div class="control"><label for="sigmaSlider">spectral smoothing $\sigma_s$<output id="sigmaOut">0.39</output></label><input id="sigmaSlider" type="range" min="0.04" max="0.74" value="0.39" step="0.001"><div class="range-ends"><span>more memory</span><span>less memory</span></div></div>
+            <div class="control"><label for="sigmaSlider">spectral smoothing $\eta_s$<output id="sigmaOut">0.39</output></label><input id="sigmaSlider" type="range" min="0.04" max="0.74" value="0.39" step="0.001"><div class="range-ends"><span>more memory</span><span>less memory</span></div></div>
           </div>
           <p class="source-note"><strong>Recorded source.</strong> <code>saved_results/tests/gpt5_6_tests/20260710_1845_plNew_authON_oscillations_unstableAtEnd.mat</code> · command $d_d\equiv u$ · 12 Hz FFT bin · record time 24.625–29.625 s · 0.5 s Hann window updated every 0.125 s. The 41 circles are computed from the recorded command samples, not generated examples.</p>
         </div>
@@ -498,29 +498,42 @@
           <div class="equation">
             \[\gamma^2(\omega)=\frac{|S_{yu}(\omega)|^2}{S_{uu}(\omega)S_{yy}(\omega)},\qquad 0\le \gamma^2\le1\]
           </div>
-          <p>Coherence alone is insufficient: an input bin may have almost no energy. SOL-OSI adds a leverage factor and a global activity factor.</p>
+          <p>Coherence alone is insufficient, so SOL-OSI gates it with input leverage for two reasons:</p>
+          <ol>
+            <li><strong>Feedback-created coherence.</strong> At frequencies with high loop gain, measurement noise can drive the feedback loop and create high coherence between feedback-related signals even when the intended external excitation is absent. The resulting relationship is driven mainly by noise and can produce a misleading transfer-function estimate.</li>
+            <li><strong>Division by weak input power.</strong> Forming a transfer-function ratio requires division by the input spectrum. When $S_{uu}$ is very small, numerical roundoff, measurement noise, spectral leakage, and ordinary estimation fluctuations can be greatly magnified.</li>
+          </ol>
+          <p>The leverage factor therefore reduces confidence in frequency bins that do not contain meaningful input power. It cannot by itself distinguish strong feedback-correlated noise from intentional excitation.</p>
+          <p>First define the <strong>relative input power</strong> $p_{rel}(\omega)$: the power in the current frequency bin divided by the power in the strongest bin.</p>
+          <div class="equation">
+            \[p_{rel}(\omega)=\frac{S_{uu}(\omega)}{\max_{\nu}S_{uu}(\nu)}\]
+            <span class="label">$p_{rel}=1$ at the strongest input frequency and approaches 0 where input power is weak.</span>
+          </div>
+          <p>Next, $p_{floor}$ is a small positive floor ($10^{-3}$ here) that prevents tiny input values from receiving high trust. The <strong>input leverage</strong> $\ell(\omega)$ maps relative power to a number between 0 and 1:</p>
+          <div class="equation">
+            \[\ell(\omega)=\frac{p_{rel}(\omega)}{p_{rel}(\omega)+p_{floor}}\]
+          </div>
+          <p>Finally, $A$ is one activity score for the entire time window: $A=0$ means the command is quiet and $A=1$ means it is strongly driven. Stage 06 gives its exact RMS-based definition. The per-frequency <strong>confidence</strong> $c(\omega)$ combines activity, coherence, and leverage:</p>
           <div class="equation accent">
-            \[p_{rel}=\frac{S_{uu}}{\max_\omega S_{uu}},\qquad \ell=\frac{p_{rel}}{p_{rel}+p_{floor}}\]
             \[c(\omega)=\underbrace{A}_{\text{activity}}\;\underbrace{\gamma^2(\omega)}_{\text{coherence}}\;\underbrace{\ell(\omega)}_{\text{input leverage}}\]
           </div>
         </div>
 
         <div class="step">
-          <p>The raw closed-loop estimate is $\widehat T=S_{yu}/S_{uu}$. Confidence $c$ decides how far to move from the model prior $T_{prior}$ toward the measurement:</p>
+          <p>The spectra now provide the <strong>raw measured closed-loop estimate</strong> $\widehat T(\omega)$:</p>
           <div class="equation">
-            \[\widehat T_{use}=c\,\widehat T+(1-c)T_{prior}\]
-            \[\widehat L=\frac{\widehat T_{use}}{1-\widehat T_{use}}\]
+            \[\widehat T(\omega)=\frac{S_{yu}(\omega)}{S_{uu}(\omega)}\]
+          </div>
+          <p>SOL-OSI also forms a <strong>model prior</strong>. It scales the healthy loop $L_0(\omega)$ by the currently applied adaptive gain $\alpha$, then converts that loop to its closed-loop response $T_{prior}(\omega)$. Here $\alpha$ is the applied <code>a_cmd</code> value: $\alpha=1.00$ means full PID gain, and it changes only if the separate adaptive-gain controller changes <code>a_cmd</code>. The estimator clamps the received value to $0.02\le\alpha\le1$:</p>
+          <div class="equation">
+            \[L_{prior}(\omega)=\alpha L_0(\omega),\qquad T_{prior}(\omega)=\frac{L_{prior}(\omega)}{1+L_{prior}(\omega)}\]
+          </div>
+          <p>The confidence $c(\omega)$ chooses how far the <strong>usable response</strong> $\widehat T_{use}(\omega)$ moves from the model prior toward the measured estimate. The final symbol $\widehat L(\omega)$ is the reconstructed open loop:</p>
+          <div class="equation">
+            \[\widehat T_{use}(\omega)=c(\omega)\widehat T(\omega)+[1-c(\omega)]T_{prior}(\omega)\]
+            \[\widehat L(\omega)=\frac{\widehat T_{use}(\omega)}{1-\widehat T_{use}(\omega)}\]
             <span class="label">The second equation is simply $T=L/(1+L)$ solved for $L$.</span>
           </div>
-        </div>
-
-        <div class="lab step">
-          <div class="lab-head"><strong>Confidence is a cross-fade</strong><span>model prior → measured estimate</span></div>
-          <div class="controls">
-            <div class="control"><label for="coherenceSlider">coherence $\gamma^2$<output id="coherenceOut">0.75</output></label><input id="coherenceSlider" type="range" min="0" max="1" value="0.75" step="0.01"></div>
-            <div class="control"><label for="leverageSlider">leverage $\ell$<output id="leverageOut">0.80</output></label><input id="leverageSlider" type="range" min="0" max="1" value="0.8" step="0.01"></div>
-          </div>
-          <div class="readout"><div><span class="metric-label">activity</span><strong>1.00</strong></div><div><span class="metric-label">confidence $c$</span><strong id="confidenceReadout">0.60</strong></div><div><span class="metric-label">interpretation</span><strong id="confidenceWord">mixed</strong></div></div>
         </div>
 
         <details class="code-link step">
@@ -552,14 +565,14 @@
 
         <div class="step">
           <p>The closed-loop denominator is $1+L$. Instability becomes possible when $L(j\omega)$ approaches $-1$, because then $1+L\to0$.</p>
+          <p>Define $b(\omega,\alpha,k)$ as the normalized distance from that critical condition at frequency $\omega$, adaptive gain $\alpha$, and plant condition $k$:</p>
           <div class="equation accent">
             \[b(\omega,\alpha,k)=\min\!\left(\frac{|1+L(j\omega,\alpha,k)|}{\sqrt{2\left(1+|L(j\omega,\alpha,k)|^2\right)}},\;\frac{1}{\sqrt2}\right)\]
             <span class="label">This normalized chordal margin stays between 0 and $1/\sqrt2\approx0.707$.</span>
           </div>
-          <p>The online stability indicator is the weakest point across the usable frequency band:</p>
+          <p>Let $\Omega$ be the usable 2–100 Hz band after excluding the 58–62 Hz line-noise bins. The operator $\operatorname{median}_3$ is a three-bin median filter that suppresses isolated spikes. The online stability indicator $b_{ST}$ is then the weakest filtered margin in $\Omega$:</p>
           <div class="equation">
             \[b_{ST}=\min_{\omega\in\Omega}\;\operatorname{median}_3\{b(\omega)\}\]
-            <span class="label">$\Omega=2$–$100$ Hz, excluding 58–62 Hz line-noise bins.</span>
           </div>
         </div>
 
@@ -601,11 +614,11 @@
           <div class="equation">
             \[S_0(\omega)=\frac{1}{1+L_0(\omega)},\qquad \text{shape}(\omega)=|S_0(\omega)|^2\]
           </div>
-          <p>The first three non-overlapping active windows build a healthy, per-frequency reference:</p>
+          <p>Let $r=1,2,3$ index the first three non-overlapping active windows. Their median defines the healthy, per-frequency reference $q_{ref}(\omega)$:</p>
           <div class="equation accent">
             \[q_{ref}(\omega)=\operatorname{median}_{r=1,2,3}\left\{\frac{|Y_r(\omega)|^2}{|S_0(\omega)|^2}\right\}\]
           </div>
-          <p>Later output power is corrected by the same shape and divided by that fixed reference:</p>
+          <p>For every later window, the observed power ratio $q_{obs}(\omega)$ corrects output power by the same shape and divides it by that fixed reference:</p>
           <div class="equation">
             \[q_{obs}(\omega)=\frac{S_{yy}(\omega)}{|S_0(\omega)|^2\,q_{ref}(\omega)}\]
             <span class="label">A value near 1 resembles the healthy reference. Persistent growth suggests changed loop dynamics.</span>
@@ -613,14 +626,14 @@
         </div>
 
         <div class="step">
-          <p>SOL-OSI represents damage-like loop growth with a scale $\rho$. It tests 25 candidates between 0.5 and 6:</p>
+          <p>SOL-OSI represents damage-like loop growth with a scale $\rho$. For each of 25 candidate values between 0.5 and 6, $q_{model}(\omega,\rho)$ predicts the output-power ratio. The best-fitting candidate is called $\rho_{best}$:</p>
           <div class="equation">
-            \[q_{model}(\omega;\rho)=\left|\frac{1+L_0(\omega)}{1+a\rho L_0(\omega)}\right|^2\]
+            \[q_{model}(\omega,\rho)=\left|\frac{1+L_0(\omega)}{1+\alpha\rho L_0(\omega)}\right|^2\]
             \[\rho_{best}=\arg\min_\rho\;\operatorname{median}_{\omega\in[28,44]}\left|\log q_{obs}-\log q_{model}(\rho)\right|\]
           </div>
-          <p>The residual-branch margin follows from the damaged-loop hypothesis:</p>
+          <p>The <strong>residual margin</strong> $b_{res}$ is the worst chordal margin predicted by the fitted damaged-loop hypothesis:</p>
           <div class="equation accent">
-            \[b_{res}=\min_{\omega\in\Omega} b\!\left(a\rho L_0(\omega)\right)\]
+            \[b_{res}=\min_{\omega\in\Omega} b\!\left(\alpha\rho L_0(\omega)\right)\]
           </div>
         </div>
 
@@ -676,19 +689,23 @@
 
         <div class="step">
           <p>When the residual band has weak input leverage, the coherent margin may be too forgiving. SOL-OSI only subtracts the part supported by the more conservative residual margin:</p>
+          <p>The implementation smooths activity over time and calls it $\overline A$. Using that smoothed activity, the residual weight $w_{res}$ grows when mean leverage in the 28–44 Hz band is low:</p>
           <div class="equation">
             \[w_{res}=\overline A\left(1-\operatorname{mean}_{28:44}\ell\right)^2\]
+          </div>
+          <p>The conservative evidence margin $b_{evid}$ subtracts only the weighted amount by which the residual margin is lower than the coherent margin:</p>
+          <div class="equation">
             \[b_{evid}=b_{ST}-w_{res}\max(b_{ST}-b_{res},0)\]
           </div>
-          <p>During quiet operation, damage memory determines how far the result remains below the safe cap:</p>
+          <p>During quiet operation, the fixed memory gain $g_{mem}$ turns fitted loop growth $(\rho-1)$ into a bounded memory strength $w_{mem}$. The resulting quiet-data margin is $b_{idle}$:</p>
           <div class="equation">
             \[w_{mem}=\operatorname{clamp}\big(g_{mem}(\rho-1),0,1\big)\]
             \[b_{idle}=\frac1{\sqrt2}-w_{mem}\left(\frac1{\sqrt2}-b_{res}\right)\]
           </div>
-          <p>Finally, activity cross-fades the two operating regimes and one more exponential update smooths the result:</p>
+          <p>Finally, activity cross-fades the two operating regimes to form $b_{raw}[n]$. The factor $\sigma_b$ is the final output-smoothing factor, so the reported margin $b[n]$ moves gradually from its previous value $b[n-1]$:</p>
           <div class="equation accent">
-            \[b_{raw}=A\,b_{evid}+(1-A)b_{idle}\]
-            \[b^{+}=b+\alpha_b(b_{raw}-b)\]
+            \[b_{raw}[n]=A\,b_{evid}+(1-A)b_{idle}\]
+            \[b[n]=b[n-1]+\sigma_b\big(b_{raw}[n]-b[n-1]\big)\]
           </div>
         </div>
 
@@ -732,9 +749,12 @@
           <p>Because a positive scale changes magnitude but not phase, the $-180^\circ$ crossover frequency stays approximately fixed. The gain margin changes in closed form:</p>
           <div class="equation accent">
             \[GM_{dB}(\alpha,k)=GM_{dB}(1,k)-20\log_{10}(\alpha)\]
+          </div>
+          <p>Let $GM_{target}$ be the desired gain margin. The scale required to meet that target is $\alpha_{required}(k)$:</p>
+          <div class="equation accent">
             \[\alpha_{required}(k)=10^{\left(GM_{dB}(1,k)-GM_{target}\right)/20}\]
           </div>
-          <p>So, when damage raises loop gain and $b$ falls, reducing $\alpha$ can restore separation from the critical condition. Recovery should be slower and evidence-based so one optimistic window cannot rush the adaptive factor upward.</p>
+          <p>The adaptive law keeps $\alpha$ between the permitted minimum $\alpha_{min}$ and 1. When damage raises loop gain and $b$ falls, reducing $\alpha$ can restore separation from the critical condition. Recovery should be slower and evidence-based so one optimistic window cannot rush the adaptive factor upward.</p>
         </div>
 
         <div class="diagram step">
@@ -951,19 +971,13 @@
       if(matchMedia('(prefers-reduced-motion: reduce)').matches){sigmaSlider.value=sigmaDefault;updateSmoothing();return;}
       let position=+sigmaSlider.value,velocity=0,last=performance.now();smoothingLab.classList.add('springing');
       function settle(now){
-        const dt=Math.min((now-last)/1000,.032),acceleration=-75*(position-sigmaDefault)-14.5*velocity;last=now;velocity+=acceleration*dt;position+=velocity*dt;sigmaSlider.value=position.toFixed(3);updateSmoothing();
+        const dt=Math.min((now-last)/1000,.032),acceleration=-75*(position-sigmaDefault)-13.7*velocity;last=now;velocity+=acceleration*dt;position+=velocity*dt;sigmaSlider.value=position.toFixed(3);updateSmoothing();
         if(Math.abs(position-sigmaDefault)<.0005&&Math.abs(velocity)<.004){sigmaSlider.value=sigmaDefault;updateSmoothing();sigmaFrame=0;smoothingLab.classList.remove('springing');return;}
         sigmaFrame=requestAnimationFrame(settle);
       }
       sigmaFrame=requestAnimationFrame(settle);
     }
     sigmaSlider.addEventListener('input',()=>{cancelSigmaSpring();updateSmoothing();});sigmaSlider.addEventListener('pointerdown',()=>{sigmaActive=true;cancelSigmaSpring();});sigmaSlider.addEventListener('pointercancel',()=>{sigmaActive=false;startSigmaSpring();});sigmaSlider.addEventListener('keydown',()=>{sigmaActive=true;cancelSigmaSpring();});sigmaSlider.addEventListener('keyup',()=>{sigmaActive=false;startSigmaSpring();});sigmaSlider.addEventListener('change',startSigmaSpring);document.addEventListener('pointerup',()=>{if(sigmaActive){sigmaActive=false;startSigmaSpring();}});updateSmoothing();
-
-    function updateConfidence() {
-      const g=+document.getElementById('coherenceSlider').value,l=+document.getElementById('leverageSlider').value,c=g*l;
-      document.getElementById('coherenceOut').textContent=g.toFixed(2);document.getElementById('leverageOut').textContent=l.toFixed(2);document.getElementById('confidenceReadout').textContent=c.toFixed(2);document.getElementById('confidenceWord').textContent=c>.72?'measurement-led':c>.3?'mixed':'model-led';
-    }
-    ['coherenceSlider','leverageSlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateConfidence));updateConfidence();
 
     function rhoMargin(rho) { return Math.min(...data.filter(d=>d[0]<58||d[0]>62).map(d=>{const z=polar(d[1]*rho,d[3]);return chordal(z);})); }
     function updateRho(){const r=+document.getElementById('rhoSlider').value;document.getElementById('rhoOut').textContent=r.toFixed(2);document.getElementById('rhoMargin').textContent=rhoMargin(r).toFixed(3);document.getElementById('rhoWord').textContent=r<.9?'smaller loop':r<1.1?'healthy scale':'loop growth';}
