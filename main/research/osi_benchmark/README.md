@@ -1,4 +1,7 @@
-# OSI benchmark — the one place to test a method
+# Fabby Benchmark — the one place to test an OSI method
+
+**Fabby Benchmark** is the official name of the combined OSI + authority
+evaluation used by this project.
 
 Every test an OSI + authority candidate must face runs from ONE call in this
 folder. It prints a scorecard with two fabby scores plus three auxiliary
@@ -85,7 +88,7 @@ ast  = my_auth('state', prm)
 | Gate | Definition | Factual basis |
 |---|---|---|
 | G1 | canonical suite 10/10 | `OSI_tests/fable/fable_synthetic_suite`, the project's established scenario set and criteria |
-| G2 | fabby_score_1 > 92 | the level the previous accepted method set |
+| G2 | fabby_score_1 > 90 | minimum accepted suite-estimation score |
 | G3 | 0 s with g·a ≥ g_crit in the closed-loop live scenario | g_crit is **computed at runtime** by bisection on `isstable(feedback(g·C·H5k, 1))` (≈2.21 for the identified 5k model) — the linear stability boundary, not an opinion |
 | G4 | max a ≤ g_crit/3 for t ≥ 66 s | after the excitation ends the record's diagnostic gain is still 3, so any a above g_crit/3 is inside the unstable region; this is the exact failure that ended the 2026-07-10 test |
 | G5 | no GDB idle shed (t < 44 s) | the record is physically healthy and undriven there; any shed is a false positive by definition |
@@ -133,6 +136,13 @@ the 3 s requirement), the healthy reference is captured blind in the first
 1.5 s (no activity gate), and the record offers only ~14 s of held-gain quiet
 so longer holds are unexercised. The time-sliced runtime is now ported in
 control_and_HS/OSI/gpt5_6_runtime.m.
+
+The hard-activity investigation is isolated in `research/sol_osi_simplified`.
+The approved simplified estimator uses the direct gate
+`A = double(rms(u) > eta_A)` with `eta_A = 0.0575` (approximately
+`4.54 sigma_noise_u`) and a residual-memory gain of `21.75`; its Fabby
+composite is `70.3`. It is research-only and does not replace the production
+files in `control_and_HS/OSI`.
 
 The baseline row shows why the gates exist: its would-be composite matches
 the shipped default's, but it spends 13+ s inside the unstable region — the

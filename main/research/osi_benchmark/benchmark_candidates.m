@@ -1,4 +1,4 @@
-%% BENCHMARK_CANDIDATES Reference scorecards for the committed candidates.
+%% BENCHMARK_CANDIDATES Fabby Benchmark scorecards for committed candidates.
 % Run from anywhere; results land in research/osi_benchmark/results/.
 
 clear

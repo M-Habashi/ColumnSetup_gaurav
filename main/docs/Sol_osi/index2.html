@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Technical formulation of Online Stability Indicator estimation for real-time hybrid simulation.">
+  <title>Online Stability Indicator (OSI) Estimation during RTHS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600&amp;family=Merriweather:wght@400;600;700&amp;family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&amp;display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = {
+      tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['\\[', '\\]']]},
+      chtml: {scale: 0.96}
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #ffffff;
+      --wash: #f5f3ef;
+      --ink: #171714;
+      --muted: #686760;
+      --line: #d9d5cd;
+      --copper: #ac6420;
+      --copper-soft: #f3e5d7;
+      --blue: #007ca8;
+      --green: #218c42;
+      --red: #901500;
+      --damage: #99270e;
+      --code: #20201d;
+      --max: 800px;
+      --serif: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
+      --grot: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
+      --mono: 'Inconsolata', Consolas, 'Cascadia Mono', ui-monospace, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 17px;
+      line-height: 1.68;
+      text-rendering: optimizeLegibility;
+    }
+    button, input { font-family: var(--grot); }
+    a { color: var(--copper); text-underline-offset: 3px; }
+    p { margin: 0 0 1.15rem; }
+    h1, h2, h3 { font-family: var(--grot); font-weight: 650; letter-spacing: -0.025em; }
+    h1 { margin: 0; font-size: clamp(2.8rem, 8vw, 5.6rem); line-height: 0.98; max-width: 760px; }
+    h2 { margin: 0 0 1rem; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.08; }
+    h3 { margin: 2rem 0 0.7rem; font-size: 1.25rem; line-height: 1.25; }
+    code, pre { font-family: var(--mono); }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--grot);
+    }
+    .brand { font-size: 0.82rem; font-weight: 720; letter-spacing: 0.08em; }
+    .progress-text { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+    .progress-track { position: fixed; z-index: 30; top: 51px; left: 0; right: 0; height: 2px; background: #ece9e3; }
+    .progress-fill { height: 100%; width: 0; background: var(--copper); }
+
+    .hero {
+      min-height: calc(100svh - 52px);
+      display: grid;
+      align-content: center;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 80px 24px 64px;
+    }
+    .kicker { color: var(--copper); font-family: var(--grot); font-size: 0.8rem; font-weight: 750; letter-spacing: 0.11em; text-transform: uppercase; }
+    .hero-deck { max-width: 660px; margin: 30px 0 38px; color: #4f4e48; font-size: clamp(1.12rem, 2.3vw, 1.42rem); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 18px 30px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--grot); font-size: 0.84rem; }
+    .hero-meta strong { color: var(--ink); display: block; font-size: 1rem; }
+    .start-link { display: inline-block; width: fit-content; margin-top: 42px; color: var(--ink); font-family: var(--grot); font-weight: 650; text-decoration: none; border-bottom: 2px solid var(--copper); }
+
+    .layout { display: grid; grid-template-columns: 210px minmax(0, var(--max)); gap: 60px; justify-content: center; padding: 0 24px; }
+    .rail { position: sticky; top: 92px; align-self: start; padding: 10px 0 80px; font-family: var(--grot); }
+    .rail-label { display: block; margin-bottom: 14px; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .rail a { display: block; padding: 7px 0 7px 13px; color: var(--muted); font-size: 0.79rem; line-height: 1.25; text-decoration: none; border-left: 1px solid var(--line); }
+    .rail a.active { color: var(--ink); font-weight: 650; border-left: 3px solid var(--copper); padding-left: 11px; }
+
+    main { min-width: 0; }
+    .lesson-section { min-height: 82svh; padding: 110px 0 90px; border-top: 1px solid var(--line); scroll-margin-top: 54px; }
+    .section-number { display: block; margin-bottom: 15px; color: var(--copper); font-family: var(--grot); font-size: 0.78rem; font-weight: 750; letter-spacing: 0.12em; }
+    .lead { color: #4e4c46; font-size: 1.14rem; }
+    .notation-key { display: grid; grid-template-columns: 150px 1fr 1fr; margin: 28px 0 36px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: var(--grot); }
+    .notation-key div { padding: 13px 14px; border-right: 1px solid var(--line); }
+    .notation-key div:last-child { border-right: 0; }
+    .notation-key span { display: block; color: var(--muted); font-size: 0.72rem; }
+    .notation-key strong { font-family: 'STIX Two Text', Cambria, var(--serif); font-size: 1.05rem; font-style: italic; }
+    .step { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease-out, transform 700ms ease-out; }
+    .step.visible { opacity: 1; transform: none; }
+
+    .equation {
+      margin: 28px 0;
+      padding: 24px 12px;
+      overflow-x: auto;
+      text-align: center;
+      background: #fbfaf8;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-family: 'STIX Two Text', Cambria, var(--serif);
+      font-size: clamp(1rem, 2.5vw, 1.22rem);
+    }
+    .equation .label { display: block; margin-top: 12px; color: var(--muted); font-family: var(--grot); font-size: 0.78rem; }
+    .equation.accent { border-left: 4px solid var(--copper); text-align: left; padding-left: 22px; }
+    .sequence { display: grid; grid-template-columns: repeat(4, 1fr); margin: 32px 0; border: 1px solid var(--line); font-family: var(--grot); }
+    .sequence div { padding: 16px 13px; border-right: 1px solid var(--line); }
+    .sequence div:last-child { border-right: 0; }
+    .sequence b { display: block; color: var(--copper); font-size: 0.76rem; }
+    .sequence span { font-size: 0.84rem; }
+
+    .term { padding: 0; color: var(--blue); background: none; border: 0; border-bottom: 1px dotted currentColor; cursor: pointer; }
+    .definition { display: none; margin: -0.4rem 0 1rem; padding: 10px 12px; color: #474640; background: #eef7fa; border-left: 3px solid var(--blue); font-family: var(--grot); font-size: 0.88rem; }
+    .definition.open { display: block; }
+
+    .diagram, .lab {
+      margin: 34px 0;
+      padding: 20px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+    }
+    .diagram-title, .lab-head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 15px; font-family: var(--grot); }
+    .diagram-title strong, .lab-head strong { font-size: 0.95rem; }
+    .diagram-title span, .lab-head span { color: var(--muted); font-size: 0.76rem; }
+    svg { display: block; width: 100%; height: auto; overflow: visible; }
+    svg text { fill: var(--ink); font-family: var(--grot); font-size: 12px; }
+    .control-loop text { fill: var(--ink); font-family: 'STIX Two Text', Cambria, var(--serif); font-size: 15px; font-style: italic; }
+    .control-loop .diagram-note { fill: var(--ink); font-size: 13px; font-style: normal; }
+    .control-loop .changing-label { fill: var(--blue); }
+    .axis { stroke: #c8c5be; stroke-width: 1; }
+    .grid { stroke: #ece9e3; stroke-width: 1; }
+    .line-7 { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+    .line-5 { fill: none; stroke: var(--copper); stroke-width: 2.5; }
+    .line-blue { fill: none; stroke: var(--blue); stroke-width: 2.5; }
+    .dot { fill: var(--copper); }
+    .raw-point { fill: var(--paper); stroke: var(--ink); stroke-width: 1.4; }
+    .source-note { margin: 14px 0 0; color: var(--ink); font-family: var(--grot); font-size: 0.72rem; line-height: 1.55; }
+    .source-note code { overflow-wrap: anywhere; word-break: break-word; }
+    #smoothing-lab.springing #sigmaOut { color: var(--copper); }
+
+    .bode-explorer { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 20px; align-items: start; }
+    .bode-plots { min-width: 0; }
+    .bode-plot + .bode-plot { margin-top: 8px; }
+    .bode-reference { fill: none; stroke: #b9b9b5; stroke-width: 2.5; }
+    .bode-live { fill: none; stroke: var(--ink); stroke-width: 2.7; }
+    .margin-guide { fill: none; stroke: var(--damage); stroke-width: 1.4; stroke-dasharray: 5 4; }
+    .margin-marker { fill: var(--paper); stroke: var(--damage); stroke-width: 2; }
+    .critical-line { stroke: var(--damage); stroke-width: 1.3; stroke-dasharray: 7 5; }
+    .critical-label, .margin-label { fill: var(--ink); font-weight: 700; }
+    .bode-controls { padding-left: 18px; border-left: 1px solid var(--line); font-family: var(--grot); }
+    .bode-controls h3 { margin: 0 0 15px; font-size: 0.9rem; letter-spacing: 0; }
+    .bode-control { margin: 0 0 20px; }
+    .bode-control label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 5px; color: var(--ink); font-size: 0.75rem; }
+    .bode-control output { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .range-ends { display: flex; justify-content: space-between; color: var(--ink); font-size: 0.68rem; }
+    .mode-switch { display: grid; grid-template-columns: auto 34px auto; gap: 7px; align-items: center; width: fit-content; margin-bottom: 22px; color: var(--ink); font-size: 0.73rem; cursor: pointer; }
+    .mode-switch input { position: absolute; opacity: 0; pointer-events: none; }
+    .switch-track { position: relative; width: 34px; height: 18px; background: #d0cec8; border: 1px solid #9c9991; }
+    .switch-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--ink); transition: transform 160ms ease; }
+    .mode-switch input:checked + .switch-track::after { transform: translateX(16px); }
+    .mode-switch input:focus-visible + .switch-track { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .margin-cards { margin: 24px 0 20px; border-top: 1px solid var(--line); }
+    .margin-card { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .margin-card span { color: var(--ink); font-size: 0.72rem; }
+    .margin-card strong { color: var(--ink); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+    .bode-legend { color: var(--ink); font-size: 0.7rem; line-height: 1.45; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .legend-swatch { width: 22px; height: 3px; flex: 0 0 auto; background: #b9b9b5; }
+    .legend-swatch.live { background: var(--ink); }
+    .margin-note { color: var(--ink); font-size: 0.68rem; line-height: 1.45; }
+
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 20px; font-family: var(--grot); }
+    .control label { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 5px; color: var(--muted); font-size: 0.78rem; }
+    .control output { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; accent-color: var(--copper); }
+    .readout { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: var(--grot); }
+    .readout div { padding: 12px; border-right: 1px solid var(--line); }
+    .readout div:last-child { border-right: 0; }
+    .metric-label { display: block; color: var(--muted); font-size: 0.78rem; }
+    .readout strong { font-size: 1.14rem; font-variant-numeric: tabular-nums; }
+
+    details.code-link { margin: 25px 0; border: 1px solid #3b3b36; background: var(--code); color: #f2f0eb; font-family: var(--grot); }
+    details.code-link summary { padding: 13px 16px; cursor: pointer; color: #ddd9d0; font-size: 0.82rem; font-weight: 650; list-style-position: inside; }
+    details.code-link[open] summary { border-bottom: 1px solid #42423d; }
+    .code-meta { padding: 12px 17px 0; color: #aaa69d; font-size: 0.72rem; }
+    pre { margin: 0; padding: 13px 17px 18px; overflow-x: auto; color: #eeeae2; font-size: 0.73rem; line-height: 1.65; tab-size: 4; }
+    pre .ln { display: inline-block; width: 32px; color: #7e7b74; user-select: none; }
+    pre .hi { color: #e49b59; }
+
+    .small-button, .mode-button {
+      padding: 7px 11px;
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+    .mode-button.active { background: var(--ink); color: white; }
+    .callout { margin: 28px 0; padding: 18px 20px; background: var(--copper-soft); border-left: 4px solid var(--copper); }
+    .callout strong { display: block; margin-bottom: 5px; }
+    .warning { background: #f7ece9; border-color: var(--red); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .plain-panel { padding-top: 13px; border-top: 3px solid var(--ink); }
+    .plain-panel.copper { border-color: var(--copper); }
+    .plain-panel h3 { margin-top: 0; }
+
+    .pipeline { margin: 32px 0; border-top: 1px solid var(--line); }
+    .pipe-row { display: grid; grid-template-columns: 44px 150px 1fr; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .pipe-row b:first-child { color: var(--copper); }
+    .pipe-row span { color: var(--muted); font-size: 0.9rem; }
+    .final-note { margin: 60px 0 120px; padding: 26px 0; border-top: 4px solid var(--copper); }
+
+    @media (max-width: 1040px) {
+      .layout { grid-template-columns: minmax(0, var(--max)); }
+      .rail { display: none; }
+    }
+    @media (max-width: 680px) {
+      body { font-size: 16px; }
+      .topbar { padding: 0 15px; }
+      .hero { padding: 65px 18px 55px; }
+      .layout { padding: 0 18px; }
+      .lesson-section { min-height: auto; padding: 78px 0 62px; }
+      .sequence { grid-template-columns: 1fr 1fr; }
+      .sequence div:nth-child(2) { border-right: 0; }
+      .sequence div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .controls, .two-col { grid-template-columns: 1fr; }
+      .notation-key { grid-template-columns: 1fr 1fr; }
+      .notation-key div:first-child { grid-column: 1 / -1; border-right: 0; border-bottom: 1px solid var(--line); }
+      .notation-key div:nth-child(2) { border-right: 1px solid var(--line); }
+      .readout { grid-template-columns: 1fr; }
+      .readout div { border-right: 0; border-bottom: 1px solid var(--line); }
+      .readout div:last-child { border-bottom: 0; }
+      .pipe-row { grid-template-columns: 38px 1fr; }
+      .pipe-row span { grid-column: 2; }
+      .diagram, .lab { margin-left: -8px; margin-right: -8px; padding: 14px; }
+      .lab-head { align-items: flex-start; flex-direction: column; gap: 3px; }
+      .lab-head span { max-width: 100%; overflow-wrap: anywhere; }
+      .bode-explorer { grid-template-columns: 1fr; }
+      .bode-controls { padding: 17px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .step { opacity: 1; transform: none; transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">OSI</span>
+    <span class="progress-text"><span id="progressSection">Overview</span> · <span id="progressPercent">0%</span></span>
+  </header>
+  <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+  <section class="hero" id="opening">
+    <span class="kicker">Real-time hybrid simulation · stability assessment</span>
+    <h1>Online Stability Indicator (OSI) Estimation during RTHS</h1>
+    <p class="hero-deck">This page documents the research-only <code>research/sol_osi_simplified/sol_osi_simplified.m</code> estimator. It quantifies changes in the experimental inner loop and uses a hard activity switch to select coherent or quiet-data evidence. The production implementation remains separate in <code>control_and_HS/OSI</code>.</p>
+    <div class="hero-meta">
+      <div><strong>Eight-stage formulation</strong>estimator derivation and implementation</div>
+      <div><strong>7k → 5k</strong>experimentally identified column models</div>
+      <div><strong>Frequency-domain analysis</strong>coherent and residual evidence</div>
+    </div>
+    <a class="start-link" href="#stage-1">Proceed to system formulation ↓</a>
+  </section>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Lesson stages">
+      <span class="rail-label">Technical sections</span>
+      <a href="#stage-1">01 · System formulation</a>
+      <a href="#stage-2">02 · Spectral estimation</a>
+      <a href="#stage-3">03 · Coherent identification</a>
+      <a href="#stage-4">04 · Chordal stability margin</a>
+    </nav>
+
+    <main>
+      <section class="lesson-section" id="stage-1" data-title="System formulation">
+        <span class="section-number">SECTION 01 / 08</span>
+        <h2>Experimental Inner-Loop System Formulation</h2>
+        <p class="lead">The inner loop comprises a PID controller, an experimentally identified plant, adaptive gain scaling, and negative feedback.</p>
+
+        <div class="notation-key step" aria-label="Course notation">
+          <div><span>Course notation</span><strong>Use u and y</strong></div>
+          <div><span>command displacement</span><strong>$d_d \equiv u$</strong></div>
+          <div><span>measured displacement</span><strong>$d_m \equiv y$</strong></div>
+        </div>
+
+        <div class="diagram step">
+          <div class="diagram-title"><strong>Experimental Inner Displacement-Control Loop</strong><span>closed-loop signal topology</span></div>
+          <svg class="control-loop" viewBox="0 0 760 190" role="img" aria-label="Block diagram from input u through the PID, adaptive gain, and changing plant H to measured response y with negative feedback">
+            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#171714"/></marker></defs>
+            <line x1="45" y1="75" x2="125" y2="75" stroke="#171714" marker-end="url(#arrow)"/>
+            <circle cx="150" cy="75" r="22" fill="white" stroke="#171714" stroke-width="2"/>
+            <text x="143" y="69" fill="#171714">+</text><text x="143" y="92" fill="#171714">−</text>
+            <line x1="172" y1="75" x2="250" y2="75" stroke="#171714" marker-end="url(#arrow)"/>
+            <rect x="255" y="43" width="130" height="64" fill="#ffffff" stroke="#171714" stroke-width="2"/>
+            <text x="320" y="69" text-anchor="middle">PID, C(s)</text><text class="diagram-note" x="320" y="89" text-anchor="middle">adaptive factor α</text>
+            <line x1="385" y1="75" x2="455" y2="75" stroke="#171714" marker-end="url(#arrow)"/>
+            <rect x="460" y="43" width="150" height="64" fill="#eef7fa" stroke="#007ca8" stroke-width="2"/>
+            <text class="changing-label" x="535" y="69" text-anchor="middle">H(s, k)</text><text class="diagram-note" x="535" y="89" text-anchor="middle">column + actuator</text>
+            <line x1="610" y1="75" x2="700" y2="75" stroke="#171714" marker-end="url(#arrow)"/>
+            <path d="M670 75 V150 H150 V98" fill="none" stroke="#171714" marker-end="url(#arrow)"/>
+            <text x="42" y="60">u</text><text x="420" y="60">v</text><text x="681" y="60">y</text>
+          </svg>
+        </div>
+
+        <div class="step">
+          <p>We call the experimentally identified plant <strong>$H(s,k)$</strong>. It maps the internal PID output $v$ to the measured response $y$, while $k$ identifies the current stiffness condition between 7k and 5k.</p>
+          <div class="equation">
+            \[H(s,k)=\frac{Y(s)}{V(s)}\]
+            <span class="label">The plant seen by the PID. Frequency enters through $s=j\omega$; stiffness enters through $k$.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <p>The PID and plant multiply to form the <strong>open-loop transfer function</strong>. The adaptive factor $\alpha\in[0.02,1]$ scales the controller’s influence; $\alpha=1.00$ means full PID gain.</p>
+          <div class="equation accent">
+            \[L(s,\alpha,k)=\alpha\,C(s)\,H(s,k)\]
+            <span class="label">In the code, the healthy full-gain loop corresponds to $L_0(s)=C(s)H(s,7\mathrm{k})$.</span>
+          </div>
+          <p>Closing the negative-feedback loop gives the command → measurement response:</p>
+          <div class="equation">
+            \[T(s,\alpha,k)=\frac{Y(s)}{U(s)}=\frac{L(s,\alpha,k)}{1+L(s,\alpha,k)}\]
+            <span class="label">Both $\alpha$ and $k$ affect $T$ through the open loop $L$.</span>
+          </div>
+        </div>
+
+        <div class="lab step">
+          <div class="lab-head"><strong>Parametric Frequency Response of the 7k–5k Inner Loop</strong><span>continuous-time evaluation at $s=j\omega$ · PID parameters: P = 0.15, I = 20, D = 0.0015</span></div>
+          <div class="bode-explorer">
+            <div class="bode-plots">
+              <svg class="bode-plot" id="bodeMagnitude" viewBox="0 0 680 265" role="img" aria-label="Bode magnitude plot with gain margin">
+                <g id="bodeMagGrid"></g>
+                <path id="bodeMagReference" class="bode-reference"></path>
+                <path id="bodeMagLive" class="bode-live"></path>
+                <g id="gainMarginMark"></g>
+              </svg>
+              <svg class="bode-plot" id="bodePhase" viewBox="0 0 680 270" role="img" aria-label="Bode phase plot with phase margin and minus 180 degree reference">
+                <g id="bodePhaseGrid"></g>
+                <line id="phaseCritical" class="critical-line"></line>
+                <text id="phaseCriticalLabel" class="critical-label">−180°</text>
+                <path id="bodePhaseReference" class="bode-reference"></path>
+                <path id="bodePhaseLive" class="bode-live"></path>
+                <g id="phaseMarginMark"></g>
+              </svg>
+            </div>
+            <aside class="bode-controls" aria-label="Bode plot controls">
+              <h3>Frequency-Response Parameters</h3>
+              <label class="mode-switch" for="loopModeSwitch"><span>Open</span><input id="loopModeSwitch" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span><span>Closed</span></label>
+              <div class="bode-control">
+                <label for="plantSlider"><span>Plant condition</span><output id="plantOut">7.0k (0%)</output></label>
+                <input id="plantSlider" type="range" min="0" max="1" value="0" step="0.01">
+                <div class="range-ends"><span>7k</span><span>5k</span></div>
+              </div>
+              <div class="bode-control">
+                <label for="alphaSlider"><span>Adaptive factor α</span><output id="alphaOut">1.00</output></label>
+                <input id="alphaSlider" type="range" min="0.2" max="1" value="1" step="0.01">
+                <div class="range-ends"><span>0.20</span><span>1.00</span></div>
+              </div>
+              <div class="margin-cards">
+                <div class="margin-card"><span>Gain margin, GM</span><strong id="gmOut">—</strong></div>
+                <div class="margin-card"><span>Phase margin, PM</span><strong id="pmOut">—</strong></div>
+              </div>
+              <div class="bode-legend">
+                <div class="legend-row"><i class="legend-swatch"></i><span>fixed 7k, α = 1</span></div>
+                <div class="legend-row"><i class="legend-swatch live" id="liveSwatch"></i><span id="liveLegend">live 7.0k (0%), α = 1.00</span></div>
+              </div>
+              <p class="margin-note">GM and PM always come from the underlying open loop, even when the closed-loop response is displayed.</p>
+            </aside>
+          </div>
+          <p class="callout"><strong>Read both plots together.</strong>GM is the extra gain available when phase reaches $-180^\circ$. PM is the extra phase available when magnitude reaches 0 dB. Move toward 5k and the live curve turns from black to <span style="color:#99270e">red</span>; the light-gray 7k, $\alpha=1$ reference stays fixed.</p>
+        </div>
+
+        <details class="code-link step">
+          <summary>Code connection · plant, PID, and nominal loop</summary>
+          <div class="code-meta">dg_cntrl_dynamics.m · lines 112–116 and 139–160; prepare_gpt5_6_runtime.m · lines 42–45<br>Repository identifiers are preserved exactly; translate logged <code>dd</code> as $u$ and <code>dm</code> as $y$.</div>
+          <pre><span class="ln">112</span>% H_dc_dm: response from the digital-controller output to measurement.
+<span class="ln">114</span>[H_dc_dm, H_dc_dm_xfunc, H_dc_dm_fit_info] = ...
+<span class="ln">115</span>    identify_experimental_system(dc, dm, fs, fit_config);
+
+<span class="ln">142</span>digital_cntrlr = pid(P, I, D, 1/derivative_filter_N, dt, ...
+<span class="ln">143</span>    'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
+<span class="ln">146</span>PID_H_dc_dm = feedback(digital_cntrlr * H_dc_dm_d, 1);
+<span class="ln">160</span>PID_H_dc_dm_loop = digital_cntrlr * H_dc_dm_d;
+
+<span class="ln">42</span>C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
+<span class="ln">45</span>cfg = sol_osi_simplified('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
+        </details>
+
+      </section>
+
+      <section class="lesson-section" id="stage-2" data-title="Spectral estimation">
+        <span class="section-number">SECTION 02 / 08</span>
+        <h2>Short-Time Spectral Estimation of Interface Response</h2>
+        <p class="lead">OSI updates at 0.125 s intervals using the most recent 0.5 s window of command and measured displacement data.</p>
+
+        <div class="sequence step">
+          <div><b>01</b><span>append 0.125 s</span></div><div><b>02</b><span>keep 0.5 s</span></div><div><b>03</b><span>apply Hann window</span></div><div><b>04</b><span>take FFT</span></div>
+        </div>
+
+        <div class="step">
+          <p>Let $u[n]$ be command displacement and $y[n]$ be measured displacement. A Hann window $w[n]$ reduces edge discontinuities before the FFT:</p>
+          <div class="equation">
+            \[U[k]=\operatorname{FFT}\{w[n]u[n]\},\qquad Y[k]=\operatorname{FFT}\{w[n]y[n]\}\]
+          </div>
+          <p>At time step $n$, the instantaneous input-power, output-power, and cross-power terms are</p>
+          <div class="equation">
+            \[p_u[n]=|U|^2,\qquad p_y[n]=|Y|^2,\qquad c_{yu}[n]=Y\,U^*\]
+            <span class="label">$^*$ means complex conjugate.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <p>One window is noisy, so each spectrum is <button class="term" aria-expanded="false">exponentially smoothed</button>.</p>
+          <div class="definition">Exponential smoothing combines the newest value with the previous estimate. It is a compact memory: recent windows matter most, but older windows do not disappear instantly.</div>
+          <div class="equation accent">
+            \[S_{uu}[n]=\bigl(1-\eta_s\bigr)S_{uu}[n-1]+\eta_s p_u[n]\]
+            \[S_{yy}[n]=\bigl(1-\eta_s\bigr)S_{yy}[n-1]+\eta_s p_y[n]\]
+            \[S_{yu}[n]=\bigl(1-\eta_s\bigr)S_{yu}[n-1]+\eta_s c_{yu}[n]\]
+            <span class="label">$n$ is the current time step and $n-1$ is the previous step. The spectral smoothing factor used here is $\eta_s=0.39$.</span>
+          </div>
+        </div>
+
+        <div class="lab step" id="smoothing-lab">
+          <div class="lab-head"><strong>Measured Command-Power Transition and Exponential Spectral Smoothing</strong></div>
+          <svg id="smoothPlot" viewBox="0 0 760 280" role="img" aria-label="Actual 12 hertz command power from an RTHS test and its exponentially smoothed spectrum">
+            <g id="smoothGrid"></g><text x="20" y="138" text-anchor="middle" transform="rotate(-90 20 138)">|U|²</text><path id="rawTrace" class="line-7"></path><g id="rawPoints"></g><path id="smoothTrace" class="line-5"></path>
+          </svg>
+          <div class="controls">
+            <div class="control"><label for="sigmaSlider">spectral smoothing $\eta_s$<output id="sigmaOut">0.39</output></label><input id="sigmaSlider" type="range" min="0.04" max="0.74" value="0.39" step="0.001"><div class="range-ends"><span>more memory</span><span>less memory</span></div></div>
+          </div>
+          <p class="source-note"><strong>Recorded source.</strong> <code>saved_results/tests/gpt5_6_tests/20260710_1845_plNew_authON_oscillations_unstableAtEnd.mat</code> · command $d_d\equiv u$ · 12 Hz FFT bin · record time 24.625–29.625 s · 0.5 s Hann window updated every 0.125 s. The 41 circles are computed from the recorded command samples, not generated examples.</p>
+        </div>
+
+        <details class="code-link step">
+          <summary>Code connection · window, FFT, and spectral memory</summary>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 31–39, 60–68, and 141–164</div>
+          <pre><span class="ln">31</span>'step_s', 0.125, ...
+<span class="ln">32</span>'segment_s', 0.5, ...
+<span class="ln">39</span>'residual_band_hz', [28 44], ...
+<span class="ln">61</span>cfg.window = 0.5-0.5*cos(2*pi*n/(cfg.segment_n-1));
+
+<span class="ln">141</span>Uall = fft(state.u.*cfg.window);
+<span class="ln">142</span>Yall = fft(state.y.*cfg.window);
+<span class="ln">145</span>pu = abs(U).^2;
+<span class="ln">146</span>py = abs(Y).^2;
+<span class="ln">147</span>cyu = Y.*conj(U);
+<span class="ln">161</span>state.Suu = state.Suu+q*(pu-state.Suu);
+<span class="ln">162</span>state.Syy = state.Syy+q*(py-state.Syy);
+<span class="ln">163</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
+        </details>
+      </section>
+
+      <section class="lesson-section" id="stage-3" data-title="Coherent identification">
+        <span class="section-number">SECTION 03 / 08</span>
+        <h2>Confidence-Weighted Coherent Identification of Closed-Loop Dynamics</h2>
+        <p class="lead">The coherent branch estimates the closed-loop response from the command–measurement relationship. It then blends that estimate with the known healthy model.</p>
+
+        <div class="step">
+          <p><button class="term" aria-expanded="false">Magnitude-squared coherence</button> asks: “At this frequency, how consistently does the input explain the output?”</p>
+          <div class="definition">Coherence ranges from 0 to 1. A value near 1 means the input and output have a strong, repeatable linear relationship at that frequency. A value near 0 means the ratio (Y/U) should not be trusted.</div>
+          <div class="equation">
+            \[\gamma^2(\omega)=\frac{|S_{yu}(\omega)|^2}{S_{uu}(\omega)S_{yy}(\omega)},\qquad 0\le \gamma^2\le1\]
+          </div>
+          <p>Coherence alone is insufficient, so OSI gates it with input leverage for two reasons:</p>
+          <ol>
+            <li><strong>Feedback-created coherence.</strong> At frequencies with high loop gain, measurement noise can drive the feedback loop and create high coherence between feedback-related signals even when the intended external excitation is absent. The resulting relationship is driven mainly by noise and can produce a misleading transfer-function estimate.</li>
+            <li><strong>Division by weak input power.</strong> Forming a transfer-function ratio requires division by the input spectrum. When $S_{uu}$ is very small, numerical roundoff, measurement noise, spectral leakage, and ordinary estimation fluctuations can be greatly magnified.</li>
+          </ol>
+          <p>The leverage factor therefore reduces confidence in frequency bins that do not contain meaningful input power. It cannot by itself distinguish strong feedback-correlated noise from intentional excitation.</p>
+          <p>First define the <strong>relative input power</strong> $p_{rel}(\omega)$: the power in the current frequency bin divided by the power in the strongest bin.</p>
+          <div class="equation">
+            \[p_{rel}(\omega)=\frac{S_{uu}(\omega)}{\max_{\nu}S_{uu}(\nu)}\]
+            <span class="label">$p_{rel}=1$ at the strongest input frequency and approaches 0 where input power is weak.</span>
+          </div>
+          <p>Next, $p_{floor}$ is a small positive floor ($10^{-3}$ here) that prevents tiny input values from receiving high trust. The <strong>input leverage</strong> $\ell(\omega)$ maps relative power to a number between 0 and 1:</p>
+          <div class="equation">
+            \[\ell(\omega)=\frac{p_{rel}(\omega)}{p_{rel}(\omega)+p_{floor}}\]
+          </div>
+          <p>Finally, $A$ is one activity score for the entire time window: $A=0$ means the command is quiet and $A=1$ means it is strongly driven. Stage 06 gives its exact RMS-based definition. The per-frequency <strong>confidence</strong> $c(\omega)$ combines activity, coherence, and leverage:</p>
+          <div class="equation accent">
+            \[c(\omega)=\underbrace{A}_{\text{activity}}\;\underbrace{\gamma^2(\omega)}_{\text{coherence}}\;\underbrace{\ell(\omega)}_{\text{input leverage}}\]
+          </div>
+        </div>
+
+        <div class="step">
+          <p>The spectra now provide the <strong>raw measured closed-loop estimate</strong> $\widehat T(\omega)$:</p>
+          <div class="equation">
+            \[\widehat T(\omega)=\frac{S_{yu}(\omega)}{S_{uu}(\omega)}\]
+          </div>
+          <p>OSI also forms a <strong>model prior</strong>. It scales the healthy loop $L_0(\omega)$ by the currently applied adaptive gain $\alpha$, then converts that loop to its closed-loop response $T_{prior}(\omega)$. Here $\alpha$ is the applied <code>a_cmd</code> value: $\alpha=1.00$ means full PID gain, and it changes only if the separate adaptive-gain controller changes <code>a_cmd</code>. The estimator clamps the received value to $0.02\le\alpha\le1$:</p>
+          <div class="equation">
+            \[L_{prior}(\omega)=\alpha L_0(\omega),\qquad T_{prior}(\omega)=\frac{L_{prior}(\omega)}{1+L_{prior}(\omega)}\]
+          </div>
+          <p>The confidence $c(\omega)$ chooses how far the <strong>usable response</strong> $\widehat T_{use}(\omega)$ moves from the model prior toward the measured estimate. The final symbol $\widehat L(\omega)$ is the reconstructed open loop:</p>
+          <div class="equation">
+            \[\widehat T_{use}(\omega)=c(\omega)\widehat T(\omega)+[1-c(\omega)]T_{prior}(\omega)\]
+            \[\widehat L(\omega)=\frac{\widehat T_{use}(\omega)}{1-\widehat T_{use}(\omega)}\]
+            <span class="label">The second equation is simply $T=L/(1+L)$ solved for $L$.</span>
+          </div>
+        </div>
+
+        <details class="code-link step">
+          <summary>Code connection · confidence-weighted loop reconstruction</summary>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 167–177</div>
+          <pre><span class="ln">167</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
+<span class="ln">168</span>p_rel = state.Suu/max(max(state.Suu), eps);
+<span class="ln">169</span>leverage = p_rel./(p_rel+cfg.power_floor);
+<span class="ln">170</span>confidence = activity*gamma2.*leverage;
+<span class="ln">171</span>That = state.Syu./max(state.Suu, eps);
+<span class="ln">172</span>Tuse = confidence.*That+(1-confidence).*Tprior;
+<span class="ln">176</span>Lhat = Tuse./den;
+<span class="ln">177</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);</pre>
+        </details>
+
+      </section>
+
+      <section class="lesson-section" id="stage-4" data-title="Chordal stability margin">
+        <span class="section-number">SECTION 04 / 08</span>
+        <h2>Chordal-Distance Formulation of the Online Stability Indicator</h2>
+        <p class="lead">At each frequency, OSI evaluates the separation between the estimated loop and the critical feedback condition; the minimum separation defines the reported margin.</p>
+
+        <div class="step">
+          <p>The closed-loop denominator is $1+L$. Instability becomes possible when $L(j\omega)$ approaches $-1$, because then $1+L\to0$.</p>
+          <p>Define $b(\omega,\alpha,k)$ as the normalized distance from that critical condition at frequency $\omega$, adaptive gain $\alpha$, and plant condition $k$:</p>
+          <div class="equation accent">
+            \[b(\omega,\alpha,k)=\min\!\left(\frac{|1+L(j\omega,\alpha,k)|}{\sqrt{2\left(1+|L(j\omega,\alpha,k)|^2\right)}},\;\frac{1}{\sqrt2}\right)\]
+            <span class="label">This normalized chordal margin stays between 0 and $1/\sqrt2\approx0.707$.</span>
+          </div>
+          <p>Let $\Omega$ be the usable 2–100 Hz band after excluding the 58–62 Hz line-noise bins. The operator $\operatorname{median}_3$ is a three-bin median filter that suppresses isolated spikes. The online stability indicator $b_{ST}$ is then the weakest filtered margin in $\Omega$:</p>
+          <div class="equation">
+            \[b_{ST}=\min_{\omega\in\Omega}\;\operatorname{median}_3\{b(\omega)\}\]
+          </div>
+        </div>
+
+        <div class="lab step">
+          <div class="lab-head"><strong>Chordal-Margin Sensitivity Across the 7k–5k Plant Family</strong><span>experimentally identified $H(s,k)$ models</span></div>
+          <svg id="marginPlot" viewBox="0 0 760 330" role="img" aria-label="Chordal stability margin versus frequency for interpolated 7k and 5k model"><g id="marginGrid"></g><path id="marginTrace" class="line-5"></path><line id="marginGuide" stroke="#901500" stroke-dasharray="5 5"/><circle id="marginDot" r="5" fill="#901500"/></svg>
+          <div class="controls">
+            <div class="control"><label for="damageSlider">plant condition<output id="damageOut">7.0k (0%)</output></label><input id="damageSlider" type="range" min="0" max="1" value="0" step="0.01"></div>
+            <div class="control"><label for="authoritySlider">adaptive factor $\alpha$<output id="authorityOut">1.00</output></label><input id="authoritySlider" type="range" min="0.2" max="1" value="1" step="0.01"></div>
+          </div>
+          <div class="readout"><div><span class="metric-label">worst margin</span><strong id="marginValue">0.589</strong></div><div><span class="metric-label">binding frequency</span><strong id="marginFreq">34 Hz</strong></div><div><span class="metric-label">condition</span><strong id="marginStatus">healthy reference</strong></div></div>
+        </div>
+
+        <div class="callout step"><strong>Read the number in the right direction</strong>A large (b) means more separation from the critical condition. A small (b) means less robustness. In these sampled project models, the 7k minimum is about 0.589 and the 5k minimum is about 0.345.</div>
+
+        <details class="code-link step">
+          <summary>Code connection · chordal curve and worst-frequency selection</summary>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 72–76, 177–179, and 293–298</div>
+          <pre><span class="ln">72</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
+<span class="ln">74</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
+<span class="ln">75</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
+
+<span class="ln">177</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);
+
+<span class="ln">293</span>function b = chordal(L, cap)
+<span class="ln">294</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
+<span class="ln">297</span>function y = minMasked(x, mask)
+<span class="ln">298</span>y = min(x(mask));</pre>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const data = [
+      [2,.680062,1.622831,-92.72406,-92.08556],[4,.3359435,.801102,-95.12262,-93.83265],[6,.2199677,.523924,-96.84096,-94.87217],[8,.1618048,.3847466,-97.48431,-94.7921],[10,.1279123,.3035015,-96.66849,-93.18643],[12,.1077532,.2550171,-94.21415,-89.84741],[14,.09743565,.2299665,-90.52334,-85.14033],[16,.09530233,.2243777,-86.85074,-80.27368],[18,.1001612,.2355208,-84.89969,-76.8974],[20,.1106341,.2605663,-85.94024,-76.23138],[22,.1250422,.2966171,-90.41929,-78.70379],[24,.141267,.3406416,-98.17596,-84.22116],[26,.1565839,.3887993,-108.6883,-92.4854],[28,.168003,.4356651,-121.1527,-103.0924],[30,.1733823,.4743961,-134.5743,-115.4869],[32,.1724718,.4987071,-147.9987,-128.9346],[34,.1667345,.505772,-160.7624,-142.6292],[36,.158216,.4973842,-172.5673,-155.8964],[38,.1486152,.4782541,176.6123,-168.336],[40,.1390039,.4533822,166.6648,-179.8165],[42,.1299363,.4265342,157.4355,169.6191],[44,.1216401,.4000047,148.7738,159.8488],[46,.1141665,.3749725,140.5498,150.7318],[48,.1074824,.3519262,132.6566,142.137],[50,.1015192,.330978,125.0076,133.953],[52,.0961989,.3120563,117.5324,126.0878],[54,.09144467,.2950125,110.1729,118.4668],[56,.08718612,.279677,102.8803,111.0288],[58,.08336043,.2658859,95.61245,103.7231],[60,.07991213,.2534936,88.33233,96.50674],[62,.07679218,.2423768,81.00667,89.34214],[64,.0739568,.2324357,73.60522,82.19557],[66,.07136633,.2235934,66.10023,75.03575],[68,.06898408,.2157948,58.46641,67.83284],[70,.06677543,.209006,50.68108,60.55749],[72,.06470703,.2032135,42.72466,53.18017],[74,.06274632,.1984251,34.5815,45.67046],[76,.06086135,.1946705,26.24097,37.99633],[78,.05902108,.192003,17.6987,30.12338],[80,.05719608,.1905028,8.957967,22.01373],[82,.05535981,.1902794,.03101639,13.62452],[84,.05349029,.1914762,-9.060063,4.905695],[86,.05157188,.1942724,-18.28305,-4.203341],[88,.04959695,.1988831,-27.59624,-13.77852],[90,.0475668,.2055481,-36.95009,-23.91784],[92,.04549158,.2144977,-46.2899,-34.74981],[94,.04338905,.2258666,-55.55904,-46.44194],[96,.04128229,.239505,-64.70245,-59.20326],[98,.03919681,.2546208,-73.6697,-73.26556],[100,.03715773,.2692554,-82.41736,-88.81362]
+    ];
+
+    const bodeData = [
+      [.2,-.0289049414,-6.82900367,-.0508866946,-16.2998293],[.2161559,-.0289036214,-6.31853904,-.050883565,-15.0814297],[.2336169,-.0289020796,-5.84622336,-.0508799094,-13.954086],[.2524884,-.0289002786,-5.40920496,-.0508756394,-12.9109919],[.2728843,-.028898175,-5.00484531,-.0508706517,-11.9458494],
+      [.2949277,-.0288957178,-4.63070304,-.0508648257,-11.0528315],[.3187519,-.0288928476,-4.2845192,-.0508580206,-10.2265464],[.3445005,-.0288894951,-3.96420369,-.0508500717,-9.46200539],[.3723291,-.0288855791,-3.66782256,-.0508407869,-8.75459242],[.4024057,-.0288810051,-3.39358637,-.0508299417,-8.10003641],
+      [.4349119,-.0288756624,-3.13983941,-.0508172738,-7.49438541],[.4700438,-.0288694219,-2.90504964,-.0508024771,-6.93398276],[.5080138,-.0288621329,-2.68779951,-.0507851939,-6.41544496],[.5490509,-.0288536191,-2.48677735,-.0507650064,-5.93564132],[.593403,-.0288436749,-2.30076949,-.0507414267,-5.49167499],
+      [.6413378,-.02883206,-2.12865289,-.050713885,-5.08086551],[.6931448,-.028818494,-1.96938841,-.0506817159,-4.70073262],[.7491368,-.0288026493,-1.82201449,-.0506441423,-4.34898128],[.8096517,-.0287841435,-1.68564139,-.0506002568,-4.02348783],[.875055,-.02876253,-1.55944578,-.0505489997,-3.72228717],
+      [.9457416,-.0287372876,-1.44266581,-.0504891337,-3.44356089],[1.022138,-.0287078077,-1.33459647,-.0504192142,-3.1856263],[1.104706,-.02867338,-1.23458538,-.0503375548,-2.94692632],[1.193944,-.0286331756,-1.14202883,-.0502421867,-2.72602],[1.29039,-.0285862272,-1.05636815,-.0501308118,-2.52157393],
+      [1.394627,-.0285314062,-.977086359,-.0500007482,-2.33235416],[1.507285,-.0284673962,-.903705013,-.0498488662,-2.15721877],[1.629042,-.028392662,-.835781378,-.0496715143,-1.99511102],[1.760636,-.0283054139,-.772905744,-.049464433,-1.84505299],[1.902859,-.028203566,-.714698985,-.049222655,-1.70613975],
+      [2.056571,-.0280846883,-.660810294,-.0489403889,-1.57753392],[2.2227,-.0279459513,-.610915095,-.0486108849,-1.45846071],[2.402249,-.0277840619,-.564713137,-.0482262793,-1.34820333],[2.596301,-.0275951905,-.521926727,-.0477774151,-1.24609878],[2.80603,-.0273748866,-.482299129,-.0472536348,-1.151534],
+      [3.032699,-.0271179834,-.4455931,-.0466425439,-1.06394234],[3.27768,-.0268184897,-.411589573,-.0459297383,-.982800423],[3.542449,-.0264694678,-.380086478,-.0450984959,-.907625254],[3.828607,-.0260628978,-.350897708,-.0441294262,-.837971716],[4.13788,-.025589529,-.323852223,-.0430000774,-.77343038],
+      [4.472136,-.0250387184,-.298793327,-.0416845002,-.713625677],[4.833393,-.024398262,-.275578097,-.0401527697,-.658214452],[5.223833,-.0236542249,-.254077019,-.0383704739,-.606884947],[5.645811,-.0227907821,-.234173836,-.0362981824,-.55935628],[6.101878,-.0217900901,-.215765665,-.0338909238,-.515378498],
+      [6.594785,-.020632223,-.198763437,-.0310977181,-.474733344],[7.127509,-.019295224,-.183092728,-.027861245,-.437235888],[7.703266,-.0177553593,-.168695094,-.0241177768,-.402737256],[8.325532,-.0159877073,-.155530055,-.0197975897,-.371128765],[8.998065,-.0139673034,-.143577892,-.0148261981,-.342347889],
+      [9.724925,-.011671196,-.132843512,-.00912697643,-.316386593],[10.5105,-.00908199306,-.123361668,-.00262609373,-.293302804],[11.35953,-.00619386601,-.115203872,.00473870503,-.273235968],[12.27715,-.00302261679,-.108487312,.0130029047,-.256427891],[13.26889,.000377485477,-.103385809,.0221492725,-.243250156],
+      [14.34075,.00388555896,-.10014203,.0320637515,-.234239093],[15.49919,.00726715172,-.0990778178,.0424605051,-.230137651],[16.75121,.0100966617,-.100593549,.0527544933,-.231938357],[18.10436,.0116328576,-.105133289,.0618457626,-.240907512],[19.56683,.010633708,-.113061057,.0677606917,-.258534934],
+      [21.14743,.00513270784,-.12433359,.0670847044,-.286268119],[22.85571,-.00765719515,-.137782036,.0541795863,-.324706758],[24.70198,-.0307715642,-.149896832,.0205127824,-.371633974],[26.69739,-.0652591288,-.153802892,-.0444893549,-.418173838],[28.854,-.106267194,-.140975089,-.14763955,-.444133231],
+      [31.18481,-.141862081,-.107837167,-.278623857,-.419990468],[33.70391,-.160182067,-.0612737669,-.400314745,-.327044211],[36.42649,-.158305618,-.0138238251,-.468158369,-.182704934],[39.36901,-.141492832,.025508335,-.466362511,-.0306859113],[42.54922,-.116731646,.0538908781,-.411716312,.0944809536],
+      [45.98633,-.0890313194,.0720920715,-.329692542,.181332864],[49.70109,-.0611440122,.0818659839,-.238874704,.232530391],[53.71592,-.034395593,.0847489013,-.149496533,.254670517],[58.05507,-.0094450148,.0817303254,-.0665964608,.253789619],[62.74473,.0131894734,.0732405532,.00731903915,.234374628],
+      [67.81322,.0326802439,.0592460232,.070859187,.199458798],[73.29114,.0473370468,.0395566124,.123086185,.150614999],[79.21157,.0540250854,.0148226983,.162843049,.0871617033],[85.61025,.0487069933,-.011220714,.18622278,.00360905584],[92.52581,.0306401313,-.0301865173,.17324473,-.114971844],[100,.00764552308,-.0345468424,.0271604475,-.254945945]
+    ];
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const plot = {left: 58, right: 724, top: 35, bottom: 285};
+    const xScale = f => plot.left + (f - 2) / 98 * (plot.right - plot.left);
+    const pathFrom = points => points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    function addLine(group, x1, y1, x2, y2, cls='grid') {
+      const line = document.createElementNS(NS, 'line');
+      Object.entries({x1,y1,x2,y2,class:cls}).forEach(([k,v]) => line.setAttribute(k,v)); group.appendChild(line);
+    }
+    function addText(group, x, y, value, anchor='middle') {
+      const text = document.createElementNS(NS, 'text'); text.setAttribute('x',x); text.setAttribute('y',y); text.setAttribute('text-anchor',anchor); text.textContent=value; group.appendChild(text);
+    }
+    function makeGrid(group, yTicks, yScale, yLabel) {
+      [20,40,60,80,100].forEach(f => { const x=xScale(f); addLine(group,x,plot.top,x,plot.bottom); addText(group,x,plot.bottom+20,f); });
+      yTicks.forEach(v => { const y=yScale(v); addLine(group,plot.left,y,plot.right,y); addText(group,plot.left-10,y+4,v,'end'); });
+      addLine(group,plot.left,plot.top,plot.left,plot.bottom,'axis'); addLine(group,plot.left,plot.bottom,plot.right,plot.bottom,'axis');
+      addText(group,plot.left,18,yLabel,'start'); addText(group,plot.right,plot.bottom+20,'Hz','end');
+    }
+
+    const bodeBox = {left: 66, right: 650, top: 26, bottom: 222};
+    const bodeX = f => bodeBox.left + Math.log10(f/.2)/Math.log10(500)*(bodeBox.right-bodeBox.left);
+    const bodeMagY = db => bodeBox.bottom-(db+30)/60*(bodeBox.bottom-bodeBox.top);
+    const bodePhaseY = deg => bodeBox.bottom-(deg+450)/450*(bodeBox.bottom-bodeBox.top);
+    const complex = (re,im) => ({re,im});
+    const magnitudeDb = z => 20*Math.log10(Math.max(Math.hypot(z.re,z.im),1e-12));
+    const closedLoop = z => { const den=(1+z.re)**2+z.im**2; return {re:(z.re*(1+z.re)+z.im*z.im)/den,im:z.im/den}; };
+    function unwrapPhase(values) {
+      const out=[]; let offset=0, previous;
+      values.forEach(z=>{let deg=Math.atan2(z.im,z.re)*180/Math.PI;if(previous!==undefined){const jump=deg+offset-previous;if(jump>180)offset-=360;if(jump<-180)offset+=360;}deg+=offset;out.push(deg);previous=deg;});
+      return out;
+    }
+    function drawBodeGrid(group, yTicks, yMap, title, showFrequency) {
+      [.2,.5,1,2,5,10,20,50,100].forEach(f=>{const x=bodeX(f);addLine(group,x,bodeBox.top,x,bodeBox.bottom);if(showFrequency)addText(group,x,bodeBox.bottom+20,f);});
+      yTicks.forEach(v=>{const y=yMap(v);addLine(group,bodeBox.left,y,bodeBox.right,y);addText(group,bodeBox.left-10,y+4,v,'end');});
+      addLine(group,bodeBox.left,bodeBox.top,bodeBox.left,bodeBox.bottom,'axis');addLine(group,bodeBox.left,bodeBox.bottom,bodeBox.right,bodeBox.bottom,'axis');
+      addText(group,bodeBox.left,16,title,'start');if(showFrequency)addText(group,(bodeBox.left+bodeBox.right)/2,260,'Frequency (Hz)');
+    }
+    drawBodeGrid(document.getElementById('bodeMagGrid'),[-30,-20,-10,0,10,20,30],bodeMagY,'Magnitude (dB)',false);
+    drawBodeGrid(document.getElementById('bodePhaseGrid'),[-450,-360,-270,-180,-90,0],bodePhaseY,'Phase (deg)',true);
+    const criticalY=bodePhaseY(-180), critical=document.getElementById('phaseCritical');
+    Object.entries({x1:bodeBox.left,x2:bodeBox.right,y1:criticalY,y2:criticalY}).forEach(([k,v])=>critical.setAttribute(k,v));
+    const criticalLabel=document.getElementById('phaseCriticalLabel');criticalLabel.setAttribute('x',bodeBox.right-5);criticalLabel.setAttribute('y',criticalY-6);criticalLabel.setAttribute('text-anchor','end');
+    function interpolateCross(frequencies, values, target) {
+      for(let i=0;i<values.length-1;i++){const a=values[i]-target,b=values[i+1]-target;if(a===0||a*b<0){const ratio=a===0?0:a/(a-b),lf=Math.log(frequencies[i])+ratio*(Math.log(frequencies[i+1])-Math.log(frequencies[i]));return {frequency:Math.exp(lf),value:target,index:i,ratio};}}
+      return null;
+    }
+    function interpolateAt(values, crossing){return values[crossing.index]+crossing.ratio*(values[crossing.index+1]-values[crossing.index]);}
+    function clearGroup(group){while(group.firstChild)group.removeChild(group.firstChild);}
+    function addMarker(group,x,y){const circle=document.createElementNS(NS,'circle');Object.entries({cx:x,cy:y,r:4,class:'margin-marker'}).forEach(([k,v])=>circle.setAttribute(k,v));group.appendChild(circle);}
+    function addMarginLabel(group,x,y,value,anchor='start'){const label=document.createElementNS(NS,'text');Object.entries({x,y,'text-anchor':anchor,class:'margin-label'}).forEach(([k,v])=>label.setAttribute(k,v));label.textContent=value;group.appendChild(label);}
+    function liveColor(t){const start=[23,23,20],end=[153,39,14],rgb=start.map((v,i)=>Math.round(v+(end[i]-v)*t));return `rgb(${rgb.join(',')})`;}
+    function conditionLabel(t){const stiffness=7-2*t,damage=Math.round(100*(7-stiffness)/7);return `${stiffness.toFixed(1)}k (${damage}%)`;}
+    function updateBode() {
+      const condition=+document.getElementById('plantSlider').value,alpha=+document.getElementById('alphaSlider').value,closed=document.getElementById('loopModeSwitch').checked;
+      const frequencies=bodeData.map(d=>d[0]);
+      const openLive=bodeData.map(d=>complex(alpha*(d[1]+(d[3]-d[1])*condition),alpha*(d[2]+(d[4]-d[2])*condition)));
+      const openReference=bodeData.map(d=>complex(d[1],d[2]));
+      const shownLive=closed?openLive.map(closedLoop):openLive,shownReference=closed?openReference.map(closedLoop):openReference;
+      const liveMagnitude=shownLive.map(magnitudeDb),referenceMagnitude=shownReference.map(magnitudeDb),livePhase=unwrapPhase(shownLive),referencePhase=unwrapPhase(shownReference);
+      document.getElementById('bodeMagLive').setAttribute('d',pathFrom(frequencies.map((f,i)=>[bodeX(f),bodeMagY(liveMagnitude[i])])));
+      document.getElementById('bodeMagReference').setAttribute('d',pathFrom(frequencies.map((f,i)=>[bodeX(f),bodeMagY(referenceMagnitude[i])])));
+      document.getElementById('bodePhaseLive').setAttribute('d',pathFrom(frequencies.map((f,i)=>[bodeX(f),bodePhaseY(livePhase[i])])));
+      document.getElementById('bodePhaseReference').setAttribute('d',pathFrom(frequencies.map((f,i)=>[bodeX(f),bodePhaseY(referencePhase[i])])));
+      const color=liveColor(condition);document.getElementById('bodeMagLive').style.stroke=color;document.getElementById('bodePhaseLive').style.stroke=color;document.getElementById('liveSwatch').style.background=color;
+      const openMagnitude=openLive.map(magnitudeDb),openPhase=unwrapPhase(openLive),gainCross=interpolateCross(frequencies,openMagnitude,0),phaseCross=interpolateCross(frequencies,openPhase,-180);
+      const gm=phaseCross?-interpolateAt(openMagnitude,phaseCross):null,pm=gainCross?180+interpolateAt(openPhase,gainCross):null;
+      document.getElementById('gmOut').textContent=gm===null?'not crossed':`${gm.toFixed(1)} dB`;
+      document.getElementById('pmOut').textContent=pm===null?'not crossed':`${pm.toFixed(1)}°`;
+      const gainGroup=document.getElementById('gainMarginMark'),phaseGroup=document.getElementById('phaseMarginMark');clearGroup(gainGroup);clearGroup(phaseGroup);
+      if(phaseCross){const x=bodeX(phaseCross.frequency),curveY=bodeMagY(interpolateAt(openMagnitude,phaseCross));addLine(gainGroup,x,closed?bodeBox.top:curveY,x,closed?bodeBox.bottom:bodeMagY(0),'margin-guide');if(!closed){addMarker(gainGroup,x,curveY);addMarker(gainGroup,x,bodeMagY(0));}addMarginLabel(gainGroup,x-7,bodeBox.top+13,`GM ${gm.toFixed(1)} dB`,'end');}
+      if(gainCross){const x=bodeX(gainCross.frequency),curveY=bodePhaseY(interpolateAt(openPhase,gainCross));addLine(phaseGroup,x,closed?bodeBox.top:curveY,x,closed?bodeBox.bottom:criticalY,'margin-guide');if(!closed){addMarker(phaseGroup,x,curveY);addMarker(phaseGroup,x,criticalY);}addMarginLabel(phaseGroup,x+7,bodeBox.top+13,`PM ${pm.toFixed(1)}°`);}
+      document.getElementById('plantOut').textContent=conditionLabel(condition);
+      document.getElementById('alphaOut').textContent=alpha.toFixed(2);document.getElementById('liveLegend').textContent=`live ${conditionLabel(condition)}, α = ${alpha.toFixed(2)}`;
+    }
+    ['plantSlider','alphaSlider','loopModeSwitch'].forEach(id=>document.getElementById(id).addEventListener('input',updateBode));updateBode();
+
+    const marginY = value => plot.bottom - value/.72*(plot.bottom-plot.top);
+    makeGrid(document.getElementById('marginGrid'), [0,.2,.4,.6], marginY, 'b(ω)');
+    function polar(mag, deg) { const a=deg*Math.PI/180; return {re:mag*Math.cos(a), im:mag*Math.sin(a)}; }
+    function chordal(z) { return Math.min(Math.hypot(1+z.re,z.im)/Math.sqrt(2*(1+z.re*z.re+z.im*z.im)),Math.SQRT1_2); }
+    function updateMargin() {
+      const damage=+document.getElementById('damageSlider').value, authority=+document.getElementById('authoritySlider').value;
+      const margins=data.map(d => { const a=polar(d[1],d[3]), b=polar(d[2],d[4]); const z={re:authority*(a.re+(b.re-a.re)*damage),im:authority*(a.im+(b.im-a.im)*damage)}; return chordal(z); });
+      let idx=0; margins.forEach((v,i)=>{if(v<margins[idx]) idx=i;});
+      document.getElementById('marginTrace').setAttribute('d',pathFrom(data.map((d,i)=>[xScale(d[0]),marginY(margins[i])])));
+      const x=xScale(data[idx][0]), y=marginY(margins[idx]);
+      Object.entries({x1:x,x2:x,y1:y,y2:plot.bottom}).forEach(([k,v])=>document.getElementById('marginGuide').setAttribute(k,v));
+      document.getElementById('marginDot').setAttribute('cx',x); document.getElementById('marginDot').setAttribute('cy',y);
+      document.getElementById('damageOut').textContent=conditionLabel(damage);
+      document.getElementById('authorityOut').textContent=authority.toFixed(2); document.getElementById('marginValue').textContent=margins[idx].toFixed(3); document.getElementById('marginFreq').textContent=`${data[idx][0]} Hz`;
+      document.getElementById('marginStatus').textContent=margins[idx]>.5?'healthy reference':margins[idx]>.35?'reduced margin':'near course threshold';
+    }
+    ['damageSlider','authoritySlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateMargin)); updateMargin();
+
+    const recordedPower=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,.001769041107,2.371710916,3.009204838,21.0670553,37.03134054,4.042019568,150.1537325,357.6515074,380.9224216,355.6367814,284.6047777,331.185633,189.5129628,114.0558956,120.4812154,213.5198315,158.3984236,1.372387403,66.21662284,21.651184,.08470675199,.06624307735,.05573129069,.3255078005,15.86304182,23.12164298];
+    const smoothBox={left:72,right:724,top:50,bottom:225}, smoothX=i=>smoothBox.left+i/40*(smoothBox.right-smoothBox.left), smoothY=v=>smoothBox.bottom-v/420*(smoothBox.bottom-smoothBox.top);
+    const smoothGroup=document.getElementById('smoothGrid');
+    [0,1,2,3,4,5].forEach(v=>{const x=smoothBox.left+v/5*(smoothBox.right-smoothBox.left);addLine(smoothGroup,x,smoothBox.top,x,smoothBox.bottom);addText(smoothGroup,x,smoothBox.bottom+19,v);});
+    [0,100,200,300,400].forEach(v=>{const y=smoothY(v);addLine(smoothGroup,smoothBox.left,y,smoothBox.right,y);addText(smoothGroup,smoothBox.left-11,y+4,v,'end');});
+    addLine(smoothGroup,smoothBox.left,smoothBox.top,smoothBox.left,smoothBox.bottom,'axis');addLine(smoothGroup,smoothBox.left,smoothBox.bottom,smoothBox.right,smoothBox.bottom,'axis');
+    addText(smoothGroup,(smoothBox.left+smoothBox.right)/2,271,'Time in excerpt (s)');
+    addLine(smoothGroup,500,16,525,16,'line-7');addText(smoothGroup,532,20,'recorded pᵤ[n]','start');addLine(smoothGroup,500,35,525,35,'line-5');addText(smoothGroup,532,39,'smoothed Sᵤᵤ[n]','start');
+    document.getElementById('rawTrace').setAttribute('d',pathFrom(recordedPower.map((v,i)=>[smoothX(i),smoothY(v)])));
+    const rawPoints=document.getElementById('rawPoints');recordedPower.forEach((v,i)=>{const point=document.createElementNS(NS,'circle');Object.entries({cx:smoothX(i),cy:smoothY(v),r:2.6,class:'raw-point'}).forEach(([k,val])=>point.setAttribute(k,val));rawPoints.appendChild(point);});
+    const sigmaSlider=document.getElementById('sigmaSlider'),sigmaDefault=.39,smoothingLab=document.getElementById('smoothing-lab');let sigmaFrame=0,sigmaActive=false;
+    function updateSmoothing() {
+      const sigma=+sigmaSlider.value,smooth=[];let s=recordedPower[0];
+      recordedPower.forEach(v=>{s+=sigma*(v-s);smooth.push(s);});
+      document.getElementById('smoothTrace').setAttribute('d',pathFrom(smooth.map((v,i)=>[smoothX(i),smoothY(v)])));
+      document.getElementById('sigmaOut').textContent=sigma.toFixed(2);
+    }
+    function cancelSigmaSpring(){if(sigmaFrame)cancelAnimationFrame(sigmaFrame);sigmaFrame=0;smoothingLab.classList.remove('springing');}
+    function startSigmaSpring(){
+      cancelSigmaSpring();
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches){sigmaSlider.value=sigmaDefault;updateSmoothing();return;}
+      let position=+sigmaSlider.value,velocity=0,last=performance.now();smoothingLab.classList.add('springing');
+      function settle(now){
+        const dt=Math.min((now-last)/1000,.032),acceleration=-75*(position-sigmaDefault)-13.7*velocity;last=now;velocity+=acceleration*dt;position+=velocity*dt;sigmaSlider.value=position.toFixed(3);updateSmoothing();
+        if(Math.abs(position-sigmaDefault)<.0005&&Math.abs(velocity)<.004){sigmaSlider.value=sigmaDefault;updateSmoothing();sigmaFrame=0;smoothingLab.classList.remove('springing');return;}
+        sigmaFrame=requestAnimationFrame(settle);
+      }
+      sigmaFrame=requestAnimationFrame(settle);
+    }
+    sigmaSlider.addEventListener('input',()=>{cancelSigmaSpring();updateSmoothing();});sigmaSlider.addEventListener('pointerdown',()=>{sigmaActive=true;cancelSigmaSpring();});sigmaSlider.addEventListener('pointercancel',()=>{sigmaActive=false;startSigmaSpring();});sigmaSlider.addEventListener('keydown',()=>{sigmaActive=true;cancelSigmaSpring();});sigmaSlider.addEventListener('keyup',()=>{sigmaActive=false;startSigmaSpring();});sigmaSlider.addEventListener('change',startSigmaSpring);document.addEventListener('pointerup',()=>{if(sigmaActive){sigmaActive=false;startSigmaSpring();}});updateSmoothing();
+
+    document.querySelectorAll('.term').forEach(button=>button.addEventListener('click',()=>{const def=button.parentElement.nextElementSibling;const open=def.classList.toggle('open');button.setAttribute('aria-expanded',open);}));
+    const steps=document.querySelectorAll('.step'); const reveal=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:.16});steps.forEach(s=>reveal.observe(s));
+    const sections=[...document.querySelectorAll('.lesson-section')], links=[...document.querySelectorAll('.rail a')];
+    const sectionObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){const i=sections.indexOf(e.target);links.forEach((a,j)=>a.classList.toggle('active',i===j));document.getElementById('progressSection').textContent=e.target.dataset.title;}}),{rootMargin:'-35% 0px -55% 0px'});sections.forEach(s=>sectionObserver.observe(s));
+    function updateProgress(){const max=document.documentElement.scrollHeight-innerHeight,p=max?scrollY/max:0;document.getElementById('progressFill').style.width=`${p*100}%`;document.getElementById('progressPercent').textContent=`${Math.round(p*100)}%`;}
+    addEventListener('scroll',updateProgress,{passive:true});updateProgress();
+  </script>
+</body>
+</html>

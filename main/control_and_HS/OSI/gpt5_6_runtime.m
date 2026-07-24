@@ -11,7 +11,8 @@ function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, ...
 persistent c raw_u raw_y raw_pos samples_in sample_phase step_count ...
     spectral_count Suu Syy Syu q_ref_samples q_ref q_ref_count ...
     reference_ratio memory_released drive log_rho rho_drive ratio_prev ...
-    b_state a_state phase W out_b out_st out_res out_auth out_valid out_dec
+    b_state a_state authority_armed phase W out_b out_st out_res ...
+    out_auth out_valid out_dec
 
 PUBLISH_PHASE = 32;
 if isempty(raw_pos)
@@ -39,6 +40,7 @@ if isempty(raw_pos)
     ratio_prev = 0;
     b_state = c.cap;
     a_state = gptauth(8);
+    authority_armed = false;
     phase = 0;
     W = initWork(c);
     out_b = c.cap;
@@ -58,10 +60,35 @@ if pause_enable
     raw_pos = 0;
     samples_in = 0;
     sample_phase = 0;
+    step_count = 0;
+    spectral_count = 0;
+    Suu(:) = 0;
+    Syy(:) = 0;
+    Syu(:) = 0;
+    q_ref_samples(:) = 0;
+    q_ref(:) = 0;
+    q_ref_count = 0;
+    reference_ratio = 1;
+    memory_released = false;
+    drive = 0;
+    log_rho = 0;
+    rho_drive = 1;
+    ratio_prev = 0;
+    b_state = c.cap;
+    a_state = gptauth(8);
+    authority_armed = false;
     phase = 0;
-    auth = publishedAuth(en_active, out_auth, gptauth(8));
+    W = initWork(c);
+    out_b = c.cap;
+    out_st = c.cap;
+    out_res = c.cap;
+    out_auth = gptauth(8);
+    out_valid = 0;
+    out_dec = 0;
+    auth = gptauth(8);
     [b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
-        diagnostics(out_b, out_st, out_res, out_valid, out_dec);
+        diagnostics(out_b, out_st, out_res, out_valid, out_dec, ...
+        authority_armed);
     return
 end
 
@@ -238,20 +265,31 @@ elseif phase > 0
             b_state = min(max(b_state + W.activity*c.margin_alpha* ...
                 (b_raw - b_state), 0), c.cap);
         end
+        evidence_valid = step_count >= c.warm_steps && W.activity >= 1;
         a_old = a_state;
-        a_state = authorityStep(b_state, W.b_full, W.res_weight, a_state, gptauth);
+        if en_active == 0
+            a_state = gptauth(8);
+            authority_armed = false;
+        elseif ~authority_armed
+            a_state = gptauth(8);
+            authority_armed = evidence_valid;
+        elseif evidence_valid
+            a_state = authorityStep(b_state, W.b_full, W.res_weight, ...
+                a_state, gptauth);
+        end
         out_b = b_state;
         out_st = W.b_st;
         out_res = W.b_res;
         out_auth = a_state;
-        out_valid = double(step_count >= c.warm_steps);
+        out_valid = double(evidence_valid);
         out_dec = double(a_state > a_old) + 2*double(a_state < a_old);
     end
 end
 
-auth = publishedAuth(en_active, out_auth, gptauth(8));
+auth = publishedAuth(en_active, out_auth, gptauth(8), authority_armed);
 [b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
-    diagnostics(out_b, out_st, out_res, out_valid, out_dec);
+    diagnostics(out_b, out_st, out_res, out_valid, out_dec, ...
+    authority_armed);
 end
 
 function c = unpackConfig(s, w, bins, rho)
@@ -368,13 +406,13 @@ a_free = exp(min(max(log(a0) + rate*p(9)*e, log(p(6))), log(p(7))));
 a = a0 + min(max(a_free - a0, -p(5)), p(5));
 end
 
-function a = publishedAuth(en, a_state, a_init)
-if en ~= 0, a = a_state; else, a = a_init; end
+function a = publishedAuth(en, a_state, a_init, armed)
+if en ~= 0 && armed, a = a_state; else, a = a_init; end
 end
 
 function [b, bst, bres, bfast, trip, valid, decision, armed] = ...
-    diagnostics(b, bst, bres, valid, decision)
+    diagnostics(b, bst, bres, valid, decision, armed_state)
 bfast = NaN;
 trip = 0;
-armed = valid;
+armed = double(armed_state);
 end

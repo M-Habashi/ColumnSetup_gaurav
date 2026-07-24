@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A step-by-step mathematical lesson on the SOL-OSI online stability-margin estimator used in the ColumnSetup project.">
-  <title>SOL-OSI — From displacement data to an online stability margin</title>
+  <meta name="description" content="Technical formulation of the research-only SOL-OSI Simplified hard-activity stability-margin estimator for real-time hybrid simulation.">
+  <title>SOL-OSI Simplified — Online Stability Estimation for RTHS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600&amp;family=Merriweather:wght@400;600;700&amp;family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&amp;display=swap" rel="stylesheet">
@@ -203,10 +203,7 @@
     pre .ln { display: inline-block; width: 32px; color: #7e7b74; user-select: none; }
     pre .hi { color: #e49b59; }
 
-    .quiz { margin: 45px 0 10px; padding: 22px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); }
-    .quiz-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-    .quiz h3 { margin: 0; }
-    .answer-toggle, .small-button, .mode-button {
+    .small-button, .mode-button {
       padding: 7px 11px;
       background: var(--paper);
       color: var(--ink);
@@ -217,11 +214,6 @@
       font-weight: 650;
     }
     .mode-button.active { background: var(--ink); color: white; }
-    .quiz ol { padding-left: 1.3rem; }
-    .quiz li { margin: 1rem 0; padding-left: 0.3rem; }
-    .answer { display: none; margin-top: 7px; color: var(--green); font-family: var(--grot); font-size: 0.88rem; font-weight: 650; }
-    body.show-answers .answer { display: block; }
-
     .callout { margin: 28px 0; padding: 18px 20px; background: var(--copper-soft); border-left: 4px solid var(--copper); }
     .callout strong { display: block; margin-bottom: 5px; }
     .warning { background: #f7ece9; border-color: var(--red); }
@@ -272,41 +264,41 @@
 </head>
 <body>
   <header class="topbar">
-    <span class="brand">SOL—OSI</span>
-    <span class="progress-text"><span id="progressSection">Opening</span> · <span id="progressPercent">0%</span></span>
+    <span class="brand">SOL—OSI SIMPLIFIED</span>
+    <span class="progress-text"><span id="progressSection">Overview</span> · <span id="progressPercent">0%</span></span>
   </header>
   <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 
   <section class="hero" id="opening">
-    <span class="kicker">Control systems · self-study lesson</span>
-    <h1>From two displacement signals to a stability margin.</h1>
-    <p class="hero-deck">SOL-OSI watches the command and measured response of the experimental column, asks how much the loop has changed, and reports a number that shrinks as the loop approaches instability.</p>
+    <span class="kicker">Real-time hybrid simulation · stability assessment</span>
+    <h1>SOL-OSI Simplified: Hard-Activity Stability Estimation during RTHS</h1>
+    <p class="hero-deck">This page documents the research-only <code>research/sol_osi_simplified/sol_osi_simplified.m</code> estimator. It quantifies changes in the experimental inner loop and uses a hard activity switch to select coherent or quiet-data evidence. The production implementation remains separate in <code>control_and_HS/OSI</code>.</p>
     <div class="hero-meta">
-      <div><strong>8 stages</strong>equations revealed while scrolling</div>
-      <div><strong>7k → 5k</strong>real identified column models</div>
-      <div><strong>≈ 18 min</strong>with short knowledge checks</div>
+      <div><strong>Eight-stage formulation</strong>estimator derivation and implementation</div>
+      <div><strong>7k → 5k</strong>experimentally identified column models</div>
+      <div><strong>Frequency-domain analysis</strong>coherent and residual evidence</div>
     </div>
-    <a class="start-link" href="#stage-1">Begin with the physical loop ↓</a>
+    <a class="start-link" href="#stage-1">Proceed to system formulation ↓</a>
   </section>
 
   <div class="layout">
     <nav class="rail" aria-label="Lesson stages">
-      <span class="rail-label">Lesson map</span>
-      <a href="#stage-1">01 · The inner loop</a>
-      <a href="#stage-2">02 · Windows to spectra</a>
-      <a href="#stage-3">03 · Coherent estimate</a>
-      <a href="#stage-4">04 · Chordal margin</a>
-      <a href="#stage-5">05 · Quiet evidence</a>
-      <a href="#stage-6">06 · Blend and memory</a>
-      <a href="#stage-7">07 · Adaptive gain</a>
-      <a href="#stage-8">08 · Complete estimator</a>
+      <span class="rail-label">Technical sections</span>
+      <a href="#stage-1">01 · System formulation</a>
+      <a href="#stage-2">02 · Spectral estimation</a>
+      <a href="#stage-3">03 · Coherent identification</a>
+      <a href="#stage-4">04 · Chordal stability margin</a>
+      <a href="#stage-5">05 · Residual evidence</a>
+      <a href="#stage-6">06 · Evidence fusion</a>
+      <a href="#stage-7">07 · Adaptive-gain interface</a>
+      <a href="#stage-8">08 · Estimator synthesis</a>
     </nav>
 
     <main>
-      <section class="lesson-section" id="stage-1" data-title="The inner loop">
-        <span class="section-number">STAGE 01 / 08</span>
-        <h2>The system SOL-OSI is watching</h2>
-        <p class="lead">Start with the familiar pieces: a PID controller, an experimentally identified plant, and negative feedback.</p>
+      <section class="lesson-section" id="stage-1" data-title="System formulation">
+        <span class="section-number">SECTION 01 / 08</span>
+        <h2>Experimental Inner-Loop System Formulation</h2>
+        <p class="lead">The inner loop comprises a PID controller, an experimentally identified plant, adaptive gain scaling, and negative feedback.</p>
 
         <div class="notation-key step" aria-label="Course notation">
           <div><span>Course notation</span><strong>Use u and y</strong></div>
@@ -315,7 +307,7 @@
         </div>
 
         <div class="diagram step">
-          <div class="diagram-title"><strong>Experimental inner displacement loop</strong><span>signal flow</span></div>
+          <div class="diagram-title"><strong>Experimental Inner Displacement-Control Loop</strong><span>closed-loop signal topology</span></div>
           <svg class="control-loop" viewBox="0 0 760 190" role="img" aria-label="Block diagram from input u through the PID, adaptive gain, and changing plant H to measured response y with negative feedback">
             <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#171714"/></marker></defs>
             <line x1="45" y1="75" x2="125" y2="75" stroke="#171714" marker-end="url(#arrow)"/>
@@ -355,7 +347,7 @@
         </div>
 
         <div class="lab step">
-          <div class="lab-head"><strong>Explore the actual 7k → 5k inner loop</strong><span>continuous-time $s=j\omega$ · PID: P = 0.15, I = 20, D = 0.0015</span></div>
+          <div class="lab-head"><strong>Parametric Frequency Response of the 7k–5k Inner Loop</strong><span>continuous-time evaluation at $s=j\omega$ · PID parameters: P = 0.15, I = 20, D = 0.0015</span></div>
           <div class="bode-explorer">
             <div class="bode-plots">
               <svg class="bode-plot" id="bodeMagnitude" viewBox="0 0 680 265" role="img" aria-label="Bode magnitude plot with gain margin">
@@ -374,7 +366,7 @@
               </svg>
             </div>
             <aside class="bode-controls" aria-label="Bode plot controls">
-              <h3>Loop controls</h3>
+              <h3>Frequency-Response Parameters</h3>
               <label class="mode-switch" for="loopModeSwitch"><span>Open</span><input id="loopModeSwitch" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span><span>Closed</span></label>
               <div class="bode-control">
                 <label for="plantSlider"><span>Plant condition</span><output id="plantOut">7.0k (0%)</output></label>
@@ -413,22 +405,15 @@
 <span class="ln">160</span>PID_H_dc_dm_loop = digital_cntrlr * H_dc_dm_d;
 
 <span class="ln">42</span>C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
-<span class="ln">45</span>cfg = sol_osi('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
+<span class="ln">45</span>cfg = sol_osi_simplified('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
         </details>
 
-        <div class="quiz step" id="check-1">
-          <div class="quiz-head"><h3>Check 1</h3><button class="answer-toggle">Show answers</button></div>
-          <ol>
-            <li>If changing $k$ makes $H(s,k)$ grow while the PID stays fixed, what happens to $L(s,\alpha,k)$?<br>A. It grows &nbsp; B. It becomes zero &nbsp; C. It is unchanged<div class="answer">Answer: A — the factors multiply.</div></li>
-            <li>Which transfer function maps the PID output $v$ to the measured response $y$ at stiffness $k$?<br>A. $C(s)$ &nbsp; B. $H(s,k)$ &nbsp; C. $1+L(s,\alpha,k)$<div class="answer">Answer: B — it is the identified plant response.</div></li>
-          </ol>
-        </div>
       </section>
 
-      <section class="lesson-section" id="stage-2" data-title="Windows to spectra">
-        <span class="section-number">STAGE 02 / 08</span>
-        <h2>Turn recent motion into frequency evidence</h2>
-        <p class="lead">SOL-OSI updates every 0.125 s, but it reasons from the most recent 0.5 s of command and measurement data.</p>
+      <section class="lesson-section" id="stage-2" data-title="Spectral estimation">
+        <span class="section-number">SECTION 02 / 08</span>
+        <h2>Short-Time Spectral Estimation of Interface Response</h2>
+        <p class="lead">OSI updates at 0.125 s intervals using the most recent 0.5 s window of command and measured displacement data.</p>
 
         <div class="sequence step">
           <div><b>01</b><span>append 0.125 s</span></div><div><b>02</b><span>keep 0.5 s</span></div><div><b>03</b><span>apply Hann window</span></div><div><b>04</b><span>take FFT</span></div>
@@ -447,18 +432,18 @@
         </div>
 
         <div class="step">
-          <p>One window is noisy, so each spectrum is <button class="term" aria-expanded="false">exponentially smoothed</button>.</p>
+          <p>One window is noisy, so each spectrum is <button class="term" aria-expanded="false">exponentially smoothed</button>. Throughout this lesson, $\Phi$ denotes a power or cross spectrum; $S$ is reserved for the feedback sensitivity function.</p>
           <div class="definition">Exponential smoothing combines the newest value with the previous estimate. It is a compact memory: recent windows matter most, but older windows do not disappear instantly.</div>
           <div class="equation accent">
-            \[S_{uu}[n]=S_{uu}[n-1]+\eta_s\bigl(p_u[n]-S_{uu}[n-1]\bigr)\]
-            \[S_{yy}[n]=S_{yy}[n-1]+\eta_s\bigl(p_y[n]-S_{yy}[n-1]\bigr)\]
-            \[S_{yu}[n]=S_{yu}[n-1]+\eta_s\bigl(c_{yu}[n]-S_{yu}[n-1]\bigr)\]
-            <span class="label">$n$ is the current time step and $n-1$ is the previous step. The spectral smoothing factor used here is $\eta_s=0.39$.</span>
+            \[\Phi_{uu}[n]=\bigl(1-\eta_s\bigr)\Phi_{uu}[n-1]+\eta_s p_u[n]\]
+            \[\Phi_{yy}[n]=\bigl(1-\eta_s\bigr)\Phi_{yy}[n-1]+\eta_s p_y[n]\]
+            \[\Phi_{yu}[n]=\bigl(1-\eta_s\bigr)\Phi_{yu}[n-1]+\eta_s c_{yu}[n]\]
+            <span class="label">$n$ is the current time step and $n-1$ is the previous step. The spectral smoothing factor is $\eta_s=0.39$. In MATLAB, $\Phi_{uu}$, $\Phi_{yy}$, and $\Phi_{yu}$ are stored as <code>state.Suu</code>, <code>state.Syy</code>, and <code>state.Syu</code>.</span>
           </div>
         </div>
 
         <div class="lab step" id="smoothing-lab">
-          <div class="lab-head"><strong>A real spectral-power transition</strong></div>
+          <div class="lab-head"><strong>Measured Command-Power Transition and Exponential Spectral Smoothing</strong></div>
           <svg id="smoothPlot" viewBox="0 0 760 280" role="img" aria-label="Actual 12 hertz command power from an RTHS test and its exponentially smoothed spectrum">
             <g id="smoothGrid"></g><text x="20" y="138" text-anchor="middle" transform="rotate(-90 20 138)">|U|²</text><path id="rawTrace" class="line-7"></path><g id="rawPoints"></g><path id="smoothTrace" class="line-5"></path>
           </svg>
@@ -470,43 +455,43 @@
 
         <details class="code-link step">
           <summary>Code connection · window, FFT, and spectral memory</summary>
-          <div class="code-meta">sol_osi.m · lines 31–39, 60–68, and 141–164</div>
-          <pre><span class="ln">31</span>'step_s', 0.125, ...
-<span class="ln">32</span>'segment_s', 0.5, ...
-<span class="ln">39</span>'residual_band_hz', [28 44], ...
-<span class="ln">61</span>cfg.window = 0.5-0.5*cos(2*pi*n/(cfg.segment_n-1));
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 42–50, 66–75, and 153–175</div>
+          <pre><span class="ln">42</span>'step_s', 0.125, ...
+<span class="ln">43</span>'segment_s', 0.5, ...
+<span class="ln">50</span>'quiet_band_hz', [28 44], ...
+<span class="ln">73</span>cfg.window = 0.5-0.5*cos(2*pi*n/(cfg.segment_n-1));
 
-<span class="ln">141</span>Uall = fft(state.u.*cfg.window);
-<span class="ln">142</span>Yall = fft(state.y.*cfg.window);
-<span class="ln">145</span>pu = abs(U).^2;
-<span class="ln">146</span>py = abs(Y).^2;
-<span class="ln">147</span>cyu = Y.*conj(U);
-<span class="ln">161</span>state.Suu = state.Suu+q*(pu-state.Suu);
-<span class="ln">162</span>state.Syy = state.Syy+q*(py-state.Syy);
-<span class="ln">163</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
+<span class="ln">153</span>Uall = fft(state.u.*cfg.window);
+<span class="ln">154</span>Yall = fft(state.y.*cfg.window);
+<span class="ln">157</span>pu = abs(U).^2;
+<span class="ln">158</span>py = abs(Y).^2;
+<span class="ln">159</span>cyu = Y.*conj(U);
+<span class="ln">173</span>state.Suu = state.Suu+q*(pu-state.Suu);
+<span class="ln">174</span>state.Syy = state.Syy+q*(py-state.Syy);
+<span class="ln">175</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
         </details>
       </section>
 
-      <section class="lesson-section" id="stage-3" data-title="Coherent estimate">
-        <span class="section-number">STAGE 03 / 08</span>
-        <h2>Trust measured dynamics only where the data supports them</h2>
+      <section class="lesson-section" id="stage-3" data-title="Coherent identification">
+        <span class="section-number">SECTION 03 / 08</span>
+        <h2>Confidence-Weighted Coherent Identification of Closed-Loop Dynamics</h2>
         <p class="lead">The coherent branch estimates the closed-loop response from the command–measurement relationship. It then blends that estimate with the known healthy model.</p>
 
         <div class="step">
           <p><button class="term" aria-expanded="false">Magnitude-squared coherence</button> asks: “At this frequency, how consistently does the input explain the output?”</p>
           <div class="definition">Coherence ranges from 0 to 1. A value near 1 means the input and output have a strong, repeatable linear relationship at that frequency. A value near 0 means the ratio (Y/U) should not be trusted.</div>
           <div class="equation">
-            \[\gamma^2(\omega)=\frac{|S_{yu}(\omega)|^2}{S_{uu}(\omega)S_{yy}(\omega)},\qquad 0\le \gamma^2\le1\]
+            \[\gamma^2(\omega)=\frac{|\Phi_{yu}(\omega)|^2}{\Phi_{uu}(\omega)\Phi_{yy}(\omega)},\qquad 0\le \gamma^2\le1\]
           </div>
-          <p>Coherence alone is insufficient, so SOL-OSI gates it with input leverage for two reasons:</p>
+          <p>Coherence alone is insufficient, so OSI gates it with input leverage for two reasons:</p>
           <ol>
             <li><strong>Feedback-created coherence.</strong> At frequencies with high loop gain, measurement noise can drive the feedback loop and create high coherence between feedback-related signals even when the intended external excitation is absent. The resulting relationship is driven mainly by noise and can produce a misleading transfer-function estimate.</li>
-            <li><strong>Division by weak input power.</strong> Forming a transfer-function ratio requires division by the input spectrum. When $S_{uu}$ is very small, numerical roundoff, measurement noise, spectral leakage, and ordinary estimation fluctuations can be greatly magnified.</li>
+            <li><strong>Division by weak input power.</strong> Forming a transfer-function ratio requires division by the input spectrum. When $\Phi_{uu}$ is very small, numerical roundoff, measurement noise, spectral leakage, and ordinary estimation fluctuations can be greatly magnified.</li>
           </ol>
           <p>The leverage factor therefore reduces confidence in frequency bins that do not contain meaningful input power. It cannot by itself distinguish strong feedback-correlated noise from intentional excitation.</p>
           <p>First define the <strong>relative input power</strong> $p_{rel}(\omega)$: the power in the current frequency bin divided by the power in the strongest bin.</p>
           <div class="equation">
-            \[p_{rel}(\omega)=\frac{S_{uu}(\omega)}{\max_{\nu}S_{uu}(\nu)}\]
+            \[p_{rel}(\omega)=\frac{\Phi_{uu}(\omega)}{\max_{\nu}\Phi_{uu}(\nu)}\]
             <span class="label">$p_{rel}=1$ at the strongest input frequency and approaches 0 where input power is weak.</span>
           </div>
           <p>Next, $p_{floor}$ is a small positive floor ($10^{-3}$ here) that prevents tiny input values from receiving high trust. The <strong>input leverage</strong> $\ell(\omega)$ maps relative power to a number between 0 and 1:</p>
@@ -522,9 +507,9 @@
         <div class="step">
           <p>The spectra now provide the <strong>raw measured closed-loop estimate</strong> $\widehat T(\omega)$:</p>
           <div class="equation">
-            \[\widehat T(\omega)=\frac{S_{yu}(\omega)}{S_{uu}(\omega)}\]
+            \[\widehat T(\omega)=\frac{\Phi_{yu}(\omega)}{\Phi_{uu}(\omega)}\]
           </div>
-          <p>SOL-OSI also forms a <strong>model prior</strong>. It scales the healthy loop $L_0(\omega)$ by the currently applied adaptive gain $\alpha$, then converts that loop to its closed-loop response $T_{prior}(\omega)$. Here $\alpha$ is the applied <code>a_cmd</code> value: $\alpha=1.00$ means full PID gain, and it changes only if the separate adaptive-gain controller changes <code>a_cmd</code>. The estimator clamps the received value to $0.02\le\alpha\le1$:</p>
+          <p>OSI also forms a <strong>model prior</strong>. It scales the healthy loop $L_0(\omega)$ by the currently applied adaptive gain $\alpha$, then converts that loop to its closed-loop response $T_{prior}(\omega)$. Here $\alpha$ is the applied <code>a_cmd</code> value: $\alpha=1.00$ means full PID gain, and it changes only if the separate adaptive-gain controller changes <code>a_cmd</code>. The estimator clamps the received value to $0.02\le\alpha\le1$:</p>
           <div class="equation">
             \[L_{prior}(\omega)=\alpha L_0(\omega),\qquad T_{prior}(\omega)=\frac{L_{prior}(\omega)}{1+L_{prior}(\omega)}\]
           </div>
@@ -538,30 +523,23 @@
 
         <details class="code-link step">
           <summary>Code connection · confidence-weighted loop reconstruction</summary>
-          <div class="code-meta">sol_osi.m · lines 167–177</div>
-          <pre><span class="ln">167</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
-<span class="ln">168</span>p_rel = state.Suu/max(max(state.Suu), eps);
-<span class="ln">169</span>leverage = p_rel./(p_rel+cfg.power_floor);
-<span class="ln">170</span>confidence = activity*gamma2.*leverage;
-<span class="ln">171</span>That = state.Syu./max(state.Suu, eps);
-<span class="ln">172</span>Tuse = confidence.*That+(1-confidence).*Tprior;
-<span class="ln">176</span>Lhat = Tuse./den;
-<span class="ln">177</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);</pre>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 179–189</div>
+          <pre><span class="ln">179</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
+<span class="ln">180</span>p_rel = state.Suu/max(max(state.Suu), eps);
+<span class="ln">181</span>leverage = p_rel./(p_rel+cfg.power_floor);
+<span class="ln">182</span>confidence = activity*gamma2.*leverage;
+<span class="ln">183</span>That = state.Syu./max(state.Suu, eps);
+<span class="ln">184</span>Tuse = confidence.*That+(1-confidence).*Tprior;
+<span class="ln">188</span>Lhat = Tuse./den;
+<span class="ln">189</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);</pre>
         </details>
 
-        <div class="quiz step">
-          <div class="quiz-head"><h3>Check 2</h3><button class="answer-toggle">Show answers</button></div>
-          <ol>
-            <li>If coherence is zero, which term dominates $\widehat T_{use}$?<br>A. $\widehat T$ &nbsp; B. $T_{prior}$ &nbsp; C. neither<div class="answer">Answer: B — confidence becomes zero.</div></li>
-            <li>Why include leverage in addition to coherence?<br>A. To reject weakly excited frequency bins &nbsp; B. To change the PID &nbsp; C. To remove phase<div class="answer">Answer: A — a ratio can look coherent even when input energy is too small to be useful.</div></li>
-          </ol>
-        </div>
       </section>
 
-      <section class="lesson-section" id="stage-4" data-title="Chordal margin">
-        <span class="section-number">STAGE 04 / 08</span>
-        <h2>Convert a loop estimate into one stability number</h2>
-        <p class="lead">For every frequency, SOL-OSI measures how safely the estimated loop sits relative to the critical feedback condition. The worst frequency becomes the margin.</p>
+      <section class="lesson-section" id="stage-4" data-title="Chordal stability margin">
+        <span class="section-number">SECTION 04 / 08</span>
+        <h2>Chordal-Distance Formulation of the Online Stability Indicator</h2>
+        <p class="lead">At each frequency, OSI evaluates the separation between the estimated loop and the critical feedback condition; the minimum separation defines the reported margin.</p>
 
         <div class="step">
           <p>The closed-loop denominator is $1+L$. Instability becomes possible when $L(j\omega)$ approaches $-1$, because then $1+L\to0$.</p>
@@ -577,7 +555,7 @@
         </div>
 
         <div class="lab step">
-          <div class="lab-head"><strong>Explore the real 7k → 5k margin</strong><span>identified $H(s,k)$ data</span></div>
+          <div class="lab-head"><strong>Chordal-Margin Sensitivity Across the 7k–5k Plant Family</strong><span>experimentally identified $H(s,k)$ models</span></div>
           <svg id="marginPlot" viewBox="0 0 760 330" role="img" aria-label="Chordal stability margin versus frequency for interpolated 7k and 5k model"><g id="marginGrid"></g><path id="marginTrace" class="line-5"></path><line id="marginGuide" stroke="#901500" stroke-dasharray="5 5"/><circle id="marginDot" r="5" fill="#901500"/></svg>
           <div class="controls">
             <div class="control"><label for="damageSlider">plant condition<output id="damageOut">7.0k (0%)</output></label><input id="damageSlider" type="range" min="0" max="1" value="0" step="0.01"></div>
@@ -590,119 +568,159 @@
 
         <details class="code-link step">
           <summary>Code connection · chordal curve and worst-frequency selection</summary>
-          <div class="code-meta">sol_osi.m · lines 72–76, 177–179, and 293–298</div>
-          <pre><span class="ln">72</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
-<span class="ln">74</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
-<span class="ln">75</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 85–88, 189–191, and 320–325</div>
+          <pre><span class="ln">85</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
+<span class="ln">87</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
+<span class="ln">88</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
 
-<span class="ln">177</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);
+<span class="ln">189</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);
 
-<span class="ln">293</span>function b = chordal(L, cap)
-<span class="ln">294</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
-<span class="ln">297</span>function y = minMasked(x, mask)
-<span class="ln">298</span>y = min(x(mask));</pre>
+<span class="ln">320</span>function b = chordal(L, cap)
+<span class="ln">321</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
+<span class="ln">324</span>function y = minMasked(x, mask)
+<span class="ln">325</span>y = min(x(mask));</pre>
         </details>
       </section>
 
-      <section class="lesson-section" id="stage-5" data-title="Quiet evidence">
-        <span class="section-number">STAGE 05 / 08</span>
-        <h2>When command data becomes weak, listen to output energy</h2>
-        <p class="lead">The coherent estimate needs useful input excitation. During quiet periods, SOL-OSI adds a second branch based on how the measured output spectrum has changed from a healthy reference.</p>
+      <section class="lesson-section" id="stage-5" data-title="Residual evidence">
+        <span class="section-number">SECTION 05 / 08</span>
+        <h2>Residual Output-Energy Inference under Weak Excitation</h2>
+        <p class="lead">When command excitation is insufficient for coherent identification, OSI evaluates changes in measured output spectra relative to a healthy reference.</p>
 
         <div class="step">
-          <p>The nominal sensitivity shape is</p>
-          <div class="equation">
-            \[S_0(\omega)=\frac{1}{1+L_0(\omega)},\qquad \text{shape}(\omega)=|S_0(\omega)|^2\]
-          </div>
-          <p>Let $r=1,2,3$ index the first three non-overlapping active windows. Their median defines the healthy, per-frequency reference $q_{ref}(\omega)$:</p>
+          <p>Let $r=1,2,3$ index the first three non-overlapping 0.5 s reference windows, which are assumed to represent the healthy loop. For window $r$, $y_r[n]\equiv d_{m,r}[n]$ is its measured-displacement segment and $Y_r(\omega)$ is the FFT of that segment after applying the estimator window $w[n]$. The median reference power is denoted by $\Phi_{yy,\mathrm{ref}}(\omega)$:</p>
           <div class="equation accent">
-            \[q_{ref}(\omega)=\operatorname{median}_{r=1,2,3}\left\{\frac{|Y_r(\omega)|^2}{|S_0(\omega)|^2}\right\}\]
+            \[Y_r(\omega)=\mathcal{F}\!\left\{w[n]\,y_r[n]\right\},\qquad y_r[n]\equiv d_{m,r}[n]\]
+            \[\Phi_{yy,\mathrm{ref}}(\omega)=\operatorname{median}_{r=1,2,3}\left\{|Y_r(\omega)|^2\right\}\]
           </div>
-          <p>For every later window, the observed power ratio $q_{obs}(\omega)$ corrects output power by the same shape and divides it by that fixed reference:</p>
+          <p>For every later window, the observed ratio $q_{obs}(\omega)$ divides the current smoothed output power by that fixed healthy-reference power:</p>
           <div class="equation">
-            \[q_{obs}(\omega)=\frac{S_{yy}(\omega)}{|S_0(\omega)|^2\,q_{ref}(\omega)}\]
+            \[q_{obs}(\omega)=\frac{\Phi_{yy}(\omega)}{\Phi_{yy,\mathrm{ref}}(\omega)}\]
             <span class="label">A value near 1 resembles the healthy reference. Persistent growth suggests changed loop dynamics.</span>
           </div>
         </div>
 
         <div class="step">
-          <p>SOL-OSI represents damage-like loop growth with a scale $\rho$. For each of 25 candidate values between 0.5 and 6, $q_{model}(\omega,\rho)$ predicts the output-power ratio. The best-fitting candidate is called $\rho_{best}$:</p>
+          <p>OSI represents damage-like loop growth with a frequency-dependent scale $\rho(\omega)$. For each of 25 candidate values between 0.5 and 6, the modeled output power $\Phi_{yy,\mathrm{model}}(\omega,\rho)$ is normalized by the same healthy-reference power used in $q_{obs}(\omega)$. The resulting modeled ratio is $q_{model}(\omega,\rho)$:</p>
           <div class="equation">
-            \[q_{model}(\omega,\rho)=\left|\frac{1+L_0(\omega)}{1+\alpha\rho L_0(\omega)}\right|^2\]
-            \[\rho_{best}=\arg\min_\rho\;\operatorname{median}_{\omega\in[28,44]}\left|\log q_{obs}-\log q_{model}(\rho)\right|\]
+            \[q_{model}(\omega,\rho)=\frac{\Phi_{yy,\mathrm{model}}(\omega,\rho)}{\Phi_{yy,\mathrm{ref}}(\omega)}
+            =\left|\frac{1+L_0(\omega)}{1+\alpha\rho L_0(\omega)}\right|^2\]
+            \[\Omega=\left\{\omega=2\pi f:\;2\,\mathrm{Hz}\le f\le100\,\mathrm{Hz},\quad
+            f\notin[58,62]\,\mathrm{Hz}\right\}\]
+            \[\rho_{best}(\omega)=\arg\min_\rho
+            \left|\log q_{obs}(\omega)-\log q_{model}(\omega,\rho)\right|,
+            \qquad\omega\in\Omega\]
+            <span class="label">Every usable frequency in $\Omega$ independently selects its best candidate $\rho$.</span>
           </div>
-          <p>The <strong>residual margin</strong> $b_{res}$ is the worst chordal margin predicted by the fitted damaged-loop hypothesis:</p>
+          <p>The separate quiet set $\mathcal Q$ supplies a scalar reference ratio for memory hysteresis and the leverage used to weight residual evidence. It does not restrict the frequency-by-frequency fit:</p>
+          <div class="equation">
+            \[\mathcal Q=\left\{\omega=2\pi f:\;28\,\mathrm{Hz}\le f\le44\,\mathrm{Hz}\right\}\]
+            \[r_{\mathcal Q}=\operatorname{median}_{\omega\in\mathcal Q}q_{obs}(\omega)\]
+            <span class="label">$\Omega$ fits $\rho(\omega)$; $\mathcal Q$ only supports the quiet-reference and memory logic.</span>
+          </div>
+          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 0.84 s update time constant while activity is present. When activity is absent, it leaks toward the healthy value $\rho=1$ with an 8 s time constant:</p>
+          <div class="equation">
+            \[\tau_{\rho,\mathrm{update}}=0.84\,\mathrm{s},
+            \qquad \tau_{\rho,\mathrm{leak}}=8\,\mathrm{s}\]
+          </div>
+          <p>The <strong>residual margin</strong> $b_{res}$ is the worst chordal margin predicted by the frequency-dependent loop-growth hypothesis. A three-bin moving median is applied across adjacent frequency bins before taking the minimum:</p>
           <div class="equation accent">
-            \[b_{res}=\min_{\omega\in\Omega} b\!\left(\alpha\rho L_0(\omega)\right)\]
+            \[b_{res}=\min_{\omega\in\Omega}\operatorname{median}_3
+            \left\{b\!\left(\alpha\rho(\omega)L_0(\omega)\right)\right\}\]
+            <span class="label">$\operatorname{median}_3$ means three adjacent frequency bins, not three time windows.</span>
           </div>
         </div>
 
         <div class="lab step">
-          <div class="lab-head"><strong>Residual hypothesis</strong><span>how loop-growth memory changes the margin</span></div>
+          <div class="lab-head"><strong>Residual Loop-Growth Hypothesis</strong><span>influence of persistent loop-growth evidence on the stability margin</span></div>
           <div class="controls">
             <div class="control"><label for="rhoSlider">estimated loop scale $\rho$<output id="rhoOut">1.00</output></label><input id="rhoSlider" type="range" min="0.5" max="3" value="1" step="0.01"></div>
           </div>
-          <div class="readout"><div><span class="metric-label">interpretation</span><strong id="rhoWord">healthy scale</strong></div><div><span class="metric-label">residual margin</span><strong id="rhoMargin">0.589</strong></div><div><span class="metric-label">fit band</span><strong>28–44 Hz</strong></div></div>
+          <div class="readout"><div><span class="metric-label">interpretation</span><strong id="rhoWord">healthy scale</strong></div><div><span class="metric-label">residual margin</span><strong id="rhoMargin">0.589</strong></div><div><span class="metric-label">fit set $\Omega$</span><strong>2–100 Hz, except 58–62</strong></div></div>
         </div>
 
         <details class="code-link step">
-          <summary>Code connection · healthy reference and rho fit</summary>
-          <div class="code-meta">sol_osi.m · lines 76–77, 148–153, and 184–213</div>
-          <pre><span class="ln">76</span>cfg.shape = max(abs(1./(1+cfg.L0)).^2, eps);
-<span class="ln">77</span>cfg.rho_grid = logspace(log10(0.5), log10(6), 25);
+          <summary>Code connection · healthy reference and frequency-dependent rho fit</summary>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 46–56, 79–81, 162–164, 198–199, 212–227, and 259–260</div>
+          <pre><span class="ln">46</span>'residual_s', 0.84, ...
+<span class="ln">50</span>'quiet_band_hz', [28 44], ...
+<span class="ln">56</span>'rho_leak_s', 8.0, ...
+<span class="ln">79</span>cfg.rho_fit_keep = cfg.keep;
+<span class="ln">80</span>cfg.quiet_keep = cfg.keep &amp; cfg.freq_hz &gt;= cfg.quiet_band_hz(1) &amp; ...
+<span class="ln">81</span>    cfg.freq_hz &lt;= cfg.quiet_band_hz(2);
 
-<span class="ln">150</span>state.q_ref_samples(:, state.q_ref_count) = py./cfg.shape;
-<span class="ln">152</span>state.q_ref = median(state.q_ref_samples, 2);
+<span class="ln">162</span>state.q_ref_samples(:, state.q_ref_count) = py;
+<span class="ln">164</span>state.q_ref = median(state.q_ref_samples, 2);
 
-<span class="ln">184</span>qobs = state.Syy./cfg.shape;
-<span class="ln">186</span>qobs = qobs./max(state.q_ref, eps);
-<span class="ln">202</span>qmod = abs((1+cfg.L0)./(1+a_now*cfg.rho_grid(k)*cfg.L0)).^2;
-<span class="ln">209</span>loss(k) = median(abs(log(max(qobs(cfg.res_keep), eps))- ...
-<span class="ln">210</span>    log(max(qmod(cfg.res_keep), eps))));
-<span class="ln">213</span>rho_best = cfg.rho_grid(kbest);</pre>
+<span class="ln">198</span>qobs = state.Syy./max(state.q_ref, eps);
+<span class="ln">199</span>state.reference_ratio = median(qobs(cfg.quiet_keep));
+<span class="ln">212</span>loss = inf(numel(cfg.L0), numel(cfg.rho_grid));
+<span class="ln">221</span>loss(cfg.rho_fit_keep, k) = abs( ...
+<span class="ln">222</span>    log(max(qobs(cfg.rho_fit_keep), eps))- ...
+<span class="ln">223</span>    log(max(qmod(cfg.rho_fit_keep), eps)));
+<span class="ln">227</span>rho_best(cfg.rho_fit_keep) = rho_values(kbest(cfg.rho_fit_keep));
+
+<span class="ln">259</span>b_res = minMasked(movmedian( ...
+<span class="ln">260</span>    chordal(a_now*rho.*cfg.L0, cfg.cap), 3), cfg.keep);</pre>
         </details>
 
-        <div class="quiz step">
-          <div class="quiz-head"><h3>Check 3</h3><button class="answer-toggle">Show answers</button></div>
-          <ol>
-            <li>Why does SOL-OSI need a quiet-data branch?<br>A. FFTs only work when quiet &nbsp; B. Coherent FRF evidence weakens without excitation &nbsp; C. PID stops running<div class="answer">Answer: B — the estimator needs a second form of evidence when $u$ is weak.</div></li>
-            <li>What does $\rho&gt;1$ represent?<br>A. A loop larger than the healthy model &nbsp; B. zero output &nbsp; C. a new sample rate<div class="answer">Answer: A — it is a fitted loop-growth factor.</div></li>
-          </ol>
-        </div>
       </section>
 
-      <section class="lesson-section" id="stage-6" data-title="Blend and memory">
-        <span class="section-number">STAGE 06 / 08</span>
-        <h2>Let the operating condition choose the branch</h2>
-        <p class="lead">Neither branch is trusted all the time. Activity, input leverage, and persistent damage memory decide how the estimates combine.</p>
+      <section class="lesson-section" id="stage-6" data-title="Evidence fusion">
+        <span class="section-number">SECTION 06 / 08</span>
+        <h2>Operating-Condition-Dependent Fusion of Stability Evidence</h2>
+        <p class="lead">Neither branch is trusted all the time. A hard command-activity decision selects the operating regime, while input leverage and persistent damage memory shape the evidence inside each regime.</p>
 
         <div class="step">
-          <p>Activity rises sharply when the 0.5 s command RMS exceeds the quiet threshold:</p>
+          <p>The 0.5 s command RMS defines the binary activity $A$ directly. The approved threshold is $\eta_A=0.0575$, approximately $4.54\sigma_{\mathrm{noise},u}$ based on the clean quiet-record estimate:</p>
           <div class="equation">
-            \[A=\min\left[1,\left(\frac{\operatorname{RMS}(u)}{0.06}\right)^4\right]\]
+            \[A=\begin{cases}
+            1,&\operatorname{RMS}_{0.5\,\mathrm{s}}(u)>\eta_A\\[6pt]
+            0,&\text{otherwise}
+            \end{cases}\]
+            \[\eta_A=0.0575\approx4.54\sigma_{\mathrm{noise},u}\]
           </div>
           <div class="two-col">
-            <div class="plain-panel"><h3>Driven: $A\approx1$</h3><p>The coherent $S/T$ branch has command energy and can estimate $\widehat L$ directly.</p></div>
-            <div class="plain-panel copper"><h3>Quiet: $A\approx0$</h3><p>The estimator preserves residual evidence through the fitted $\rho$ memory.</p></div>
+            <div class="plain-panel"><h3>Excited Regime: $A=1$</h3><p>The coherent transfer-function branch has command energy and can estimate $\widehat L$ directly.</p></div>
+            <div class="plain-panel copper"><h3>Low-Excitation Regime: $A=0$</h3><p>The estimator preserves residual evidence through the fitted $\rho$ memory.</p></div>
           </div>
         </div>
 
         <div class="step">
-          <p>When the residual band has weak input leverage, the coherent margin may be too forgiving. SOL-OSI only subtracts the part supported by the more conservative residual margin:</p>
-          <p>The implementation smooths activity over time and calls it $\overline A$. Using that smoothed activity, the residual weight $w_{res}$ grows when mean leverage in the 28–44 Hz band is low:</p>
+          <p>When the residual band has weak input leverage, the coherent margin may be too forgiving. OSI only subtracts the part supported by the more conservative residual margin.</p>
+          <p>The current simplified estimator does not filter $A$ or form a smoothed activity state. Binary $A$ selects either $b_{evid}$ or $b_{idle}$ without a cross-fade. The memoryless activation weight $w_A$ applies the constant calibration $g_A=0.80$, so it changes immediately between 0 and 0.80:</p>
           <div class="equation">
-            \[w_{res}=\overline A\left(1-\operatorname{mean}_{28:44}\ell\right)^2\]
+            \[w_A[n]=g_AA[n],\qquad g_A=0.80,\qquad A[n]\in\{0,1\}\]
+          </div>
+          <p>For clarity, $\ell(\omega)$ is the input leverage at frequency $\omega$. It maps the relative command power $p_{rel}(\omega)$ to $[0,1]$, using the floor $p_{floor}=10^{-3}$:</p>
+          <div class="equation">
+            \[p_{rel}(\omega)=\frac{\Phi_{uu}(\omega)}{\max_{\nu}\Phi_{uu}(\nu)},
+            \qquad
+            \ell(\omega)=\frac{p_{rel}(\omega)}{p_{rel}(\omega)+p_{floor}}\]
+          </div>
+          <p>The residual weight $w_{res}$ therefore grows when the mean leverage over the quiet set $\mathcal Q=[28,44]\,\mathrm{Hz}$ is low:</p>
+          <div class="equation">
+            \[w_{res}=w_A\left(1-\frac{1}{|\mathcal Q|}\sum_{\omega\in\mathcal Q}\ell(\omega)\right)^2\]
           </div>
           <p>The conservative evidence margin $b_{evid}$ subtracts only the weighted amount by which the residual margin is lower than the coherent margin:</p>
           <div class="equation">
             \[b_{evid}=b_{ST}-w_{res}\max(b_{ST}-b_{res},0)\]
           </div>
-          <p>During quiet operation, the fixed memory gain $g_{mem}$ turns fitted loop growth $(\rho-1)$ into a bounded memory strength $w_{mem}$. The resulting quiet-data margin is $b_{idle}$:</p>
+          <p>The quiet-set ratio $r_{\mathcal Q}$ controls memory hysteresis: the high-gain memory is released when $r_{\mathcal Q}&lt;0.6$ and re-engaged when $r_{\mathcal Q}&gt;1.4$. This decision uses $\mathcal Q$, while the simplified estimator fits $\rho(\omega)$ over the larger set $\Omega$:</p>
           <div class="equation">
-            \[w_{mem}=\operatorname{clamp}\big(g_{mem}(\rho-1),0,1\big)\]
+            \[\text{memory state}=\begin{cases}
+            \text{released},&r_{\mathcal Q}<0.6\\
+            \text{re-engaged},&r_{\mathcal Q}>1.4\\
+            \text{unchanged},&\text{otherwise}
+            \end{cases}\]
+          </div>
+          <p>During quiet operation, the recovery-adjusted memory gain turns fitted loop growth $(\rho-1)$ into a bounded memory strength $w_{mem}$. The gain is 21.75 while memory is engaged and 1 after release. The resulting quiet-data margin is $b_{idle}$:</p>
+          <div class="equation">
+            \[g_{mem}=\begin{cases}21.75,&\text{memory engaged}\\1,&\text{memory released}\end{cases},
+            \qquad w_{mem}=\operatorname{clamp}\big(g_{mem}(\rho-1),0,1\big)\]
             \[b_{idle}=\frac1{\sqrt2}-w_{mem}\left(\frac1{\sqrt2}-b_{res}\right)\]
           </div>
-          <p>Finally, activity cross-fades the two operating regimes to form $b_{raw}[n]$. The factor $\sigma_b$ is the final output-smoothing factor, so the reported margin $b[n]$ moves gradually from its previous value $b[n-1]$:</p>
+          <p>Finally, binary activity makes branch selection hard: $b_{raw}$ comes from one operating regime or the other, without an activity cross-fade. The factor $\sigma_b$ still smooths the reported margin $b[n]$ over time:</p>
           <div class="equation accent">
             \[b_{raw}[n]=A\,b_{evid}+(1-A)b_{idle}\]
             \[b[n]=b[n-1]+\sigma_b\big(b_{raw}[n]-b[n-1]\big)\]
@@ -710,34 +728,37 @@
         </div>
 
         <div class="lab step">
-          <div class="lab-head"><strong>Branch mixer</strong><span>hold the branch estimates fixed and move activity</span></div>
+          <div class="lab-head"><strong>Hard-Activity Evidence Selection</strong><span>$\eta_A=0.0575$ sets $A=0$ or $A=1$ from the 0.5 s command RMS</span></div>
           <div class="controls">
-            <div class="control"><label for="activitySlider">activity $A$<output id="activityOut">0.70</output></label><input id="activitySlider" type="range" min="0" max="1" value="0.7" step="0.01"></div>
+            <div class="control"><label for="activitySlider">0.5 s command RMS<output id="activityOut">RMS=0.050 · A=0</output></label><input id="activitySlider" type="range" min="0" max="0.12" value="0.05" step="0.001"></div>
             <div class="control"><label for="memorySlider">memory $w_{mem}$<output id="memoryOut">0.80</output></label><input id="memorySlider" type="range" min="0" max="1" value="0.8" step="0.01"></div>
           </div>
           <div class="readout"><div><span class="metric-label">coherent evidence</span><strong>0.41</strong></div><div><span class="metric-label">quiet evidence</span><strong id="idleReadout">0.42</strong></div><div><span class="metric-label">raw selected OSI</span><strong id="blendReadout">0.41</strong></div></div>
         </div>
 
         <details class="code-link step">
-          <summary>Code connection · activity, conservative blend, and final smoothing</summary>
-          <div class="code-meta">sol_osi.m · lines 126–131 and 248–258</div>
-          <pre><span class="ln">126</span>activity = min(1, (rms(state.u)/cfg.quiet_rms)^4);
-<span class="ln">127</span>state.drive = state.drive+cfg.drive_alpha*(activity-state.drive);
+          <summary>Code connection · hard activity, conservative blend, and final margin smoothing</summary>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 45, 53–55, 138–139, 240, 262, and 271–273</div>
+          <pre><span class="ln">45</span>'margin_s', 0.08, ...
+<span class="ln">53</span>'eta_A', 0.0575, ...
+<span class="ln">54</span>'hard_activity_gain', 0.80, ...
+<span class="ln">55</span>'detector_max', 1.95, ...
 
-<span class="ln">248</span>res_weight = state.drive*(1-mean(leverage(cfg.res_keep)))^2;
-<span class="ln">249</span>b_evid = b_st-res_weight*max(b_st-b_res, 0);
-<span class="ln">254</span>w_mem = min(max(memory_gain*(rho-1), 0), 1);
-<span class="ln">255</span>b_idle = cfg.cap-w_mem*(cfg.cap-b_res);
-<span class="ln">256</span>b_raw = activity*b_evid+(1-activity)*b_idle;
-<span class="ln">257</span>state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
-<span class="ln">258</span>b = min(max(state.b, 0), cfg.cap);</pre>
+<span class="ln">138</span>activity = double(rms(state.u) &gt; cfg.eta_A);
+<span class="ln">139</span>activation_weight = cfg.hard_activity_gain*activity;
+<span class="ln">240</span>drive_ratio = 1+activation_weight*kick;
+<span class="ln">262</span>res_weight = activation_weight* ...
+<span class="ln">263</span>    (1-mean(leverage(cfg.quiet_keep)))^2;
+<span class="ln">271</span>b_raw = activity*b_evid+(1-activity)*b_idle;
+<span class="ln">272</span>state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
+<span class="ln">273</span>b = min(max(state.b, 0), cfg.cap);</pre>
         </details>
       </section>
 
-      <section class="lesson-section" id="stage-7" data-title="Adaptive gain">
-        <span class="section-number">STAGE 07 / 08</span>
-        <h2>Use the margin without confusing estimator and controller</h2>
-        <p class="lead">SOL-OSI estimates the margin $b$. A separate adaptive-gain law decides how the controller should respond.</p>
+      <section class="lesson-section" id="stage-7" data-title="Adaptive-gain interface">
+        <span class="section-number">SECTION 07 / 08</span>
+        <h2>Separation of Stability Estimation and Adaptive-Gain Control</h2>
+        <p class="lead">OSI estimates the stability margin $b$, while a separate adaptive-gain law determines the controller response.</p>
 
         <div class="callout warning step"><strong>Important separation</strong>The estimator does not directly choose PID gains. It receives the currently applied adaptive factor $\alpha$ (stored as <code>a_cmd</code>), evaluates the corresponding loop, and returns evidence for a separate adaptive-gain controller.</div>
 
@@ -758,12 +779,12 @@
         </div>
 
         <div class="diagram step">
-          <div class="diagram-title"><strong>Closed adaptation loop</strong><span>estimation informs the adaptive gain; the gain changes the observed loop</span></div>
-          <svg viewBox="0 0 760 180" role="img" aria-label="Flow from experiment to SOL-OSI to an adaptive-gain law and back to the PID scale">
+          <div class="diagram-title"><strong>Closed-Loop Adaptive-Gain Architecture</strong><span>bidirectional coupling between stability estimation and loop-gain adaptation</span></div>
+          <svg viewBox="0 0 760 180" role="img" aria-label="Flow from experiment to OSI to an adaptive-gain law and back to the PID scale">
             <defs><marker id="arrow2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#686760"/></marker></defs>
             <rect x="25" y="48" width="155" height="68" fill="#eef7fa" stroke="#007ca8" stroke-width="2"/><text x="102" y="76" text-anchor="middle" fill="#171714">experiment</text><text x="102" y="97" text-anchor="middle">u, y</text>
             <line x1="180" y1="82" x2="270" y2="82" stroke="#686760" marker-end="url(#arrow2)"/>
-            <rect x="275" y="48" width="150" height="68" fill="#f3e5d7" stroke="#ac6420" stroke-width="2"/><text x="350" y="76" text-anchor="middle" fill="#171714">SOL-OSI</text><text x="350" y="97" text-anchor="middle">margin b</text>
+            <rect x="275" y="48" width="150" height="68" fill="#f3e5d7" stroke="#ac6420" stroke-width="2"/><text x="350" y="76" text-anchor="middle" fill="#171714">OSI</text><text x="350" y="97" text-anchor="middle">margin b</text>
             <line x1="425" y1="82" x2="515" y2="82" stroke="#686760" marker-end="url(#arrow2)"/>
             <rect x="520" y="48" width="175" height="68" fill="#fff" stroke="#171714" stroke-width="2"/><text x="607" y="76" text-anchor="middle" fill="#171714">adaptive-gain law</text><text x="607" y="97" text-anchor="middle">α ∈ [α<tspan baseline-shift="sub">min</tspan>, 1]</text>
             <path d="M607 116 V150 H102 V118" fill="none" stroke="#686760" marker-end="url(#arrow2)"/><text x="350" y="167" text-anchor="middle">scale PID and report α<tspan baseline-shift="sub">cmd</tspan> back to estimator</text>
@@ -772,11 +793,11 @@
 
         <details class="code-link step">
           <summary>Code connection · applied adaptive gain enters the estimator</summary>
-          <div class="code-meta">sol_osi.m · lines 128–131; predict_inner_margin.m · lines 3–11</div>
-          <pre><span class="ln">128</span>a_now = min(max(state.a_cmd, 0.02), 1);
-<span class="ln">129</span>Lprior = a_now*cfg.L0;
-<span class="ln">130</span>Tprior = Lprior./(1+Lprior);
-<span class="ln">131</span>b_prior = minMasked(chordal(Lprior, cfg.cap), cfg.keep);
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 140–143; predict_inner_margin.m · lines 3–11</div>
+          <pre><span class="ln">140</span>a_now = min(max(state.a_cmd, 0.02), 1);
+<span class="ln">141</span>Lprior = a_now*cfg.L0;
+<span class="ln">142</span>Tprior = Lprior./(1+Lprior);
+<span class="ln">143</span>b_prior = minMasked(chordal(Lprior, cfg.cap), cfg.keep);
 
 <span class="ln">3</span>% T = feedback(a*C_pid*H_dc_dm, 1), with open loop
 <span class="ln">4</span>% L(a) = a * C_pid * H_dc_dm.
@@ -784,23 +805,16 @@
 <span class="ln">11</span>% a_required = 10^((GM_dB(1) - target_gm_db)/20)</pre>
         </details>
 
-        <div class="quiz step">
-          <div class="quiz-head"><h3>Check 4</h3><button class="answer-toggle">Show answers</button></div>
-          <ol>
-            <li>Does SOL-OSI itself set the applied adaptive gain?<br>A. Yes &nbsp; B. No<div class="answer">Answer: B — it estimates $b$; a separate law sets the adaptive gain.</div></li>
-            <li>If $\alpha$ decreases, what happens to $20\log_{10}|L|$?<br>A. It increases &nbsp; B. It decreases &nbsp; C. phase becomes zero<div class="answer">Answer: B — positive adaptive scaling reduces loop magnitude.</div></li>
-          </ol>
-        </div>
       </section>
 
-      <section class="lesson-section" id="stage-8" data-title="Complete estimator">
-        <span class="section-number">STAGE 08 / 08</span>
-        <h2>The complete mathematical story</h2>
-        <p class="lead">SOL-OSI is easier to remember as eight questions asked every update.</p>
+      <section class="lesson-section" id="stage-8" data-title="Estimator synthesis">
+        <span class="section-number">SECTION 08 / 08</span>
+        <h2>Integrated Mathematical Formulation of the OSI Estimator</h2>
+        <p class="lead">The complete OSI update is summarized as an eight-stage computational sequence.</p>
 
         <div class="pipeline step">
           <div class="pipe-row"><b>01</b><strong>What moved?</strong><span>Append $u,y$ and measure command activity.</span></div>
-          <div class="pipe-row"><b>02</b><strong>At which frequencies?</strong><span>Window, FFT, and smooth $S_{uu},S_{yy},S_{yu}$.</span></div>
+          <div class="pipe-row"><b>02</b><strong>At which frequencies?</strong><span>Window, FFT, and smooth $\Phi_{uu},\Phi_{yy},\Phi_{yu}$.</span></div>
           <div class="pipe-row"><b>03</b><strong>Is the ratio believable?</strong><span>Combine activity, coherence, and leverage into confidence.</span></div>
           <div class="pipe-row"><b>04</b><strong>What loop produced it?</strong><span>Blend $\widehat T$ with $T_{prior}$, then invert to $\widehat L$.</span></div>
           <div class="pipe-row"><b>05</b><strong>How close is critical?</strong><span>Evaluate the chordal curve and take its minimum.</span></div>
@@ -813,19 +827,9 @@
           \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{ST},b_{res}\;\longrightarrow\;b\;}\]
         </div>
 
-        <div class="quiz step">
-          <div class="quiz-head"><h3>Final check</h3><button class="answer-toggle">Show answers</button></div>
-          <ol>
-            <li>Which branch is strongest during well-excited operation?<br>A. Coherent $S/T$ branch &nbsp; B. quiet reference only<div class="answer">Answer: A.</div></li>
-            <li>Which operation turns a frequency curve into one reported margin?<br>A. Maximum &nbsp; B. Minimum over usable bins &nbsp; C. integral<div class="answer">Answer: B — the weakest frequency binds.</div></li>
-            <li>Why retain the healthy model prior?<br>A. It stabilizes estimates where data confidence is weak &nbsp; B. It replaces all measurements<div class="answer">Answer: A.</div></li>
-            <li>What does a falling $b$ mean?<br>A. More robust &nbsp; B. less separation from the critical loop condition<div class="answer">Answer: B.</div></li>
-          </ol>
-        </div>
-
         <div class="final-note step">
-          <h3>You now have the reading order for the code.</h3>
-          <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. The implementation is compact because each line corresponds to one of these equations.</p>
+          <h3>Correspondence Between Mathematical Formulation and Implementation</h3>
+          <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified/sol_osi_simplified.m</code>; it does not replace the production SOL-OSI implementation.</p>
         </div>
       </section>
     </main>
@@ -983,12 +987,10 @@
     function updateRho(){const r=+document.getElementById('rhoSlider').value;document.getElementById('rhoOut').textContent=r.toFixed(2);document.getElementById('rhoMargin').textContent=rhoMargin(r).toFixed(3);document.getElementById('rhoWord').textContent=r<.9?'smaller loop':r<1.1?'healthy scale':'loop growth';}
     document.getElementById('rhoSlider').addEventListener('input',updateRho);updateRho();
 
-    function updateBlend(){const a=+document.getElementById('activitySlider').value,w=+document.getElementById('memorySlider').value,bres=.35,cap=Math.SQRT1_2,bevid=.41,bidle=cap-w*(cap-bres),braw=a*bevid+(1-a)*bidle;document.getElementById('activityOut').textContent=a.toFixed(2);document.getElementById('memoryOut').textContent=w.toFixed(2);document.getElementById('idleReadout').textContent=bidle.toFixed(2);document.getElementById('blendReadout').textContent=braw.toFixed(2);}
+    function updateBlend(){const rmsU=+document.getElementById('activitySlider').value,a=rmsU>.0575?1:0,w=+document.getElementById('memorySlider').value,bres=.35,cap=Math.SQRT1_2,bevid=.41,bidle=cap-w*(cap-bres),braw=a*bevid+(1-a)*bidle;document.getElementById('activityOut').textContent=`RMS=${rmsU.toFixed(3)} · A=${a}`;document.getElementById('memoryOut').textContent=w.toFixed(2);document.getElementById('idleReadout').textContent=bidle.toFixed(2);document.getElementById('blendReadout').textContent=braw.toFixed(2);}
     ['activitySlider','memorySlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateBlend));updateBlend();
 
     document.querySelectorAll('.term').forEach(button=>button.addEventListener('click',()=>{const def=button.parentElement.nextElementSibling;const open=def.classList.toggle('open');button.setAttribute('aria-expanded',open);}));
-    document.querySelectorAll('.answer-toggle').forEach(button=>button.addEventListener('click',()=>{document.body.classList.toggle('show-answers');const shown=document.body.classList.contains('show-answers');document.querySelectorAll('.answer-toggle').forEach(b=>b.textContent=shown?'Hide answers':'Show answers');}));
-
     const steps=document.querySelectorAll('.step'); const reveal=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:.16});steps.forEach(s=>reveal.observe(s));
     const sections=[...document.querySelectorAll('.lesson-section')], links=[...document.querySelectorAll('.rail a')];
     const sectionObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){const i=sections.indexOf(e.target);links.forEach((a,j)=>a.classList.toggle('active',i===j));document.getElementById('progressSection').textContent=e.target.dataset.title;}}),{rootMargin:'-35% 0px -55% 0px'});sections.forEach(s=>sectionObserver.observe(s));

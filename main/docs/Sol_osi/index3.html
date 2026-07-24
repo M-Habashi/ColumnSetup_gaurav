@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SOL-OSI performance under a gradual 7k to 5k stiffness change: monitor-only versus adaptive authority, high-band and low-band excitation.">
+  <title>SOL-OSI Performance — Gradual 7k → 5k Softening</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600&amp;family=Merriweather:wght@400;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper:#ffffff; --wash:#f7f5f1; --ink:#171714; --muted:#6c6b64;
+      --faint:#9c9a92; --line:#e0ddd5; --grid:#eeece6;
+      --copper:#ac6420; --blue:#0f74a8; --green:#1f8a44; --red:#a3311b;
+      --serif:'Merriweather', Georgia, 'Times New Roman', serif;
+      --mono:'Inconsolata', Consolas, ui-monospace, monospace;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; background:var(--paper); color:var(--ink);
+      font-family:var(--serif); font-size:16px; line-height:1.62;
+      text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
+    }
+    .topbar {
+      position:sticky; top:0; z-index:20; height:50px; display:flex;
+      align-items:center; justify-content:space-between; padding:0 22px;
+      background:#fff; border-bottom:1px solid var(--line);
+      font-family:var(--mono); font-size:0.78rem; letter-spacing:0.04em;
+    }
+    .topbar .brand { font-weight:600; }
+    .topbar .tag { color:var(--muted); }
+    .wrap { max-width:900px; margin:0 auto; padding:0 22px; }
+    header.hero { padding:52px 0 30px; border-bottom:1px solid var(--line); }
+    .kicker {
+      color:var(--copper); font-family:var(--mono); font-size:0.74rem;
+      font-weight:600; letter-spacing:0.12em; text-transform:uppercase;
+    }
+    h1 { margin:14px 0 0; font-size:clamp(1.9rem,4.6vw,2.9rem); line-height:1.06;
+         letter-spacing:-0.02em; font-weight:700; }
+    .deck { margin:18px 0 0; max-width:660px; color:#43423c; font-size:1.05rem; }
+    .setup {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+      margin:30px 0 6px; border:1px solid var(--line);
+      font-family:var(--mono); font-size:0.76rem;
+    }
+    .setup div { padding:12px 14px; border-right:1px solid var(--line); }
+    .setup div:last-child { border-right:0; }
+    .setup span { display:block; color:var(--muted); font-size:0.68rem;
+      letter-spacing:0.06em; text-transform:uppercase; margin-bottom:3px; }
+    .setup strong { font-weight:600; color:var(--ink); }
+    .howto {
+      margin:34px 0 8px; padding:16px 18px; background:var(--wash);
+      border-left:3px solid var(--copper); font-size:0.92rem; color:#413f39;
+    }
+    .howto b { color:var(--ink); }
+
+    figure.card { margin:44px 0 8px; }
+    .cap-head { display:flex; align-items:baseline; gap:12px; margin-bottom:4px; }
+    .fig-no {
+      font-family:var(--mono); font-size:0.72rem; font-weight:600;
+      color:var(--copper); letter-spacing:0.08em; white-space:nowrap;
+    }
+    .fig-title { font-size:1.12rem; font-weight:700; letter-spacing:-0.01em; }
+    .mode-pill {
+      font-family:var(--mono); font-size:0.62rem; font-weight:600;
+      letter-spacing:0.06em; text-transform:uppercase; padding:2px 8px;
+      border-radius:20px; white-space:nowrap;
+    }
+    .pill-mon { color:#6a4a12; background:#f5e6cf; }
+    .pill-ada { color:#0d5a30; background:#d9efe0; }
+    figcaption { margin:2px 0 10px; color:var(--muted); font-size:0.9rem; max-width:720px; }
+    .plot-shell {
+      border:1px solid var(--line); background:#fff; padding:8px 6px 4px;
+      border-radius:3px; position:relative;
+    }
+    svg.fig { display:block; width:100%; height:auto; }
+    svg.fig text { font-family:var(--mono); fill:var(--muted); }
+    .readout {
+      position:absolute; top:8px; right:10px; pointer-events:none;
+      font-family:var(--mono); font-size:0.68rem; color:var(--ink);
+      background:rgba(255,255,255,0.9); border:1px solid var(--line);
+      border-radius:3px; padding:5px 8px; line-height:1.5; opacity:0;
+      transition:opacity 120ms; min-width:118px;
+    }
+    .readout b { color:var(--muted); font-weight:600; }
+    .readout .sw { display:inline-block; width:9px; height:9px; border-radius:2px;
+      margin-right:5px; vertical-align:baseline; }
+
+    footer { margin:70px 0 90px; padding-top:22px; border-top:2px solid var(--copper);
+      color:var(--muted); font-size:0.82rem; font-family:var(--mono); }
+    footer code { color:var(--ink); overflow-wrap:anywhere; }
+    a { color:var(--copper); }
+
+    @media (max-width:640px) {
+      .setup { grid-template-columns:1fr; }
+      .setup div { border-right:0; border-bottom:1px solid var(--line); }
+      .setup div:last-child { border-bottom:0; }
+      .cap-head { flex-wrap:wrap; gap:7px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">SOL—OSI · PERFORMANCE</span>
+    <span class="tag">gradual 7k → 5k · fabby benchmark</span>
+  </header>
+
+  <div class="wrap">
+    <header class="hero">
+      <span class="kicker">Online stability indicator · replay figures</span>
+      <h1>SOL-OSI under a gradual 7k → 5k stiffness change</h1>
+      <p class="deck">The synthetic <em>gradual softening</em> case from the Fabby benchmark, replayed through the closed inner loop with the <code>sol_osi_simplified</code> estimator. The specimen holds at the healthy 7k model until 60 s, then blends linearly to the damaged 5k model by 100 s. Each figure isolates one excitation band and one authority mode.</p>
+
+      <div class="setup">
+        <div><span>Plant transition</span><strong>7k → 5k · linear 60–100 s</strong></div>
+        <div><span>Estimator</span><strong>sol_osi_simplified</strong></div>
+        <div><span>True margin (full auth.)</span><strong id="mB7">0.588 → 0.345</strong></div>
+      </div>
+
+      <div class="howto">
+        Each figure stacks three panels over a shared time axis. <b>Top</b> — the command <span style="color:var(--blue)">d<sub>d</sub></span> and measured <span style="color:var(--copper)">d<sub>m</sub></span> displacement, with dashed lines at the <b>7k</b> (60 s) and <b>5k</b> (100 s) marks. <b>Middle</b> — the selected <b>OSI</b> margin replayed from those signals. <b>Bottom</b> — the <b>adaptive factor</b> α. Hover any figure for a sample readout.
+      </div>
+    </header>
+
+    <div id="figs"></div>
+
+    <footer>
+      Data: <code>research/sol_osi_simplified/make_index3_data.m</code> → <code>index3_data.js</code>.
+      Closed inner loop (discrete PID × identified 7k/5k plants, dt = 1/2048), estimator
+      <code>sol_osi_simplified.m</code>, authority <code>gpt5_6_4_auth.m</code>. High band 20–60 Hz,
+      low band 2–10 Hz. Monitor-only cases freeze α = 1 (OSI disconnected from the loop);
+      adaptive cases apply α every 0.125 s.
+    </footer>
+  </div>
+
+  <script src="index3_data.js"></script>
+  <script>
+  (function () {
+    var D = window.OSI;
+    if (!D) { document.getElementById('figs').textContent = 'index3_data.js failed to load.'; return; }
+    var C = { blue:'#0f74a8', copper:'#ac6420', ink:'#171714', green:'#1f8a44',
+              muted:'#6c6b64', faint:'#9c9a92', grid:'#eeece6', red:'#a3311b' };
+    var TGT = D.meta.target, LAM = D.meta.lam_t, DUR = D.meta.dur_s;
+
+    var FIGS = [
+      { key:'high_monitor', no:'FIG. 1', title:'High band · monitoring only',
+        mode:'monitor',
+        cap:'High-band excitation (20–60 Hz) brackets the damage-sensitive resonance. Authority is frozen at α = 1 — the OSI only watches — so the estimate tracks the true margin down as the specimen softens.' },
+      { key:'low_monitor', no:'FIG. 2', title:'Low band · monitoring only',
+        mode:'monitor',
+        cap:'Low-frequency excitation (2–10 Hz) sits below the resonance, so the softening is nearly invisible to the command band. With α frozen at 1, the residual/quiet-band evidence still pulls the reading down, but only partially.' },
+      { key:'high_adapt', no:'FIG. 3', title:'High band · adaptive authority',
+        mode:'adapt',
+        cap:'Same high-band excitation, but the adaptive factor α now updates every 0.125 s. As damage grows the authority sheds, holding the true margin near the 0.55 target — the OSI reading stays regulated instead of collapsing.' },
+      { key:'low_adapt', no:'FIG. 4', title:'Low band · adaptive authority',
+        mode:'adapt',
+        cap:'Low-band excitation with α updating. Detection is slower and noisier because the damage barely shows in the command band, but the authority still sheds and defends the margin toward the target.' }
+    ];
+
+    // ---- geometry -----------------------------------------------------------
+    var W = 900, PADL = 58, PADR = 108, PADT = 16, GAP = 26;
+    var PH = [128, 128, 108];                    // panel heights
+    var H = PADT + PH[0] + GAP + PH[1] + GAP + PH[2] + 40;
+    function panelTop(i){ var y = PADT; for (var k=0;k<i;k++) y += PH[k]+GAP; return y; }
+
+    function xOf(t){ return PADL + (t/DUR)*(W-PADL-PADR); }
+    function yOf(v, lo, hi, top, h){ return top + (1-(v-lo)/(hi-lo))*h; }
+
+    function pathFrom(xs, ys, sx, sy){
+      var d = '', started = false;
+      for (var i=0;i<xs.length;i++){
+        var vy = ys[i];
+        if (vy === null || vy === undefined || isNaN(vy)) { started = false; continue; }
+        var px = sx(xs[i]).toFixed(1), py = sy(vy).toFixed(1);
+        d += (started ? 'L' : 'M') + px + ' ' + py + ' ';
+        started = true;
+      }
+      return d;
+    }
+    function el(name, attrs, txt){
+      var e = document.createElementNS('http://www.w3.org/2000/svg', name);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (txt != null) e.textContent = txt;
+      return e;
+    }
+
+    function niceRange(vals){
+      var lo=Infinity, hi=-Infinity;
+      for (var i=0;i<vals.length;i++){ var v=vals[i];
+        if (v==null||isNaN(v)) continue; if (v<lo) lo=v; if (v>hi) hi=v; }
+      if (!isFinite(lo)) { lo=-1; hi=1; }
+      return [lo, hi];
+    }
+
+    function gridV(g, top, h, sx){
+      // vertical time gridlines every 20 s + axis
+      for (var t=0;t<=DUR;t+=20){
+        g.appendChild(el('line',{x1:sx(t),y1:top,x2:sx(t),y2:top+h,
+          stroke:C.grid,'stroke-width':1}));
+      }
+    }
+    function changeLines(g, top, h, sx, label){
+      [ [LAM[0],'7k'], [LAM[1],'5k'] ].forEach(function(p){
+        var x = sx(p[0]);
+        g.appendChild(el('line',{x1:x,y1:top,x2:x,y2:top+h,
+          stroke:C.red,'stroke-width':1.3,'stroke-dasharray':'5 4',opacity:0.85}));
+        if (label){
+          g.appendChild(el('text',{x:x+4,y:top+13,'font-size':10,
+            'font-weight':600,fill:C.red}, p[1]));
+        }
+      });
+    }
+    function yTicks(g, ticks, lo, hi, top, h, sx, fmt){
+      ticks.forEach(function(v){
+        var y = yOf(v, lo, hi, top, h);
+        g.appendChild(el('line',{x1:PADL,y1:y,x2:W-PADR,y2:y,
+          stroke:C.grid,'stroke-width':1}));
+        g.appendChild(el('text',{x:PADL-8,y:y+3.5,'text-anchor':'end',
+          'font-size':10}, fmt(v)));
+      });
+    }
+    function axisLabel(g, top, h, txt){
+      var cy = top + h/2;
+      g.appendChild(el('text',{x:16,y:cy,'font-size':10.5,fill:C.muted,
+        'text-anchor':'middle',transform:'rotate(-90 16 '+cy+')'}, txt));
+    }
+    function legend(g, top, items){
+      var x = W-PADR+12, y = top+12;
+      items.forEach(function(it){
+        g.appendChild(el('line',{x1:x,y1:y,x2:x+18,y2:y,stroke:it.c,
+          'stroke-width':it.w||2.4,'stroke-dasharray':it.dash||'none'}));
+        g.appendChild(el('text',{x:x+23,y:y+3.5,'font-size':10,fill:C.ink}, it.t));
+        y += 16;
+      });
+    }
+
+    function render(spec){
+      var s = D[spec.key];
+      var svg = el('svg',{class:'fig',viewBox:'0 0 '+W+' '+H,
+        preserveAspectRatio:'xMidYMid meet'});
+      var sx = xOf;
+
+      // ---------- panel 1 : signals ----------
+      var t1 = panelTop(0), h1 = PH[0];
+      var g1 = el('g',{}); svg.appendChild(g1);
+      var r1 = niceRange(s.dd.concat(s.dm));
+      var m1 = Math.max(Math.abs(r1[0]), Math.abs(r1[1])); m1 = Math.ceil(m1*10)/10;
+      var lo1=-m1, hi1=m1;
+      gridV(g1, t1, h1, sx);
+      yTicks(g1,[-m1,0,m1],lo1,hi1,t1,h1,sx,function(v){return v.toFixed(1);});
+      changeLines(g1, t1, h1, sx, true);
+      g1.appendChild(el('path',{d:pathFrom(s.t_sig,s.dm,sx,
+        function(v){return yOf(v,lo1,hi1,t1,h1);}),fill:'none',
+        stroke:C.copper,'stroke-width':0.7,opacity:0.9}));
+      g1.appendChild(el('path',{d:pathFrom(s.t_sig,s.dd,sx,
+        function(v){return yOf(v,lo1,hi1,t1,h1);}),fill:'none',
+        stroke:C.blue,'stroke-width':0.7,opacity:0.85}));
+      axisLabel(g1,t1,h1,'displacement (mm)');
+      legend(g1,t1,[{c:C.blue,t:'d_d command'},{c:C.copper,t:'d_m measured'}]);
+
+      // ---------- panel 2 : OSI margin ----------
+      var t2 = panelTop(1), h2 = PH[1];
+      var g2 = el('g',{}); svg.appendChild(g2);
+      var lo2=0, hi2=0.72;
+      gridV(g2, t2, h2, sx);
+      yTicks(g2,[0,0.2,0.4,0.6],lo2,hi2,t2,h2,sx,function(v){return v.toFixed(1);});
+      changeLines(g2, t2, h2, sx, false);
+      // target reference
+      var yt = yOf(TGT,lo2,hi2,t2,h2);
+      g2.appendChild(el('line',{x1:PADL,y1:yt,x2:W-PADR,y2:yt,stroke:C.faint,
+        'stroke-width':1,'stroke-dasharray':'2 3'}));
+      g2.appendChild(el('text',{x:W-PADR-2,y:yt-4,'text-anchor':'end',
+        'font-size':9.5,fill:C.faint}, 'target '+TGT.toFixed(2)));
+      g2.appendChild(el('path',{d:pathFrom(s.tc,s.b_est,sx,
+        function(v){return yOf(v,lo2,hi2,t2,h2);}),fill:'none',
+        stroke:C.ink,'stroke-width':2}));
+      axisLabel(g2,t2,h2,'OSI margin');
+      legend(g2,t2,[{c:C.ink,t:'OSI'},
+        {c:C.faint,t:'target',dash:'2 3',w:1.4}]);
+
+      // ---------- panel 3 : authority ----------
+      var t3 = panelTop(2), h3 = PH[2];
+      var g3 = el('g',{}); svg.appendChild(g3);
+      var lo3=0, hi3=1.06;
+      gridV(g3, t3, h3, sx);
+      yTicks(g3,[0,0.5,1.0],lo3,hi3,t3,h3,sx,function(v){return v.toFixed(1);});
+      changeLines(g3, t3, h3, sx, false);
+      g3.appendChild(el('path',{d:pathFrom(s.tc,s.a,sx,
+        function(v){return yOf(v,lo3,hi3,t3,h3);}),fill:'none',
+        stroke:C.green,'stroke-width':2}));
+      axisLabel(g3,t3,h3,'adaptive factor α');
+      // x ticks + label on bottom panel
+      for (var t=0;t<=DUR;t+=20){
+        g3.appendChild(el('text',{x:sx(t),y:t3+h3+16,'text-anchor':'middle',
+          'font-size':10}, t));
+      }
+      g3.appendChild(el('text',{x:(PADL+W-PADR)/2,y:t3+h3+34,
+        'text-anchor':'middle','font-size':10.5,fill:C.muted}, 'time (s)'));
+      if (spec.mode === 'monitor'){
+        g3.appendChild(el('text',{x:W-PADR+12,y:t3+16,'font-size':9.5,
+          fill:C.muted}, 'α held'));
+        g3.appendChild(el('text',{x:W-PADR+12,y:t3+28,'font-size':9.5,
+          fill:C.muted}, 'at 1 (idle)'));
+      }
+
+      // ---------- hover crosshair ----------
+      var cross = el('line',{y1:PADT,y2:t3+h3,stroke:C.ink,'stroke-width':1,
+        opacity:0,'stroke-dasharray':'3 3'});
+      svg.appendChild(cross);
+      var hit = el('rect',{x:PADL,y:PADT,width:W-PADL-PADR,height:t3+h3-PADT,
+        fill:'transparent'});
+      svg.appendChild(hit);
+
+      var shell = document.createElement('div');
+      shell.className = 'plot-shell';
+      shell.appendChild(svg);
+      var read = document.createElement('div');
+      read.className = 'readout';
+      shell.appendChild(read);
+
+      function nearest(arr, t){
+        var lo=0, hi=arr.length-1;
+        while (lo<hi){ var mid=(lo+hi)>>1; if (arr[mid]<t) lo=mid+1; else hi=mid; }
+        if (lo>0 && Math.abs(arr[lo-1]-t)<Math.abs(arr[lo]-t)) return lo-1;
+        return lo;
+      }
+      function move(ev){
+        var box = svg.getBoundingClientRect();
+        var px = (ev.clientX-box.left)/box.width*W;
+        if (px<PADL || px>W-PADR){ hide(); return; }
+        var t = (px-PADL)/(W-PADL-PADR)*DUR;
+        var xx = sx(t);
+        cross.setAttribute('x1',xx); cross.setAttribute('x2',xx);
+        cross.setAttribute('opacity',0.5);
+        var i = nearest(s.tc, t);
+        read.style.opacity = 1;
+        read.innerHTML =
+          '<b>t</b> '+s.tc[i].toFixed(1)+' s<br>'+
+          '<span class="sw" style="background:'+C.ink+'"></span>OSI '+
+            (isNaN(s.b_est[i])?'—':s.b_est[i].toFixed(3))+'<br>'+
+          '<span class="sw" style="background:'+C.green+'"></span>α '+
+            s.a[i].toFixed(3)+'<br>'+
+          '<b>b_true</b> '+(isNaN(s.b_true[i])?'—':s.b_true[i].toFixed(3));
+      }
+      function hide(){ cross.setAttribute('opacity',0); read.style.opacity=0; }
+      hit.addEventListener('mousemove', move);
+      hit.addEventListener('mouseleave', hide);
+
+      return shell;
+    }
+
+    var host = document.getElementById('figs');
+    document.getElementById('mB7').textContent =
+      D.meta.b7.toFixed(3)+' → '+D.meta.b5.toFixed(3);
+    FIGS.forEach(function(spec){
+      var fig = document.createElement('figure');
+      fig.className = 'card';
+      var head = document.createElement('div');
+      head.className = 'cap-head';
+      head.innerHTML = '<span class="fig-no">'+spec.no+'</span>'+
+        '<span class="fig-title">'+spec.title+'</span>'+
+        '<span class="mode-pill '+(spec.mode==='monitor'?'pill-mon':'pill-ada')+'">'+
+          (spec.mode==='monitor'?'monitor only':'adaptive')+'</span>';
+      fig.appendChild(head);
+      var cap = document.createElement('figcaption');
+      cap.textContent = spec.cap;
+      fig.appendChild(cap);
+      fig.appendChild(render(spec));
+      host.appendChild(fig);
+    });
+  })();
+  </script>
+</body>
+</html>

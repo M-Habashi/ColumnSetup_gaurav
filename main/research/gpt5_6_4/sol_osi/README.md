@@ -47,7 +47,7 @@ re-engaging it.
 
 The main implementation is `control_and_HS/OSI/sol_osi.m`.
 Use `run_sol_osi_record` for the highlighted-record comparison and
-`run_sol_osi_benchmark` for the complete canonical benchmark.
+`run_sol_osi_benchmark` for the complete Fabby Benchmark.
 
 Deployment note: the estimator must be initialized after pause, or its healthy
 reference state must be reset when pause ends. The time-sliced implementation

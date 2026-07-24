@@ -1,5 +1,10 @@
 # OSI/Auth-Factor Plots
 
+The project's combined OSI + authority acceptance test is officially called
+the **Fabby Benchmark**. Run it through
+`research/osi_benchmark/run_osi_benchmark.m`; the scripts below are supporting
+plots and focused replays.
+
 For the redesigned indicator + authority law (Fable), see `fable/README.md`
 and `fable/fable_report.html`:
 

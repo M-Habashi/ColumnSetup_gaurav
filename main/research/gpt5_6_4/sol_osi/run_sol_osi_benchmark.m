@@ -1,5 +1,5 @@
 function result = run_sol_osi_benchmark
-%RUN_SOL_OSI_BENCHMARK Run the canonical benchmark for sol_osi.
+%RUN_SOL_OSI_BENCHMARK Run the Fabby Benchmark for sol_osi.
 
 here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(fileparts(here)));

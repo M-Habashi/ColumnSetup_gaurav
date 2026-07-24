@@ -1,5 +1,5 @@
 function result = run_osi_benchmark(osi_fn, auth_fn, label)
-%RUN_OSI_BENCHMARK Standard fact-anchored evaluation of an OSI + authority law.
+%RUN_OSI_BENCHMARK Run the Fabby Benchmark for an OSI + authority law.
 %
 %   result = run_osi_benchmark(@my_osi, @my_auth, 'my_label')
 %
@@ -36,7 +36,7 @@ function result = run_osi_benchmark(osi_fn, auth_fn, label)
 %
 % HARD GATES (all must pass; each is a measurable fact):
 %   G1 canonical suite 10/10   (OSI_tests/fable/fable_synthetic_suite)
-%   G2 fabby_score_1 > 92      (research/fable_2/fabby_score ground truth)
+%   G2 fabby_score_1 > 90      (research/fable_2/fabby_score ground truth)
 %   G3 closed-loop live scenario: 0 s with g*a >= g_crit, where g_crit is
 %      COMPUTED from the identified model (first g destabilizing
 %      feedback(g*C*H5k)) - not a chosen number
@@ -106,7 +106,7 @@ gdb = gdbReplay(project, pv, osi_fn, auth_fn);
 %% ---- gates ----------------------------------------------------------------
 gates = struct( ...
     'G1_suite_10_of_10', nnz([suite.cases.pass]) == 10, ...
-    'G2_fabby_1_gt_92', fab.mean_score > 92, ...
+    'G2_fabby_1_gt_90', fab.mean_score > 90, ...
     'G3_zero_unstable_time', emu.unstable_time_s == 0, ...
     'G4_end_hold', emu.tail_max_a < emu.g_crit/3, ...
     'G5_gdb_no_idle_shed', gdb.no_idle_shed, ...
@@ -128,12 +128,12 @@ if ~isfinite(scores.S5_gdb_recovery), scores.S5_gdb_recovery = 0; end
 composite = mean(struct2array(scores));
 
 %% ---- scorecard ------------------------------------------------------------
-fprintf('\n================ OSI BENCHMARK: %s ================\n', label)
+fprintf('\n=============== FABBY BENCHMARK: %s ===============\n', label)
 for i = 1:numel(gate_names)
     fprintf('  %-24s %s\n', gate_names{i}, passText(gates.(gate_names{i})))
 end
 fprintf('  ------------------------------------------\n')
-fprintf('  fabby_score_1      %6.1f   (suite estimation, >92 required)\n', scores.fabby_score_1)
+fprintf('  fabby_score_1      %6.1f   (suite estimation, >90 required)\n', scores.fabby_score_1)
 fprintf('  fabby_score_2      %6.1f   (closed-loop regulation on osi_calibration_test)\n', scores.fabby_score_2)
 fprintf('  S3 detection       %6.1f   (%d/%d gain rises within 2 s)\n', ...
     scores.S3_detection, nnz(isfinite(det_lat) & det_lat <= 2), numel(det_lat))

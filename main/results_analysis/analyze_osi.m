@@ -69,16 +69,22 @@ assert(isfield(model_data, 'H_dc_dm'), ...
 
 [t, u_osi, dm, dt, sample_index] = replaySignals(result);
 loop_tf = makeLoop(model_data, dt);
-a_acted = loggedAuthority(result, sample_index);
+a_acted = loggedAdaptiveFactor(result, sample_index);
 replay = gpt5_6('run', t, u_osi, dm, dt, loop_tf, ...
     struct('osi', osi_override, 'auth', auth_override), a_acted);
 replay.test_file = test_file;
 replay.exp_tf_file = exp_tf_file;
 
 plotReplay(test_name, t, dm, result, replay, a_acted, ...
-    diagnosticGain(result, t, sample_index), sample_index);
+    diagnosticGain(result, t, sample_index), ...
+    estimatedStiffness(result, t, sample_index), sample_index);
 fprintf('SOL_OSI replay: %s | %d updates | target %.3f\n', ...
     test_name, numel(replay.tc), replay.cfg.auth.target)
+if isfield(result, 'hs') && isfield(result.hs, 'intensity_factor') && ...
+        isfield(result.hs, 'time_scale_factor')
+    fprintf('Earthquake scale: %.6g | Time scale: %.6g\n', ...
+        result.hs.intensity_factor, result.hs.time_scale_factor)
+end
 end
 
 function result = unwrapResult(data)
@@ -135,7 +141,7 @@ end
 loop_tf = controller*plant;
 end
 
-function a = loggedAuthority(result, sample_index)
+function a = loggedAdaptiveFactor(result, sample_index)
 a = [];
 for name = {'auth', 'osi_gain', 'auth_factor'}
     if isfield(result, name{1}) && ...
@@ -149,10 +155,16 @@ end
 
 function diag = diagnosticGain(result, t, sample_index)
 diag = struct('t', [], 'value', []);
-if isfield(result, 'Results') && size(result.Results, 2) >= 21 && ...
-        size(result.Results, 1) >= sample_index(end)
+if isfield(result, 'Results')
+    logged_results = result.Results;
+    if iscell(logged_results), logged_results = logged_results{1}; end
+else
+    logged_results = [];
+end
+if size(logged_results, 2) >= 21 && ...
+        size(logged_results, 1) >= sample_index(end)
     diag.t = t;
-    diag.value = result.Results(sample_index, 21);
+    diag.value = logged_results(sample_index, 21);
 elseif isfield(result, 'diag_gain') && ...
         numel(result.diag_gain) >= sample_index(end)
     diag.t = t;
@@ -160,13 +172,23 @@ elseif isfield(result, 'diag_gain') && ...
 end
 end
 
-function plotReplay(name, t, dm, result, replay, a_acted, diag, sample_index)
+function stiffness = estimatedStiffness(result, t, sample_index)
+stiffness = struct('t', [], 'value', []);
+if isfield(result, 'k_hat') && numel(result.k_hat) >= sample_index(end)
+    stiffness.t = t;
+    stiffness.value = result.k_hat(sample_index);
+end
+end
+
+function plotReplay(name, t, dm, result, replay, a_acted, diag, ...
+        stiffness, sample_index)
 colors = struct('black', [0 0 0], 'blue', [0 124 168]/255, ...
     'purple', [116 5 138]/255, 'copper', [172 100 32]/255, ...
     'green', [57 191 94]/255, 'red', [144 21 0]/255);
 fig = figure('Name', [name ' - SOL_OSI'], 'Color', 'w', ...
     'Position', [80 80 1200 820]);
-tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact')
+tile_count = 3 + ~isempty(stiffness.value);
+tiledlayout(fig, tile_count, 1, 'TileSpacing', 'compact', 'Padding', 'compact')
 
 ax(1) = nexttile; hold on
 h_disp = gobjects(0);
@@ -199,23 +221,40 @@ makeLegend(gca, [h_st h_res h_sel h_target])
 
 ax(3) = nexttile; hold on
 h = gobjects(0);
-h(end+1) = plot(replay.tc, replay.auth_factor, 'Color', colors.copper, ...
-    'LineWidth', 1.5, 'DisplayName', 'GPT auth factor');
 if ~isempty(a_acted)
-    h(end+1) = plot(t(1:numel(a_acted)), a_acted, 'Color', colors.purple, ...
-        'LineWidth', 1.0, 'DisplayName', 'logged auth factor');
+    h(end+1) = plot(t(1:numel(a_acted)), a_acted, 'Color', colors.copper, ...
+        'LineWidth', 1.5, 'DisplayName', 'Adaptive factor');
 end
-ylabel('Authority factor'); ylim([0 1.05])
+axis_values = [1; a_acted(:); diag.value(:)];
+y_max = 1.05*max(axis_values(isfinite(axis_values)));
+shared_ylim = [0 y_max];
+ylabel('Adaptive factor'); ylim(shared_ylim)
 if ~isempty(diag.value)
     yyaxis right
-    h(end+1) = plot(diag.t, diag.value, 'Color', colors.black, 'LineWidth', 1, ...
-        'DisplayName', 'diagnostic gain');
+    h(end+1) = plot(diag.t, diag.value, 'Color', colors.red, 'LineWidth', 1, ...
+        'DisplayName', 'Diagnostic gain');
     ylabel('Diagnostic gain')
+    ylim(shared_ylim)
+    ax_adaptive = gca;
+    ax_adaptive.YAxis(2).Color = colors.red;
     yyaxis left
+    setappdata(fig, 'adaptive_y_link', ...
+        linkprop(ax_adaptive.YAxis, 'Limits'))
 end
-styleAxis(gca); xlabel('Time (s)'); title('Authority and diagnostic gain')
+styleAxis(gca); title('Adaptive factor and diagnostic gain')
 makeLegend(gca, h)
+if ~isempty(stiffness.value)
+    ax(4) = nexttile; hold on
+    plot(stiffness.t, stiffness.value, 'Color', colors.blue, ...
+        'LineWidth', 1, 'DisplayName', 'k hat');
+    styleAxis(gca); ylabel('k (N/m)'); title('Estimated stiffness')
+    makeLegend(gca)
+end
+xlabel(ax(end), 'Time (s)')
 linkaxes(ax, 'x')
+zoom_mode = zoom(fig);
+zoom_mode.Motion = 'both';
+zoom_mode.Enable = 'on';
 end
 
 function styleAxis(ax)

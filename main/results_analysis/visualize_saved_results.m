@@ -66,6 +66,8 @@ dm = dm(1:n);
 dm_filtfilt = dm_filtfilt(1:n);
 fm = fm(1:n);
 am = am(1:n);
+adaptiveFactor = loggedAdaptiveFactor(result, n);
+hasAdaptiveFactor = ~isempty(adaptiveFactor);
 if hasTseEstimate
     m_hat = result.m_hat(1:n);
     c_hat = result.c_hat(1:n);
@@ -176,13 +178,100 @@ lgd.ItemHitFcn = @toggleSignalVisibility;
 
 linkaxes(ax, 'x')
 
-figure('Name', [resultName ' - Hysteresis']);
-patch(dmPlot, fmPlot, zeros(size(dmPlot)), 'FaceColor', 'none', ...
-    'EdgeColor', colors.purple, 'EdgeAlpha', 0.3, 'LineWidth', 1.0);
+hHysteresisFigure = figure('Name', [resultName ' - Hysteresis']);
+hHysteresisAxes = axes('Parent', hHysteresisFigure, ...
+    'Position', [0.10 0.24 0.85 0.69]);
+transitionStart = tPlot(1);
+transitionEnd = tPlot(end);
+transitionBlend = hysteresisTransitionBlend( ...
+    tPlot, transitionStart, transitionEnd);
+hHysteresis = surface(hHysteresisAxes, [dmPlot(:) dmPlot(:)], ...
+    [fmPlot(:) fmPlot(:)], zeros(numel(dmPlot), 2), ...
+    [transitionBlend transitionBlend], 'FaceColor', 'none', ...
+    'EdgeColor', 'interp', 'LineWidth', 1.2);
+colormap(hHysteresisAxes, linspace(0, 1, 256)'.*colors.purple)
+caxis(hHysteresisAxes, [0 1])
 grid on
 xlabel('Measured displacement (mm)')
 ylabel('Measured force (N)')
-title('Force-Displacement Hysteresis')
+updateHysteresisTitle()
+
+uicontrol(hHysteresisFigure, 'Style', 'text', 'Units', 'normalized', ...
+    'Position', [0.10 0.155 0.13 0.035], 'String', 'Transition start (s)', ...
+    'HorizontalAlignment', 'left');
+hStartSlider = uicontrol(hHysteresisFigure, 'Style', 'slider', ...
+    'Units', 'normalized', 'Position', [0.24 0.16 0.56 0.035], ...
+    'Min', tPlot(1), 'Max', tPlot(end), 'Value', transitionStart, ...
+    'Callback', @setTransitionStartFromSlider);
+hStartEdit = uicontrol(hHysteresisFigure, 'Style', 'edit', ...
+    'Units', 'normalized', 'Position', [0.82 0.155 0.13 0.045], ...
+    'String', sprintf('%.3f', transitionStart), ...
+    'Callback', @setTransitionStartFromEdit);
+
+uicontrol(hHysteresisFigure, 'Style', 'text', 'Units', 'normalized', ...
+    'Position', [0.10 0.085 0.13 0.035], 'String', 'Transition end (s)', ...
+    'HorizontalAlignment', 'left');
+hEndSlider = uicontrol(hHysteresisFigure, 'Style', 'slider', ...
+    'Units', 'normalized', 'Position', [0.24 0.09 0.56 0.035], ...
+    'Min', tPlot(1), 'Max', tPlot(end), 'Value', transitionEnd, ...
+    'Callback', @setTransitionEndFromSlider);
+hEndEdit = uicontrol(hHysteresisFigure, 'Style', 'edit', ...
+    'Units', 'normalized', 'Position', [0.82 0.085 0.13 0.045], ...
+    'String', sprintf('%.3f', transitionEnd), ...
+    'Callback', @setTransitionEndFromEdit);
+
+if hasAdaptiveFactor
+    adaptivePlot = adaptiveFactor(plotIndex);
+    factorMin = min(adaptivePlot);
+    factorMax = max(adaptivePlot);
+    factorControlMin = min(0, factorMin);
+    factorControlMax = max(1, factorMax);
+    factorTransitionStart = factorMin;
+    factorTransitionEnd = factorMax;
+    factorBlend = hysteresisTransitionBlend(adaptivePlot, ...
+        factorTransitionStart, factorTransitionEnd);
+
+    hFactorFigure = figure('Name', ...
+        [resultName ' - Hysteresis by Adaptive Factor']);
+    hFactorAxes = axes('Parent', hFactorFigure, ...
+        'Position', [0.10 0.24 0.85 0.69]);
+    hFactorHysteresis = surface(hFactorAxes, ...
+        [dmPlot(:) dmPlot(:)], [fmPlot(:) fmPlot(:)], ...
+        zeros(numel(dmPlot), 2), [factorBlend factorBlend], ...
+        'FaceColor', 'none', 'EdgeColor', 'interp', 'LineWidth', 1.2);
+    colormap(hFactorAxes, linspace(0, 1, 256)'.*colors.red)
+    caxis(hFactorAxes, [0 1])
+    grid on
+    xlabel('Measured displacement (mm)')
+    ylabel('Measured force (N)')
+    updateFactorHysteresisTitle()
+
+    uicontrol(hFactorFigure, 'Style', 'text', 'Units', 'normalized', ...
+        'Position', [0.10 0.155 0.13 0.035], ...
+        'String', 'Transition start', 'HorizontalAlignment', 'left');
+    hFactorStartSlider = uicontrol(hFactorFigure, 'Style', 'slider', ...
+        'Units', 'normalized', 'Position', [0.24 0.16 0.56 0.035], ...
+        'Min', factorControlMin, 'Max', factorControlMax, ...
+        'Value', factorTransitionStart, ...
+        'Callback', @setFactorStartFromSlider);
+    hFactorStartEdit = uicontrol(hFactorFigure, 'Style', 'edit', ...
+        'Units', 'normalized', 'Position', [0.82 0.155 0.13 0.045], ...
+        'String', sprintf('%.3f', factorTransitionStart), ...
+        'Callback', @setFactorStartFromEdit);
+
+    uicontrol(hFactorFigure, 'Style', 'text', 'Units', 'normalized', ...
+        'Position', [0.10 0.085 0.13 0.035], ...
+        'String', 'Transition end', 'HorizontalAlignment', 'left');
+    hFactorEndSlider = uicontrol(hFactorFigure, 'Style', 'slider', ...
+        'Units', 'normalized', 'Position', [0.24 0.09 0.56 0.035], ...
+        'Min', factorControlMin, 'Max', factorControlMax, ...
+        'Value', factorTransitionEnd, ...
+        'Callback', @setFactorEndFromSlider);
+    hFactorEndEdit = uicontrol(hFactorFigure, 'Style', 'edit', ...
+        'Units', 'normalized', 'Position', [0.82 0.085 0.13 0.045], ...
+        'String', sprintf('%.3f', factorTransitionEnd), ...
+        'Callback', @setFactorEndFromEdit);
+end
 
 if hasTseEstimate
     figure('Name', [resultName ' - Online TSE'], 'WindowState', 'maximized');
@@ -212,6 +301,120 @@ if hasTseEstimate
     ylabel('c (N s/m)')
     title('Online TSE Damping')
     linkaxes(ax_tse, 'x')
+end
+
+    function setTransitionStartFromSlider(~, ~)
+        transitionStart = min(hStartSlider.Value, transitionEnd);
+        updateHysteresisControls()
+    end
+
+    function setTransitionEndFromSlider(~, ~)
+        transitionEnd = max(hEndSlider.Value, transitionStart);
+        updateHysteresisControls()
+    end
+
+    function setTransitionStartFromEdit(~, ~)
+        value = str2double(hStartEdit.String);
+        if isfinite(value)
+            transitionStart = min(max(value, tPlot(1)), transitionEnd);
+        end
+        updateHysteresisControls()
+    end
+
+    function setTransitionEndFromEdit(~, ~)
+        value = str2double(hEndEdit.String);
+        if isfinite(value)
+            transitionEnd = max(min(value, tPlot(end)), transitionStart);
+        end
+        updateHysteresisControls()
+    end
+
+    function updateHysteresisControls()
+        hStartSlider.Value = transitionStart;
+        hEndSlider.Value = transitionEnd;
+        hStartEdit.String = sprintf('%.3f', transitionStart);
+        hEndEdit.String = sprintf('%.3f', transitionEnd);
+        transitionBlend = hysteresisTransitionBlend( ...
+            tPlot, transitionStart, transitionEnd);
+        hHysteresis.CData = [transitionBlend transitionBlend];
+        updateHysteresisTitle()
+    end
+
+    function updateHysteresisTitle()
+        title(hHysteresisAxes, sprintf( ...
+            'Force-Displacement Hysteresis (color transition: %.3f-%.3f s)', ...
+            transitionStart, transitionEnd))
+    end
+
+    function setFactorStartFromSlider(~, ~)
+        factorTransitionStart = min( ...
+            hFactorStartSlider.Value, factorTransitionEnd);
+        updateFactorHysteresisControls()
+    end
+
+    function setFactorEndFromSlider(~, ~)
+        factorTransitionEnd = max( ...
+            hFactorEndSlider.Value, factorTransitionStart);
+        updateFactorHysteresisControls()
+    end
+
+    function setFactorStartFromEdit(~, ~)
+        value = str2double(hFactorStartEdit.String);
+        if isfinite(value)
+            factorTransitionStart = min(max(value, factorControlMin), ...
+                factorTransitionEnd);
+        end
+        updateFactorHysteresisControls()
+    end
+
+    function setFactorEndFromEdit(~, ~)
+        value = str2double(hFactorEndEdit.String);
+        if isfinite(value)
+            factorTransitionEnd = max(min(value, factorControlMax), ...
+                factorTransitionStart);
+        end
+        updateFactorHysteresisControls()
+    end
+
+    function updateFactorHysteresisControls()
+        hFactorStartSlider.Value = factorTransitionStart;
+        hFactorEndSlider.Value = factorTransitionEnd;
+        hFactorStartEdit.String = sprintf('%.3f', factorTransitionStart);
+        hFactorEndEdit.String = sprintf('%.3f', factorTransitionEnd);
+        factorBlend = hysteresisTransitionBlend(adaptivePlot, ...
+            factorTransitionStart, factorTransitionEnd);
+        hFactorHysteresis.CData = [factorBlend factorBlend];
+        updateFactorHysteresisTitle()
+    end
+
+    function updateFactorHysteresisTitle()
+        title(hFactorAxes, sprintf([ ...
+            'Force-Displacement Hysteresis ' ...
+            '(adaptive factor transition: %.3f-%.3f)'], ...
+            factorTransitionStart, factorTransitionEnd))
+    end
+end
+
+function blend = hysteresisTransitionBlend(values, transitionStart, ...
+        transitionEnd)
+if transitionStart == transitionEnd
+    blend = double(values >= transitionEnd);
+else
+    blend = (values - transitionStart)/(transitionEnd - transitionStart);
+    blend = min(max(blend, 0), 1);
+end
+blend = blend(:);
+end
+
+function factor = loggedAdaptiveFactor(result, n)
+factor = [];
+for name = {'auth', 'osi_gain', 'auth_factor'}
+    if isfield(result, name{1}) && numel(result.(name{1})) >= n
+        values = result.(name{1});
+        factor = values(1:n);
+        factor = factor(:);
+        return
+    end
 end
 end
 
