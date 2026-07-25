@@ -96,8 +96,8 @@ Net: 22 tunable parameters → 20, and one state field removed.
 
 | Removed | Added |
 |---|---|
-| `residual_memory_gain` (21.75) | `rho_detect` = 1.65 |
-| `memory_release_ratio` (0.6) | `rho_recover_s` = 1.5 (renamed from `rho_leak_s`) |
+| `residual_memory_gain` (21.75) | `rho_detect` = 1.75 |
+| `memory_release_ratio` (0.6) | `rho_recover_s` = 0.4 (renamed from `rho_leak_s`) |
 | `memory_reengage_ratio` (1.4) | |
 | `rho_leak_s` (8.0) | |
 | state `memory_released` (latch) | |
@@ -116,19 +116,21 @@ experimental live and GDB records.
 | | `sol_osi` | `simplified` | `simplified_5` |
 |---|---:|---:|---:|
 | all seven gates | FAIL | FAIL | **PASS** |
-| synthetic score | 92.7 | 93.0 | 91.2 |
-| experimental score | 60.9 | 66.2 | 61.5 |
+| synthetic score | 92.7 | 93.0 | 91.4 |
+| experimental score | 60.9 | 66.2 | 53.3 |
 | S3 detection | 100.0 | 60.0 | 60.0 |
-| S4 smoothness | 77.9 | 84.8 | 77.8 |
-| S5 GDB recovery | 100.0 | 100.0 | 86.0 |
-| raw composite | 86.3 | 80.8 | **75.3** |
+| S4 smoothness | 77.9 | 84.8 | 85.8 |
+| S5 GDB recovery | 100.0 | 100.0 | 77.2 |
+| raw composite | 86.3 | 80.8 | **73.5** |
 | unstable time | 0.25 s | 2.00 s | **0.00 s** |
-| G4 tail max `a` | 0.743 | 0.806 | **0.657** |
+| G4 tail max `a` | 0.743 | 0.806 | **0.571** |
 
 The raw composites of the first two methods are gated out. V5 is the only
 method with zero unstable time and an end-hold authority below the `0.736`
-limit. The promoted `rho_recover_s = 1.5` and `rho_detect = 1.65` improve the
-honest-prior baseline from 74.2 to 75.3 without losing a gate.
+limit. The reference ratio now uses the full retained 2–100 Hz band except
+58–62 Hz. Tuning `rho_recover_s = 0.4`, `rho_detect = 1.75`, and
+`reference_level_beta = 0.26` preserves every gate without changing the
+estimator equations.
 
 ## Run it
 

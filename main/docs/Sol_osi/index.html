@@ -227,6 +227,39 @@
     .pipe-row b:first-child { color: var(--copper); }
     .pipe-row span { color: var(--muted); font-size: 0.9rem; }
     .final-note { margin: 60px 0 120px; padding: 26px 0; border-top: 4px solid var(--copper); }
+    .bench-picker { display: flex; align-items: center; gap: 12px; margin: 18px 0 6px; font-family: var(--grot); font-size: 0.8rem; }
+    .bench-picker label { color: var(--muted); }
+    .bench-picker select { flex: 1; min-width: 0; padding: 7px 9px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 2px; font-family: var(--grot); font-size: 0.8rem; }
+    .bench-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 12px 0 4px; color: var(--ink); font-family: var(--grot); font-size: 0.71rem; }
+    .bench-legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .bench-legend i { width: 22px; height: 0; flex: 0 0 auto; border-top-width: 3px; border-top-style: solid; }
+    .bench-legend i.dash { border-top-width: 2px; border-top-style: dashed; }
+    .bench-scroll { overflow-x: auto; }
+    .bench-scroll svg { min-width: 560px; }
+    .plot-frame { fill: none; stroke: var(--line); stroke-width: 1; }
+    .plot-grid { stroke: #ece9e3; stroke-width: 1; }
+    .plot-tick { fill: var(--muted); font-family: var(--grot); font-size: 10px; }
+    .plot-title { fill: var(--ink); font-family: var(--grot); font-size: 11px; font-weight: 700; }
+    .plot-mark { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 6 4; }
+    .plot-mark-label { fill: var(--ink); font-family: var(--grot); font-size: 10px; font-weight: 700; }
+    .plot-ref { stroke: var(--muted); stroke-width: 1.1; stroke-dasharray: 2 3; }
+    .metric-name { border-bottom: 1px dotted var(--muted); cursor: help; }
+    .metric-name:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .bench-tip { position: fixed; z-index: 80; width: 330px; max-width: calc(100vw - 24px); padding: 14px 16px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 5px 5px 0 rgba(23, 23, 20, 0.13); font-family: var(--grot); font-size: 0.735rem; line-height: 1.58; color: var(--ink); opacity: 0; visibility: hidden; transition: opacity 110ms ease; pointer-events: none; }
+    .bench-tip.on { opacity: 1; visibility: visible; }
+    .bench-tip h4 { margin: 0 0 8px; font-size: 0.82rem; letter-spacing: 0; }
+    .bench-tip .dir { display: inline-block; margin-bottom: 9px; padding: 2px 7px; border: 1px solid; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .bench-tip .dir.up { color: var(--green); border-color: var(--green); }
+    .bench-tip .dir.down { color: var(--damage); border-color: var(--damage); }
+    .bench-tip .dir.gate { color: var(--copper); border-color: var(--copper); }
+    .bench-tip .where { margin: 0 0 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--muted); }
+    .bench-tip .where b { color: var(--ink); }
+    .bench-tip p { margin: 0 0 7px; }
+    .bench-tip p:last-child { margin-bottom: 0; }
+    .bench-table { width: 100%; margin: 22px 0; border-collapse: collapse; font-family: var(--grot); font-size: 0.82rem; }
+    .bench-table th, .bench-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+    .bench-table th:first-child, .bench-table td:first-child { text-align: left; }
+    .bench-table thead th { border-bottom: 2px solid var(--ink); color: var(--ink); }
 
     @media (max-width: 1040px) {
       .layout { grid-template-columns: minmax(0, var(--max)); }
@@ -292,11 +325,12 @@
       <a href="#stage-6">06 · Evidence fusion</a>
       <a href="#stage-7">07 · Adaptive-gain interface</a>
       <a href="#stage-8">08 · Estimator synthesis</a>
+      <a href="#stage-9">09 · Benchmark results</a>
     </nav>
 
     <main>
       <section class="lesson-section" id="stage-1" data-title="System formulation">
-        <span class="section-number">SECTION 01 / 08</span>
+        <span class="section-number">SECTION 01 / 09</span>
         <h2>Experimental Inner-Loop System Formulation</h2>
         <p class="lead">The inner loop comprises a PID controller, an experimentally identified plant, adaptive gain scaling, and negative feedback.</p>
 
@@ -411,7 +445,7 @@
       </section>
 
       <section class="lesson-section" id="stage-2" data-title="Spectral estimation">
-        <span class="section-number">SECTION 02 / 08</span>
+        <span class="section-number">SECTION 02 / 09</span>
         <h2>Short-Time Spectral Estimation of Interface Response</h2>
         <p class="lead">OSI updates at 0.125 s intervals using the most recent 0.5 s window of command and measured displacement data.</p>
 
@@ -458,22 +492,22 @@
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 70–78, 92–101, and 179–201</div>
           <pre><span class="ln">70</span>'step_s', 0.125, ...
 <span class="ln">71</span>'segment_s', 0.5, ...
-<span class="ln">78</span>'quiet_band_hz', [28 44], ...
+<span class="ln">106</span>cfg.reference_keep = cfg.keep;
 <span class="ln">99</span>cfg.window = 0.5-0.5*cos(2*pi*n/(cfg.segment_n-1));
 
-<span class="ln">179</span>Uall = fft(state.u.*cfg.window);
-<span class="ln">180</span>Yall = fft(state.y.*cfg.window);
-<span class="ln">183</span>pu = abs(U).^2;
-<span class="ln">184</span>py = abs(Y).^2;
-<span class="ln">185</span>cyu = Y.*conj(U);
-<span class="ln">199</span>state.Suu = state.Suu+q*(pu-state.Suu);
-<span class="ln">200</span>state.Syy = state.Syy+q*(py-state.Syy);
-<span class="ln">201</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
+<span class="ln">178</span>Uall = fft(state.u.*cfg.window);
+<span class="ln">179</span>Yall = fft(state.y.*cfg.window);
+<span class="ln">182</span>pu = abs(U).^2;
+<span class="ln">183</span>py = abs(Y).^2;
+<span class="ln">184</span>cyu = Y.*conj(U);
+<span class="ln">198</span>state.Suu = state.Suu+q*(pu-state.Suu);
+<span class="ln">199</span>state.Syy = state.Syy+q*(py-state.Syy);
+<span class="ln">200</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
         </details>
       </section>
 
       <section class="lesson-section" id="stage-3" data-title="Coherent identification">
-        <span class="section-number">SECTION 03 / 08</span>
+        <span class="section-number">SECTION 03 / 09</span>
         <h2>Confidence-Weighted Coherent Identification of Closed-Loop Dynamics</h2>
         <p class="lead">The coherent branch estimates the closed-loop response from the command–measurement relationship. It then blends that estimate with the known healthy model.</p>
 
@@ -524,20 +558,20 @@
         <details class="code-link step">
           <summary>Code connection · confidence-weighted loop reconstruction</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 206–216</div>
-          <pre><span class="ln">206</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
-<span class="ln">207</span>p_rel = state.Suu/max(max(state.Suu), eps);
-<span class="ln">208</span>leverage = p_rel./(p_rel+cfg.power_floor);
-<span class="ln">209</span>confidence = activity*gamma2.*leverage;
-<span class="ln">210</span>That = state.Syu./max(state.Suu, eps);
-<span class="ln">211</span>Tuse = confidence.*That+(1-confidence).*Tprior;
-<span class="ln">215</span>Lhat = Tuse./den;
-<span class="ln">216</span>b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);</pre>
+          <pre><span class="ln">205</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
+<span class="ln">206</span>p_rel = state.Suu/max(max(state.Suu), eps);
+<span class="ln">207</span>leverage = p_rel./(p_rel+cfg.power_floor);
+<span class="ln">208</span>confidence = activity*gamma2.*leverage;
+<span class="ln">209</span>That = state.Syu./max(state.Suu, eps);
+<span class="ln">210</span>Tuse = confidence.*That+(1-confidence).*Tprior;
+<span class="ln">214</span>Lhat = Tuse./den;
+<span class="ln">215</span>b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);</pre>
         </details>
 
       </section>
 
       <section class="lesson-section" id="stage-4" data-title="Chordal stability margin">
-        <span class="section-number">SECTION 04 / 08</span>
+        <span class="section-number">SECTION 04 / 09</span>
         <h2>Chordal-Distance Formulation of the Online Stability Indicator</h2>
         <p class="lead">At each frequency, OSI evaluates the separation between the estimated loop and the critical feedback condition; the minimum separation defines the reported margin.</p>
 
@@ -570,23 +604,23 @@
         <details class="code-link step">
           <summary>Code connection · chordal curve and worst-frequency selection</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 111–114, 216–218, and 358–363</div>
-          <pre><span class="ln">111</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
-<span class="ln">113</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
-<span class="ln">114</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
+          <pre><span class="ln">110</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
+<span class="ln">112</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
+<span class="ln">113</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
 
-<span class="ln">216</span>b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);
-<span class="ln">217</span>full_coherent = minMasked(movmedian(chordal(min(1/a_now, 4)*Lhat, ...
-<span class="ln">218</span>    cfg.cap), 3), cfg.keep);
+<span class="ln">215</span>b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);
+<span class="ln">216</span>full_coherent = minMasked(movmedian(chordal(min(1/a_now, 4)*Lhat, ...
+<span class="ln">217</span>    cfg.cap), 3), cfg.keep);
 
-<span class="ln">358</span>function b = chordal(L, cap)
-<span class="ln">359</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
-<span class="ln">362</span>function y = minMasked(x, mask)
-<span class="ln">363</span>y = min(x(mask));</pre>
+<span class="ln">361</span>function b = chordal(L, cap)
+<span class="ln">362</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
+<span class="ln">365</span>function y = minMasked(x, mask)
+<span class="ln">366</span>y = min(x(mask));</pre>
         </details>
       </section>
 
       <section class="lesson-section" id="stage-5" data-title="Residual evidence">
-        <span class="section-number">SECTION 05 / 08</span>
+        <span class="section-number">SECTION 05 / 09</span>
         <h2>Residual Output-Energy Inference under Weak Excitation</h2>
         <p class="lead">When command excitation is insufficient for coherent identification, OSI evaluates changes in measured output spectra relative to a healthy reference.</p>
 
@@ -615,16 +649,18 @@
             \qquad\omega\in\Omega\]
             <span class="label">Every usable frequency in $\Omega$ independently selects its best candidate $\rho$.</span>
           </div>
-          <p>The separate quiet set $\mathcal Q$ supplies a scalar reference ratio used by the recovery criterion of Section 06. It does not restrict the frequency-by-frequency fit:</p>
+          <p>The scalar reference ratio used by the recovery criterion of Section 06 is now evaluated over the same complete retained frequency set as the fit. There is no separately hard-coded 28–44 Hz quiet band:</p>
           <div class="equation">
-            \[\mathcal Q=\left\{\omega=2\pi f:\;28\,\mathrm{Hz}\le f\le44\,\mathrm{Hz}\right\}\]
-            \[r_{\mathcal Q}=\operatorname{median}_{\omega\in\mathcal Q}q_{obs}(\omega)\]
-            <span class="label">$\Omega$ fits $\rho(\omega)$; $\mathcal Q$ only supports the quiet-reference and recovery logic.</span>
+            \[\mathcal Q\equiv\Omega
+            =\left\{\omega=2\pi f:\;2\,\mathrm{Hz}\le f\le100\,\mathrm{Hz},\quad
+            f\notin[58,62]\,\mathrm{Hz}\right\}\]
+            \[r_{\mathcal Q}=\operatorname{median}_{\omega\in\Omega}q_{obs}(\omega)\]
+            <span class="label">The reference ratio therefore generalizes automatically with the configured analysis band and line-rejection mask.</span>
           </div>
-          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 0.84 s update time constant while activity is present. It decays back toward the healthy value $\rho=1$ with a 2 s time constant whenever the recovery criterion of Section 06 holds:</p>
+          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 0.84 s update time constant while activity is present. It decays back toward the healthy value $\rho=1$ with a 0.4 s time constant whenever the recovery criterion of Section 06 holds:</p>
           <div class="equation">
             \[\tau_{\rho,\mathrm{update}}=0.84\,\mathrm{s},
-            \qquad \tau_{rec}=2\,\mathrm{s}\]
+            \qquad \tau_{rec}=0.4\,\mathrm{s}\]
           </div>
           <p>The <strong>residual margin</strong> $b_{res}(\omega)$ is the chordal margin predicted by the frequency-dependent loop-growth hypothesis, kept as a curve just as $b_{ST}(\omega)$ is. A three-bin moving median is applied across adjacent frequency bins:</p>
           <div class="equation accent">
@@ -646,30 +682,29 @@
           <summary>Code connection · healthy reference and frequency-dependent rho fit</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 74–84, 105–107, 188–190, 226–227, 233–248, and 286</div>
           <pre><span class="ln">74</span>'residual_s', 0.84, ...
-<span class="ln">78</span>'quiet_band_hz', [28 44], ...
-<span class="ln">84</span>'rho_recover_s', 2.0, ...
+<span class="ln">83</span>'rho_recover_s', 0.4, ...
+<span class="ln">86</span>'reference_level_beta', 0.26, ...
 <span class="ln">105</span>cfg.rho_fit_keep = cfg.keep;
-<span class="ln">106</span>cfg.quiet_keep = cfg.keep &amp; cfg.freq_hz &gt;= cfg.quiet_band_hz(1) &amp; ...
-<span class="ln">107</span>    cfg.freq_hz &lt;= cfg.quiet_band_hz(2);
+<span class="ln">106</span>cfg.reference_keep = cfg.keep;
 
-<span class="ln">188</span>state.q_ref_samples(:, state.q_ref_count) = py;
-<span class="ln">190</span>state.q_ref = median(state.q_ref_samples, 2);
+<span class="ln">187</span>state.q_ref_samples(:, state.q_ref_count) = py;
+<span class="ln">189</span>state.q_ref = median(state.q_ref_samples, 2);
 
-<span class="ln">226</span>qobs = state.Syy./max(state.q_ref, eps);
-<span class="ln">227</span>state.reference_ratio = median(qobs(cfg.quiet_keep));
-<span class="ln">233</span>loss = inf(numel(cfg.L0), numel(cfg.rho_grid));
-<span class="ln">242</span>loss(cfg.rho_fit_keep, k) = abs( ...
-<span class="ln">243</span>    log(max(qobs(cfg.rho_fit_keep), eps))- ...
-<span class="ln">244</span>    log(max(qmod(cfg.rho_fit_keep), eps)));
-<span class="ln">248</span>rho_best(cfg.rho_fit_keep) = rho_values(kbest(cfg.rho_fit_keep));
+<span class="ln">225</span>qobs = state.Syy./max(state.q_ref, eps);
+<span class="ln">226</span>state.reference_ratio = median(qobs(cfg.reference_keep));
+<span class="ln">232</span>loss = inf(numel(cfg.L0), numel(cfg.rho_grid));
+<span class="ln">241</span>loss(cfg.rho_fit_keep, k) = abs( ...
+<span class="ln">242</span>    log(max(qobs(cfg.rho_fit_keep), eps))- ...
+<span class="ln">243</span>    log(max(qmod(cfg.rho_fit_keep), eps)));
+<span class="ln">247</span>rho_best(cfg.rho_fit_keep) = rho_values(kbest(cfg.rho_fit_keep));
 
-<span class="ln">286</span>b_rho_curve = movmedian(chordal(a_now*rho.*cfg.L0, cfg.cap), 3);</pre>
+<span class="ln">285</span>b_rho_curve = movmedian(chordal(a_now*rho.*cfg.L0, cfg.cap), 3);</pre>
         </details>
 
       </section>
 
       <section class="lesson-section" id="stage-6" data-title="Evidence fusion">
-        <span class="section-number">SECTION 06 / 08</span>
+        <span class="section-number">SECTION 06 / 09</span>
         <h2>Per-Frequency Fusion of Stability Evidence</h2>
         <p class="lead">Neither branch is trusted everywhere. Both are kept as curves over frequency, every bin is charged for the evidence it actually has, and only then does the weakest bin govern.</p>
 
@@ -692,10 +727,10 @@
           <div class="equation">
             \[w_{ST}(\omega)=c(\omega)=A\,\gamma^2(\omega)\,\ell(\omega)\]
           </div>
-          <p>The second is a detection weight $d(\omega)$. The fitted loop growth $\rho(\omega)$ only means something once it clears the resolution of the $\rho$ fit itself; below the threshold $\rho_{det}=1.65$ the deviation carries little residual evidence. Where $\rho$ does clear it, the residual model $b_{res}(\omega)$ is worth believing to the extent the loop is <em>not</em> directly visible:</p>
+          <p>The second is a detection weight $d(\omega)$. The fitted loop growth $\rho(\omega)$ only means something once it clears the resolution of the $\rho$ fit itself; below the threshold $\rho_{det}=1.75$ the deviation carries little residual evidence. Where $\rho$ does clear it, the residual model $b_{res}(\omega)$ is worth believing to the extent the loop is <em>not</em> directly visible:</p>
           <div class="equation">
             \[d(\omega)=\operatorname{clamp}\!\left(\frac{\rho(\omega)-1}{\rho_{det}-1},0,1\right),
-            \qquad \rho_{det}=1.65\]
+            \qquad \rho_{det}=1.75\]
             \[w_{res}(\omega)=\big(1-c(\omega)\big)\,d(\omega)\]
           </div>
           <p>The two weights never sum to more than one. Whatever is left over is the unsupported share, which falls back to the current authority-scaled commissioning prior $b_{prior}(\omega)$. This makes the reported value an estimate of the loop margin rather than treating “unknown” as the largest possible margin.</p>
@@ -741,13 +776,13 @@
           <p>Only the residual branch carries memory, so it is the only thing that has to forget. That memory exists because the observed output power stood above the healthy reference, so it decays whenever that is no longer true — one criterion covering both the quiet case and the driven-after-repair case:</p>
           <div class="equation accent">
             \[\log\rho[n]\;\longleftarrow\;\log\rho[n]\Big(1-\sigma_{rec}\,\mathbb 1\{r_{\mathcal Q}<1\}\Big),
-            \qquad \tau_{rec}=1.5\,\mathrm{s}\]
+            \qquad \tau_{rec}=0.4\,\mathrm{s}\]
             \[\sigma_{rec}=1-\exp\!\left(-\frac{\Delta t_u}{\tau_{rec}}\right),
             \qquad \Delta t_u=0.125\,\mathrm{s},
-            \qquad \sigma_{rec}\approx0.07996\]
-            <span class="label">$r_{\mathcal Q}$ is the quiet-set reference ratio from Section 05.</span>
+            \qquad \sigma_{rec}\approx0.26838\]
+            <span class="label">$r_{\mathcal Q}$ is the full retained-band reference ratio from Section 05.</span>
           </div>
-          <p>Here $\sigma_{rec}$ is the dimensionless decay applied at each estimator update, $\Delta t_u$ is the update interval, and $\tau_{rec}$ is the continuous-time recovery constant. When $r_{\mathcal Q}&lt;1$, each update multiplies $\log\rho$ by approximately $0.92004$; otherwise this recovery step leaves it unchanged. This replaces both the blind decay that ran only while $A=0$ and the two-threshold release/re-engage hysteresis on $r_{\mathcal Q}$.</p>
+          <p>Here $\sigma_{rec}$ is the dimensionless decay applied at each estimator update, $\Delta t_u$ is the update interval, and $\tau_{rec}$ is the continuous-time recovery constant. When $r_{\mathcal Q}&lt;1$, each update multiplies $\log\rho$ by approximately $0.73162$; otherwise this recovery step leaves it unchanged. This replaces both the blind decay that ran only while $A=0$ and the two-threshold release/re-engage hysteresis on $r_{\mathcal Q}$.</p>
         </div>
 
         <div class="lab step">
@@ -763,35 +798,40 @@
           <summary>Code connection · recovery criterion, per-bin weights, and final margin smoothing</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 73, 81–85, 163–164, 261, 281–283, and 299–305</div>
           <pre><span class="ln">73</span>'margin_s', 0.08, ...
-<span class="ln">81</span>'eta_A', 0.0575, ...
-<span class="ln">82</span>'hard_activity_gain', 0.80, ...
-<span class="ln">83</span>'detector_max', 1.95, ...
-<span class="ln">84</span>'rho_recover_s', 1.5, ...
-<span class="ln">85</span>'rho_detect', 1.65, ...
+<span class="ln">80</span>'eta_A', 0.0575, ...
+<span class="ln">81</span>'hard_activity_gain', 0.80, ...
+<span class="ln">82</span>'detector_max', 1.95, ...
+<span class="ln">83</span>'rho_recover_s', 0.4, ...
+<span class="ln">84</span>'rho_detect', 1.75, ...
+<span class="ln">86</span>'reference_level_beta', 0.26, ...
 
-<span class="ln">163</span>activity = double(rms(state.u) &gt; cfg.eta_A);
-<span class="ln">164</span>activation_weight = cfg.hard_activity_gain*activity;
-<span class="ln">261</span>drive_ratio = 1+activation_weight*kick;
+<span class="ln">162</span>activity = double(rms(state.u) &gt; cfg.eta_A);
+<span class="ln">163</span>activation_weight = cfg.hard_activity_gain*activity;
+<span class="ln">260</span>drive_ratio = 1+activation_weight*kick;
 
-<span class="ln">281</span>forgetting = double(state.reference_ratio &lt; 1);
-<span class="ln">282</span>state.log_rho = state.log_rho*(1-cfg.recover_alpha*forgetting);
-<span class="ln">283</span>rho = exp(state.log_rho)*drive_ratio;
+<span class="ln">280</span>forgetting = double(state.reference_ratio &lt; 1);
+<span class="ln">281</span>state.log_rho = state.log_rho*(1-cfg.recover_alpha*forgetting);
+<span class="ln">282</span>rho = exp(state.log_rho)*drive_ratio;
 
-<span class="ln">299</span>detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
-<span class="ln">300</span>w_st = confidence;
-<span class="ln">301</span>w_res = (1-confidence).*detected;
-<span class="ln">302</span>b_bin = w_st.*b_st_curve+w_res.*b_rho_curve ...
-<span class="ln">303</span>    +(1-w_st-w_res).*b_prior_curve;
+<span class="ln">297</span>detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
+<span class="ln">298</span>w_st = confidence;
+<span class="ln">299</span>w_res = (1-confidence).*detected;
+<span class="ln">300</span>no_evidence_curve = cfg.cap*ones(size(b_prior_curve));
+<span class="ln">301</span>if cfg.no_evidence_prior
+<span class="ln">302</span>    no_evidence_curve = b_prior_curve;
+<span class="ln">303</span>end
+<span class="ln">304</span>b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+ ...
+<span class="ln">305</span>    (1-w_st-w_res).*no_evidence_curve;
 <span class="ln">307</span>[b_raw, governing_local] = min(b_bin(cfg.keep));
-<span class="ln">315</span>info.residual_weight = w_res(governing_bin);
-<span class="ln">316</span>info.direct_fraction = w_st(governing_bin);
-<span class="ln">317</span>info.fallback_fraction = 1-w_st(governing_bin)-w_res(governing_bin);
-<span class="ln">318</span>info.governing_freq_hz = cfg.freq_hz(governing_bin);</pre>
+<span class="ln">314</span>    activity, w_res(governing_bin), rho_best, full_coherent, cfg, state);
+<span class="ln">315</span>info.direct_fraction = w_st(governing_bin);
+<span class="ln">316</span>info.fallback_fraction = 1-w_st(governing_bin)-w_res(governing_bin);
+<span class="ln">317</span>info.governing_freq_hz = cfg.freq_hz(governing_bin);</pre>
         </details>
       </section>
 
       <section class="lesson-section" id="stage-7" data-title="Adaptive-gain interface">
-        <span class="section-number">SECTION 07 / 08</span>
+        <span class="section-number">SECTION 07 / 09</span>
         <h2>Separation of Stability Estimation and Adaptive-Gain Control</h2>
         <p class="lead">OSI estimates the stability margin $b$, while a separate adaptive-gain law determines the controller response.</p>
 
@@ -829,11 +869,11 @@
         <details class="code-link step">
           <summary>Code connection · applied adaptive gain enters the estimator</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 165–169; predict_inner_margin.m · lines 3–11</div>
-          <pre><span class="ln">165</span>a_now = min(max(state.a_cmd, 0.02), 1);
-<span class="ln">166</span>Lprior = a_now*cfg.L0;
-<span class="ln">167</span>Tprior = Lprior./(1+Lprior);
-<span class="ln">168</span>b_prior_curve = chordal(Lprior, cfg.cap);
-<span class="ln">169</span>b_prior = minMasked(b_prior_curve, cfg.keep);
+          <pre><span class="ln">164</span>a_now = min(max(state.a_cmd, 0.02), 1);
+<span class="ln">165</span>Lprior = a_now*cfg.L0;
+<span class="ln">166</span>Tprior = Lprior./(1+Lprior);
+<span class="ln">167</span>b_prior_curve = chordal(Lprior, cfg.cap);
+<span class="ln">168</span>b_prior = minMasked(b_prior_curve, cfg.keep);
 
 <span class="ln">3</span>% T = feedback(a*C_pid*H_dc_dm, 1), with open loop
 <span class="ln">4</span>% L(a) = a * C_pid * H_dc_dm.
@@ -844,7 +884,7 @@
       </section>
 
       <section class="lesson-section" id="stage-8" data-title="Estimator synthesis">
-        <span class="section-number">SECTION 08 / 08</span>
+        <span class="section-number">SECTION 08 / 09</span>
         <h2>Integrated Mathematical Formulation of the OSI Estimator</h2>
         <p class="lead">The complete OSI update is summarized as an eight-stage computational sequence.</p>
 
@@ -866,7 +906,43 @@
         <div class="final-note step">
           <h3>Correspondence Between Mathematical Formulation and Implementation</h3>
           <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code>; it does not replace the production SOL-OSI implementation.</p>
-          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade. In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, this implementation is the only one of the three compared methods to pass all seven gates. It scores 75.3, has zero unstable time, and holds tail authority to 0.657 against the 0.736 limit.</p>
+          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade. The recovery ratio now uses the full retained analysis band rather than a fixed 28–44 Hz subset. In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, this implementation passes all seven gates, scores 73.5, has zero unstable time, and holds tail authority to 0.571 against the 0.736 limit.</p>
+          <h3>Fabby Bench 2 Comparison</h3>
+          <p>The detection score counts the five known diagnostic-gain increases—three in the live experimental scenario and two in GDB—and awards one fifth for each event reflected in the reading or authority response within two seconds. Simplified_5 detects 3 of 5: live latencies 0.24 s, missed, and 0.42 s; GDB latencies missed and 0.50 s. Therefore its detection score is $100(3/5)=60$.</p>
+          <p>The current implementation has the strongest detection score, but it fails the zero-unstable-time and end-hold gates. Its raw composite is therefore not an accepted benchmark result. Generalized simplified_5 gives up two of the five fast-detection events and some experimental regulation score, but it is the only compared implementation that passes every gate. Section 09 replays every test of the benchmark and tabulates the scorecard.</p>
+        </div>
+      </section>
+
+      <section class="lesson-section" id="stage-9" data-title="Benchmark results">
+        <span class="section-number">SECTION 09 / 09</span>
+        <h2>Fabby Bench 2: Measured Behaviour of the Three Implementations</h2>
+        <p class="lead">Every test of the benchmark, replayed for the production estimator, the earlier simplified form, and the generalized simplified_5, with the reported margin and the applied authority factor side by side.</p>
+
+        <div class="lab step">
+          <div class="lab-head"><strong>Test Replay</strong><span id="benchMeta">select a test</span></div>
+          <div class="bench-picker">
+            <label for="benchTest">test</label>
+            <select id="benchTest"></select>
+          </div>
+          <div class="bench-legend" id="benchLegend"></div>
+          <div class="bench-scroll">
+            <svg id="benchPlot" viewBox="0 0 760 660" role="img" aria-label="Measured displacement, online stability indicator, and authority factor for the selected benchmark test"></svg>
+          </div>
+          <p class="margin-note" id="benchNote"></p>
+        </div>
+
+        <div class="step">
+          <p>The measured displacement is drawn once per implementation, because in every closed-loop test the authority factor scales the command that drives the plant: where the three traces separate, the implementations have driven the specimen differently. Dashed vertical marks give the plant blend used by the synthetic scenarios, where $\lambda=0$ is the identified 7k model and $\lambda=1$ the 5k model. Where a test provides ground truth, the true chordal margin is drawn dashed in each implementation's own colour, since it depends on the authority that implementation applied. The diagnostic gain, where the record carries one, is drawn against the right-hand axis of the authority panel.</p>
+        </div>
+
+        <div class="step">
+          <h3>Scorecard</h3>
+          <p>Read directly from the saved Fabby Bench 2 results, so this table cannot disagree with the benchmark that produced it. A raw composite is reported only when all seven gates pass; the other two are shown for reference and marked as gated out. <strong>Hover or tab onto any metric name</strong> for what it measures, whether high or low is the good direction, and which test in the dropdown above to look at.</p>
+          <table class="bench-table" id="benchTable">
+            <thead><tr><th>Metric</th><th>implemented</th><th>simplified</th><th>simplified_5</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p class="margin-note" id="benchTableNote"></p>
         </div>
       </section>
     </main>
@@ -1024,7 +1100,7 @@
     function updateRho(){const r=+document.getElementById('rhoSlider').value;document.getElementById('rhoOut').textContent=r.toFixed(2);document.getElementById('rhoMargin').textContent=rhoMargin(r).toFixed(3);document.getElementById('rhoWord').textContent=r<.9?'smaller loop':r<1.1?'healthy scale':'loop growth';}
     document.getElementById('rhoSlider').addEventListener('input',updateRho);updateRho();
 
-    function updateBlend(){const c=+document.getElementById('activitySlider').value,rho=+document.getElementById('memorySlider').value,rhoDet=1.65,cap=Math.SQRT1_2,bst=.41,bprior=.35,d=Math.min(Math.max((rho-1)/(rhoDet-1),0),1),wSt=c,wRes=(1-c)*d,wNone=1-wSt-wRes,bres=Math.min(cap,.35/rho),bbin=wSt*bst+wRes*bres+wNone*bprior;document.getElementById('activityOut').textContent=c.toFixed(2);document.getElementById('memoryOut').textContent=rho.toFixed(2);document.getElementById('idleReadout').textContent=`${wSt.toFixed(2)} / ${wRes.toFixed(2)} / ${wNone.toFixed(2)}`;document.getElementById('blendReadout').textContent=bbin.toFixed(3);}
+    function updateBlend(){const c=+document.getElementById('activitySlider').value,rho=+document.getElementById('memorySlider').value,rhoDet=1.75,cap=Math.SQRT1_2,bst=.41,bprior=.35,d=Math.min(Math.max((rho-1)/(rhoDet-1),0),1),wSt=c,wRes=(1-c)*d,wNone=1-wSt-wRes,bres=Math.min(cap,.35/rho),bbin=wSt*bst+wRes*bres+wNone*bprior;document.getElementById('activityOut').textContent=c.toFixed(2);document.getElementById('memoryOut').textContent=rho.toFixed(2);document.getElementById('idleReadout').textContent=`${wSt.toFixed(2)} / ${wRes.toFixed(2)} / ${wNone.toFixed(2)}`;document.getElementById('blendReadout').textContent=bbin.toFixed(3);}
     ['activitySlider','memorySlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateBlend));updateBlend();
 
     document.querySelectorAll('.term').forEach(button=>button.addEventListener('click',()=>{const def=button.parentElement.nextElementSibling;const open=def.classList.toggle('open');button.setAttribute('aria-expanded',open);}));
@@ -1033,6 +1109,346 @@
     const sectionObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){const i=sections.indexOf(e.target);links.forEach((a,j)=>a.classList.toggle('active',i===j));document.getElementById('progressSection').textContent=e.target.dataset.title;}}),{rootMargin:'-35% 0px -55% 0px'});sections.forEach(s=>sectionObserver.observe(s));
     function updateProgress(){const max=document.documentElement.scrollHeight-innerHeight,p=max?scrollY/max:0;document.getElementById('progressFill').style.width=`${p*100}%`;document.getElementById('progressPercent').textContent=`${Math.round(p*100)}%`;}
     addEventListener('scroll',updateProgress,{passive:true});updateProgress();
+  </script>
+
+  <script src="bench2_data.js"></script>
+  <script>
+  (function(){
+    const D = window.BENCH2_DATA;
+    const svg = document.getElementById('benchPlot');
+    if (!D || !svg) { return; }
+    const NS = 'http://www.w3.org/2000/svg';
+    const W = 760, PAD_L = 54, PAD_R = 48, PAD_T = 20, PAD_B = 26, GAP = 34, PH = 176;
+    const PLOT_W = W - PAD_L - PAD_R;
+
+    const el = (n, a) => { const e = document.createElementNS(NS, n);
+      for (const k in a) e.setAttribute(k, a[k]); return e; };
+    const num = v => (v === null || v === undefined || Number.isNaN(v)) ? null : v;
+
+    // ---- axis helpers -----------------------------------------------------
+    function niceTicks(lo, hi, want){
+      if (!(hi > lo)) return [lo];
+      const raw = (hi - lo)/want, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+      const norm = raw/mag, step = mag*(norm >= 5 ? 5 : norm >= 2 ? 2 : norm >= 1 ? 1 : 0.5);
+      const out = [];
+      for (let v = Math.ceil(lo/step)*step; v <= hi + step*1e-6; v += step) out.push(+v.toFixed(10));
+      return out;
+    }
+    const fmt = v => Math.abs(v) >= 1000 ? v.toExponential(1)
+      : (Math.abs(v) < 0.01 && v !== 0) ? v.toFixed(3)
+      : (Number.isInteger(v) ? String(v) : v.toFixed(2));
+
+    function extent(arrays){
+      let lo = Infinity, hi = -Infinity;
+      arrays.forEach(a => a && a.forEach(v => { v = num(v);
+        if (v !== null) { if (v < lo) lo = v; if (v > hi) hi = v; } }));
+      if (!isFinite(lo)) { lo = 0; hi = 1; }
+      if (hi === lo) { hi = lo + 1; }
+      return [lo, hi];
+    }
+
+    // ---- one panel --------------------------------------------------------
+    function panel(top, title, xr, yr, opts){
+      const g = el('g', {transform: `translate(0,${top})`});
+      const X = v => PAD_L + (v - xr[0])/(xr[1] - xr[0])*PLOT_W;
+      const Y = v => PH - (v - yr[0])/(yr[1] - yr[0])*PH;
+      g.appendChild(el('text', {x: PAD_L, y: -6, class: 'plot-title'})).textContent = title;
+      niceTicks(yr[0], yr[1], 4).forEach(v => {
+        const y = Y(v);
+        if (y < -0.5 || y > PH + 0.5) return;
+        g.appendChild(el('line', {x1: PAD_L, x2: PAD_L + PLOT_W, y1: y, y2: y, class: 'plot-grid'}));
+        const t = el('text', {x: PAD_L - 7, y: y + 3.5, class: 'plot-tick', 'text-anchor': 'end'});
+        t.textContent = fmt(v); g.appendChild(t);
+      });
+      niceTicks(xr[0], xr[1], 6).forEach(v => {
+        const x = X(v);
+        if (x < PAD_L - 0.5 || x > PAD_L + PLOT_W + 0.5) return;
+        g.appendChild(el('line', {x1: x, x2: x, y1: 0, y2: PH, class: 'plot-grid'}));
+        const t = el('text', {x: x, y: PH + 15, class: 'plot-tick', 'text-anchor': 'middle'});
+        t.textContent = fmt(v); g.appendChild(t);
+      });
+      g.appendChild(el('rect', {x: PAD_L, y: 0, width: PLOT_W, height: PH, class: 'plot-frame'}));
+      if (opts && opts.right){
+        const R = opts.right;
+        niceTicks(R.lo, R.hi, 3).forEach(v => {
+          const y = PH - (v - R.lo)/(R.hi - R.lo)*PH;
+          if (y < -0.5 || y > PH + 0.5) return;
+          const t = el('text', {x: PAD_L + PLOT_W + 7, y: y + 3.5, class: 'plot-tick'});
+          t.textContent = fmt(v); g.appendChild(t);
+        });
+        const lab = el('text', {x: PAD_L + PLOT_W + 7, y: -6, class: 'plot-tick'});
+        lab.textContent = R.title; g.appendChild(lab);
+      }
+      return {g: g, X: X, Y: Y};
+    }
+
+    function line(p, xs, ys, color, dashed, width){
+      let d = '', pen = false;
+      const n = Math.min(xs.length, ys.length);
+      for (let i = 0; i < n; i++){
+        const yv = num(ys[i]), xv = num(xs[i]);
+        if (yv === null || xv === null) { pen = false; continue; }
+        d += (pen ? 'L' : 'M') + p.X(xv).toFixed(1) + ' ' + p.Y(yv).toFixed(1) + ' ';
+        pen = true;
+      }
+      if (!d) return;
+      const a = {d: d, fill: 'none', stroke: color, 'stroke-width': width || 1.7,
+        'stroke-linejoin': 'round'};
+      if (dashed) a['stroke-dasharray'] = '6 4';
+      p.g.appendChild(el('path', a));
+    }
+
+    function hline(p, v, xr){
+      p.g.appendChild(el('line', {x1: p.X(xr[0]), x2: p.X(xr[1]),
+        y1: p.Y(v), y2: p.Y(v), class: 'plot-ref'}));
+    }
+
+    function marks(p, list, xr){
+      list.forEach(m => {
+        if (m.t < xr[0] || m.t > xr[1]) return;
+        const x = p.X(m.t);
+        p.g.appendChild(el('line', {x1: x, x2: x, y1: 0, y2: PH, class: 'plot-mark'}));
+        const t = el('text', {x: x + 4, y: 12, class: 'plot-mark-label'});
+        t.textContent = m.label; p.g.appendChild(t);
+      });
+    }
+
+    // ---- draw one test ----------------------------------------------------
+    function draw(test){
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      const M = D.methods;
+      const dmSeries = M.map(m => test.dm[m.key]).filter(Boolean);
+      // mark times join the extent so a transition at t = 0 (a scenario that
+      // starts damaged) is not clipped off the left edge
+      const xr = extent([test.dm_t, test.tc, (test.marks || []).map(m => m.t)]);
+      const rows = [];
+
+      // panel 1 - measured displacement
+      const dmr = extent(dmSeries);
+      const pad = (dmr[1] - dmr[0])*0.08;
+      const p1 = panel(PAD_T, 'measured displacement  dm', xr, [dmr[0] - pad, dmr[1] + pad]);
+      marks(p1, test.marks || [], xr);
+      M.forEach(m => { if (test.dm[m.key]) line(p1, test.dm_t, test.dm[m.key], m.color, false, 0.9); });
+      rows.push(p1);
+
+      // panel 2 - reported margin (and true NCF where it exists)
+      const osiSeries = M.map(m => test.osi[m.key]).filter(Boolean);
+      const ncfSeries = test.has_ncf ? M.map(m => test.ncf[m.key]).filter(Boolean) : [];
+      let or_ = extent(osiSeries.concat(ncfSeries, [[test.target]]));
+      or_ = [Math.max(0, or_[0] - 0.04), Math.min(0.75, or_[1] + 0.04)];
+      const p2 = panel(PAD_T + PH + GAP, 'online stability indicator  b', xr, or_);
+      hline(p2, test.target, xr);
+      const tl = el('text', {x: PAD_L + 4, y: p2.Y(test.target) - 4, class: 'plot-tick'});
+      tl.textContent = 'target ' + test.target; p2.g.appendChild(tl);
+      marks(p2, test.marks || [], xr);
+      if (test.has_ncf) M.forEach(m => { if (test.ncf[m.key]) line(p2, test.tc, test.ncf[m.key], m.color, true, 1.3); });
+      M.forEach(m => { if (test.osi[m.key]) line(p2, test.tc, test.osi[m.key], m.color, false, 1.7); });
+      rows.push(p2);
+
+      // panel 3 - authority factor (and diagnostic gain on the right axis)
+      const p3opts = {};
+      if (test.has_gain){
+        const gr = extent([test.gain]);
+        p3opts.right = {lo: Math.min(1, gr[0]) - 0.1, hi: gr[1] + 0.2, title: 'diagnostic gain'};
+      }
+      const p3 = panel(PAD_T + 2*(PH + GAP), 'authority factor  a', xr, [0, 1.06], p3opts);
+      marks(p3, test.marks || [], xr);
+      if (test.has_gain){
+        const R = p3opts.right;
+        const scaled = test.gain.map(v => num(v) === null ? null : (v - R.lo)/(R.hi - R.lo)*1.06);
+        line(p3, test.tc, scaled, '#171714', true, 1.3);
+      }
+      M.forEach(m => { if (test.auth[m.key]) line(p3, test.tc, test.auth[m.key], m.color, false, 1.7); });
+      rows.push(p3);
+
+      rows.forEach(p => svg.appendChild(p.g));
+      const xlab = el('text', {x: PAD_L + PLOT_W/2, y: PAD_T + 3*(PH + GAP) - GAP + PAD_B,
+        class: 'plot-tick', 'text-anchor': 'middle'});
+      xlab.textContent = 'time [s]';
+      svg.appendChild(xlab);
+
+      // legend + captions
+      const leg = document.getElementById('benchLegend');
+      leg.innerHTML = '';
+      M.forEach(m => {
+        const s = document.createElement('span');
+        s.innerHTML = '<i style="border-top-color:' + m.color + '"></i>' + m.label;
+        leg.appendChild(s);
+      });
+      if (test.has_ncf){
+        const s = document.createElement('span');
+        s.innerHTML = '<i class="dash" style="border-top-color:#686760"></i>true NCF (per implementation)';
+        leg.appendChild(s);
+      }
+      if (test.has_gain){
+        const s = document.createElement('span');
+        s.innerHTML = '<i class="dash" style="border-top-color:#171714"></i>diagnostic gain (right axis)';
+        leg.appendChild(s);
+      }
+      document.getElementById('benchMeta').textContent =
+        test.group + ' test  ·  target ' + test.target;
+      document.getElementById('benchNote').textContent = test.note || '';
+    }
+
+    // ---- dropdown ---------------------------------------------------------
+    const sel = document.getElementById('benchTest');
+    const groups = {synthetic: 'Synthetic suite', experimental: 'Experimental records'};
+    Object.keys(groups).forEach(gk => {
+      const og = document.createElement('optgroup');
+      og.label = groups[gk];
+      D.tests.forEach((t, i) => {
+        if (t.group !== gk) return;
+        const o = document.createElement('option');
+        o.value = String(i); o.textContent = t.label;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    sel.addEventListener('change', () => draw(D.tests[+sel.value]));
+    const firstExp = D.tests.findIndex(t => t.group === 'experimental');
+    sel.value = String(firstExp >= 0 ? firstExp : 0);
+    draw(D.tests[+sel.value]);
+
+    // ---- what each metric means (definitions of run_osi_benchmark.m) ------
+    const INFO = {
+      all_gates_pass: {dir: 'gate', dirText: 'all seven must pass',
+        where: 'Every test: the ten synthetic cases, the live record and the GDB replay.',
+        body: ['G1 suite 10/10 · G2 synthetic score above 90 · G3 zero unstable time · ' +
+               'G4 end-hold · G5 no GDB idle shed · G6 GDB quake flagged within 2 s · ' +
+               'G7 no NaN and no authority step beyond the method’s declared max.',
+               'These are pass/fail facts, not preferences. A method is an accepted ' +
+               'result only when all seven pass; otherwise its composite is reported ' +
+               'for reference only and marked gated out.']},
+      fabby_score_1: {dir: 'up', dirText: 'higher is better',
+        where: 'Synthetic suite — all ten cases in the dropdown.',
+        body: ['How closely the reported b tracks the true margin the model actually ' +
+               'has, averaged over the ten cases. Reading too high (claiming more ' +
+               'margin than exists) is the unsafe direction and is weighted three ' +
+               'times as heavily as reading too low; the error scale is 0.10.',
+               'Gate G2 requires more than 90, so this doubles as a pass/fail line.']},
+      fabby_score_2: {dir: 'up', dirText: 'higher is better',
+        where: 'Experimental → <b>Live closed loop</b> only.',
+        body: ['Not estimation quality but regulation quality: how well the TRUE ' +
+               'margin is held at the ideal setpoint b* = max(target, margin at full ' +
+               'authority). It asks what the loop ended up at, not what the estimator ' +
+               'said about it.',
+               'Saturated per update, so a bounded bad stretch costs its own duration ' +
+               'instead of zeroing the score. That keeps it readable even when a ' +
+               'stability gate has already failed.']},
+      S3_detection: {dir: 'up', dirText: 'higher is better',
+        where: 'Five diagnostic-gain rises: three in <b>Live closed loop</b>, two in <b>GDB replay</b>.',
+        body: ['The fraction of those five rises the method reacts to within 2 s, ' +
+               'either by the reading dropping 0.04 below its own healthy level or by ' +
+               'the authority factor responding.',
+               'Only five events exist, so this moves in steps of 20. Watch the ' +
+               'diagnostic-gain trace on the authority panel and check whether b or a ' +
+               'moves as it steps up.']},
+      S4_smoothness: {dir: 'up', dirText: 'higher is better',
+        where: 'Experimental → <b>Live closed loop</b>, 45–63 s window.',
+        body: ['Total authority travel, the sum of |Δa| over the window, compared ' +
+               'against the travel measured in the failed run of 2026-07-10. 100 means ' +
+               'the authority did not move at all; 0 means it churned as much as that ' +
+               'failed run.',
+               'It rewards a quiet actuator, so it trades against detection: a method ' +
+               'can score well here by simply not reacting.']},
+      S5_gdb_recovery: {dir: 'up', dirText: 'higher is better',
+        where: 'Experimental → <b>GDB replay</b>, after the gain is restored.',
+        body: ['How long the authority takes to climb back to 0.95 once the ' +
+               'diagnostic gain returns to 1. Scored linearly: 3 s or faster is 100, ' +
+               '20 s is 0, and never recovering inside the record is also 0.',
+               'This is the cost of remembering damage. A method that forgets slowly ' +
+               'holds authority down long after the fault is gone.']},
+      composite: {dir: 'up', dirText: 'higher is better',
+        where: 'The mean of the five scores above.',
+        body: ['A single ranking number, and the last thing to look at rather than ' +
+               'the first: it is only an accepted result when all seven gates pass.',
+               'Where a gate failed it is shown as gated out, because averaging a ' +
+               'method that drove the loop unstable against one that did not would ' +
+               'hide exactly the failure that matters.']},
+      unstable_time_s: {dir: 'down', dirText: 'lower is better — must be 0',
+        where: 'Experimental → <b>Live closed loop</b>.',
+        body: ['Seconds spent with g·a at or above g_crit, the loop gain that ' +
+               'destabilises feedback(g·C·H₅ₖ). g_crit is computed ' +
+               'from the identified model by bisection, not chosen by hand.',
+               'Gate G3 requires exactly zero. Any non-zero value means the ' +
+               'method left the applied loop inside the unstable region.']},
+      tail_max_a: {dir: 'down', dirText: 'lower is better — must clear the limit',
+        where: 'Experimental → <b>Live closed loop</b>, t ≥ 66 s.',
+        body: ['The highest authority factor reached after the excitation ends while ' +
+               'the diagnostic gain is still 3. Any a above g_crit/3 = ' +
+               D.g_crit_over_3 + ' puts the loop back inside the unstable region, so ' +
+               'gate G4 requires staying below it.',
+               'This is the end-hold test: it catches a method that forgets the fault ' +
+               'as soon as the shaking stops and hands full authority back to a loop ' +
+               'that is still three times too hot.']}
+    };
+
+    const tip = document.createElement('div');
+    tip.className = 'bench-tip';
+    tip.id = 'benchTip';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+    let tipFor = null;
+    function showTip(el, key){
+      const inf = INFO[key];
+      if (!inf) return;
+      tip.innerHTML = '<h4>' + el.textContent + '</h4>' +
+        '<span class="dir ' + inf.dir + '">' + inf.dirText + '</span>' +
+        '<p class="where">Where to look: ' + inf.where + '</p>' +
+        inf.body.map(p => '<p>' + p + '</p>').join('');
+      tip.classList.add('on');
+      const r = el.getBoundingClientRect(), tr = tip.getBoundingClientRect();
+      let x = r.right + 14;
+      if (x + tr.width > innerWidth - 10) x = Math.max(10, r.left - tr.width - 14);
+      let y = r.top + r.height/2 - tr.height/2;
+      y = Math.min(Math.max(10, y), innerHeight - tr.height - 10);
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+      tipFor = el;
+    }
+    function hideTip(){ tip.classList.remove('on'); tipFor = null; }
+    addEventListener('scroll', () => { if (tipFor) hideTip(); }, {passive: true});
+
+    // ---- scorecard --------------------------------------------------------
+    const tb = document.querySelector('#benchTable tbody');
+    const gates = D.table.find(r => r.key === 'all_gates_pass');
+    D.table.forEach(r => {
+      const tr = document.createElement('tr');
+      const th = document.createElement('td');
+      const nm = document.createElement('span');
+      nm.className = 'metric-name';
+      nm.textContent = r.label;
+      if (INFO[r.key]){
+        nm.tabIndex = 0;
+        nm.setAttribute('aria-describedby', 'benchTip');
+        nm.addEventListener('mouseenter', () => showTip(nm, r.key));
+        nm.addEventListener('mouseleave', hideTip);
+        nm.addEventListener('focus', () => showTip(nm, r.key));
+        nm.addEventListener('blur', hideTip);
+        nm.addEventListener('click', e => {
+          e.stopPropagation();
+          tipFor === nm ? hideTip() : showTip(nm, r.key);
+        });
+      }
+      th.appendChild(nm);
+      tr.appendChild(th);
+      r.values.forEach((v, i) => {
+        const td = document.createElement('td');
+        if (r.kind === 'gate') td.textContent = v ? 'Pass' : 'Fail';
+        else if (r.key === 'composite' && gates && !gates.values[i])
+          td.textContent = v.toFixed(2) + ', gated out';
+        else td.textContent = (Math.abs(v) >= 100 ? v.toFixed(1) : v.toFixed(2));
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    document.addEventListener('click', () => { if (tipFor) hideTip(); });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && tipFor) hideTip(); });
+    document.getElementById('benchTableNote').textContent =
+      'Synthetic target ' + D.synthetic_target + ', experimental target ' +
+      D.experimental_target + '. The G4 end-hold limit is ' + D.g_crit_over_3 +
+      '. Generated ' + D.generated_at + ' by research/fabby_bench_2/make_bench2_plot_data.m.';
+  })();
   </script>
 </body>
 </html>
