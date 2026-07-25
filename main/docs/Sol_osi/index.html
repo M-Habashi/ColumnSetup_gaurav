@@ -271,8 +271,8 @@
 
   <section class="hero" id="opening">
     <span class="kicker">Real-time hybrid simulation · stability assessment</span>
-    <h1>SOL-OSI Simplified: Hard-Activity Stability Estimation during RTHS</h1>
-    <p class="hero-deck">This page documents the research-only <code>research/sol_osi_simplified/sol_osi_simplified.m</code> estimator. It quantifies changes in the experimental inner loop and uses a hard activity switch to select coherent or quiet-data evidence. The production implementation remains separate in <code>control_and_HS/OSI</code>.</p>
+    <h1>SOL-OSI Simplified: Per-Frequency Evidence Fusion for Stability Estimation during RTHS</h1>
+    <p class="hero-deck">This page documents the research-only <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code> estimator. It quantifies changes in the experimental inner loop and fuses coherent and quiet-data evidence <em>frequency by frequency</em>, charging each branch for the evidence it actually has before the weakest bin governs. The production implementation remains separate in <code>control_and_HS/OSI</code>.</p>
     <div class="hero-meta">
       <div><strong>Eight-stage formulation</strong>estimator derivation and implementation</div>
       <div><strong>7k → 5k</strong>experimentally identified column models</div>
@@ -405,7 +405,7 @@
 <span class="ln">160</span>PID_H_dc_dm_loop = digital_cntrlr * H_dc_dm_d;
 
 <span class="ln">42</span>C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
-<span class="ln">45</span>cfg = sol_osi_simplified('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
+<span class="ln">45</span>cfg = sol_osi_simplified_5('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
         </details>
 
       </section>
@@ -455,20 +455,20 @@
 
         <details class="code-link step">
           <summary>Code connection · window, FFT, and spectral memory</summary>
-          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 42–50, 66–75, and 153–175</div>
-          <pre><span class="ln">42</span>'step_s', 0.125, ...
-<span class="ln">43</span>'segment_s', 0.5, ...
-<span class="ln">50</span>'quiet_band_hz', [28 44], ...
-<span class="ln">73</span>cfg.window = 0.5-0.5*cos(2*pi*n/(cfg.segment_n-1));
+          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 70–78, 92–101, and 179–201</div>
+          <pre><span class="ln">70</span>'step_s', 0.125, ...
+<span class="ln">71</span>'segment_s', 0.5, ...
+<span class="ln">78</span>'quiet_band_hz', [28 44], ...
+<span class="ln">99</span>cfg.window = 0.5-0.5*cos(2*pi*n/(cfg.segment_n-1));
 
-<span class="ln">153</span>Uall = fft(state.u.*cfg.window);
-<span class="ln">154</span>Yall = fft(state.y.*cfg.window);
-<span class="ln">157</span>pu = abs(U).^2;
-<span class="ln">158</span>py = abs(Y).^2;
-<span class="ln">159</span>cyu = Y.*conj(U);
-<span class="ln">173</span>state.Suu = state.Suu+q*(pu-state.Suu);
-<span class="ln">174</span>state.Syy = state.Syy+q*(py-state.Syy);
-<span class="ln">175</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
+<span class="ln">179</span>Uall = fft(state.u.*cfg.window);
+<span class="ln">180</span>Yall = fft(state.y.*cfg.window);
+<span class="ln">183</span>pu = abs(U).^2;
+<span class="ln">184</span>py = abs(Y).^2;
+<span class="ln">185</span>cyu = Y.*conj(U);
+<span class="ln">199</span>state.Suu = state.Suu+q*(pu-state.Suu);
+<span class="ln">200</span>state.Syy = state.Syy+q*(py-state.Syy);
+<span class="ln">201</span>state.Syu = state.Syu+q*(cyu-state.Syu);</pre>
         </details>
       </section>
 
@@ -523,15 +523,15 @@
 
         <details class="code-link step">
           <summary>Code connection · confidence-weighted loop reconstruction</summary>
-          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 179–189</div>
-          <pre><span class="ln">179</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
-<span class="ln">180</span>p_rel = state.Suu/max(max(state.Suu), eps);
-<span class="ln">181</span>leverage = p_rel./(p_rel+cfg.power_floor);
-<span class="ln">182</span>confidence = activity*gamma2.*leverage;
-<span class="ln">183</span>That = state.Syu./max(state.Suu, eps);
-<span class="ln">184</span>Tuse = confidence.*That+(1-confidence).*Tprior;
-<span class="ln">188</span>Lhat = Tuse./den;
-<span class="ln">189</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);</pre>
+          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 206–216</div>
+          <pre><span class="ln">206</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
+<span class="ln">207</span>p_rel = state.Suu/max(max(state.Suu), eps);
+<span class="ln">208</span>leverage = p_rel./(p_rel+cfg.power_floor);
+<span class="ln">209</span>confidence = activity*gamma2.*leverage;
+<span class="ln">210</span>That = state.Syu./max(state.Suu, eps);
+<span class="ln">211</span>Tuse = confidence.*That+(1-confidence).*Tprior;
+<span class="ln">215</span>Lhat = Tuse./den;
+<span class="ln">216</span>b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);</pre>
         </details>
 
       </section>
@@ -548,9 +548,10 @@
             \[b(\omega,\alpha,k)=\min\!\left(\frac{|1+L(j\omega,\alpha,k)|}{\sqrt{2\left(1+|L(j\omega,\alpha,k)|^2\right)}},\;\frac{1}{\sqrt2}\right)\]
             <span class="label">This normalized chordal margin stays between 0 and $1/\sqrt2\approx0.707$.</span>
           </div>
-          <p>Let $\Omega$ be the usable 2–100 Hz band after excluding the 58–62 Hz line-noise bins. The operator $\operatorname{median}_3$ is a three-bin median filter that suppresses isolated spikes. The online stability indicator $b_{ST}$ is then the weakest filtered margin in $\Omega$:</p>
+          <p>Let $\Omega$ be the usable 2–100 Hz band after excluding the 58–62 Hz line-noise bins. The operator $\operatorname{median}_3$ is a three-bin median filter that suppresses isolated spikes. The identification branch keeps its margin as a <em>curve</em> over $\Omega$:</p>
           <div class="equation">
-            \[b_{ST}=\min_{\omega\in\Omega}\;\operatorname{median}_3\{b(\omega)\}\]
+            \[b_{ST}(\omega)=\operatorname{median}_3\{b(\omega)\},\qquad\omega\in\Omega\]
+            <span class="label">The reduction $\min_{\omega\in\Omega}$ is deferred to Section 06, after both branches have been fused bin by bin.</span>
           </div>
         </div>
 
@@ -568,17 +569,19 @@
 
         <details class="code-link step">
           <summary>Code connection · chordal curve and worst-frequency selection</summary>
-          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 85–88, 189–191, and 320–325</div>
-          <pre><span class="ln">85</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
-<span class="ln">87</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
-<span class="ln">88</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
+          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 111–114, 216–218, and 358–363</div>
+          <pre><span class="ln">111</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
+<span class="ln">113</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
+<span class="ln">114</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
 
-<span class="ln">189</span>b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);
+<span class="ln">216</span>b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);
+<span class="ln">217</span>full_coherent = minMasked(movmedian(chordal(min(1/a_now, 4)*Lhat, ...
+<span class="ln">218</span>    cfg.cap), 3), cfg.keep);
 
-<span class="ln">320</span>function b = chordal(L, cap)
-<span class="ln">321</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
-<span class="ln">324</span>function y = minMasked(x, mask)
-<span class="ln">325</span>y = min(x(mask));</pre>
+<span class="ln">358</span>function b = chordal(L, cap)
+<span class="ln">359</span>b = min(real(abs(1+L)./sqrt(2*(1+abs(L).^2))), cap);
+<span class="ln">362</span>function y = minMasked(x, mask)
+<span class="ln">363</span>y = min(x(mask));</pre>
         </details>
       </section>
 
@@ -612,21 +615,21 @@
             \qquad\omega\in\Omega\]
             <span class="label">Every usable frequency in $\Omega$ independently selects its best candidate $\rho$.</span>
           </div>
-          <p>The separate quiet set $\mathcal Q$ supplies a scalar reference ratio for memory hysteresis and the leverage used to weight residual evidence. It does not restrict the frequency-by-frequency fit:</p>
+          <p>The separate quiet set $\mathcal Q$ supplies a scalar reference ratio used by the recovery criterion of Section 06. It does not restrict the frequency-by-frequency fit:</p>
           <div class="equation">
             \[\mathcal Q=\left\{\omega=2\pi f:\;28\,\mathrm{Hz}\le f\le44\,\mathrm{Hz}\right\}\]
             \[r_{\mathcal Q}=\operatorname{median}_{\omega\in\mathcal Q}q_{obs}(\omega)\]
-            <span class="label">$\Omega$ fits $\rho(\omega)$; $\mathcal Q$ only supports the quiet-reference and memory logic.</span>
+            <span class="label">$\Omega$ fits $\rho(\omega)$; $\mathcal Q$ only supports the quiet-reference and recovery logic.</span>
           </div>
-          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 0.84 s update time constant while activity is present. When activity is absent, it leaks toward the healthy value $\rho=1$ with an 8 s time constant:</p>
+          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 0.84 s update time constant while activity is present. It decays back toward the healthy value $\rho=1$ with a 2 s time constant whenever the recovery criterion of Section 06 holds:</p>
           <div class="equation">
             \[\tau_{\rho,\mathrm{update}}=0.84\,\mathrm{s},
-            \qquad \tau_{\rho,\mathrm{leak}}=8\,\mathrm{s}\]
+            \qquad \tau_{rec}=2\,\mathrm{s}\]
           </div>
-          <p>The <strong>residual margin</strong> $b_{res}$ is the worst chordal margin predicted by the frequency-dependent loop-growth hypothesis. A three-bin moving median is applied across adjacent frequency bins before taking the minimum:</p>
+          <p>The <strong>residual margin</strong> $b_{res}(\omega)$ is the chordal margin predicted by the frequency-dependent loop-growth hypothesis, kept as a curve just as $b_{ST}(\omega)$ is. A three-bin moving median is applied across adjacent frequency bins:</p>
           <div class="equation accent">
-            \[b_{res}=\min_{\omega\in\Omega}\operatorname{median}_3
-            \left\{b\!\left(\alpha\rho(\omega)L_0(\omega)\right)\right\}\]
+            \[b_{res}(\omega)=\operatorname{median}_3
+            \left\{b\!\left(\alpha\rho(\omega)L_0(\omega)\right)\right\},\qquad\omega\in\Omega\]
             <span class="label">$\operatorname{median}_3$ means three adjacent frequency bins, not three time windows.</span>
           </div>
         </div>
@@ -641,35 +644,34 @@
 
         <details class="code-link step">
           <summary>Code connection · healthy reference and frequency-dependent rho fit</summary>
-          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 46–56, 79–81, 162–164, 198–199, 212–227, and 259–260</div>
-          <pre><span class="ln">46</span>'residual_s', 0.84, ...
-<span class="ln">50</span>'quiet_band_hz', [28 44], ...
-<span class="ln">56</span>'rho_leak_s', 8.0, ...
-<span class="ln">79</span>cfg.rho_fit_keep = cfg.keep;
-<span class="ln">80</span>cfg.quiet_keep = cfg.keep &amp; cfg.freq_hz &gt;= cfg.quiet_band_hz(1) &amp; ...
-<span class="ln">81</span>    cfg.freq_hz &lt;= cfg.quiet_band_hz(2);
+          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 74–84, 105–107, 188–190, 226–227, 233–248, and 286</div>
+          <pre><span class="ln">74</span>'residual_s', 0.84, ...
+<span class="ln">78</span>'quiet_band_hz', [28 44], ...
+<span class="ln">84</span>'rho_recover_s', 2.0, ...
+<span class="ln">105</span>cfg.rho_fit_keep = cfg.keep;
+<span class="ln">106</span>cfg.quiet_keep = cfg.keep &amp; cfg.freq_hz &gt;= cfg.quiet_band_hz(1) &amp; ...
+<span class="ln">107</span>    cfg.freq_hz &lt;= cfg.quiet_band_hz(2);
 
-<span class="ln">162</span>state.q_ref_samples(:, state.q_ref_count) = py;
-<span class="ln">164</span>state.q_ref = median(state.q_ref_samples, 2);
+<span class="ln">188</span>state.q_ref_samples(:, state.q_ref_count) = py;
+<span class="ln">190</span>state.q_ref = median(state.q_ref_samples, 2);
 
-<span class="ln">198</span>qobs = state.Syy./max(state.q_ref, eps);
-<span class="ln">199</span>state.reference_ratio = median(qobs(cfg.quiet_keep));
-<span class="ln">212</span>loss = inf(numel(cfg.L0), numel(cfg.rho_grid));
-<span class="ln">221</span>loss(cfg.rho_fit_keep, k) = abs( ...
-<span class="ln">222</span>    log(max(qobs(cfg.rho_fit_keep), eps))- ...
-<span class="ln">223</span>    log(max(qmod(cfg.rho_fit_keep), eps)));
-<span class="ln">227</span>rho_best(cfg.rho_fit_keep) = rho_values(kbest(cfg.rho_fit_keep));
+<span class="ln">226</span>qobs = state.Syy./max(state.q_ref, eps);
+<span class="ln">227</span>state.reference_ratio = median(qobs(cfg.quiet_keep));
+<span class="ln">233</span>loss = inf(numel(cfg.L0), numel(cfg.rho_grid));
+<span class="ln">242</span>loss(cfg.rho_fit_keep, k) = abs( ...
+<span class="ln">243</span>    log(max(qobs(cfg.rho_fit_keep), eps))- ...
+<span class="ln">244</span>    log(max(qmod(cfg.rho_fit_keep), eps)));
+<span class="ln">248</span>rho_best(cfg.rho_fit_keep) = rho_values(kbest(cfg.rho_fit_keep));
 
-<span class="ln">259</span>b_res = minMasked(movmedian( ...
-<span class="ln">260</span>    chordal(a_now*rho.*cfg.L0, cfg.cap), 3), cfg.keep);</pre>
+<span class="ln">286</span>b_rho_curve = movmedian(chordal(a_now*rho.*cfg.L0, cfg.cap), 3);</pre>
         </details>
 
       </section>
 
       <section class="lesson-section" id="stage-6" data-title="Evidence fusion">
         <span class="section-number">SECTION 06 / 08</span>
-        <h2>Operating-Condition-Dependent Fusion of Stability Evidence</h2>
-        <p class="lead">Neither branch is trusted all the time. A hard command-activity decision selects the operating regime, while input leverage and persistent damage memory shape the evidence inside each regime.</p>
+        <h2>Per-Frequency Fusion of Stability Evidence</h2>
+        <p class="lead">Neither branch is trusted everywhere. Both are kept as curves over frequency, every bin is charged for the evidence it actually has, and only then does the weakest bin govern.</p>
 
         <div class="step">
           <p>The 0.5 s command RMS defines the binary activity $A$ directly. The approved threshold is $\eta_A=0.0575$, approximately $4.54\sigma_{\mathrm{noise},u}$ based on the clean quiet-record estimate:</p>
@@ -680,78 +682,93 @@
             \end{cases}\]
             \[\eta_A=0.0575\approx4.54\sigma_{\mathrm{noise},u}\]
           </div>
-          <div class="two-col">
-            <div class="plain-panel"><h3>Excited Regime: $A=1$</h3><p>The coherent transfer-function branch has command energy and can estimate $\widehat L$ directly.</p></div>
-            <div class="plain-panel copper"><h3>Low-Excitation Regime: $A=0$</h3><p>The estimator preserves residual evidence through the fitted $\rho$ memory.</p></div>
-          </div>
+          <p>Activity is no longer a regime switch that selects one scalar margin or the other. It enters only where it belongs: inside the confidence $c(\omega)$ of the identification branch, and in the fast drive-ratio detector of the residual branch.</p>
         </div>
 
+        <div class="callout step"><strong>Why the fusion is per frequency</strong>A chordal margin is defined at a frequency, and the loop margin is the weakest of them. Collapsing each branch with $\min_\omega$ <em>first</em> and then combining the two scalars mixes margins taken at different frequencies, which is not a quantity with a meaning. The minimum therefore runs last, after each bin has formed its own estimate.</div>
+
         <div class="step">
-          <p>When the residual band has weak input leverage, the coherent margin may be too forgiving. OSI only subtracts the part supported by the more conservative residual margin.</p>
-          <p>The current simplified estimator does not filter $A$ or form a smoothed activity state. Binary $A$ selects either $b_{evid}$ or $b_{idle}$ without a cross-fade. The memoryless activation weight $w_A$ applies the constant calibration $g_A=0.80$, so it changes immediately between 0 and 0.80:</p>
+          <p>Two independent kinds of evidence exist at every bin, and each one has to pay for the claim it makes. The first is the confidence $c(\omega)$ already built in Section 03: command energy and coherence say the loop is <em>directly visible</em> at this frequency, so the identified margin $b_{ST}(\omega)$ is worth believing.</p>
           <div class="equation">
-            \[w_A[n]=g_AA[n],\qquad g_A=0.80,\qquad A[n]\in\{0,1\}\]
+            \[w_{ST}(\omega)=c(\omega)=A\,\gamma^2(\omega)\,\ell(\omega)\]
           </div>
-          <p>For clarity, $\ell(\omega)$ is the input leverage at frequency $\omega$. It maps the relative command power $p_{rel}(\omega)$ to $[0,1]$, using the floor $p_{floor}=10^{-3}$:</p>
+          <p>The second is a detection weight $d(\omega)$. The fitted loop growth $\rho(\omega)$ only means something once it clears the resolution of the $\rho$ fit itself; below the threshold $\rho_{det}=1.50$ the deviation is fit noise. Where $\rho$ does clear it, the residual model $b_{res}(\omega)$ is worth believing to the extent the loop is <em>not</em> directly visible:</p>
           <div class="equation">
-            \[p_{rel}(\omega)=\frac{\Phi_{uu}(\omega)}{\max_{\nu}\Phi_{uu}(\nu)},
-            \qquad
-            \ell(\omega)=\frac{p_{rel}(\omega)}{p_{rel}(\omega)+p_{floor}}\]
+            \[d(\omega)=\operatorname{clamp}\!\left(\frac{\rho(\omega)-1}{\rho_{det}-1},0,1\right),
+            \qquad \rho_{det}=1.50\]
+            \[w_{res}(\omega)=\big(1-c(\omega)\big)\,d(\omega)\]
           </div>
-          <p>The residual weight $w_{res}$ therefore grows when the mean leverage over the quiet set $\mathcal Q=[28,44]\,\mathrm{Hz}$ is low:</p>
-          <div class="equation">
-            \[w_{res}=w_A\left(1-\frac{1}{|\mathcal Q|}\sum_{\omega\in\mathcal Q}\ell(\omega)\right)^2\]
-          </div>
-          <p>The conservative evidence margin $b_{evid}$ subtracts only the weighted amount by which the residual margin is lower than the coherent margin:</p>
-          <div class="equation">
-            \[b_{evid}=b_{ST}-w_{res}\max(b_{ST}-b_{res},0)\]
-          </div>
-          <p>The quiet-set ratio $r_{\mathcal Q}$ controls memory hysteresis: the high-gain memory is released when $r_{\mathcal Q}&lt;0.6$ and re-engaged when $r_{\mathcal Q}&gt;1.4$. This decision uses $\mathcal Q$, while the simplified estimator fits $\rho(\omega)$ over the larger set $\Omega$:</p>
-          <div class="equation">
-            \[\text{memory state}=\begin{cases}
-            \text{released},&r_{\mathcal Q}<0.6\\
-            \text{re-engaged},&r_{\mathcal Q}>1.4\\
-            \text{unchanged},&\text{otherwise}
-            \end{cases}\]
-          </div>
-          <p>During quiet operation, the recovery-adjusted memory gain turns fitted loop growth $(\rho-1)$ into a bounded memory strength $w_{mem}$. The gain is 21.75 while memory is engaged and 1 after release. The resulting quiet-data margin is $b_{idle}$:</p>
-          <div class="equation">
-            \[g_{mem}=\begin{cases}21.75,&\text{memory engaged}\\1,&\text{memory released}\end{cases},
-            \qquad w_{mem}=\operatorname{clamp}\big(g_{mem}(\rho-1),0,1\big)\]
-            \[b_{idle}=\frac1{\sqrt2}-w_{mem}\left(\frac1{\sqrt2}-b_{res}\right)\]
-          </div>
-          <p>Finally, binary activity makes branch selection hard: $b_{raw}$ comes from one operating regime or the other, without an activity cross-fade. The factor $\sigma_b$ still smooths the reported margin $b[n]$ over time:</p>
+          <p>The two weights never sum to more than one. Whatever is left over is the bin's admission that it has <strong>no evidence at all</strong>, and a bin with no evidence makes no claim: it reports the ceiling $1/\sqrt2$, which cannot drag a minimum downward.</p>
           <div class="equation accent">
-            \[b_{raw}[n]=A\,b_{evid}+(1-A)b_{idle}\]
+            \[b(\omega)=w_{ST}(\omega)\,b_{ST}(\omega)
+            +w_{res}(\omega)\,b_{res}(\omega)
+            +\big(1-w_{ST}(\omega)-w_{res}(\omega)\big)\frac{1}{\sqrt2}\]
+            \[b_{raw}[n]=\min_{\omega\in\Omega}b(\omega)\]
+            <span class="label">Weight, weight, worst-of. The $\min$ now acts on a per-frequency estimate rather than on two pre-collapsed scalars.</span>
+          </div>
+          <p>The factor $\sigma_b$ smooths the reported margin over time exactly as before:</p>
+          <div class="equation accent">
             \[b[n]=b[n-1]+\sigma_b\big(b_{raw}[n]-b[n-1]\big)\]
           </div>
         </div>
 
-        <div class="lab step">
-          <div class="lab-head"><strong>Hard-Activity Evidence Selection</strong><span>$\eta_A=0.0575$ sets $A=0$ or $A=1$ from the 0.5 s command RMS</span></div>
-          <div class="controls">
-            <div class="control"><label for="activitySlider">0.5 s command RMS<output id="activityOut">RMS=0.050 · A=0</output></label><input id="activitySlider" type="range" min="0" max="0.12" value="0.05" step="0.001"></div>
-            <div class="control"><label for="memorySlider">memory $w_{mem}$<output id="memoryOut">0.80</output></label><input id="memorySlider" type="range" min="0" max="1" value="0.8" step="0.01"></div>
+        <div class="step">
+          <h3>The quiet case stops being a special case</h3>
+          <p>When nothing drives the loop, $A=0$, so $c(\omega)=0$ at every bin and $w_{ST}$ vanishes identically. What remains is decided by $d(\omega)$ alone:</p>
+          <div class="two-col">
+            <div class="plain-panel"><h3>Quiet, loop unchanged</h3><p>$\rho\approx1$, so $d=0$ and $w_{res}=0$. Every bin reports $1/\sqrt2$: the estimator has observed nothing and asks for no change in adaptive gain.</p></div>
+            <div class="plain-panel copper"><h3>Quiet, damage remembered</h3><p>$\rho&gt;\rho_{det}$, so $d=1$ and the bin keeps reporting $b_{res}(\omega)$ — the remembered loop — until the recovery criterion forgets it.</p></div>
           </div>
-          <div class="readout"><div><span class="metric-label">coherent evidence</span><strong>0.41</strong></div><div><span class="metric-label">quiet evidence</span><strong id="idleReadout">0.42</strong></div><div><span class="metric-label">raw selected OSI</span><strong id="blendReadout">0.41</strong></div></div>
+          <p>No separate idle margin, no activity cross-fade, and no memory latch is needed to produce this behaviour; it falls out of the same expression that handles the excited case.</p>
+        </div>
+
+        <div class="callout warning step"><strong>An unsupported bin must report the ceiling, not the prior</strong>Weighting the two branches by $c$ and $1-c$ alone fails, and the failure is instructive: $\min_\omega$ <em>self-selects</em> the bins where $c\approx0$, because those are exactly the ones such a blend leaves lowest. The identification branch then never governs and the reading becomes the noise of the $\rho$ fit at unexcited frequencies. Measured on the live scenario, $b$ tracked $b_{res}$ to three decimals while $b_{ST}$ sat about 0.25 higher and unused. Charging each branch for its own evidence is what removes the pathology.</div>
+
+        <div class="step">
+          <h3>Recovery</h3>
+          <p>Only the residual branch carries memory, so it is the only thing that has to forget. That memory exists because the observed output power stood above the healthy reference, so it decays whenever that is no longer true — one criterion covering both the quiet case and the driven-after-repair case:</p>
+          <div class="equation accent">
+            \[\log\rho[n]\;\longleftarrow\;\log\rho[n]\Big(1-\sigma_{rec}\,\mathbb 1\{r_{\mathcal Q}<1\}\Big),
+            \qquad \tau_{rec}=2\,\mathrm{s}\]
+            <span class="label">$r_{\mathcal Q}$ is the quiet-set reference ratio from Section 05.</span>
+          </div>
+          <p>This replaces both the blind decay that ran only while $A=0$ and the two-threshold release/re-engage hysteresis on $r_{\mathcal Q}$.</p>
+        </div>
+
+        <div class="lab step">
+          <div class="lab-head"><strong>Per-Bin Evidence Weighting</strong><span>what a single frequency bin contributes, given its own evidence</span></div>
+          <div class="controls">
+            <div class="control"><label for="activitySlider">confidence $c(\omega)$<output id="activityOut">0.00</output></label><input id="activitySlider" type="range" min="0" max="1" value="0" step="0.01"></div>
+            <div class="control"><label for="memorySlider">fitted growth $\rho(\omega)$<output id="memoryOut">1.00</output></label><input id="memorySlider" type="range" min="1" max="3" value="1" step="0.01"></div>
+          </div>
+          <div class="readout"><div><span class="metric-label">$w_{ST}$ / $w_{res}$ / no claim</span><strong id="idleReadout">0.00 / 0.00 / 1.00</strong></div><div><span class="metric-label">this bin reports</span><strong id="blendReadout">0.707</strong></div></div>
         </div>
 
         <details class="code-link step">
-          <summary>Code connection · hard activity, conservative blend, and final margin smoothing</summary>
-          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 45, 53–55, 138–139, 240, 262, and 271–273</div>
-          <pre><span class="ln">45</span>'margin_s', 0.08, ...
-<span class="ln">53</span>'eta_A', 0.0575, ...
-<span class="ln">54</span>'hard_activity_gain', 0.80, ...
-<span class="ln">55</span>'detector_max', 1.95, ...
+          <summary>Code connection · recovery criterion, per-bin weights, and final margin smoothing</summary>
+          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 73, 81–85, 163–164, 261, 281–283, and 299–305</div>
+          <pre><span class="ln">73</span>'margin_s', 0.08, ...
+<span class="ln">81</span>'eta_A', 0.0575, ...
+<span class="ln">82</span>'hard_activity_gain', 0.80, ...
+<span class="ln">83</span>'detector_max', 1.95, ...
+<span class="ln">84</span>'rho_recover_s', 2.0, ...
+<span class="ln">85</span>'rho_detect', 1.50, ...
 
-<span class="ln">138</span>activity = double(rms(state.u) &gt; cfg.eta_A);
-<span class="ln">139</span>activation_weight = cfg.hard_activity_gain*activity;
-<span class="ln">240</span>drive_ratio = 1+activation_weight*kick;
-<span class="ln">262</span>res_weight = activation_weight* ...
-<span class="ln">263</span>    (1-mean(leverage(cfg.quiet_keep)))^2;
-<span class="ln">271</span>b_raw = activity*b_evid+(1-activity)*b_idle;
-<span class="ln">272</span>state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
-<span class="ln">273</span>b = min(max(state.b, 0), cfg.cap);</pre>
+<span class="ln">163</span>activity = double(rms(state.u) &gt; cfg.eta_A);
+<span class="ln">164</span>activation_weight = cfg.hard_activity_gain*activity;
+<span class="ln">261</span>drive_ratio = 1+activation_weight*kick;
+
+<span class="ln">281</span>forgetting = double(state.reference_ratio &lt; 1);
+<span class="ln">282</span>state.log_rho = state.log_rho*(1-cfg.recover_alpha*forgetting);
+<span class="ln">283</span>rho = exp(state.log_rho)*drive_ratio;
+
+<span class="ln">299</span>detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
+<span class="ln">300</span>w_st = confidence;
+<span class="ln">301</span>w_res = (1-confidence).*detected;
+<span class="ln">302</span>b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+(1-w_st-w_res)*cfg.cap;
+<span class="ln">303</span>b_raw = minMasked(b_bin, cfg.keep);
+<span class="ln">304</span>state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
+<span class="ln">305</span>b = min(max(state.b, 0), cfg.cap);</pre>
         </details>
       </section>
 
@@ -793,11 +810,12 @@
 
         <details class="code-link step">
           <summary>Code connection · applied adaptive gain enters the estimator</summary>
-          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 140–143; predict_inner_margin.m · lines 3–11</div>
-          <pre><span class="ln">140</span>a_now = min(max(state.a_cmd, 0.02), 1);
-<span class="ln">141</span>Lprior = a_now*cfg.L0;
-<span class="ln">142</span>Tprior = Lprior./(1+Lprior);
-<span class="ln">143</span>b_prior = minMasked(chordal(Lprior, cfg.cap), cfg.keep);
+          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 165–169; predict_inner_margin.m · lines 3–11</div>
+          <pre><span class="ln">165</span>a_now = min(max(state.a_cmd, 0.02), 1);
+<span class="ln">166</span>Lprior = a_now*cfg.L0;
+<span class="ln">167</span>Tprior = Lprior./(1+Lprior);
+<span class="ln">168</span>b_prior_curve = chordal(Lprior, cfg.cap);
+<span class="ln">169</span>b_prior = minMasked(b_prior_curve, cfg.keep);
 
 <span class="ln">3</span>% T = feedback(a*C_pid*H_dc_dm, 1), with open loop
 <span class="ln">4</span>% L(a) = a * C_pid * H_dc_dm.
@@ -819,17 +837,18 @@
           <div class="pipe-row"><b>04</b><strong>What loop produced it?</strong><span>Blend $\widehat T$ with $T_{prior}$, then invert to $\widehat L$.</span></div>
           <div class="pipe-row"><b>05</b><strong>How close is critical?</strong><span>Evaluate the chordal curve and take its minimum.</span></div>
           <div class="pipe-row"><b>06</b><strong>What if input is quiet?</strong><span>Fit $\rho$ from output power relative to a fixed healthy reference.</span></div>
-          <div class="pipe-row"><b>07</b><strong>Which evidence is safer?</strong><span>Blend coherent and residual margins using activity and memory.</span></div>
+          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{ST}(\omega)$ by $c$, $b_{res}(\omega)$ by $(1-c)d$, the rest claims nothing; take the worst bin.</span></div>
           <div class="pipe-row"><b>08</b><strong>What should be reported?</strong><span>Smooth and clamp $b\in[0,1/\sqrt2]$; pass it to the adaptive-gain law.</span></div>
         </div>
 
         <div class="equation accent step">
-          \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{ST},b_{res}\;\longrightarrow\;b\;}\]
+          \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{ST}(\omega),b_{res}(\omega)\;\longrightarrow\;\min_{\omega\in\Omega}b(\omega)\;\longrightarrow\;b\;}\]
         </div>
 
         <div class="final-note step">
           <h3>Correspondence Between Mathematical Formulation and Implementation</h3>
-          <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified/sol_osi_simplified.m</code>; it does not replace the production SOL-OSI implementation.</p>
+          <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code>; it does not replace the production SOL-OSI implementation.</p>
+          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade — three tunable parameters and one latched state, replaced by $\rho_{det}$ and a single recovery constant. On the Fabby Benchmark it passes all seven gates with a composite of 75.0 against 73.6 for the earlier form.</p>
         </div>
       </section>
     </main>
@@ -987,7 +1006,7 @@
     function updateRho(){const r=+document.getElementById('rhoSlider').value;document.getElementById('rhoOut').textContent=r.toFixed(2);document.getElementById('rhoMargin').textContent=rhoMargin(r).toFixed(3);document.getElementById('rhoWord').textContent=r<.9?'smaller loop':r<1.1?'healthy scale':'loop growth';}
     document.getElementById('rhoSlider').addEventListener('input',updateRho);updateRho();
 
-    function updateBlend(){const rmsU=+document.getElementById('activitySlider').value,a=rmsU>.0575?1:0,w=+document.getElementById('memorySlider').value,bres=.35,cap=Math.SQRT1_2,bevid=.41,bidle=cap-w*(cap-bres),braw=a*bevid+(1-a)*bidle;document.getElementById('activityOut').textContent=`RMS=${rmsU.toFixed(3)} · A=${a}`;document.getElementById('memoryOut').textContent=w.toFixed(2);document.getElementById('idleReadout').textContent=bidle.toFixed(2);document.getElementById('blendReadout').textContent=braw.toFixed(2);}
+    function updateBlend(){const c=+document.getElementById('activitySlider').value,rho=+document.getElementById('memorySlider').value,rhoDet=1.5,cap=Math.SQRT1_2,bst=.41,d=Math.min(Math.max((rho-1)/(rhoDet-1),0),1),wSt=c,wRes=(1-c)*d,wNone=1-wSt-wRes,bres=Math.min(cap,.35/rho),bbin=wSt*bst+wRes*bres+wNone*cap;document.getElementById('activityOut').textContent=c.toFixed(2);document.getElementById('memoryOut').textContent=rho.toFixed(2);document.getElementById('idleReadout').textContent=`${wSt.toFixed(2)} / ${wRes.toFixed(2)} / ${wNone.toFixed(2)}`;document.getElementById('blendReadout').textContent=bbin.toFixed(3);}
     ['activitySlider','memorySlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateBlend));updateBlend();
 
     document.querySelectorAll('.term').forEach(button=>button.addEventListener('click',()=>{const def=button.parentElement.nextElementSibling;const open=def.classList.toggle('open');button.setAttribute('aria-expanded',open);}));
