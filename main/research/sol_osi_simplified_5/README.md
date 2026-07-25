@@ -39,14 +39,15 @@ the claim it makes:
   enough from the healthy reference to clear the resolution of the ρ fit
   itself, so the ρ-corrected model `b_ρ(f)` is worth believing.
 
-A bin with neither makes **no claim**: it reads `cap`, which cannot drag a
-minimum down.
+A bin with neither falls back to the current authority-scaled commissioning
+prior.
 
 ```matlab
 detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
 w_st     = confidence;
 w_res    = (1-confidence).*detected;
-b_bin    = w_st.*b_st_curve + w_res.*b_rho_curve + (1-w_st-w_res)*cfg.cap;
+b_bin    = w_st.*b_st_curve + w_res.*b_rho_curve ...
+         + (1-w_st-w_res).*b_prior_curve;
 b_raw    = min(b_bin(cfg.keep));          % the worst frequency governs
 ```
 
@@ -56,15 +57,16 @@ formed, not before.
 
 **The idle case stops being a special case.** Quiet means every `c(f)` is
 zero, so a loop that still matches its commissioning has `w_st = w_res = 0`
-everywhere, reads `cap`, and asks for no authority change. A bin that did
+everywhere and reads its commissioning prior. A bin that did
 detect damage keeps reporting it. The `activity*... + (1-activity)*...` mux,
 `b_evid`, `b_idle`, `w_mem`, `rho_memory` and the `memory_released` latch are
 all gone — not replaced, deleted.
 
-### Why an unsupported bin must read `cap`, not the prior
+### Unsupported-bin fallback
 
 The first version of this fusion used `w_st = c`, `w_res = 1−c` with no
-`cap` term. It fails, and the failure is worth recording: `min` over a blend
+separate fallback term. It fails, and the failure is worth recording: `min`
+over a blend
 *self-selects* the bins where `c ≈ 0`, because those are the ones the blend
 leaves lowest. The identified branch then never governs and the reading is
 just the noise of the ρ fit at unexcited bins — measured on the live
@@ -94,48 +96,42 @@ Net: 22 tunable parameters → 20, and one state field removed.
 
 | Removed | Added |
 |---|---|
-| `residual_memory_gain` (21.75) | `rho_detect` = 1.50 |
-| `memory_release_ratio` (0.6) | `rho_recover_s` = 2.0 (renamed from `rho_leak_s`) |
+| `residual_memory_gain` (21.75) | `rho_detect` = 1.65 |
+| `memory_release_ratio` (0.6) | `rho_recover_s` = 1.5 (renamed from `rho_leak_s`) |
 | `memory_reengage_ratio` (1.4) | |
 | `rho_leak_s` (8.0) | |
 | state `memory_released` (latch) | |
 
-`residual_weight` is now reported as **0**. It exists so an authority law can
-widen its guard when a reading mixes measured and inferred evidence; here
-every bin's claim is already weighted by its own evidence and an unsupported
-bin claims nothing, so there is no leftover global uncertainty to guard. This
-was measured, not assumed — feeding the honest inferred share to
-`gpt5_6_4_auth` costs composite (75.0 → 74.7) because the widened guard
-mostly blocks recovery.
+`residual_weight` reports `w_res` at the frequency bin that governs `b_raw`.
+The accompanying `direct_fraction`, `fallback_fraction`, and
+`governing_freq_hz` fields expose the full provenance of that result. The
+authority law may use `residual_weight` to widen its guard, but that policy is
+separate from reporting the inferred share honestly.
 
-## Fabby Benchmark
+## Fabby Bench 2
 
-`gpt5_6_4_auth`, method defaults everywhere, one parameter set.
+Fabby Bench 2 retains the synthetic target of `0.55` and uses `0.30` for the
+experimental live and GDB records.
 
-| | `sol_osi_simplified` | `sol_osi_simplified_5` |
-|---|---|---|
-| all seven gates | PASS | PASS |
-| fabby_score_1 | 93.0 | 91.7 |
-| fabby_score_2 | 59.6 | 55.6 |
-| S3 detection | 80.0 | 80.0 |
-| S4 smoothness | 85.9 | 79.8 |
-| S5 gdb recovery | 49.3 | **67.6** |
-| **composite** | **73.6** | **75.0** |
-| G4 tail max a (limit 0.736) | 0.715 | 0.707 |
+| | `sol_osi` | `simplified` | `simplified_5` |
+|---|---:|---:|---:|
+| all seven gates | FAIL | FAIL | **PASS** |
+| synthetic score | 92.7 | 93.0 | 91.2 |
+| experimental score | 60.9 | 66.2 | 61.5 |
+| S3 detection | 100.0 | 60.0 | 60.0 |
+| S4 smoothness | 77.9 | 84.8 | 77.8 |
+| S5 GDB recovery | 100.0 | 100.0 | 86.0 |
+| raw composite | 86.3 | 80.8 | **75.3** |
+| unstable time | 0.25 s | 2.00 s | **0.00 s** |
+| G4 tail max `a` | 0.743 | 0.806 | **0.657** |
 
-Suite 10/10, `emu unstable 0.00 s`. The trade is real and worth naming: v5
-gives up some live-scenario tracking and smoothness, and buys back GDB
-recovery (14.8 s → 8.5 s) and a wider G4 margin than the baseline's.
-
-Both `rho_detect` and `rho_recover_s` sit near a G4 cliff — anything that
-speeds recovery eventually lets authority return before the diagnostic gain
-does. `rho_recover_s = 2.0, rho_detect = 1.75` scores 75.5 but fails G3/G4.
-The baseline sits on the same cliff (tail 0.715 against a 0.736 limit); this
-is the benchmark's shape, not a weakness peculiar to v5.
+The raw composites of the first two methods are gated out. V5 is the only
+method with zero unstable time and an end-hold authority below the `0.736`
+limit. The promoted `rho_recover_s = 1.5` and `rho_detect = 1.65` improve the
+honest-prior baseline from 74.2 to 75.3 without losing a gate.
 
 ## Run it
 
 ```matlab
-result = run_sol_osi_simplified_5_benchmark;      % full scorecard
-comparison = compare_sol_osi_5;                   % v5 vs the baseline
+comparison = compare_fabby_bench_2;
 ```

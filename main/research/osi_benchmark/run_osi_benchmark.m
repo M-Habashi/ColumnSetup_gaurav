@@ -1,4 +1,4 @@
-function result = run_osi_benchmark(osi_fn, auth_fn, label)
+function result = run_osi_benchmark(osi_fn, auth_fn, label, target_override)
 %RUN_OSI_BENCHMARK Run the Fabby Benchmark for an OSI + authority law.
 %
 %   result = run_osi_benchmark(@my_osi, @my_auth, 'my_label')
@@ -74,6 +74,9 @@ function result = run_osi_benchmark(osi_fn, auth_fn, label)
 assert(nargin >= 3 && ischar(label) || isstring(label), ...
     'Usage: run_osi_benchmark(@osi_fn, @auth_fn, ''label'')')
 label = char(label);
+if nargin < 4
+    target_override = [];
+end
 here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(here));
 addpath(fullfile(project, 'OSI_tests', 'fable'))
@@ -97,11 +100,11 @@ fab = fabby_score(suite, project);
 
 %% ---- G3/G4/S2/S3/S4: closed-loop live scenario ----------------------------
 fprintf('[2/3] Closed-loop live scenario (osi_calibration_test)...\n')
-emu = closedLoopScenario(project, pv, osi_fn, auth_fn);
+emu = closedLoopScenario(project, pv, osi_fn, auth_fn, target_override);
 
 %% ---- G5/G6/S3/S5: GDBqFpKb replay -----------------------------------------
 fprintf('[3/3] GDBqFpKb replay...\n')
-gdb = gdbReplay(project, pv, osi_fn, auth_fn);
+gdb = gdbReplay(project, pv, osi_fn, auth_fn, target_override);
 
 %% ---- gates ----------------------------------------------------------------
 gates = struct( ...
@@ -192,7 +195,7 @@ if isfield(s, f), v = s.(f); else, v = dflt; end
 end
 
 %% ===== closed-loop live scenario ===========================================
-function emu = closedLoopScenario(project, pv, osi_fn, auth_fn)
+function emu = closedLoopScenario(project, pv, osi_fn, auth_fn, target_override)
 S = load(fullfile(project, 'saved_results', 'tests', 'gpt5_6_tests', ...
     'osi_calibration_test.mat'));
 rec = S.result;
@@ -207,6 +210,7 @@ g_crit = stabilityBoundary(L0);
 
 % test facts come from the record, not from the candidate
 target = rec.hs.target_outer_ncf;
+if ~isempty(target_override), target = target_override; end
 a_min = rec.hs.osi_gain_min;
 t = rec.t(:);
 ref = rec.u_osi(:);
@@ -310,7 +314,7 @@ g_crit = (lo+hi)/2;
 end
 
 %% ===== GDBqFpKb replay ======================================================
-function gdb = gdbReplay(project, pv, osi_fn, auth_fn)
+function gdb = gdbReplay(project, pv, osi_fn, auth_fn, target_override)
 S = load(fullfile(project, 'saved_results', 'tests', 'tsting_osi', ...
     'GDBqFpKb.mat'));
 r = S.result;
@@ -319,7 +323,9 @@ C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 L0 = C*c2d(load_H(project), dt, 'zoh');
 cfg = osi_fn('config', dt, L0, struct());
-prm = auth_fn('params', struct('dt_update', cfg.step_s));   % method DEFAULTS
+auth_override = struct('dt_update', cfg.step_s);
+if ~isempty(target_override), auth_override.target = target_override; end
+prm = auth_fn('params', auth_override);
 ost = osi_fn('state', cfg);
 ast = auth_fn('state', prm);
 tap = r.u_osi(:); dm = r.dm(:); t = r.t(:); gain = r.Results(:, 21);

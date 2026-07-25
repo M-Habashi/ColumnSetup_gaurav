@@ -692,17 +692,17 @@
           <div class="equation">
             \[w_{ST}(\omega)=c(\omega)=A\,\gamma^2(\omega)\,\ell(\omega)\]
           </div>
-          <p>The second is a detection weight $d(\omega)$. The fitted loop growth $\rho(\omega)$ only means something once it clears the resolution of the $\rho$ fit itself; below the threshold $\rho_{det}=1.50$ the deviation is fit noise. Where $\rho$ does clear it, the residual model $b_{res}(\omega)$ is worth believing to the extent the loop is <em>not</em> directly visible:</p>
+          <p>The second is a detection weight $d(\omega)$. The fitted loop growth $\rho(\omega)$ only means something once it clears the resolution of the $\rho$ fit itself; below the threshold $\rho_{det}=1.65$ the deviation carries little residual evidence. Where $\rho$ does clear it, the residual model $b_{res}(\omega)$ is worth believing to the extent the loop is <em>not</em> directly visible:</p>
           <div class="equation">
             \[d(\omega)=\operatorname{clamp}\!\left(\frac{\rho(\omega)-1}{\rho_{det}-1},0,1\right),
-            \qquad \rho_{det}=1.50\]
+            \qquad \rho_{det}=1.65\]
             \[w_{res}(\omega)=\big(1-c(\omega)\big)\,d(\omega)\]
           </div>
-          <p>The two weights never sum to more than one. Whatever is left over is the bin's admission that it has <strong>no evidence at all</strong>, and a bin with no evidence makes no claim: it reports the ceiling $1/\sqrt2$, which cannot drag a minimum downward.</p>
+          <p>The two weights never sum to more than one. Whatever is left over is the unsupported share, which falls back to the current authority-scaled commissioning prior $b_{prior}(\omega)$. This makes the reported value an estimate of the loop margin rather than treating “unknown” as the largest possible margin.</p>
           <div class="equation accent">
             \[b(\omega)=w_{ST}(\omega)\,b_{ST}(\omega)
             +w_{res}(\omega)\,b_{res}(\omega)
-            +\big(1-w_{ST}(\omega)-w_{res}(\omega)\big)\frac{1}{\sqrt2}\]
+            +\big(1-w_{ST}(\omega)-w_{res}(\omega)\big)b_{prior}(\omega)\]
             \[b_{raw}[n]=\min_{\omega\in\Omega}b(\omega)\]
             <span class="label">Weight, weight, worst-of. The $\min$ now acts on a per-frequency estimate rather than on two pre-collapsed scalars.</span>
           </div>
@@ -716,23 +716,38 @@
           <h3>The quiet case stops being a special case</h3>
           <p>When nothing drives the loop, $A=0$, so $c(\omega)=0$ at every bin and $w_{ST}$ vanishes identically. What remains is decided by $d(\omega)$ alone:</p>
           <div class="two-col">
-            <div class="plain-panel"><h3>Quiet, loop unchanged</h3><p>$\rho\approx1$, so $d=0$ and $w_{res}=0$. Every bin reports $1/\sqrt2$: the estimator has observed nothing and asks for no change in adaptive gain.</p></div>
+            <div class="plain-panel"><h3>Quiet, loop unchanged</h3><p>$\rho\approx1$, so $d=0$ and $w_{res}=0$. Every bin returns its authority-scaled commissioning prior. In Fabby Bench 2 the experimental target is below that healthy prior, so idle does not shed authority.</p></div>
             <div class="plain-panel copper"><h3>Quiet, damage remembered</h3><p>$\rho&gt;\rho_{det}$, so $d=1$ and the bin keeps reporting $b_{res}(\omega)$ — the remembered loop — until the recovery criterion forgets it.</p></div>
           </div>
           <p>No separate idle margin, no activity cross-fade, and no memory latch is needed to produce this behaviour; it falls out of the same expression that handles the excited case.</p>
         </div>
 
-        <div class="callout warning step"><strong>An unsupported bin must report the ceiling, not the prior</strong>Weighting the two branches by $c$ and $1-c$ alone fails, and the failure is instructive: $\min_\omega$ <em>self-selects</em> the bins where $c\approx0$, because those are exactly the ones such a blend leaves lowest. The identification branch then never governs and the reading becomes the noise of the $\rho$ fit at unexcited frequencies. Measured on the live scenario, $b$ tracked $b_{res}$ to three decimals while $b_{ST}$ sat about 0.25 higher and unused. Charging each branch for its own evidence is what removes the pathology.</div>
+        <div class="callout warning step"><strong>A fallback is not residual evidence</strong>Weighting the two evidence branches by $c$ and $1-c$ alone fails: $\min_\omega$ self-selects poorly excited bins and lets residual-fit noise govern. The separate fallback term removes that pathology. Its value is now the commissioning prior, while $w_{res}$ remains reserved for actual inferred residual evidence.</div>
+
+        <div class="step">
+          <h3>Provenance of the governing result</h3>
+          <p>After forming every $b(\omega)$, the estimator finds the frequency $\omega_*$ that produces $b_{raw}$. It reports the three weights at that same governing bin, rather than averaging evidence over the band:</p>
+          <div class="equation">
+            \[\omega_*=\arg\min_{\omega\in\Omega}b(\omega)\]
+            \[\texttt{direct\_fraction}=w_{ST}(\omega_*),\qquad
+            \texttt{residual\_weight}=w_{res}(\omega_*),\qquad
+            \texttt{fallback\_fraction}=1-w_{ST}(\omega_*)-w_{res}(\omega_*)\]
+          </div>
+          <p><code>governing_freq_hz</code> is $\omega_*/(2\pi)$ in hertz. For example, direct = 0.20, residual = 0.70, and fallback = 0.10 means the worst-bin estimate is 20% identified from command–response data, 70% inferred through the $\rho$ model, and 10% supplied by the commissioning prior. These fields describe where the result came from; the authority law separately decides how much extra guard inferred evidence requires.</p>
+        </div>
 
         <div class="step">
           <h3>Recovery</h3>
           <p>Only the residual branch carries memory, so it is the only thing that has to forget. That memory exists because the observed output power stood above the healthy reference, so it decays whenever that is no longer true — one criterion covering both the quiet case and the driven-after-repair case:</p>
           <div class="equation accent">
             \[\log\rho[n]\;\longleftarrow\;\log\rho[n]\Big(1-\sigma_{rec}\,\mathbb 1\{r_{\mathcal Q}<1\}\Big),
-            \qquad \tau_{rec}=2\,\mathrm{s}\]
+            \qquad \tau_{rec}=1.5\,\mathrm{s}\]
+            \[\sigma_{rec}=1-\exp\!\left(-\frac{\Delta t_u}{\tau_{rec}}\right),
+            \qquad \Delta t_u=0.125\,\mathrm{s},
+            \qquad \sigma_{rec}\approx0.07996\]
             <span class="label">$r_{\mathcal Q}$ is the quiet-set reference ratio from Section 05.</span>
           </div>
-          <p>This replaces both the blind decay that ran only while $A=0$ and the two-threshold release/re-engage hysteresis on $r_{\mathcal Q}$.</p>
+          <p>Here $\sigma_{rec}$ is the dimensionless decay applied at each estimator update, $\Delta t_u$ is the update interval, and $\tau_{rec}$ is the continuous-time recovery constant. When $r_{\mathcal Q}&lt;1$, each update multiplies $\log\rho$ by approximately $0.92004$; otherwise this recovery step leaves it unchanged. This replaces both the blind decay that ran only while $A=0$ and the two-threshold release/re-engage hysteresis on $r_{\mathcal Q}$.</p>
         </div>
 
         <div class="lab step">
@@ -741,7 +756,7 @@
             <div class="control"><label for="activitySlider">confidence $c(\omega)$<output id="activityOut">0.00</output></label><input id="activitySlider" type="range" min="0" max="1" value="0" step="0.01"></div>
             <div class="control"><label for="memorySlider">fitted growth $\rho(\omega)$<output id="memoryOut">1.00</output></label><input id="memorySlider" type="range" min="1" max="3" value="1" step="0.01"></div>
           </div>
-          <div class="readout"><div><span class="metric-label">$w_{ST}$ / $w_{res}$ / no claim</span><strong id="idleReadout">0.00 / 0.00 / 1.00</strong></div><div><span class="metric-label">this bin reports</span><strong id="blendReadout">0.707</strong></div></div>
+          <div class="readout"><div><span class="metric-label">direct / inferred / prior</span><strong id="idleReadout">0.00 / 0.00 / 1.00</strong></div><div><span class="metric-label">this bin reports</span><strong id="blendReadout">0.350</strong></div></div>
         </div>
 
         <details class="code-link step">
@@ -751,8 +766,8 @@
 <span class="ln">81</span>'eta_A', 0.0575, ...
 <span class="ln">82</span>'hard_activity_gain', 0.80, ...
 <span class="ln">83</span>'detector_max', 1.95, ...
-<span class="ln">84</span>'rho_recover_s', 2.0, ...
-<span class="ln">85</span>'rho_detect', 1.50, ...
+<span class="ln">84</span>'rho_recover_s', 1.5, ...
+<span class="ln">85</span>'rho_detect', 1.65, ...
 
 <span class="ln">163</span>activity = double(rms(state.u) &gt; cfg.eta_A);
 <span class="ln">164</span>activation_weight = cfg.hard_activity_gain*activity;
@@ -765,10 +780,13 @@
 <span class="ln">299</span>detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
 <span class="ln">300</span>w_st = confidence;
 <span class="ln">301</span>w_res = (1-confidence).*detected;
-<span class="ln">302</span>b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+(1-w_st-w_res)*cfg.cap;
-<span class="ln">303</span>b_raw = minMasked(b_bin, cfg.keep);
-<span class="ln">304</span>state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
-<span class="ln">305</span>b = min(max(state.b, 0), cfg.cap);</pre>
+<span class="ln">302</span>b_bin = w_st.*b_st_curve+w_res.*b_rho_curve ...
+<span class="ln">303</span>    +(1-w_st-w_res).*b_prior_curve;
+<span class="ln">307</span>[b_raw, governing_local] = min(b_bin(cfg.keep));
+<span class="ln">315</span>info.residual_weight = w_res(governing_bin);
+<span class="ln">316</span>info.direct_fraction = w_st(governing_bin);
+<span class="ln">317</span>info.fallback_fraction = 1-w_st(governing_bin)-w_res(governing_bin);
+<span class="ln">318</span>info.governing_freq_hz = cfg.freq_hz(governing_bin);</pre>
         </details>
       </section>
 
@@ -837,8 +855,8 @@
           <div class="pipe-row"><b>04</b><strong>What loop produced it?</strong><span>Blend $\widehat T$ with $T_{prior}$, then invert to $\widehat L$.</span></div>
           <div class="pipe-row"><b>05</b><strong>How close is critical?</strong><span>Evaluate the chordal curve and take its minimum.</span></div>
           <div class="pipe-row"><b>06</b><strong>What if input is quiet?</strong><span>Fit $\rho$ from output power relative to a fixed healthy reference.</span></div>
-          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{ST}(\omega)$ by $c$, $b_{res}(\omega)$ by $(1-c)d$, the rest claims nothing; take the worst bin.</span></div>
-          <div class="pipe-row"><b>08</b><strong>What should be reported?</strong><span>Smooth and clamp $b\in[0,1/\sqrt2]$; pass it to the adaptive-gain law.</span></div>
+          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{ST}(\omega)$ by $c$, $b_{res}(\omega)$ by $(1-c)d$, and the unsupported share by the prior; take the worst bin.</span></div>
+          <div class="pipe-row"><b>08</b><strong>What should be reported?</strong><span>Smooth and clamp $b$, then report the direct, inferred, and prior shares at the governing frequency.</span></div>
         </div>
 
         <div class="equation accent step">
@@ -848,7 +866,7 @@
         <div class="final-note step">
           <h3>Correspondence Between Mathematical Formulation and Implementation</h3>
           <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code>; it does not replace the production SOL-OSI implementation.</p>
-          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade — three tunable parameters and one latched state, replaced by $\rho_{det}$ and a single recovery constant. On the Fabby Benchmark it passes all seven gates with a composite of 75.0 against 73.6 for the earlier form.</p>
+          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade. In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, this implementation is the only one of the three compared methods to pass all seven gates. It scores 75.3, has zero unstable time, and holds tail authority to 0.657 against the 0.736 limit.</p>
         </div>
       </section>
     </main>
@@ -1006,7 +1024,7 @@
     function updateRho(){const r=+document.getElementById('rhoSlider').value;document.getElementById('rhoOut').textContent=r.toFixed(2);document.getElementById('rhoMargin').textContent=rhoMargin(r).toFixed(3);document.getElementById('rhoWord').textContent=r<.9?'smaller loop':r<1.1?'healthy scale':'loop growth';}
     document.getElementById('rhoSlider').addEventListener('input',updateRho);updateRho();
 
-    function updateBlend(){const c=+document.getElementById('activitySlider').value,rho=+document.getElementById('memorySlider').value,rhoDet=1.5,cap=Math.SQRT1_2,bst=.41,d=Math.min(Math.max((rho-1)/(rhoDet-1),0),1),wSt=c,wRes=(1-c)*d,wNone=1-wSt-wRes,bres=Math.min(cap,.35/rho),bbin=wSt*bst+wRes*bres+wNone*cap;document.getElementById('activityOut').textContent=c.toFixed(2);document.getElementById('memoryOut').textContent=rho.toFixed(2);document.getElementById('idleReadout').textContent=`${wSt.toFixed(2)} / ${wRes.toFixed(2)} / ${wNone.toFixed(2)}`;document.getElementById('blendReadout').textContent=bbin.toFixed(3);}
+    function updateBlend(){const c=+document.getElementById('activitySlider').value,rho=+document.getElementById('memorySlider').value,rhoDet=1.65,cap=Math.SQRT1_2,bst=.41,bprior=.35,d=Math.min(Math.max((rho-1)/(rhoDet-1),0),1),wSt=c,wRes=(1-c)*d,wNone=1-wSt-wRes,bres=Math.min(cap,.35/rho),bbin=wSt*bst+wRes*bres+wNone*bprior;document.getElementById('activityOut').textContent=c.toFixed(2);document.getElementById('memoryOut').textContent=rho.toFixed(2);document.getElementById('idleReadout').textContent=`${wSt.toFixed(2)} / ${wRes.toFixed(2)} / ${wNone.toFixed(2)}`;document.getElementById('blendReadout').textContent=bbin.toFixed(3);}
     ['activitySlider','memorySlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateBlend));updateBlend();
 
     document.querySelectorAll('.term').forEach(button=>button.addEventListener('click',()=>{const def=button.parentElement.nextElementSibling;const open=def.classList.toggle('open');button.setAttribute('aria-expanded',open);}));

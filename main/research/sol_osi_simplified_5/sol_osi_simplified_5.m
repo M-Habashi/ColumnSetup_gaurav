@@ -16,9 +16,9 @@ function [out, state, info] = sol_osi_simplified_5(varargin)
 %                                           the observation detected a
 %                                           deviation clearing the resolution
 %                                           of the rho fit itself.
-%     2. b(f) = w_st*b_st + w_res*b_rho + (1-w_st-w_res)*cap
-%           A bin with neither kind of evidence makes NO claim -- it reads
-%           cap, which cannot drag a minimum down.
+%     2. b(f) = w_st*b_st + w_res*b_rho + (1-w_st-w_res)*b_prior
+%           A bin with neither kind of evidence falls back to the current
+%           authority-scaled commissioning prior.
 %     3. b = min_f b(f)
 %           The worst frequency governs, as the chordal/NCF definition says.
 %           The min now runs after the per-frequency estimate is formed
@@ -26,8 +26,8 @@ function [out, state, info] = sol_osi_simplified_5(varargin)
 %           different frequencies.
 %
 %   Idle stops being a special case: quiet means every c(f) is zero, so a
-%   loop still matching its commissioning reads cap and asks for nothing,
-%   while a bin that detected damage keeps reporting it.  Recovery needs no
+%   loop still matching its commissioning reads its prior, while a bin that
+%   detected damage keeps reporting it.  Recovery needs no
 %   latch either -- the observation branch is the only one carrying memory,
 %   and it forgets on one criterion (observed power no longer above the
 %   healthy reference) with one time constant, rho_recover_s.
@@ -81,8 +81,9 @@ cfg = struct( ...
     'eta_A', 0.0575, ...
     'hard_activity_gain', 0.80, ...
     'detector_max', 1.95, ...  % ceiling on the fast drive-ratio kick on rho
-    'rho_recover_s', 2.0, ...  % the one recovery time constant
-    'rho_detect', 1.50, ...    % rho resolution: below this a bin saw nothing
+    'rho_recover_s', 1.5, ...  % the one recovery time constant
+    'rho_detect', 1.65, ...    % rho resolution: below this a bin saw little
+    'no_evidence_prior', true, ...
     'reference_level_beta', 0.0, ...
     'level_fit_gain', 0.28, ...
     'level_fit_start_ratio', 4.0, ...
@@ -291,27 +292,31 @@ b_rho_curve = movmedian(chordal(a_now*rho.*cfg.L0, cfg.cap), 3);
 %   d(f) - the observed power has moved far enough from the healthy
 %          reference to clear the resolution of the rho fit itself, so the
 %          rho-corrected model is worth believing.
-% A bin with neither makes NO claim: it reads cap, which cannot drag the
-% minimum down.  That one line is what makes the idle case ordinary --
-% quiet means every c is zero, so a loop that still matches its
-% commissioning reads cap and asks for nothing, while a bin that detected
-% damage keeps reporting it until the recovery criterion forgets.
+% A bin with neither kind of evidence falls back to the current
+% authority-scaled commissioning prior. Quiet is therefore an ordinary
+% case: every c is zero, an undamaged loop reads its prior, and a bin that
+% detected damage keeps reporting it until the recovery criterion forgets.
 detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
 w_st = confidence;
 w_res = (1-confidence).*detected;
-b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+(1-w_st-w_res)*cfg.cap;
-b_raw = minMasked(b_bin, cfg.keep);
+no_evidence_curve = cfg.cap*ones(size(b_prior_curve));
+if cfg.no_evidence_prior
+    no_evidence_curve = b_prior_curve;
+end
+b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+ ...
+    (1-w_st-w_res).*no_evidence_curve;
+keep_idx = find(cfg.keep);
+[b_raw, governing_local] = min(b_bin(cfg.keep));
+governing_bin = keep_idx(governing_local);
 state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
 b = min(max(state.b, 0), cfg.cap);
 
-% residual_weight is reported as 0 on purpose.  It exists so an authority
-% law can widen its guard when the reading mixes measured and inferred
-% evidence; here every bin's claim is already weighted by its own evidence
-% and an unsupported bin claims nothing, so there is no leftover global
-% uncertainty for a guard to cover.
 info = makeInfo(minMasked(b_st_curve, cfg.keep), ...
     minMasked(b_rho_curve, cfg.keep), b_raw, Tuse, Lhat, confidence, ...
-    activity, 0, rho_best, full_coherent, cfg, state);
+    activity, w_res(governing_bin), rho_best, full_coherent, cfg, state);
+info.direct_fraction = w_st(governing_bin);
+info.fallback_fraction = 1-w_st(governing_bin)-w_res(governing_bin);
+info.governing_freq_hz = cfg.freq_hz(governing_bin);
 end
 
 function info = makeInfo(b_st, b_res, b_raw, T, L, confidence, activity, ...
