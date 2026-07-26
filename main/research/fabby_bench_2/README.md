@@ -15,10 +15,10 @@ It compares:
 
 1. `control_and_HS/OSI/sol_osi.m`
 2. `research/sol_osi_simplified/sol_osi_simplified.m`
-3. `research/sol_osi_simplified_5/sol_osi_simplified_5.m`
 
-`sol_osi_simplified_5` uses the current authority-scaled commissioning prior
-for unsupported bins and reports the inferred share of its governing bin.
+`sol_osi_simplified` is the accepted V6 formulation. It uses the current
+authority-scaled commissioning prior for unsupported bins and reports the
+second-smallest retained bin so one isolated low residual does not govern.
 
 Run:
 

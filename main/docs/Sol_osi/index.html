@@ -361,7 +361,7 @@
   <section class="hero" id="opening">
     <span class="kicker">Real-time hybrid simulation · stability assessment</span>
     <h1>SOL-OSI Simplified: Per-Frequency Evidence Fusion for Stability Estimation during RTHS</h1>
-    <p class="hero-deck">This page documents the research-only <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code> estimator. It quantifies changes in the experimental inner loop and fuses coherent and quiet-data evidence <em>frequency by frequency</em>, charging each branch for the evidence it actually has before the weakest bin governs. The production implementation remains separate in <code>control_and_HS/OSI</code>.</p>
+    <p class="hero-deck">This page documents the research-only <code>research/sol_osi_simplified/sol_osi_simplified.m</code> estimator. It quantifies changes in the experimental inner loop and fuses coherent and quiet-data evidence <em>frequency by frequency</em>, charging each branch for the evidence it actually has before one isolated low bin is trimmed and the second-smallest bin governs. The production implementation remains separate in <code>control_and_HS/OSI</code>.</p>
     <div class="hero-meta">
       <div><strong>Eight-stage formulation</strong>estimator derivation and implementation</div>
       <div><strong>7k → 5k</strong>experimentally identified column models</div>
@@ -495,7 +495,7 @@
 <span class="ln">160</span>PID_H_dc_dm_loop = digital_cntrlr * H_dc_dm_d;
 
 <span class="ln">42</span>C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
-<span class="ln">45</span>cfg = sol_osi_simplified_5('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
+<span class="ln">45</span>cfg = sol_osi_simplified('config', dt, <span class="hi">C*H_dc_dm</span>, override.osi);</pre>
         </details>
 
       </section>
@@ -545,7 +545,7 @@
 
         <details class="code-link step">
           <summary>Code connection · window, FFT, and spectral memory</summary>
-          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 70–78, 92–101, and 179–201</div>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 70–78, 92–101, and 179–201</div>
           <pre><span class="ln">70</span>'step_s', 0.125, ...
 <span class="ln">71</span>'segment_s', 0.5, ...
 <span class="ln">106</span>cfg.reference_keep = cfg.keep;
@@ -613,7 +613,7 @@
 
         <details class="code-link step">
           <summary>Code connection · confidence-weighted loop reconstruction</summary>
-          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 206–216</div>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 206–216</div>
           <pre><span class="ln">205</span>gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
 <span class="ln">206</span>p_rel = state.Suu/max(max(state.Suu), eps);
 <span class="ln">207</span>leverage = p_rel./(p_rel+cfg.power_floor);
@@ -659,7 +659,7 @@
 
         <details class="code-link step">
           <summary>Code connection · chordal curve and worst-frequency selection</summary>
-          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 111–114, 216–218, and 358–363</div>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 111–114, 216–218, and 358–363</div>
           <pre><span class="ln">110</span>cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
 <span class="ln">112</span>cfg.nominal_curve = chordal(cfg.L0, cfg.cap);
 <span class="ln">113</span>cfg.nominal = min(cfg.nominal_curve.*cfg.keep+cfg.cap*(~cfg.keep));
@@ -736,7 +736,7 @@
 
         <details class="code-link step">
           <summary>Code connection · healthy reference and frequency-dependent rho fit</summary>
-          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 74–84, 105–107, 188–190, 226–227, 233–248, and 286</div>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 74–84, 105–107, 188–190, 226–227, 233–248, and 286</div>
           <pre><span class="ln">74</span>'residual_s', 1.00, ...
 <span class="ln">83</span>'rho_recover_s', 0.4, ...
 <span class="ln">86</span>'reference_level_beta', 0.50, ...
@@ -762,7 +762,7 @@
       <section class="lesson-section" id="stage-6" data-title="Evidence fusion">
         <span class="section-number">SECTION 06 / 09</span>
         <h2>Per-Frequency Fusion of Stability Evidence</h2>
-        <p class="lead">Neither branch is trusted everywhere. Both are kept as curves over frequency, every bin is charged for the evidence it actually has, and only then does the weakest bin govern.</p>
+        <p class="lead">Neither branch is trusted everywhere. Both are kept as curves over frequency, every bin is charged for the evidence it actually has, and only then is one isolated low bin trimmed so the second-smallest bin governs.</p>
 
         <div class="step">
           <p>The 0.5 s command RMS defines the binary activity $A$ directly. The approved threshold is $\eta_A=0.0575$, approximately $4.54\sigma_{\mathrm{noise},u}$ based on the clean quiet-record estimate:</p>
@@ -776,7 +776,7 @@
           <p>Activity is no longer a regime switch that selects one scalar margin or the other. It enters only where it belongs: inside the confidence $c(\omega)$ of the identification branch, and in the fast drive-ratio detector of the residual branch.</p>
         </div>
 
-        <div class="callout step"><strong>Why the fusion is per frequency</strong>A chordal margin is defined at a frequency, and the loop margin is the weakest of them. Collapsing each branch with $\min_\omega$ <em>first</em> and then combining the two scalars mixes margins taken at different frequencies, which is not a quantity with a meaning. The minimum therefore runs last, after each bin has formed its own estimate.</div>
+        <div class="callout step"><strong>Why the fusion is per frequency</strong>A chordal margin is defined at a frequency. Collapsing each branch <em>first</em> and then combining two scalars mixes margins taken at different frequencies, which is not a quantity with a meaning. The final order-statistic reduction therefore runs last, after each bin has formed its own estimate.</div>
 
         <div class="step">
           <p>Two independent kinds of evidence exist at every bin, and each one has to pay for the claim it makes. The first is the confidence $c(\omega)$ already built in Section 03: command energy and coherence say the loop is <em>directly visible</em> at this frequency, so the identified margin $b_{st}(\omega)$ is worth believing.</p>
@@ -799,8 +799,8 @@
             \[b(\omega)=w_{st}(\omega)\,b_{st}(\omega)
             +w_{res}(\omega)\,b_{res}(\omega)
             +w_{prior}(\omega)\,b_{prior}(\omega)\]
-            \[b_i[n]=\min_{\omega\in\Omega}b(\omega)\]
-            <span class="label">A convex combination of three margins at one frequency, then worst-of. The $\min$ now acts on a per-frequency estimate rather than on two pre-collapsed scalars. $b_i$ is the instantaneous margin of update $n$, before any smoothing in time; it is <code>b_raw</code> in the implementation.</span>
+            \[b_i[n]=b_{(2)}\!\left(\left\{b(\omega):\omega\in\Omega\right\}\right)\]
+            <span class="label">A convex combination of three margins at one frequency, followed by the second order statistic. The single smallest bin is trimmed; the next-lowest bin supplies <code>b_raw</code> and the reported provenance before any smoothing in time.</span>
           </div>
 
           <div class="lab weightmap">
@@ -856,18 +856,18 @@
           <p>No separate idle margin, no activity cross-fade, and no memory latch is needed to produce this behaviour; it falls out of the same expression that handles the excited case.</p>
         </div>
 
-        <div class="callout warning step"><strong>A fallback is not residual evidence</strong>Weighting the two evidence branches by $c$ and $1-c$ alone fails: $\min_\omega$ self-selects poorly excited bins and lets residual-fit noise govern. Giving the leftover share its own weight $w_{prior}$ removes that pathology, and it keeps $w_{res}$ reserved for actual inferred residual evidence rather than doubling as a catch-all.</div>
+        <div class="callout warning step"><strong>A fallback is not residual evidence</strong>Weighting the two evidence branches by $c$ and $1-c$ alone lets poorly excited bins and residual-fit noise dominate the low order statistics. Giving the leftover share its own weight $w_{prior}$ removes that pathology, and it keeps $w_{res}$ reserved for actual inferred residual evidence rather than doubling as a catch-all.</div>
 
         <div class="step">
           <h3>Provenance of the governing result</h3>
-          <p>After forming every $b(\omega)$, the estimator finds the frequency $\omega_*$ that produces $b_i$. It reports the three weights at that same governing bin, rather than averaging evidence over the band:</p>
+          <p>After forming every $b(\omega)$, the estimator sorts the retained values, trims the single smallest one, and selects the frequency $\omega_*$ of the second-smallest value. It reports the three weights at that same governing bin, rather than averaging evidence over the band:</p>
           <div class="equation">
-            \[\omega_*=\arg\min_{\omega\in\Omega}b(\omega)\]
+            \[b(\omega_*)=b_{(2)}\!\left(\left\{b(\omega):\omega\in\Omega\right\}\right)\]
             \[\texttt{direct\_fraction}=w_{st}(\omega_*),\qquad
             \texttt{residual\_weight}=w_{res}(\omega_*),\qquad
             \texttt{fallback\_fraction}=w_{prior}(\omega_*)\]
           </div>
-          <p><code>governing_freq_hz</code> is $\omega_*/(2\pi)$ in hertz. For example, direct = 0.20, residual = 0.70, and fallback = 0.10 means the worst-bin estimate is 20% identified from command–response data, 70% inferred through the $\rho$ model, and 10% supplied by the commissioning prior. These fields describe where the result came from; the authority law separately decides how much extra guard inferred evidence requires.</p>
+          <p><code>governing_freq_hz</code> is $\omega_*/(2\pi)$ in hertz. For example, direct = 0.20, residual = 0.70, and fallback = 0.10 means the selected-bin estimate is 20% identified from command–response data, 70% inferred through the $\rho$ model, and 10% supplied by the commissioning prior. These fields describe where the result came from; the authority law separately decides how much extra guard inferred evidence requires.</p>
         </div>
 
         <div class="step">
@@ -895,7 +895,7 @@
 
         <details class="code-link step">
           <summary>Code connection · recovery criterion, per-bin weights, and final margin smoothing</summary>
-          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 73, 81–85, 163–164, 261, 281–283, and 299–305</div>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 73, 81–85, 163–164, 261, 281–283, and 299–310</div>
           <pre><span class="ln">73</span>'margin_s', 0.25, ...
 <span class="ln">80</span>'eta_A', 0.0575, ...
 <span class="ln">81</span>'hard_activity_gain', 0.80, ...
@@ -921,7 +921,9 @@
 <span class="ln">303</span>end
 <span class="ln">304</span>b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+ ...
 <span class="ln">305</span>    (1-w_st-w_res).*no_evidence_curve;
-<span class="ln">307</span>[b_raw, governing_local] = min(b_bin(cfg.keep));
+<span class="ln">307</span>[b_sorted, order] = sort(b_bin(cfg.keep));
+<span class="ln">308</span>b_raw = b_sorted(2);
+<span class="ln">309</span>governing_local = order(2);
 <span class="ln">314</span>    activity, w_res(governing_bin), rho_best, full_coherent, cfg, state);
 <span class="ln">315</span>info.direct_fraction = w_st(governing_bin);
 <span class="ln">316</span>info.fallback_fraction = 1-w_st(governing_bin)-w_res(governing_bin);
@@ -967,7 +969,7 @@
 
         <details class="code-link step">
           <summary>Code connection · applied adaptive gain enters the estimator</summary>
-          <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 165–169; predict_inner_margin.m · lines 3–11</div>
+          <div class="code-meta">research/sol_osi_simplified/sol_osi_simplified.m · lines 165–169; predict_inner_margin.m · lines 3–11</div>
           <pre><span class="ln">164</span>a_now = min(max(state.a_cmd, 0.02), 1);
 <span class="ln">165</span>Lprior = a_now*cfg.L0;
 <span class="ln">166</span>Tprior = Lprior./(1+Lprior);
@@ -994,30 +996,29 @@
           <div class="pipe-row"><b>04</b><strong>What loop produced it?</strong><span>Blend $\widehat T$ with $T_{prior}$, then invert to $\widehat L$.</span></div>
           <div class="pipe-row"><b>05</b><strong>How close is critical?</strong><span>Evaluate the chordal curve and take its minimum.</span></div>
           <div class="pipe-row"><b>06</b><strong>What if input is quiet?</strong><span>Fit $\rho$ from output power relative to a fixed healthy reference.</span></div>
-          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{st}(\omega)$ by $w_{st}=c$, $b_{res}(\omega)$ by $w_{res}=(1-c)d$, and $b_{prior}(\omega)$ by the remaining $w_{prior}$; take the worst bin.</span></div>
+          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{st}(\omega)$ by $w_{st}=c$, $b_{res}(\omega)$ by $w_{res}=(1-c)d$, and $b_{prior}(\omega)$ by the remaining $w_{prior}$; trim one isolated low bin and take the second-smallest.</span></div>
           <div class="pipe-row"><b>08</b><strong>What should be reported?</strong><span>Smooth and clamp $b$, then report the direct, inferred, and prior shares at the governing frequency.</span></div>
         </div>
 
         <div class="equation accent step">
-          \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{st}(\omega),b_{res}(\omega)\;\longrightarrow\;\min_{\omega\in\Omega}b(\omega)\;\longrightarrow\;b\;}\]
+          \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{st}(\omega),b_{res}(\omega)\;\longrightarrow\;b_{(2)}\{b(\omega)\}\;\longrightarrow\;b\;}\]
         </div>
 
         <div class="final-note step">
           <h3>Correspondence Between Mathematical Formulation and Implementation</h3>
-          <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code>; it does not replace the production SOL-OSI implementation.</p>
-          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade. The recovery ratio now uses the full retained analysis band rather than a fixed 28–44 Hz subset. In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, this implementation passes all seven gates, scores 80.9, has zero unstable time, and holds tail authority to 0.443 against the 0.736 limit.</p>
-          <p>Three constants were then retuned, without touching any equation. The first two address the same thing: the $\rho$ update constant $\tau_{\rho,\mathrm{update}}$ went from 0.84 s to 1.0 s and the level-normalisation exponent $\beta$ from 0.26 to 0.50. On a record where the drive itself gets louder, an amplitude-only rise inflates the reference ratio and is read as loop growth; a larger $\beta$ divides more of that level out and leaves the fit reading shape, and a slower attack stops a transient from being committed to memory. On the GDB replay the effect is large — the authority floor rises from 0.20 to 0.59 and the recovery latency after the gain is restored falls from 6.9 s to 0 s — because the shed there was driven by exactly that false level evidence.</p>
-          <p>The third is the output smoothing constant $\tau_b$, from 0.08 s to 0.25 s, which addresses the indicator jitter in the scorecard below. Taking the worst of forty-seven per-frequency estimates is an order statistic, so this formulation buys its per-bin honesty with a noisier trace; the output filter is where that is paid back. The jitter falls from 4.54 to 1.98 — less than half the production estimator's 4.22 — with no detection lost, because after the first two changes the fast edges no longer rely on the fast filter. The composite rises from 73.5 to 80.9 and every gate still passes. The panel in Section 09 runs this estimator in the browser, so all three constants and the other eleven can be moved against the recorded data directly.</p>
+          <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified/sol_osi_simplified.m</code>; it remains separate from the production SOL-OSI implementation.</p>
+          <p>The accepted simplified method keeps the complete V5 estimator and changes only the final reducer: after the per-frequency evidence mixture is formed, it selects the second-smallest retained value instead of the minimum. That one-bin trim prevents a single isolated residual from governing the full estimate while leaving all evidence weights, filters, detector settings, and authority logic unchanged.</p>
+          <p>In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, the simplified method passes all seven gates. It scores 92.94 on Fabby 1, 62.48 on Fabby 2, 60.00 on detection, 87.73 on smoothness, and 100 on GDB recovery, for a composite of 80.63. Indicator jitter is 1.95, unstable time is zero, and tail authority is 0.503.</p>
           <h3>Fabby Bench 2 Comparison</h3>
-          <p>The detection score counts the five known diagnostic-gain increases—three in the live experimental scenario and two in GDB—and awards one fifth for each event reflected in the reading or authority response within two seconds. Simplified_5 detects 3 of 5: live latencies 0.11 s, missed, and 0.04 s; GDB latencies missed and 0.50 s. Therefore its detection score is $100(3/5)=60$.</p>
-          <p>The current implementation has the strongest detection score, but it fails the zero-unstable-time and end-hold gates. Its raw composite is therefore not an accepted benchmark result. Generalized simplified_5 and the second-smallest-bin simplified_6 both pass every gate; simplified_6 is slightly less conservative on the synthetic damage cases but gives up experimental regulation score. Section 09 replays every test of the benchmark and tabulates the scorecard.</p>
+          <p>The detection score counts the five known diagnostic-gain increases—three in the live experimental scenario and two in GDB—and awards one fifth for each event reflected in the reading or authority response within two seconds. The simplified method detects 3 of 5, so its detection score is $100(3/5)=60$.</p>
+          <p>The implemented estimator has the strongest raw detection score, but it fails the zero-unstable-time and end-hold gates. The simplified estimator passes every gate. Section 09 replays every test for these two maintained methods and tabulates the scorecard.</p>
         </div>
       </section>
 
       <section class="lesson-section" id="stage-9" data-title="Benchmark results">
         <span class="section-number">SECTION 09 / 09</span>
-        <h2>Fabby Bench 2: Measured Behaviour of the Four Implementations</h2>
-        <p class="lead">Every test of the benchmark, replayed for the production estimator, the earlier simplified form, generalized simplified_5, and the second-smallest-bin simplified_6, with the reported margin and applied authority side by side.</p>
+        <h2>Fabby Bench 2: Implemented and Simplified</h2>
+        <p class="lead">Every test of the benchmark, replayed for the implemented estimator and the accepted second-smallest-bin simplified estimator, with the reported margin and applied authority side by side.</p>
 
         <div class="replay-bay">
           <div class="lab step">
@@ -1035,9 +1036,9 @@
 
           <aside class="tune-panel step idle" id="tunePanel">
             <div class="lab-head" style="margin-bottom:0">
-              <strong>Tune simplified_5</strong><span class="tune-busy" id="tuneBusy">re-running…</span>
+              <strong>Tune simplified</strong><span class="tune-busy" id="tuneBusy">re-running…</span>
             </div>
-            <p class="tune-sub" id="tuneSub">The estimator itself runs in your browser on the same recorded data. Move a parameter and the dark red trace is recomputed.</p>
+            <p class="tune-sub" id="tuneSub">The estimator itself runs in your browser on the same recorded data. Move a parameter and the Copperwood trace is recomputed.</p>
             <label class="tune-check"><input type="checkbox" id="tuneGhost" checked> show the committed tune as a ghost</label>
             <div class="tune-body" id="tuneBody"></div>
             <div class="tune-actions">
@@ -1050,14 +1051,14 @@
         </div>
 
         <div class="step">
-          <p>The measured displacement is drawn once per implementation, because in every closed-loop test the authority factor scales the command that drives the plant: where the four traces separate, the implementations have driven the specimen differently. Dashed vertical marks give the plant blend used by the synthetic scenarios, where $\lambda=0$ is the identified 7k model and $\lambda=1$ the 5k model. Where a test provides ground truth, the true chordal margin is drawn dashed in each implementation's own colour, since it depends on the authority that implementation applied. The diagnostic gain, where the record carries one, is drawn against the right-hand axis of the authority panel. <strong>Click any legend entry</strong> to hide or restore that trace; the vertical scales follow what is left visible, so a single implementation can be read out of a crowded plot.</p>
+          <p>The measured displacement is drawn once per implementation, because in every closed-loop test the authority factor scales the command that drives the plant: where the two traces separate, the implementations have driven the specimen differently. Dashed vertical marks give the plant blend used by the synthetic scenarios, where $\lambda=0$ is the identified 7k model and $\lambda=1$ the 5k model. Where a test provides ground truth, the true chordal margin is drawn dashed in each implementation's own colour, since it depends on the authority that implementation applied. The diagnostic gain, where the record carries one, is drawn against the right-hand axis of the authority panel. <strong>Click any legend entry</strong> to hide or restore that trace; the vertical scales follow what is left visible, so a single implementation can be read out of a crowded plot.</p>
         </div>
 
         <div class="step">
           <h3>Scorecard</h3>
-          <p>Read directly from the saved Fabby Bench 2 results, so this table cannot disagree with the benchmark that produced it. A raw composite is reported only when all seven gates pass; the two failing methods are shown for reference and marked as gated out. <strong>Hover or tab onto any metric name</strong> for what it measures, whether high or low is the good direction, and which test in the dropdown above to look at.</p>
+          <p>Read directly from the saved Fabby Bench 2 results, so this table cannot disagree with the benchmark that produced it. A raw composite is reported only when all seven gates pass; the failing implemented method is shown for reference and marked as gated out. <strong>Hover or tab onto any metric name</strong> for what it measures, whether high or low is the good direction, and which test in the dropdown above to look at.</p>
           <table class="bench-table" id="benchTable">
-            <thead><tr><th>Metric</th><th>implemented</th><th>simplified</th><th>simplified_5</th><th>simplified_6</th></tr></thead>
+            <thead><tr><th>Metric</th><th>implemented</th><th>simplified</th></tr></thead>
             <tbody></tbody>
           </table>
           <p class="margin-note" id="benchTableNote"></p>
@@ -1701,7 +1702,7 @@
       M.forEach(m => legendItem(m.key, m.color, m.label, false, false));
       if (test.has_ncf) legendItem('ncf', '#686760', 'true NCF (per implementation)', true, false);
       if (test.has_gain) legendItem('gain', '#171714', 'diagnostic gain (right axis)', true, false);
-      if (ghost) legendItem('ghost', ghost.color, 'simplified_5 at the committed tune', false, true);
+      if (ghost) legendItem('ghost', ghost.color, 'simplified at the committed tune', false, true);
       document.getElementById('benchMeta').textContent =
         test.group + ' test  ·  target ' + test.target;
       document.getElementById('benchNote').textContent = test.note || '';
@@ -1724,19 +1725,19 @@
     const firstExp = D.tests.findIndex(t => t.group === 'experimental');
     sel.value = String(firstExp >= 0 ? firstExp : 0);
 
-    // ---- live parameter panel for simplified_5 ----------------------------
+    // ---- live parameter panel for the simplified estimator ----------------
     // The estimator is re-run in the browser on the same recorded inputs
     // (bench2_engine.js), so a slider move produces the same curve MATLAB
     // would, not an approximation of it.
-    const KEY = 'sol_osi_simplified_5';
-    const TUNE = window.BENCH2_TUNE, ENG = window.OSI5;
+    const KEY = 'sol_osi_simplified';
+    const TUNE = window.BENCH2_TUNE, ENG = window.OSISimplified;
     const tPanel = document.getElementById('tunePanel');
     const bodyEl = document.getElementById('tuneBody');
     const busyEl = document.getElementById('tuneBusy');
     const subEl = document.getElementById('tuneSub');
     const outEl = document.getElementById('tuneReadout');
     const ghostBox = document.getElementById('tuneGhost');
-    const ghostColor = (D.methods.find(m => m.key === KEY) || {}).color || '#901500';
+    const ghostColor = (D.methods.find(m => m.key === KEY) || {}).color || '#ac6420';
 
     // label, min, max, step, decimals
     const SPECS = [
@@ -1763,7 +1764,7 @@
         ['reference_level_beta', 'level normalisation β', 0, 1, 0.02, 2]
       ]]
     ];
-    // the values simplified_5 shipped with before the retune
+    // the values the simplified estimator used before the committed retune
     const PRE_RETUNE = {residual_s: 0.84, reference_level_beta: 0.26, margin_s: 0.08};
 
     const params = {};

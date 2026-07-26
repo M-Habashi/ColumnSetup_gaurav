@@ -1,4 +1,4 @@
-/* Verify the browser port of sol_osi_simplified_5 against MATLAB.
+/* Verify the browser port of sol_osi_simplified against MATLAB.
  *
  * docs/Sol_osi/bench2_engine.js re-runs the estimator in the reader's browser;
  * this compares its output at the committed defaults against the curves
@@ -43,14 +43,14 @@ params.no_evidence_prior = !!params.no_evidence_prior;
 let worst = 0;
 for (const key of ['gdb_replay', 'live_closed_loop']) {
   const t0 = Date.now();
-  const out = window.OSI5.run(key, params);
+  const out = window.OSISimplified.run(key, params);
   const ms = Date.now() - t0;
   const ref = D.tests.find(x => x.key === key);
   console.log(`\n${key}   (${ms} ms, ${out.b.length} updates)`);
-  worst = Math.max(worst, stats('b', out.b, ref.osi.sol_osi_simplified_5));
-  worst = Math.max(worst, stats('a', out.a, ref.auth.sol_osi_simplified_5));
+  worst = Math.max(worst, stats('b', out.b, ref.osi.sol_osi_simplified));
+  worst = Math.max(worst, stats('a', out.a, ref.auth.sol_osi_simplified));
   if (ref.has_ncf && out.b_true) {
-    worst = Math.max(worst, stats('b_true', out.b_true, ref.ncf.sol_osi_simplified_5));
+    worst = Math.max(worst, stats('b_true', out.b_true, ref.ncf.sol_osi_simplified));
   }
 }
 console.log(`\nworst deviation across both scenarios: ${worst.toExponential(3)}`);

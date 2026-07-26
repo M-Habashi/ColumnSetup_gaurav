@@ -1,8 +1,32 @@
 function [out, state, info] = sol_osi_simplified(varargin)
-%SOL_OSI_SIMPLIFIED Research-only frequency-dependent rho variant.
+%SOL_OSI_SIMPLIFIED Per-frequency evidence fusion with a trimmed reduction.
 %   cfg = sol_osi_simplified('config', dt, initial_loop_tf, override)
 %   state = sol_osi_simplified('state', cfg)
 %   [b, state, info] = sol_osi_simplified(dd, dm, cfg, state)
+%
+%   The identified and residual branches are kept as curves over frequency
+%   and fused through three statements per bin:
+%
+%     1. w_st(f)  = c(f)                    identified margin is believable
+%                                           where the loop is visible;
+%        w_res(f) = (1-c(f))*d(f)           the rho model is believable where
+%                                           the observation detected a
+%                                           deviation clearing the resolution
+%                                           of the rho fit itself.
+%     2. b(f) = w_st*b_st + w_res*b_rho + (1-w_st-w_res)*b_prior
+%           A bin with neither kind of evidence falls back to the current
+%           authority-scaled commissioning prior.
+%     3. b = second-smallest_f b(f)
+%           One isolated low bin is trimmed after the per-frequency estimate
+%           is formed. The selected bin still supplies the reported evidence
+%           fractions and governing frequency.
+%
+%   Idle stops being a special case: quiet means every c(f) is zero, so a
+%   loop still matching its commissioning reads its prior, while a bin that
+%   detected damage keeps reporting it.  Recovery needs no
+%   latch either -- the observation branch is the only one carrying memory,
+%   and it forgets on one criterion (observed power no longer above the
+%   healthy reference) with one time constant, rho_recover_s.
 
 persistent eta_A_override benchmark_override
 
@@ -42,22 +66,20 @@ cfg = struct( ...
     'step_s', 0.125, ...
     'segment_s', 0.5, ...
     'memory_s', 0.25, ...
-    'margin_s', 0.08, ...
-    'residual_s', 0.84, ...
+    'margin_s', 0.25, ...
+    'residual_s', 1.00, ...
     'warm_s', 2.0, ...
     'band_hz', [2 100], ...
     'line_reject_hz', [58 62], ...
-    'quiet_band_hz', [28 44], ...
     'power_floor_db', 30, ...
     'fit_floor', 0.10, ...
     'eta_A', 0.0575, ...
     'hard_activity_gain', 0.80, ...
     'detector_max', 1.95, ...  % ceiling on the fast drive-ratio kick on rho
-    'rho_leak_s', 8.0, ...     % idle decay time constant of the rho memory
-    'reference_level_beta', 0.0, ...
-    'residual_memory_gain', 21.75, ...
-    'memory_release_ratio', 0.6, ...
-    'memory_reengage_ratio', 1.4, ...
+    'rho_recover_s', 0.4, ...  % the one recovery time constant
+    'rho_detect', 1.75, ...    % rho resolution: below this a bin saw little
+    'no_evidence_prior', true, ...
+    'reference_level_beta', 0.50, ...
     'level_fit_gain', 0.28, ...
     'level_fit_start_ratio', 4.0, ...
     'cap', 1/sqrt(2));
@@ -77,9 +99,8 @@ cfg.freq_hz = f(cfg.bin);
 cfg.keep = ~(cfg.freq_hz >= cfg.line_reject_hz(1) & ...
     cfg.freq_hz <= cfg.line_reject_hz(2));
 cfg.rho_fit_keep = cfg.keep;
-cfg.quiet_keep = cfg.keep & cfg.freq_hz >= cfg.quiet_band_hz(1) & ...
-    cfg.freq_hz <= cfg.quiet_band_hz(2);
-assert(any(cfg.rho_fit_keep) && any(cfg.quiet_keep), ...
+cfg.reference_keep = cfg.keep;
+assert(any(cfg.rho_fit_keep) && any(cfg.reference_keep), ...
     'The selected OSI bands contain no usable bins.')
 
 cfg.L0 = squeeze(freqresp(initial_loop_tf, 2*pi*cfg.freq_hz));
@@ -92,7 +113,7 @@ cfg.spectral_alpha = 1-exp(-cfg.step_s/cfg.memory_s);
 cfg.margin_alpha = 1-exp(-cfg.step_s/cfg.margin_s);
 cfg.residual_alpha = 1-exp(-cfg.step_s/cfg.residual_s);
 cfg.drive_alpha = 1-exp(-cfg.step_s/cfg.warm_s);
-cfg.leak_alpha = 1-exp(-cfg.step_s/cfg.rho_leak_s);
+cfg.recover_alpha = 1-exp(-cfg.step_s/cfg.rho_recover_s);
 cfg.power_floor = 10^(-cfg.power_floor_db/10);
 cfg.warm_steps = round(cfg.warm_s/cfg.step_s);
 cfg.reference_stride = cfg.segment_n/cfg.step_n;
@@ -113,7 +134,6 @@ state = struct( ...
     'q_ref', zeros(nf, 1), ...
     'q_ref_count', 0, ...
     'reference_ratio', 1, ...
-    'memory_released', false, ...
     'log_rho', zeros(nf, 1), ...
     'rho_drive', 1, ...
     'ratio_prev', 0, ...
@@ -140,12 +160,13 @@ activation_weight = cfg.hard_activity_gain*activity;
 a_now = min(max(state.a_cmd, 0.02), 1);
 Lprior = a_now*cfg.L0;
 Tprior = Lprior./(1+Lprior);
-b_prior = minMasked(chordal(Lprior, cfg.cap), cfg.keep);
+b_prior_curve = chordal(Lprior, cfg.cap);
+b_prior = minMasked(b_prior_curve, cfg.keep);
 
 if state.samples_in < cfg.segment_n
     state.b = state.b+activity*cfg.margin_alpha*(b_prior-state.b);
     b = state.b;
-    info = makeInfo(b_prior, b_prior, b_prior, Tprior, Lprior, ...
+    info = makeInfo(b_prior, cfg.cap, b_prior, Tprior, Lprior, ...
         zeros(size(Tprior)), activity, 0, 1, cfg.nominal, cfg, state);
     return
 end
@@ -176,6 +197,7 @@ else
 end
 state.spectral_count = state.spectral_count+1;
 
+%% ---- branch 1: identification ---------------------------------------------
 gamma2 = min(1, abs(state.Syu).^2./max(state.Suu.*state.Syy, eps));
 p_rel = state.Suu/max(max(state.Suu), eps);
 leverage = p_rel./(p_rel+cfg.power_floor);
@@ -186,37 +208,31 @@ den = 1-Tuse;
 small = abs(den) < 0.02;
 den(small) = 0.02*exp(1i*angle(den(small)+eps));
 Lhat = Tuse./den;
-b_st = minMasked(movmedian(chordal(Lhat, cfg.cap), 3), cfg.keep);
+b_st_curve = movmedian(chordal(Lhat, cfg.cap), 3);
 full_coherent = minMasked(movmedian(chordal(min(1/a_now, 4)*Lhat, ...
     cfg.cap), 3), cfg.keep);
 
+%% ---- branch 2: observation -------------------------------------------------
 rho_best = ones(size(cfg.L0));
 drive_ratio = 1;
 if state.step_count > cfg.warm_steps
     qobs = state.Syy./cfg.shape;
     if state.q_ref_count == 3
         qobs = state.Syy./max(state.q_ref, eps);
-        state.reference_ratio = median(qobs(cfg.quiet_keep));
-        if state.memory_released
-            if state.reference_ratio > cfg.memory_reengage_ratio
-                state.memory_released = false;
-            end
-        elseif state.reference_ratio < cfg.memory_release_ratio
-            state.memory_released = true;
-        end
-        qobs = qobs/max(median(qobs(cfg.quiet_keep))^ ...
+        state.reference_ratio = median(qobs(cfg.reference_keep));
+        qobs = qobs/max(median(qobs(cfg.reference_keep))^ ...
             cfg.reference_level_beta, eps);
     else
-        qobs = qobs/max(median(qobs(cfg.quiet_keep)), eps);
+        qobs = qobs/max(median(qobs(cfg.reference_keep)), eps);
     end
     loss = inf(numel(cfg.L0), numel(cfg.rho_grid));
     for k = 1:numel(cfg.rho_grid)
         qmod = abs((1+cfg.L0)./(1+a_now*cfg.rho_grid(k)*cfg.L0)).^2;
         if state.q_ref_count == 3
-            qmod = qmod/max(median(qmod(cfg.quiet_keep))^ ...
+            qmod = qmod/max(median(qmod(cfg.reference_keep))^ ...
                 cfg.reference_level_beta, eps);
         else
-            qmod = qmod/max(median(qmod(cfg.quiet_keep)), eps);
+            qmod = qmod/max(median(qmod(cfg.reference_keep)), eps);
         end
         loss(cfg.rho_fit_keep, k) = abs( ...
             log(max(qobs(cfg.rho_fit_keep), eps))- ...
@@ -251,29 +267,52 @@ if state.step_count > cfg.warm_steps
     alpha_rho = activity*cfg.residual_alpha;
     state.log_rho = state.log_rho+alpha_rho*dlog_rho;
 end
-% Blind forgiveness: with no drive there is no evidence either way, so
-% the damage memory decays toward healthy (rho -> 1) with time constant
-% rho_leak_s. The (1-activity) gate keeps the driven fit unbiased.
-state.log_rho = state.log_rho*(1-cfg.leak_alpha*(1-activity));
+% Recovery.  The observation branch is the only one carrying memory, so it
+% is the only one that has to forget.  One criterion does it: the memory
+% exists because the observed output power stood above the healthy
+% reference, so it decays whenever that is no longer true -- while quiet,
+% and equally while driven after a repair.  This is the only recovery
+% constant in the estimator.
+forgetting = double(state.reference_ratio < 1);
+state.log_rho = state.log_rho*(1-cfg.recover_alpha*forgetting);
 rho = exp(state.log_rho)*drive_ratio;
-b_res = minMasked(movmedian(chordal(a_now*rho.*cfg.L0, cfg.cap), 3), ...
-    cfg.keep);
 
-res_weight = activation_weight*(1-mean(leverage(cfg.quiet_keep)))^2;
-b_evid = b_st-res_weight*max(b_st-b_res, 0);
-memory_gain = cfg.residual_memory_gain;
-if state.memory_released
-    memory_gain = 1;
+%% ---- fusion: per bin, then trim one isolated low bin -----------------------
+b_rho_curve = movmedian(chordal(a_now*rho.*cfg.L0, cfg.cap), 3);
+% Two independent kinds of evidence exist at every bin, and each one has to
+% pay for the claim it makes:
+%   c(f) - the loop is directly visible here (drive energy and coherence),
+%          so the identified margin is worth believing;
+%   d(f) - the observed power has moved far enough from the healthy
+%          reference to clear the resolution of the rho fit itself, so the
+%          rho-corrected model is worth believing.
+% A bin with neither kind of evidence falls back to the current
+% authority-scaled commissioning prior. Quiet is therefore an ordinary
+% case: every c is zero, an undamaged loop reads its prior, and a bin that
+% detected damage keeps reporting it until the recovery criterion forgets.
+detected = min(max((rho-1)/(cfg.rho_detect-1), 0), 1);
+w_st = confidence;
+w_res = (1-confidence).*detected;
+no_evidence_curve = cfg.cap*ones(size(b_prior_curve));
+if cfg.no_evidence_prior
+    no_evidence_curve = b_prior_curve;
 end
-rho_memory = median(rho(cfg.keep));
-w_mem = min(max(memory_gain*(rho_memory-1), 0), 1);
-b_idle = cfg.cap-w_mem*(cfg.cap-b_res);
-b_raw = activity*b_evid+(1-activity)*b_idle;
+b_bin = w_st.*b_st_curve+w_res.*b_rho_curve+ ...
+    (1-w_st-w_res).*no_evidence_curve;
+keep_idx = find(cfg.keep);
+[b_sorted, order] = sort(b_bin(cfg.keep));
+b_raw = b_sorted(2);
+governing_local = order(2);
+governing_bin = keep_idx(governing_local);
 state.b = state.b+cfg.margin_alpha*(b_raw-state.b);
 b = min(max(state.b, 0), cfg.cap);
 
-info = makeInfo(b_st, b_res, b_raw, Tuse, Lhat, confidence, activity, ...
-    res_weight, rho_best, full_coherent, cfg, state);
+info = makeInfo(minMasked(b_st_curve, cfg.keep), ...
+    minMasked(b_rho_curve, cfg.keep), b_raw, Tuse, Lhat, confidence, ...
+    activity, w_res(governing_bin), rho_best, full_coherent, cfg, state);
+info.direct_fraction = w_st(governing_bin);
+info.fallback_fraction = 1-w_st(governing_bin)-w_res(governing_bin);
+info.governing_freq_hz = cfg.freq_hz(governing_bin);
 end
 
 function info = makeInfo(b_st, b_res, b_raw, T, L, confidence, activity, ...
@@ -295,6 +334,7 @@ info = struct( ...
     'rho_curve', exp(state.log_rho), ...
     'rho_best_curve', rho_best, ...
     'full_margin', full_margin, ...
+    'reference_ratio', state.reference_ratio, ...
     'freq_hz', cfg.freq_hz, ...
     'ready', state.step_count*cfg.step_s >= cfg.warm_s);
 end

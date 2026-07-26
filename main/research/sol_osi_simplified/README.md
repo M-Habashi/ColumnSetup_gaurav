@@ -1,87 +1,63 @@
 # SOL-OSI Simplified
 
-This folder contains the approved research-only simplified SOL-OSI. It remains
-separate from the production implementation in `control_and_HS/OSI`.
+This folder contains the single research-only simplified SOL-OSI estimator.
+It is the method previously evaluated as V6; the numbered name has been
+retired now that this is the accepted simplified method. The implemented
+estimator remains separate in `control_and_HS/OSI`.
 
-## Activity
+## Formulation
 
-The estimator uses a hard binary activity gate:
-
-```matlab
-A = double(rms(u) > eta_A);
-eta_A = 0.0575;
-activation_weight = 0.80*A;
-```
-
-Using the clean quiet-record estimate `sigma_noise_u = 0.012657`, the selected
-threshold is approximately `4.54*sigma_noise_u`.
-
-There is no filtered activity state. `activation_weight` changes immediately
-between `0` and `0.80`; the constant factor has no memory or transition ramp.
-The calibrated final-margin response time is `margin_s = 0.08`.
-
-## Residual inference
-
-The healthy output-power reference is the pointwise median of the first three
-non-overlapping 0.5 s windows:
+The estimator keeps the identified and residual margins as curves over
+frequency. At each retained frequency bin it forms
 
 ```matlab
-Phi_yy_ref = median(abs(Y_ref).^2, 2);
-q_obs = Phi_yy ./ max(Phi_yy_ref, eps);
+w_st = confidence;
+w_res = (1-confidence).*detected;
+b_bin = w_st.*b_st_curve + w_res.*b_rho_curve + ...
+    (1-w_st-w_res).*b_prior_curve;
 ```
 
-The estimator separates the frequency sets:
-
-- `Omega`: all usable 2–100 Hz bins, excluding 58–62 Hz. Each bin independently
-  selects its best loop scale `rho_best(omega)`.
-- `Q`: the 28–44 Hz quiet set. It supplies the scalar reference ratio used by
-  memory hysteresis and the leverage used to weight residual evidence; it does
-  not restrict the `rho` fit.
-
-The residual margin is calculated from the frequency-dependent stored scale:
+The retained bin values are then sorted and the second-smallest value is
+reported:
 
 ```matlab
-b_res = minMasked(movmedian( ...
-    chordal(alpha*rho.*L0, cap), 3), keep);
+[b_sorted, order] = sort(b_bin(cfg.keep));
+b_raw = b_sorted(2);
+governing_local = order(2);
 ```
 
-The moving median uses three adjacent frequency bins, not three time windows.
-The calibrated dynamics are:
+This is the only change from the accepted V5 formulation. It trims one
+isolated low-frequency-bin residual instead of allowing that single bin to
+govern the full estimate.
+
+## Fabby Bench 2
+
+With the synthetic target at 0.55 and the experimental target at 0.30, the
+canonical result is:
+
+| Metric | Simplified |
+|---|---:|
+| All gates pass | true |
+| Fabby score 1 | 92.94 |
+| Fabby score 2 | 62.48 |
+| Detection | 60.00 |
+| Smoothness | 87.73 |
+| GDB recovery | 100.00 |
+| Composite | 80.63 |
+| Indicator jitter | 1.95 |
+| Unstable time | 0 s |
+| Tail maximum authority | 0.503 |
+
+Run the two-method comparison from `research/fabby_bench_2`:
 
 ```matlab
-residual_s = 0.84;
-rho_leak_s = 8.0;
-residual_memory_gain = 21.75;
+comparison = compare_fabby_bench_2();
 ```
 
-## Fabby Benchmark result
-
-| Evaluator | Implemented | Simplified |
-|---|---:|---:|
-| Fabby 1 | 92.733890 | 93.026280 |
-| Fabby 2 | 57.928097 | 59.589202 |
-| S3 detection | 100.000000 | 80.000000 |
-| S4 highlighted subset | 81.550273 | 85.860001 |
-| S5 recovery | 38.235294 | 49.264706 |
-| Composite | 74.089511 | 73.548038 |
-
-The simplified estimator passes all seven gates. Its GDB recovery latency is
-`11.625 s`, and its maximum tail authority is `0.71493`.
-
-Run the canonical benchmark with:
+For focused estimator studies:
 
 ```matlab
 result = run_sol_osi_simplified_benchmark;
-```
-
-Sweep the hard-activity threshold with:
-
-```matlab
 result = run_sol_osi_simplified_sweep;
-```
-
-Sweep the calibrated residual dynamics with:
-
-```matlab
 result = run_sol_osi_simplified_parameter_sweep;
 ```

@@ -2,7 +2,7 @@ function make_bench2_plot_data()
 %MAKE_BENCH2_PLOT_DATA Traces for the docs/Sol_osi/index.html results section.
 %
 %   Builds one JSON payload holding, for every Fabby Bench 2 test and each of
-%   the four estimators (sol_osi, simplified, simplified_5, simplified_6):
+%   the two estimators (implemented and simplified):
 %   the measured displacement dm, the reported OSI b, the applied authority
 %   factor, plus the true NCF and the diagnostic gain where the test has
 %   them.  Writes docs/Sol_osi/bench2_data.js.
@@ -17,18 +17,14 @@ here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(here));
 addpath(fullfile(project, 'control_and_HS', 'OSI'), '-begin');
 addpath(fullfile(project, 'research', 'sol_osi_simplified'), '-begin');
-addpath(fullfile(project, 'research', 'sol_osi_simplified_5'), '-begin');
-addpath(fullfile(project, 'research', 'sol_osi_simplified_6'), '-begin');
 addpath(fullfile(project, 'OSI_tests', 'fable'));
 rehash;
 
 methods = struct( ...
-    'key',   {'sol_osi', 'sol_osi_simplified', 'sol_osi_simplified_5', ...
-              'sol_osi_simplified_6'}, ...
-    'label', {'implemented', 'simplified', 'simplified_5', 'simplified_6'}, ...
-    'fn',    {@sol_osi, @sol_osi_simplified, @sol_osi_simplified_5, ...
-              @sol_osi_simplified_6}, ...
-    'color', {'#007ca8', '#ac6420', '#901500', '#39bf5e'});
+    'key',   {'sol_osi', 'sol_osi_simplified'}, ...
+    'label', {'implemented', 'simplified'}, ...
+    'fn',    {@sol_osi, @sol_osi_simplified}, ...
+    'color', {'#007ca8', '#ac6420'});
 nm = numel(methods);
 
 experimental_target = 0.30;

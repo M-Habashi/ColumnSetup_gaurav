@@ -1,6 +1,6 @@
-/* sol_osi_simplified_5 + gpt5_6_4_auth, ported to the browser.
+/* sol_osi_simplified + gpt5_6_4_auth, ported to the browser.
  *
- * A line-for-line port of research/sol_osi_simplified_5/sol_osi_simplified_5.m
+ * A line-for-line port of research/sol_osi_simplified/sol_osi_simplified.m
  * and control_and_HS/OSI/gpt5_6_4_auth.m, so the reader can move a parameter
  * and watch the same estimator re-run on the same recorded data.
  *
@@ -318,13 +318,14 @@
       rho[i] = Math.exp(st.log_rho[i]) * drive_ratio;
     }
 
-    /* fusion: per bin, then worst bin */
+    /* fusion: per bin, then trim one isolated low bin */
     var brho = st._brho;
     for (i = 0; i < nb; i++) {
       var s = a_now * rho[i];
       brho[i] = chordal(s * cfg.L0re[i], s * cfg.L0im[i], cap);
     }
     var brhom = movmedian3(brho, st._brhom);
+    var lowest = Infinity, lowestGov = 0;
     var b_raw = Infinity, gov = 0, wres = st._wres;
     for (i = 0; i < nb; i++) {
       var det = Math.min(Math.max((rho[i] - 1) / (p.rho_detect - 1), 0), 1);
@@ -332,7 +333,12 @@
       wres[i] = (1 - conf[i]) * det;
       var no_ev = p.no_evidence_prior ? bprior[i] : cap;
       var bb = w_st * bstm[i] + wres[i] * brhom[i] + (1 - w_st - wres[i]) * no_ev;
-      if (keep[i] && bb < b_raw) { b_raw = bb; gov = i; }
+      if (keep[i] && bb < lowest) {
+        b_raw = lowest; gov = lowestGov;
+        lowest = bb; lowestGov = i;
+      } else if (keep[i] && bb < b_raw) {
+        b_raw = bb; gov = i;
+      }
     }
     st.b += cfg.margin_alpha * (b_raw - st.b);
     var b = Math.min(Math.max(st.b, 0), cap);
@@ -476,5 +482,5 @@
       : runOpen(test, name, cfg, prm);
   }
 
-  root.OSI5 = { run: run, buildCfg: buildCfg, osiStep: osiStep, authStep: authStep };
+  root.OSISimplified = { run: run, buildCfg: buildCfg, osiStep: osiStep, authStep: authStep };
 })(typeof window !== 'undefined' ? window : globalThis);

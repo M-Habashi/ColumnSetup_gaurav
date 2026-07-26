@@ -1,21 +1,17 @@
 function comparison = compare_fabby_bench_2()
-%COMPARE_FABBY_BENCH_2 Compare three SOL-OSI implementations at target 0.30.
+%COMPARE_FABBY_BENCH_2 Compare implemented and simplified SOL-OSI.
 
 here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(here));
 addpath(here, '-begin');
 addpath(fullfile(project, 'control_and_HS', 'OSI'), '-begin');
 addpath(fullfile(project, 'research', 'sol_osi_simplified'), '-begin');
-addpath(fullfile(project, 'research', 'sol_osi_simplified_5'), '-begin');
-addpath(fullfile(project, 'research', 'sol_osi_simplified_6'), '-begin');
 addpath(fullfile(project, 'research', 'osi_benchmark'));
 rehash;
 
 estimators = { ...
     "sol_osi",              @sol_osi; ...
-    "sol_osi_simplified",   @sol_osi_simplified; ...
-    "sol_osi_simplified_5", @sol_osi_simplified_5; ...
-    "sol_osi_simplified_6", @sol_osi_simplified_6};
+    "sol_osi_simplified",   @sol_osi_simplified};
 
 results = cell(size(estimators, 1), 1);
 for i = 1:size(estimators, 1)

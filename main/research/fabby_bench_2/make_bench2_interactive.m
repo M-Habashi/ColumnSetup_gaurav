@@ -2,7 +2,7 @@ function make_bench2_interactive()
 %MAKE_BENCH2_INTERACTIVE Payload for the live parameter panel on the page.
 %
 %   Writes docs/Sol_osi/bench2_tune.js, which carries everything the browser
-%   needs to re-run sol_osi_simplified_5 on the two experimental scenarios
+%   needs to re-run sol_osi_simplified on the two experimental scenarios
 %   while the reader moves a slider.  The estimator itself is ported to
 %   JavaScript inside index.html; this function only exports the inputs it
 %   cannot recompute there.
@@ -24,7 +24,7 @@ function make_bench2_interactive()
 here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(here));
 addpath(fullfile(project, 'control_and_HS', 'OSI'), '-begin');
-addpath(fullfile(project, 'research', 'sol_osi_simplified_5'), '-begin');
+addpath(fullfile(project, 'research', 'sol_osi_simplified'), '-begin');
 rehash;
 
 E = load(fullfile(project, 'saved_results', 'exp_tf', ...
@@ -41,7 +41,7 @@ C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 H5 = ss(c2d(E.H_dc_dm, dt, 'zoh'));
 L0tf = C*H5;
-cfg = sol_osi_simplified_5('config', dt, L0tf, struct());
+cfg = sol_osi_simplified('config', dt, L0tf, struct());
 
 %% ---- static configuration --------------------------------------------------
 out.cfg = struct( ...
