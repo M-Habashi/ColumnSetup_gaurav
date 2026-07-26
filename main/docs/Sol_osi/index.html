@@ -231,11 +231,44 @@
     .bench-picker label { color: var(--muted); }
     .bench-picker select { flex: 1; min-width: 0; padding: 7px 9px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 2px; font-family: var(--grot); font-size: 0.8rem; }
     .bench-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 12px 0 4px; color: var(--ink); font-family: var(--grot); font-size: 0.71rem; }
-    .bench-legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .bench-legend span, .bench-legend button { display: inline-flex; align-items: center; gap: 7px; }
+    .bench-legend button { padding: 0; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }
+    .bench-legend button:focus-visible { outline: 2px solid var(--copper); outline-offset: 3px; }
+    .bench-legend button.off { opacity: 0.3; }
+    .bench-legend button.off i { border-top-style: dotted; }
     .bench-legend i { width: 22px; height: 0; flex: 0 0 auto; border-top-width: 3px; border-top-style: solid; }
     .bench-legend i.dash { border-top-width: 2px; border-top-style: dashed; }
     .bench-scroll { overflow-x: auto; }
     .bench-scroll svg { min-width: 560px; }
+
+    /* the replay card and its parameter panel; the panel reaches into the
+       right margin by however much margin actually exists, up to 230px */
+    .replay-bay { display: grid; grid-template-columns: minmax(0, 1fr) 292px; gap: 24px; align-items: start;
+      margin-right: calc(-1 * max(0px, min(230px, (100vw - 1118px) / 2))); }
+    .tune-panel { margin: 34px 0; padding: 16px 16px 18px; border: 1px solid var(--line); background: var(--paper); font-family: var(--grot); position: sticky; top: 74px; }
+    .tune-panel h4 { margin: 0; font-size: 0.9rem; }
+    .tune-sub { margin: 4px 0 0; color: var(--muted); font-size: 0.7rem; line-height: 1.5; }
+    .tune-body { max-height: 60vh; overflow-y: auto; margin-top: 12px; padding-right: 4px; }
+    .tune-group { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .tune-group:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+    .tune-group h5 { margin: 0 0 9px; color: var(--copper); font-size: 0.65rem; font-weight: 750; letter-spacing: 0.09em; text-transform: uppercase; }
+    .tune-row { margin-bottom: 11px; }
+    .tune-row label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 3px; color: var(--muted); font-size: 0.7rem; }
+    .tune-row label b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.72rem; }
+    .tune-row label b.moved { color: var(--copper); }
+    .tune-row input[type="range"] { width: 100%; }
+    .tune-check { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--muted); font-size: 0.7rem; cursor: pointer; }
+    .tune-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .tune-actions button { flex: 1; padding: 7px 8px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 2px; font-family: var(--grot); font-size: 0.7rem; font-weight: 650; cursor: pointer; }
+    .tune-actions button:hover { background: var(--ink); color: var(--paper); }
+    .tune-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 12px; background: var(--line); border: 1px solid var(--line); }
+    .tune-readout div { padding: 7px 8px; background: var(--paper); }
+    .tune-readout span { display: block; color: var(--muted); font-size: 0.62rem; line-height: 1.3; }
+    .tune-readout strong { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+    .tune-note { margin: 10px 0 0; color: var(--muted); font-size: 0.63rem; line-height: 1.5; }
+    .tune-panel.idle .tune-body, .tune-panel.idle .tune-actions, .tune-panel.idle .tune-readout { opacity: 0.35; pointer-events: none; }
+    .tune-busy { color: var(--copper); font-size: 0.62rem; visibility: hidden; }
+    .tune-busy.on { visibility: visible; }
     .plot-frame { fill: none; stroke: var(--line); stroke-width: 1; }
     .plot-grid { stroke: #ece9e3; stroke-width: 1; }
     .plot-tick { fill: var(--muted); font-family: var(--grot); font-size: 10px; }
@@ -243,6 +276,23 @@
     .plot-mark { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 6 4; }
     .plot-mark-label { fill: var(--ink); font-family: var(--grot); font-size: 10px; font-weight: 700; }
     .plot-ref { stroke: var(--muted); stroke-width: 1.1; stroke-dasharray: 2 3; }
+    .weightmap .bench-scroll { margin-top: 16px; }
+    .weightmap svg { min-width: 620px; }
+    .wm-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 16px; align-items: end; margin-top: 20px; font-family: var(--grot); }
+    .wm-controls label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; }
+    .wm-controls input[type="color"] { width: 100%; height: 30px; padding: 2px; background: var(--paper); border: 1px solid var(--ink); border-radius: 2px; cursor: pointer; }
+    .wm-limits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 16px; align-items: end; margin-top: 14px; font-family: var(--grot); }
+    .wm-limits label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.74rem; }
+    .wm-limits input[type="number"] { width: 100%; padding: 6px 8px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 2px; font-family: var(--grot); font-size: 0.78rem; }
+    .wm-side-controls { display: flex; align-items: center; gap: 14px; }
+    .wm-check { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--muted); font-size: 0.74rem; white-space: nowrap; cursor: pointer; }
+    .wm-check input { accent-color: var(--copper); cursor: pointer; }
+    .wm-grid, .wm-grid-minor { stroke: #46453e; stroke-width: 1; stroke-opacity: 0.5; stroke-dasharray: 3 3; }
+    .wm-line { fill: none; stroke: #12120f; stroke-width: 1.7; stroke-linecap: round; }
+    .wm-region { fill: #12120f; font-family: var(--grot); font-size: 11.5px; font-weight: 700; }
+    .wm-swatch { stroke: var(--ink); stroke-width: 1; }
+    .wm-legend { fill: var(--ink); font-family: var(--grot); font-size: 11.5px; }
+    .wm-legend-sub { fill: var(--muted); font-family: var(--grot); font-size: 10px; }
     .metric-name { border-bottom: 1px dotted var(--muted); cursor: help; }
     .metric-name:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
     .bench-tip { position: fixed; z-index: 80; width: 330px; max-width: calc(100vw - 24px); padding: 14px 16px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 5px 5px 0 rgba(23, 23, 20, 0.13); font-family: var(--grot); font-size: 0.735rem; line-height: 1.58; color: var(--ink); opacity: 0; visibility: hidden; transition: opacity 110ms ease; pointer-events: none; }
@@ -265,6 +315,11 @@
       .layout { grid-template-columns: minmax(0, var(--max)); }
       .rail { display: none; }
     }
+    @media (max-width: 1080px) {
+      .replay-bay { grid-template-columns: minmax(0, 1fr); margin-right: 0; }
+      .tune-panel { position: static; }
+      .tune-body { max-height: none; }
+    }
     @media (max-width: 680px) {
       body { font-size: 16px; }
       .topbar { padding: 0 15px; }
@@ -284,6 +339,7 @@
       .pipe-row { grid-template-columns: 38px 1fr; }
       .pipe-row span { grid-column: 2; }
       .diagram, .lab { margin-left: -8px; margin-right: -8px; padding: 14px; }
+      .tune-panel { position: static; }
       .lab-head { align-items: flex-start; flex-direction: column; gap: 3px; }
       .lab-head span { max-width: 100%; overflow-wrap: anywhere; }
       .bode-explorer { grid-template-columns: 1fr; }
@@ -584,7 +640,7 @@
           </div>
           <p>Let $\Omega$ be the usable 2–100 Hz band after excluding the 58–62 Hz line-noise bins. The operator $\operatorname{median}_3$ is a three-bin median filter that suppresses isolated spikes. The identification branch keeps its margin as a <em>curve</em> over $\Omega$:</p>
           <div class="equation">
-            \[b_{ST}(\omega)=\operatorname{median}_3\{b(\omega)\},\qquad\omega\in\Omega\]
+            \[b_{st}(\omega)=\operatorname{median}_3\{b(\omega)\},\qquad\omega\in\Omega\]
             <span class="label">The reduction $\min_{\omega\in\Omega}$ is deferred to Section 06, after both branches have been fused bin by bin.</span>
           </div>
         </div>
@@ -657,12 +713,12 @@
             \[r_{\mathcal Q}=\operatorname{median}_{\omega\in\Omega}q_{obs}(\omega)\]
             <span class="label">The reference ratio therefore generalizes automatically with the configured analysis band and line-rejection mask.</span>
           </div>
-          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 0.84 s update time constant while activity is present. It decays back toward the healthy value $\rho=1$ with a 0.4 s time constant whenever the recovery criterion of Section 06 holds:</p>
+          <p>The fitted curve moves toward $\rho_{best}(\omega)$ with a 1.0 s update time constant while activity is present. It decays back toward the healthy value $\rho=1$ with a 0.4 s time constant whenever the recovery criterion of Section 06 holds:</p>
           <div class="equation">
-            \[\tau_{\rho,\mathrm{update}}=0.84\,\mathrm{s},
+            \[\tau_{\rho,\mathrm{update}}=1.0\,\mathrm{s},
             \qquad \tau_{rec}=0.4\,\mathrm{s}\]
           </div>
-          <p>The <strong>residual margin</strong> $b_{res}(\omega)$ is the chordal margin predicted by the frequency-dependent loop-growth hypothesis, kept as a curve just as $b_{ST}(\omega)$ is. A three-bin moving median is applied across adjacent frequency bins:</p>
+          <p>The <strong>residual margin</strong> $b_{res}(\omega)$ is the chordal margin predicted by the frequency-dependent loop-growth hypothesis, kept as a curve just as $b_{st}(\omega)$ is. A three-bin moving median is applied across adjacent frequency bins:</p>
           <div class="equation accent">
             \[b_{res}(\omega)=\operatorname{median}_3
             \left\{b\!\left(\alpha\rho(\omega)L_0(\omega)\right)\right\},\qquad\omega\in\Omega\]
@@ -681,9 +737,9 @@
         <details class="code-link step">
           <summary>Code connection · healthy reference and frequency-dependent rho fit</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 74–84, 105–107, 188–190, 226–227, 233–248, and 286</div>
-          <pre><span class="ln">74</span>'residual_s', 0.84, ...
+          <pre><span class="ln">74</span>'residual_s', 1.00, ...
 <span class="ln">83</span>'rho_recover_s', 0.4, ...
-<span class="ln">86</span>'reference_level_beta', 0.26, ...
+<span class="ln">86</span>'reference_level_beta', 0.50, ...
 <span class="ln">105</span>cfg.rho_fit_keep = cfg.keep;
 <span class="ln">106</span>cfg.reference_keep = cfg.keep;
 
@@ -723,9 +779,9 @@
         <div class="callout step"><strong>Why the fusion is per frequency</strong>A chordal margin is defined at a frequency, and the loop margin is the weakest of them. Collapsing each branch with $\min_\omega$ <em>first</em> and then combining the two scalars mixes margins taken at different frequencies, which is not a quantity with a meaning. The minimum therefore runs last, after each bin has formed its own estimate.</div>
 
         <div class="step">
-          <p>Two independent kinds of evidence exist at every bin, and each one has to pay for the claim it makes. The first is the confidence $c(\omega)$ already built in Section 03: command energy and coherence say the loop is <em>directly visible</em> at this frequency, so the identified margin $b_{ST}(\omega)$ is worth believing.</p>
+          <p>Two independent kinds of evidence exist at every bin, and each one has to pay for the claim it makes. The first is the confidence $c(\omega)$ already built in Section 03: command energy and coherence say the loop is <em>directly visible</em> at this frequency, so the identified margin $b_{st}(\omega)$ is worth believing.</p>
           <div class="equation">
-            \[w_{ST}(\omega)=c(\omega)=A\,\gamma^2(\omega)\,\ell(\omega)\]
+            \[w_{st}(\omega)=c(\omega)=A\,\gamma^2(\omega)\,\ell(\omega)\]
           </div>
           <p>The second is a detection weight $d(\omega)$. The fitted loop growth $\rho(\omega)$ only means something once it clears the resolution of the $\rho$ fit itself; below the threshold $\rho_{det}=1.75$ the deviation carries little residual evidence. Where $\rho$ does clear it, the residual model $b_{res}(\omega)$ is worth believing to the extent the loop is <em>not</em> directly visible:</p>
           <div class="equation">
@@ -733,40 +789,83 @@
             \qquad \rho_{det}=1.75\]
             \[w_{res}(\omega)=\big(1-c(\omega)\big)\,d(\omega)\]
           </div>
-          <p>The two weights never sum to more than one. Whatever is left over is the unsupported share, which falls back to the current authority-scaled commissioning prior $b_{prior}(\omega)$. This makes the reported value an estimate of the loop margin rather than treating “unknown” as the largest possible margin.</p>
-          <div class="equation accent">
-            \[b(\omega)=w_{ST}(\omega)\,b_{ST}(\omega)
-            +w_{res}(\omega)\,b_{res}(\omega)
-            +\big(1-w_{ST}(\omega)-w_{res}(\omega)\big)b_{prior}(\omega)\]
-            \[b_{raw}[n]=\min_{\omega\in\Omega}b(\omega)\]
-            <span class="label">Weight, weight, worst-of. The $\min$ now acts on a per-frequency estimate rather than on two pre-collapsed scalars.</span>
+          <p>The two evidence weights never sum to more than one. Whatever is left over is the <strong>prior weight</strong> $w_{prior}$: the share of the bin that neither branch can account for, and which therefore falls back on the current authority-scaled commissioning prior $b_{prior}(\omega)$.</p>
+          <div class="equation">
+            \[w_{prior}(\omega)=1-w_{st}(\omega)-w_{res}(\omega)\]
+            <span class="label">The three weights partition the bin: $w_{st}+w_{res}+w_{prior}=1$, each in $[0,1]$.</span>
           </div>
-          <p>The factor $\sigma_b$ smooths the reported margin over time exactly as before:</p>
+          <p>Carrying the unsupported share on the prior, rather than on the ceiling, is what makes the reported value an estimate of the loop margin instead of treating “unknown” as the largest possible margin.</p>
           <div class="equation accent">
-            \[b[n]=b[n-1]+\sigma_b\big(b_{raw}[n]-b[n-1]\big)\]
+            \[b(\omega)=w_{st}(\omega)\,b_{st}(\omega)
+            +w_{res}(\omega)\,b_{res}(\omega)
+            +w_{prior}(\omega)\,b_{prior}(\omega)\]
+            \[b_i[n]=\min_{\omega\in\Omega}b(\omega)\]
+            <span class="label">A convex combination of three margins at one frequency, then worst-of. The $\min$ now acts on a per-frequency estimate rather than on two pre-collapsed scalars. $b_i$ is the instantaneous margin of update $n$, before any smoothing in time; it is <code>b_raw</code> in the implementation.</span>
+          </div>
+
+          <div class="lab weightmap">
+            <div class="lab-head"><strong>Where Each Bin's Answer Comes From</strong><span>the mixture $w_{st}:w_{res}:w_{prior}$ over the whole $(d,c)$ plane</span></div>
+            <p class="margin-note">Every frequency bin of every update lands somewhere on this square. Its position fixes the mixture completely, because the three weights are determined by $c$ and $d$ alone: $w_{st}=c$, $w_{res}=(1-c)d$, $w_{prior}=(1-c)(1-d)$. The colour is those three weights blended in linear light, so a corner shows its pure colour and the interior shows the true proportions.</p>
+            <div class="bench-scroll">
+              <svg id="wmPlot" viewBox="0 0 760 430" role="img" aria-label="Colour map of the three fusion weights over detection weight d and confidence c"></svg>
+            </div>
+            <div class="readout">
+              <div><span class="metric-label">cursor $(d,\,c)$</span><strong id="wmPos">—</strong></div>
+              <div><span class="metric-label">$w_{st}$ / $w_{res}$ / $w_{prior}$</span><strong id="wmWeights">—</strong></div>
+              <div><span class="metric-label">dominant term</span><strong id="wmDom">—</strong></div>
+            </div>
+            <div class="wm-controls">
+              <div><label for="wmColSt">$w_{st}$ — identified</label><input type="color" id="wmColSt" value="#007ca8"></div>
+              <div><label for="wmColRes">$w_{res}$ — inferred</label><input type="color" id="wmColRes" value="#99270e"></div>
+              <div><label for="wmColPrior">$w_{prior}$ — prior</label><input type="color" id="wmColPrior" value="#a9a49a"></div>
+              <button type="button" class="small-button" id="wmReset">Reset colours</button>
+            </div>
+            <div class="wm-limits">
+              <div><label for="wmD0">$d$ min</label><input type="number" id="wmD0" value="0" min="0" max="1" step="0.05"></div>
+              <div><label for="wmD1">$d$ max</label><input type="number" id="wmD1" value="1" min="0" max="1" step="0.05"></div>
+              <div><label for="wmC0">$c$ min</label><input type="number" id="wmC0" value="0" min="0" max="1" step="0.05"></div>
+              <div><label for="wmC1">$c$ max</label><input type="number" id="wmC1" value="1" min="0" max="1" step="0.05"></div>
+              <div class="wm-side-controls">
+                <label class="wm-check"><input type="checkbox" id="wmGrid" checked> grid</label>
+                <button type="button" class="small-button" id="wmFull">Full range</button>
+              </div>
+            </div>
+          </div>
+
+          <p>The two solid boundaries are where the largest of the three weights changes hands, so each region is labelled by the term that actually governs its bins. They are not chosen by eye. Setting $w_{st}$ equal to the larger of the other two gives the upper boundary, and $w_{res}=w_{prior}$ gives the lower one:</p>
+          <div class="equation">
+            \[c=\frac{m}{1+m},\quad m=\max(d,\,1-d)
+            \qquad\text{and}\qquad d=\tfrac12\]
+            <span class="label">The upper boundary dips to $c=\tfrac13$ at $d=\tfrac12$, where the two lower terms split the remaining weight evenly, and rises to $c=\tfrac12$ at either edge, where one of them takes it all.</span>
+          </div>
+          <p>Two features are worth reading off it. The whole bottom edge is quiet operation, $c=0$: with no excitation the answer is grey at $\rho\approx1$ and turns red only as $\rho$ approaches $\rho_{det}$ — that edge is the estimator's entire idle behaviour. And no amount of detection can outvote a well-identified bin, because $w_{res}\le1-c$: the blue region reaches all the way across the top whatever $d$ does.</p>
+          <p>The reported margin is a first-order lag on that instantaneous value, with $\eta_b$ the fraction of the new reading admitted at each update:</p>
+          <div class="equation accent">
+            \[b[n]=(1-\eta_b)\,b[n-1]+\eta_b\,b_i[n]\]
+            <span class="label">$\eta_b=1-\exp(-\Delta t_u/\tau_b)$ with $\tau_b=0.08\,\mathrm{s}$ and $\Delta t_u=0.125\,\mathrm{s}$, so $\eta_b\approx0.7919$: the reading is mostly the current update, with a short tail of the previous one.</span>
           </div>
         </div>
 
         <div class="step">
           <h3>The quiet case stops being a special case</h3>
-          <p>When nothing drives the loop, $A=0$, so $c(\omega)=0$ at every bin and $w_{ST}$ vanishes identically. What remains is decided by $d(\omega)$ alone:</p>
+          <p>When nothing drives the loop, $A=0$, so $c(\omega)=0$ at every bin and $w_{st}$ vanishes identically. What remains is decided by $d(\omega)$ alone:</p>
           <div class="two-col">
-            <div class="plain-panel"><h3>Quiet, loop unchanged</h3><p>$\rho\approx1$, so $d=0$ and $w_{res}=0$. Every bin returns its authority-scaled commissioning prior. In Fabby Bench 2 the experimental target is below that healthy prior, so idle does not shed authority.</p></div>
+            <div class="plain-panel"><h3>Quiet, loop unchanged</h3><p>$\rho\approx1$, so $d=0$ and $w_{res}=0$, leaving $w_{prior}=1$. Every bin returns its authority-scaled commissioning prior. In Fabby Bench 2 the experimental target is below that healthy prior, so idle does not shed authority.</p></div>
             <div class="plain-panel copper"><h3>Quiet, damage remembered</h3><p>$\rho&gt;\rho_{det}$, so $d=1$ and the bin keeps reporting $b_{res}(\omega)$ — the remembered loop — until the recovery criterion forgets it.</p></div>
           </div>
           <p>No separate idle margin, no activity cross-fade, and no memory latch is needed to produce this behaviour; it falls out of the same expression that handles the excited case.</p>
         </div>
 
-        <div class="callout warning step"><strong>A fallback is not residual evidence</strong>Weighting the two evidence branches by $c$ and $1-c$ alone fails: $\min_\omega$ self-selects poorly excited bins and lets residual-fit noise govern. The separate fallback term removes that pathology. Its value is now the commissioning prior, while $w_{res}$ remains reserved for actual inferred residual evidence.</div>
+        <div class="callout warning step"><strong>A fallback is not residual evidence</strong>Weighting the two evidence branches by $c$ and $1-c$ alone fails: $\min_\omega$ self-selects poorly excited bins and lets residual-fit noise govern. Giving the leftover share its own weight $w_{prior}$ removes that pathology, and it keeps $w_{res}$ reserved for actual inferred residual evidence rather than doubling as a catch-all.</div>
 
         <div class="step">
           <h3>Provenance of the governing result</h3>
-          <p>After forming every $b(\omega)$, the estimator finds the frequency $\omega_*$ that produces $b_{raw}$. It reports the three weights at that same governing bin, rather than averaging evidence over the band:</p>
+          <p>After forming every $b(\omega)$, the estimator finds the frequency $\omega_*$ that produces $b_i$. It reports the three weights at that same governing bin, rather than averaging evidence over the band:</p>
           <div class="equation">
             \[\omega_*=\arg\min_{\omega\in\Omega}b(\omega)\]
-            \[\texttt{direct\_fraction}=w_{ST}(\omega_*),\qquad
+            \[\texttt{direct\_fraction}=w_{st}(\omega_*),\qquad
             \texttt{residual\_weight}=w_{res}(\omega_*),\qquad
-            \texttt{fallback\_fraction}=1-w_{ST}(\omega_*)-w_{res}(\omega_*)\]
+            \texttt{fallback\_fraction}=w_{prior}(\omega_*)\]
           </div>
           <p><code>governing_freq_hz</code> is $\omega_*/(2\pi)$ in hertz. For example, direct = 0.20, residual = 0.70, and fallback = 0.10 means the worst-bin estimate is 20% identified from command–response data, 70% inferred through the $\rho$ model, and 10% supplied by the commissioning prior. These fields describe where the result came from; the authority law separately decides how much extra guard inferred evidence requires.</p>
         </div>
@@ -791,19 +890,19 @@
             <div class="control"><label for="activitySlider">confidence $c(\omega)$<output id="activityOut">0.00</output></label><input id="activitySlider" type="range" min="0" max="1" value="0" step="0.01"></div>
             <div class="control"><label for="memorySlider">fitted growth $\rho(\omega)$<output id="memoryOut">1.00</output></label><input id="memorySlider" type="range" min="1" max="3" value="1" step="0.01"></div>
           </div>
-          <div class="readout"><div><span class="metric-label">direct / inferred / prior</span><strong id="idleReadout">0.00 / 0.00 / 1.00</strong></div><div><span class="metric-label">this bin reports</span><strong id="blendReadout">0.350</strong></div></div>
+          <div class="readout"><div><span class="metric-label">$w_{st}$ / $w_{res}$ / $w_{prior}$</span><strong id="idleReadout">0.00 / 0.00 / 1.00</strong></div><div><span class="metric-label">this bin reports</span><strong id="blendReadout">0.350</strong></div></div>
         </div>
 
         <details class="code-link step">
           <summary>Code connection · recovery criterion, per-bin weights, and final margin smoothing</summary>
           <div class="code-meta">research/sol_osi_simplified_5/sol_osi_simplified_5.m · lines 73, 81–85, 163–164, 261, 281–283, and 299–305</div>
-          <pre><span class="ln">73</span>'margin_s', 0.08, ...
+          <pre><span class="ln">73</span>'margin_s', 0.25, ...
 <span class="ln">80</span>'eta_A', 0.0575, ...
 <span class="ln">81</span>'hard_activity_gain', 0.80, ...
 <span class="ln">82</span>'detector_max', 1.95, ...
 <span class="ln">83</span>'rho_recover_s', 0.4, ...
 <span class="ln">84</span>'rho_detect', 1.75, ...
-<span class="ln">86</span>'reference_level_beta', 0.26, ...
+<span class="ln">86</span>'reference_level_beta', 0.50, ...
 
 <span class="ln">162</span>activity = double(rms(state.u) &gt; cfg.eta_A);
 <span class="ln">163</span>activation_weight = cfg.hard_activity_gain*activity;
@@ -895,51 +994,70 @@
           <div class="pipe-row"><b>04</b><strong>What loop produced it?</strong><span>Blend $\widehat T$ with $T_{prior}$, then invert to $\widehat L$.</span></div>
           <div class="pipe-row"><b>05</b><strong>How close is critical?</strong><span>Evaluate the chordal curve and take its minimum.</span></div>
           <div class="pipe-row"><b>06</b><strong>What if input is quiet?</strong><span>Fit $\rho$ from output power relative to a fixed healthy reference.</span></div>
-          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{ST}(\omega)$ by $c$, $b_{res}(\omega)$ by $(1-c)d$, and the unsupported share by the prior; take the worst bin.</span></div>
+          <div class="pipe-row"><b>07</b><strong>What can each bin support?</strong><span>Weight $b_{st}(\omega)$ by $w_{st}=c$, $b_{res}(\omega)$ by $w_{res}=(1-c)d$, and $b_{prior}(\omega)$ by the remaining $w_{prior}$; take the worst bin.</span></div>
           <div class="pipe-row"><b>08</b><strong>What should be reported?</strong><span>Smooth and clamp $b$, then report the direct, inferred, and prior shares at the governing frequency.</span></div>
         </div>
 
         <div class="equation accent step">
-          \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{ST}(\omega),b_{res}(\omega)\;\longrightarrow\;\min_{\omega\in\Omega}b(\omega)\;\longrightarrow\;b\;}\]
+          \[\boxed{\;(u,y,L_0,\alpha)\;\longrightarrow\;\widehat L\;\text{and}\;\rho\;\longrightarrow\;b_{st}(\omega),b_{res}(\omega)\;\longrightarrow\;\min_{\omega\in\Omega}b(\omega)\;\longrightarrow\;b\;}\]
         </div>
 
         <div class="final-note step">
           <h3>Correspondence Between Mathematical Formulation and Implementation</h3>
           <p>Read <code>makeConfig</code> as the mathematical constants, <code>makeState</code> as estimator memory, and <code>stepEstimator</code> as the eight-stage pipeline above. This formulation corresponds to <code>research/sol_osi_simplified_5/sol_osi_simplified_5.m</code>; it does not replace the production SOL-OSI implementation.</p>
-          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade. The recovery ratio now uses the full retained analysis band rather than a fixed 28–44 Hz subset. In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, this implementation passes all seven gates, scores 73.5, has zero unstable time, and holds tail authority to 0.571 against the 0.736 limit.</p>
+          <p>Relative to <code>research/sol_osi_simplified</code>, the fusion of Section 06 removes the memory gain of 21.75, the two-threshold release/re-engage latch, the separate idle margin and the activity cross-fade. The recovery ratio now uses the full retained analysis band rather than a fixed 28–44 Hz subset. In Fabby Bench 2, with synthetic target 0.55 and experimental target 0.30, this implementation passes all seven gates, scores 80.9, has zero unstable time, and holds tail authority to 0.443 against the 0.736 limit.</p>
+          <p>Three constants were then retuned, without touching any equation. The first two address the same thing: the $\rho$ update constant $\tau_{\rho,\mathrm{update}}$ went from 0.84 s to 1.0 s and the level-normalisation exponent $\beta$ from 0.26 to 0.50. On a record where the drive itself gets louder, an amplitude-only rise inflates the reference ratio and is read as loop growth; a larger $\beta$ divides more of that level out and leaves the fit reading shape, and a slower attack stops a transient from being committed to memory. On the GDB replay the effect is large — the authority floor rises from 0.20 to 0.59 and the recovery latency after the gain is restored falls from 6.9 s to 0 s — because the shed there was driven by exactly that false level evidence.</p>
+          <p>The third is the output smoothing constant $\tau_b$, from 0.08 s to 0.25 s, which addresses the indicator jitter in the scorecard below. Taking the worst of forty-seven per-frequency estimates is an order statistic, so this formulation buys its per-bin honesty with a noisier trace; the output filter is where that is paid back. The jitter falls from 4.54 to 1.98 — less than half the production estimator's 4.22 — with no detection lost, because after the first two changes the fast edges no longer rely on the fast filter. The composite rises from 73.5 to 80.9 and every gate still passes. The panel in Section 09 runs this estimator in the browser, so all three constants and the other eleven can be moved against the recorded data directly.</p>
           <h3>Fabby Bench 2 Comparison</h3>
-          <p>The detection score counts the five known diagnostic-gain increases—three in the live experimental scenario and two in GDB—and awards one fifth for each event reflected in the reading or authority response within two seconds. Simplified_5 detects 3 of 5: live latencies 0.24 s, missed, and 0.42 s; GDB latencies missed and 0.50 s. Therefore its detection score is $100(3/5)=60$.</p>
-          <p>The current implementation has the strongest detection score, but it fails the zero-unstable-time and end-hold gates. Its raw composite is therefore not an accepted benchmark result. Generalized simplified_5 gives up two of the five fast-detection events and some experimental regulation score, but it is the only compared implementation that passes every gate. Section 09 replays every test of the benchmark and tabulates the scorecard.</p>
+          <p>The detection score counts the five known diagnostic-gain increases—three in the live experimental scenario and two in GDB—and awards one fifth for each event reflected in the reading or authority response within two seconds. Simplified_5 detects 3 of 5: live latencies 0.11 s, missed, and 0.04 s; GDB latencies missed and 0.50 s. Therefore its detection score is $100(3/5)=60$.</p>
+          <p>The current implementation has the strongest detection score, but it fails the zero-unstable-time and end-hold gates. Its raw composite is therefore not an accepted benchmark result. Generalized simplified_5 and the second-smallest-bin simplified_6 both pass every gate; simplified_6 is slightly less conservative on the synthetic damage cases but gives up experimental regulation score. Section 09 replays every test of the benchmark and tabulates the scorecard.</p>
         </div>
       </section>
 
       <section class="lesson-section" id="stage-9" data-title="Benchmark results">
         <span class="section-number">SECTION 09 / 09</span>
-        <h2>Fabby Bench 2: Measured Behaviour of the Three Implementations</h2>
-        <p class="lead">Every test of the benchmark, replayed for the production estimator, the earlier simplified form, and the generalized simplified_5, with the reported margin and the applied authority factor side by side.</p>
+        <h2>Fabby Bench 2: Measured Behaviour of the Four Implementations</h2>
+        <p class="lead">Every test of the benchmark, replayed for the production estimator, the earlier simplified form, generalized simplified_5, and the second-smallest-bin simplified_6, with the reported margin and applied authority side by side.</p>
 
-        <div class="lab step">
-          <div class="lab-head"><strong>Test Replay</strong><span id="benchMeta">select a test</span></div>
-          <div class="bench-picker">
-            <label for="benchTest">test</label>
-            <select id="benchTest"></select>
+        <div class="replay-bay">
+          <div class="lab step">
+            <div class="lab-head"><strong>Test Replay</strong><span id="benchMeta">select a test</span></div>
+            <div class="bench-picker">
+              <label for="benchTest">test</label>
+              <select id="benchTest"></select>
+            </div>
+            <div class="bench-legend" id="benchLegend"></div>
+            <div class="bench-scroll">
+              <svg id="benchPlot" viewBox="0 0 760 660" role="img" aria-label="Measured displacement, online stability indicator, and authority factor for the selected benchmark test"></svg>
+            </div>
+            <p class="margin-note" id="benchNote"></p>
           </div>
-          <div class="bench-legend" id="benchLegend"></div>
-          <div class="bench-scroll">
-            <svg id="benchPlot" viewBox="0 0 760 660" role="img" aria-label="Measured displacement, online stability indicator, and authority factor for the selected benchmark test"></svg>
-          </div>
-          <p class="margin-note" id="benchNote"></p>
+
+          <aside class="tune-panel step idle" id="tunePanel">
+            <div class="lab-head" style="margin-bottom:0">
+              <strong>Tune simplified_5</strong><span class="tune-busy" id="tuneBusy">re-running…</span>
+            </div>
+            <p class="tune-sub" id="tuneSub">The estimator itself runs in your browser on the same recorded data. Move a parameter and the dark red trace is recomputed.</p>
+            <label class="tune-check"><input type="checkbox" id="tuneGhost" checked> show the committed tune as a ghost</label>
+            <div class="tune-body" id="tuneBody"></div>
+            <div class="tune-actions">
+              <button type="button" id="tuneReset">Reset to committed</button>
+              <button type="button" id="tuneBefore">Load pre-retune</button>
+            </div>
+            <div class="tune-readout" id="tuneReadout"></div>
+            <p class="tune-note">Frame geometry (0.125 s update, 0.5 s window, 2–100 Hz band) is fixed because the exported spectra are computed on it. The scorecard below always reflects the committed tune, not these sliders.</p>
+          </aside>
         </div>
 
         <div class="step">
-          <p>The measured displacement is drawn once per implementation, because in every closed-loop test the authority factor scales the command that drives the plant: where the three traces separate, the implementations have driven the specimen differently. Dashed vertical marks give the plant blend used by the synthetic scenarios, where $\lambda=0$ is the identified 7k model and $\lambda=1$ the 5k model. Where a test provides ground truth, the true chordal margin is drawn dashed in each implementation's own colour, since it depends on the authority that implementation applied. The diagnostic gain, where the record carries one, is drawn against the right-hand axis of the authority panel.</p>
+          <p>The measured displacement is drawn once per implementation, because in every closed-loop test the authority factor scales the command that drives the plant: where the four traces separate, the implementations have driven the specimen differently. Dashed vertical marks give the plant blend used by the synthetic scenarios, where $\lambda=0$ is the identified 7k model and $\lambda=1$ the 5k model. Where a test provides ground truth, the true chordal margin is drawn dashed in each implementation's own colour, since it depends on the authority that implementation applied. The diagnostic gain, where the record carries one, is drawn against the right-hand axis of the authority panel. <strong>Click any legend entry</strong> to hide or restore that trace; the vertical scales follow what is left visible, so a single implementation can be read out of a crowded plot.</p>
         </div>
 
         <div class="step">
           <h3>Scorecard</h3>
-          <p>Read directly from the saved Fabby Bench 2 results, so this table cannot disagree with the benchmark that produced it. A raw composite is reported only when all seven gates pass; the other two are shown for reference and marked as gated out. <strong>Hover or tab onto any metric name</strong> for what it measures, whether high or low is the good direction, and which test in the dropdown above to look at.</p>
+          <p>Read directly from the saved Fabby Bench 2 results, so this table cannot disagree with the benchmark that produced it. A raw composite is reported only when all seven gates pass; the two failing methods are shown for reference and marked as gated out. <strong>Hover or tab onto any metric name</strong> for what it measures, whether high or low is the good direction, and which test in the dropdown above to look at.</p>
           <table class="bench-table" id="benchTable">
-            <thead><tr><th>Metric</th><th>implemented</th><th>simplified</th><th>simplified_5</th></tr></thead>
+            <thead><tr><th>Metric</th><th>implemented</th><th>simplified</th><th>simplified_5</th><th>simplified_6</th></tr></thead>
             <tbody></tbody>
           </table>
           <p class="margin-note" id="benchTableNote"></p>
@@ -1111,7 +1229,292 @@
     addEventListener('scroll',updateProgress,{passive:true});updateProgress();
   </script>
 
+  <script>
+  // ---- weight-mixture colour map over the (d, c) plane ---------------------
+  (function(){
+    const svg = document.getElementById('wmPlot');
+    if (!svg) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const XL = 'http://www.w3.org/1999/xlink';
+    const el = (n, a) => { const e = document.createElementNS(NS, n);
+      for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+    const X0 = 86, Y0 = 52, S = 330;            // plot square
+    const RHO_DET = 1.75;
+    const DEFAULTS = {st: '#007ca8', res: '#99270e', prior: '#a9a49a'};
+    const inputs = {st: document.getElementById('wmColSt'),
+                    res: document.getElementById('wmColRes'),
+                    prior: document.getElementById('wmColPrior')};
+    const lims = {d0: document.getElementById('wmD0'), d1: document.getElementById('wmD1'),
+                  c0: document.getElementById('wmC0'), c1: document.getElementById('wmC1')};
+    const gridBox = document.getElementById('wmGrid');
+    let L = {d0: 0, d1: 1, c0: 0, c1: 1};       // current window, always inside [0,1]
+
+    function readLimits(){
+      const g = (inp, dflt) => { const v = parseFloat(inp.value);
+        return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : dflt; };
+      let d0 = g(lims.d0, 0), d1 = g(lims.d1, 1), c0 = g(lims.c0, 0), c1 = g(lims.c1, 1);
+      if (d1 - d0 < 0.02){ d1 = Math.min(1, d0 + 0.02); d0 = Math.min(d0, d1 - 0.02); }
+      if (c1 - c0 < 0.02){ c1 = Math.min(1, c0 + 0.02); c0 = Math.min(c0, c1 - 0.02); }
+      L = {d0: d0, d1: d1, c0: c0, c1: c1};
+      lims.d0.value = +d0.toFixed(3); lims.d1.value = +d1.toFixed(3);
+      lims.c0.value = +c0.toFixed(3); lims.c1.value = +c1.toFixed(3);
+    }
+
+    // geometry: d along x (increasing right), c along y (increasing up)
+    const px = d => X0 + (d - L.d0)/(L.d1 - L.d0)*S;
+    const py = c => Y0 + (1 - (c - L.c0)/(L.c1 - L.c0))*S;
+
+    function niceTicks(lo, hi, want){
+      const raw = (hi - lo)/want, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+      const norm = raw/mag;
+      const step = mag*(norm >= 5 ? 5 : norm >= 2 ? 2 : norm >= 1 ? 1 : 0.5);
+      const out = [];
+      for (let v = Math.ceil(lo/step - 1e-9)*step; v <= hi + step*1e-6; v += step)
+        out.push(+v.toFixed(10));
+      return out;
+    }
+    const tickText = v => {
+      const s = Math.abs(v) < 1e-9 ? '0' : v.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+      return s;
+    };
+
+    // gamma-correct mixing: blending in linear light keeps the interior from
+    // going muddy and leaves each corner exactly the colour that was picked
+    const s2l = u => { u /= 255; return u <= 0.04045 ? u/12.92 : Math.pow((u + 0.055)/1.055, 2.4); };
+    const l2s = v => { const u = v <= 0.0031308 ? v*12.92 : 1.055*Math.pow(Math.max(v, 0), 1/2.4) - 0.055;
+      return Math.round(Math.min(1, Math.max(0, u))*255); };
+    const hexLin = h => { const n = parseInt(h.slice(1), 16);
+      return [s2l((n >> 16) & 255), s2l((n >> 8) & 255), s2l(n & 255)]; };
+
+    const N = 192;
+    const cv = document.createElement('canvas');
+    cv.width = N; cv.height = N;
+    const ctx = cv.getContext('2d');
+    const field = el('image', {x: X0, y: Y0, width: S, height: S,
+      preserveAspectRatio: 'none'});
+
+    function renderField(){
+      const A = hexLin(inputs.st.value), B = hexLin(inputs.res.value),
+            C = hexLin(inputs.prior.value);
+      const img = ctx.createImageData(N, N);
+      let p = 0;
+      for (let j = 0; j < N; j++){
+        const c = L.c1 - j/(N - 1)*(L.c1 - L.c0);
+        for (let i = 0; i < N; i++){
+          const d = L.d0 + i/(N - 1)*(L.d1 - L.d0);
+          const wst = c, wres = (1 - c)*d, wpr = (1 - c)*(1 - d);
+          img.data[p++] = l2s(wst*A[0] + wres*B[0] + wpr*C[0]);
+          img.data[p++] = l2s(wst*A[1] + wres*B[1] + wpr*C[1]);
+          img.data[p++] = l2s(wst*A[2] + wres*B[2] + wpr*C[2]);
+          img.data[p++] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const url = cv.toDataURL();
+      field.setAttribute('href', url);
+      field.setAttributeNS(XL, 'href', url);
+      ['st', 'res', 'prior'].forEach(k => {
+        const sw = document.getElementById('wmSw_' + k);
+        if (sw) sw.setAttribute('fill', inputs[k].value);
+      });
+    }
+
+    function build(){
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      const defs = el('defs', {});
+      // userSpaceOnUse: a perfectly vertical boundary has a zero-width
+      // bounding box, and the default objectBoundingBox units would collapse
+      // its filter region to nothing and drop the line entirely
+      const filt = el('filter', {id: 'wmShadow', filterUnits: 'userSpaceOnUse',
+        x: X0 - 24, y: Y0 - 24, width: S + 48, height: S + 48});
+      filt.appendChild(el('feDropShadow', {dx: 0, dy: 1, stdDeviation: 1.5,
+        'flood-color': '#57564f', 'flood-opacity': 0.72}));
+      defs.appendChild(filt);
+      svg.appendChild(defs);
+      svg.appendChild(field);
+      svg.appendChild(el('rect', {x: X0, y: Y0, width: S, height: S, class: 'plot-frame'}));
+
+      // axes and grid, over the current window
+      const xt = niceTicks(L.d0, L.d1, 5), yt = niceTicks(L.c0, L.c1, 5);
+      const showGrid = gridBox.checked;
+      // minor grid at the midpoints: twice as fine as the labelled ticks
+      const minors = ts => {
+        if (ts.length < 2) return [];
+        const h = (ts[1] - ts[0])/2, out = [];
+        for (let v = ts[0] - h; v <= ts[ts.length - 1] + h + 1e-9; v += 2*h) out.push(v);
+        return out;
+      };
+      if (showGrid){
+        minors(xt).forEach(v => {
+          if (v < L.d0 - 1e-9 || v > L.d1 + 1e-9) return;
+          const x = px(v);
+          if (x > X0 + 0.5 && x < X0 + S - 0.5)
+            svg.appendChild(el('line', {x1: x, x2: x, y1: Y0, y2: Y0 + S, class: 'wm-grid-minor'}));
+        });
+        minors(yt).forEach(v => {
+          if (v < L.c0 - 1e-9 || v > L.c1 + 1e-9) return;
+          const y = py(v);
+          if (y > Y0 + 0.5 && y < Y0 + S - 0.5)
+            svg.appendChild(el('line', {x1: X0, x2: X0 + S, y1: y, y2: y, class: 'wm-grid-minor'}));
+        });
+      }
+      xt.forEach(v => {
+        if (v < L.d0 - 1e-9 || v > L.d1 + 1e-9) return;
+        const x = px(v);
+        if (showGrid && x > X0 + 0.5 && x < X0 + S - 0.5)
+          svg.appendChild(el('line', {x1: x, x2: x, y1: Y0, y2: Y0 + S, class: 'wm-grid'}));
+        svg.appendChild(el('line', {x1: x, x2: x, y1: Y0 + S, y2: Y0 + S + 5, class: 'plot-frame'}));
+        const xb = el('text', {x: x, y: Y0 + S + 17, class: 'plot-tick', 'text-anchor': 'middle'});
+        xb.textContent = tickText(v); svg.appendChild(xb);
+        svg.appendChild(el('line', {x1: x, x2: x, y1: Y0 - 5, y2: Y0, class: 'plot-frame'}));
+        const rt = el('text', {x: x, y: Y0 - 10, class: 'plot-tick', 'text-anchor': 'middle'});
+        rt.textContent = (1 + v*(RHO_DET - 1)).toFixed(2); svg.appendChild(rt);
+      });
+      yt.forEach(v => {
+        if (v < L.c0 - 1e-9 || v > L.c1 + 1e-9) return;
+        const y = py(v);
+        if (showGrid && y > Y0 + 0.5 && y < Y0 + S - 0.5)
+          svg.appendChild(el('line', {x1: X0, x2: X0 + S, y1: y, y2: y, class: 'wm-grid'}));
+        svg.appendChild(el('line', {x1: X0 - 5, x2: X0, y1: y, y2: y, class: 'plot-frame'}));
+        const yl = el('text', {x: X0 - 9, y: y + 3.5, class: 'plot-tick', 'text-anchor': 'end'});
+        yl.textContent = tickText(v); svg.appendChild(yl);
+      });
+
+      // dominance boundaries, derived not drawn by eye, clipped to the window
+      const inC = c => c >= L.c0 - 1e-9 && c <= L.c1 + 1e-9;
+      let up = '', pen = false;
+      for (let i = 0; i <= 300; i++){
+        const d = L.d0 + i/300*(L.d1 - L.d0);
+        const m = Math.max(d, 1 - d), c = m/(1 + m);
+        if (!inC(c)){ pen = false; continue; }
+        up += (pen ? 'L' : 'M') + px(d).toFixed(1) + ' ' + py(c).toFixed(1) + ' ';
+        pen = true;
+      }
+      let low = '';
+      if (0.5 >= L.d0 && 0.5 <= L.d1 && L.c0 < 1/3){
+        const cTop = Math.min(1/3, L.c1), cBot = Math.max(0, L.c0);
+        if (cTop > cBot)
+          low = 'M' + px(0.5).toFixed(1) + ' ' + py(cTop).toFixed(1) +
+                ' L' + px(0.5).toFixed(1) + ' ' + py(cBot).toFixed(1);
+      }
+      [up, low].forEach(dd => {
+        if (!dd) return;
+        svg.appendChild(el('path', {d: dd, class: 'wm-line', filter: 'url(#wmShadow)'}));
+      });
+
+      // region labels placed at the centroid of the VISIBLE part of each
+      // region, so they stay meaningful when the window is zoomed in
+      const NAMES = ['identified margin governs', 'inferred margin governs',
+                     'prior governs'];
+      const acc = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+      const M = 56;
+      for (let a = 0; a < M; a++){
+        const c = L.c0 + (a + 0.5)/M*(L.c1 - L.c0);
+        for (let b = 0; b < M; b++){
+          const d = L.d0 + (b + 0.5)/M*(L.d1 - L.d0);
+          const w = [c, (1 - c)*d, (1 - c)*(1 - d)];
+          const k = w.indexOf(Math.max(...w));
+          acc[k][0] += d; acc[k][1] += c; acc[k][2]++;
+        }
+      }
+      acc.forEach((a, k) => {
+        if (a[2] / (M*M) < 0.05) return;                 // too small to label
+        const x = Math.min(Math.max(px(a[0]/a[2]), X0 + 74), X0 + S - 74);
+        const y = Math.min(Math.max(py(a[1]/a[2]), Y0 + 16), Y0 + S - 10);
+        const t = el('text', {x: x, y: y, class: 'wm-region', 'text-anchor': 'middle',
+          filter: 'url(#wmShadow)'});
+        t.textContent = NAMES[k]; svg.appendChild(t);
+      });
+      const xl = el('text', {x: X0 + S/2, y: Y0 + S + 36, class: 'plot-title', 'text-anchor': 'middle'});
+      xl.textContent = 'detection weight  d(ω)'; svg.appendChild(xl);
+      const rl = el('text', {x: X0 + S/2, y: Y0 - 26, class: 'plot-title', 'text-anchor': 'middle'});
+      rl.textContent = 'fitted loop growth  ρ(ω)   (saturates at ρ ≥ 1.75)'; svg.appendChild(rl);
+      const yl2 = el('text', {x: 0, y: 0, class: 'plot-title', 'text-anchor': 'middle',
+        transform: `translate(${X0 - 40},${Y0 + S/2}) rotate(-90)`});
+      yl2.textContent = 'confidence  c(ω)'; svg.appendChild(yl2);
+
+      // legend
+      const LX = X0 + S + 46;
+      let ly = Y0 + 8;
+      const head = el('text', {x: LX, y: ly, class: 'plot-title'});
+      head.textContent = 'mixture at a bin'; svg.appendChild(head);
+      ly += 22;
+      [['st', 'w_st  =  c', 'the loop is visible here'],
+       ['res', 'w_res  =  (1 − c) d', 'growth inferred from output power'],
+       ['prior', 'w_prior  =  (1 − c)(1 − d)', 'neither: fall back on L₀']
+      ].forEach(([k, lab, sub]) => {
+        svg.appendChild(el('rect', {id: 'wmSw_' + k, x: LX, y: ly - 10, width: 16, height: 16,
+          class: 'wm-swatch', fill: DEFAULTS[k]}));
+        const t = el('text', {x: LX + 24, y: ly + 2, class: 'wm-legend'});
+        t.textContent = lab; svg.appendChild(t);
+        const s = el('text', {x: LX + 24, y: ly + 17, class: 'wm-legend-sub'});
+        s.textContent = sub; svg.appendChild(s);
+        ly += 46;
+      });
+      ly += 6;
+      ['The black lines mark where the', 'largest weight changes hands.',
+       '', 'Bottom edge (c = 0) is quiet', 'operation; the top edge is a',
+       'fully identified bin.'].forEach(line => {
+        const t = el('text', {x: LX, y: ly, class: 'wm-legend-sub'});
+        t.textContent = line; svg.appendChild(t);
+        ly += 14;
+      });
+
+      // cursor probe
+      const dot = el('circle', {r: 4.5, fill: 'none', stroke: '#fff', 'stroke-width': 2,
+        opacity: 0, id: 'wmDot'});
+      const dot2 = el('circle', {r: 4.5, fill: 'none', stroke: '#1a1a17', 'stroke-width': 3.6,
+        'stroke-opacity': 0.35, opacity: 0, id: 'wmDot2'});
+      svg.appendChild(dot2); svg.appendChild(dot);
+    }
+
+    const fmt = v => v.toFixed(2);
+    function probe(ev){
+      const r = svg.getBoundingClientRect();
+      const sc = 760/r.width;
+      const x = (ev.clientX - r.left)*sc, y = (ev.clientY - r.top)*sc;
+      const u = (x - X0)/S, v = 1 - (y - Y0)/S;
+      const d = L.d0 + u*(L.d1 - L.d0), c = L.c0 + v*(L.c1 - L.c0);
+      const dot = document.getElementById('wmDot'), dot2 = document.getElementById('wmDot2');
+      if (u < 0 || u > 1 || v < 0 || v > 1){ clearProbe(); return; }
+      const wst = c, wres = (1 - c)*d, wpr = (1 - c)*(1 - d);
+      document.getElementById('wmPos').textContent = fmt(d) + ',  ' + fmt(c);
+      document.getElementById('wmWeights').textContent =
+        fmt(wst) + ' / ' + fmt(wres) + ' / ' + fmt(wpr);
+      const names = ['identified', 'inferred', 'prior'], wv = [wst, wres, wpr];
+      document.getElementById('wmDom').textContent = names[wv.indexOf(Math.max(...wv))];
+      [dot, dot2].forEach(o => { o.setAttribute('cx', px(d)); o.setAttribute('cy', py(c));
+        o.setAttribute('opacity', 1); });
+    }
+    function clearProbe(){
+      ['wmPos', 'wmWeights', 'wmDom'].forEach(i => document.getElementById(i).textContent = '—');
+      ['wmDot', 'wmDot2'].forEach(i => { const o = document.getElementById(i);
+        if (o) o.setAttribute('opacity', 0); });
+    }
+
+    function redraw(){ readLimits(); build(); renderField(); clearProbe(); }
+
+    redraw();
+    Object.values(inputs).forEach(inp => inp.addEventListener('input', renderField));
+    Object.values(lims).forEach(inp => inp.addEventListener('change', redraw));
+    gridBox.addEventListener('change', redraw);
+    document.getElementById('wmReset').addEventListener('click', () => {
+      Object.keys(inputs).forEach(k => inputs[k].value = DEFAULTS[k]);
+      renderField();
+    });
+    document.getElementById('wmFull').addEventListener('click', () => {
+      lims.d0.value = 0; lims.d1.value = 1; lims.c0.value = 0; lims.c1.value = 1;
+      redraw();
+    });
+    svg.addEventListener('mousemove', probe);
+    svg.addEventListener('mouseleave', clearProbe);
+  })();
+  </script>
+
   <script src="bench2_data.js"></script>
+  <script src="bench2_tune.js"></script>
+  <script src="bench2_engine.js"></script>
   <script>
   (function(){
     const D = window.BENCH2_DATA;
@@ -1124,6 +1527,8 @@
     const el = (n, a) => { const e = document.createElementNS(NS, n);
       for (const k in a) e.setAttribute(k, a[k]); return e; };
     const num = v => (v === null || v === undefined || Number.isNaN(v)) ? null : v;
+    // series switched off from the legend; survives redraws and test changes
+    const hidden = new Set();
 
     // ---- axis helpers -----------------------------------------------------
     function niceTicks(lo, hi, want){
@@ -1182,7 +1587,7 @@
       return {g: g, X: X, Y: Y};
     }
 
-    function line(p, xs, ys, color, dashed, width){
+    function line(p, xs, ys, color, dashed, width, opacity){
       let d = '', pen = false;
       const n = Math.min(xs.length, ys.length);
       for (let i = 0; i < n; i++){
@@ -1195,6 +1600,7 @@
       const a = {d: d, fill: 'none', stroke: color, 'stroke-width': width || 1.7,
         'stroke-linejoin': 'round'};
       if (dashed) a['stroke-dasharray'] = '6 4';
+      if (opacity !== undefined) a['stroke-opacity'] = opacity;
       p.g.appendChild(el('path', a));
     }
 
@@ -1214,10 +1620,14 @@
     }
 
     // ---- draw one test ----------------------------------------------------
-    function draw(test){
+    // ghost, when present, is the committed-tune result for the method the
+    // reader is retuning, drawn faint underneath so the change is visible
+    function draw(test, ghost){
       while (svg.firstChild) svg.removeChild(svg.firstChild);
       const M = D.methods;
-      const dmSeries = M.map(m => test.dm[m.key]).filter(Boolean);
+      const on = k => !hidden.has(k);
+      const V = M.filter(m => on(m.key));            // methods still shown
+      const dmSeries = V.map(m => test.dm[m.key]).filter(Boolean);
       // mark times join the extent so a transition at t = 0 (a scenario that
       // starts damaged) is not clipped off the left edge
       const xr = extent([test.dm_t, test.tc, (test.marks || []).map(m => m.t)]);
@@ -1228,12 +1638,12 @@
       const pad = (dmr[1] - dmr[0])*0.08;
       const p1 = panel(PAD_T, 'measured displacement  dm', xr, [dmr[0] - pad, dmr[1] + pad]);
       marks(p1, test.marks || [], xr);
-      M.forEach(m => { if (test.dm[m.key]) line(p1, test.dm_t, test.dm[m.key], m.color, false, 0.9); });
+      V.forEach(m => { if (test.dm[m.key]) line(p1, test.dm_t, test.dm[m.key], m.color, false, 0.9); });
       rows.push(p1);
 
       // panel 2 - reported margin (and true NCF where it exists)
-      const osiSeries = M.map(m => test.osi[m.key]).filter(Boolean);
-      const ncfSeries = test.has_ncf ? M.map(m => test.ncf[m.key]).filter(Boolean) : [];
+      const osiSeries = V.map(m => test.osi[m.key]).filter(Boolean);
+      const ncfSeries = (test.has_ncf && on('ncf')) ? V.map(m => test.ncf[m.key]).filter(Boolean) : [];
       let or_ = extent(osiSeries.concat(ncfSeries, [[test.target]]));
       or_ = [Math.max(0, or_[0] - 0.04), Math.min(0.75, or_[1] + 0.04)];
       const p2 = panel(PAD_T + PH + GAP, 'online stability indicator  b', xr, or_);
@@ -1241,8 +1651,9 @@
       const tl = el('text', {x: PAD_L + 4, y: p2.Y(test.target) - 4, class: 'plot-tick'});
       tl.textContent = 'target ' + test.target; p2.g.appendChild(tl);
       marks(p2, test.marks || [], xr);
-      if (test.has_ncf) M.forEach(m => { if (test.ncf[m.key]) line(p2, test.tc, test.ncf[m.key], m.color, true, 1.3); });
-      M.forEach(m => { if (test.osi[m.key]) line(p2, test.tc, test.osi[m.key], m.color, false, 1.7); });
+      if (test.has_ncf && on('ncf')) V.forEach(m => { if (test.ncf[m.key]) line(p2, test.tc, test.ncf[m.key], m.color, true, 1.3); });
+      if (ghost && ghost.osi && on('ghost')) line(p2, test.tc, ghost.osi, ghost.color, false, 1.5, 0.3);
+      V.forEach(m => { if (test.osi[m.key]) line(p2, test.tc, test.osi[m.key], m.color, false, 1.7); });
       rows.push(p2);
 
       // panel 3 - authority factor (and diagnostic gain on the right axis)
@@ -1253,12 +1664,13 @@
       }
       const p3 = panel(PAD_T + 2*(PH + GAP), 'authority factor  a', xr, [0, 1.06], p3opts);
       marks(p3, test.marks || [], xr);
-      if (test.has_gain){
+      if (test.has_gain && on('gain')){
         const R = p3opts.right;
         const scaled = test.gain.map(v => num(v) === null ? null : (v - R.lo)/(R.hi - R.lo)*1.06);
         line(p3, test.tc, scaled, '#171714', true, 1.3);
       }
-      M.forEach(m => { if (test.auth[m.key]) line(p3, test.tc, test.auth[m.key], m.color, false, 1.7); });
+      if (ghost && ghost.auth && on('ghost')) line(p3, test.tc, ghost.auth, ghost.color, false, 1.5, 0.3);
+      V.forEach(m => { if (test.auth[m.key]) line(p3, test.tc, test.auth[m.key], m.color, false, 1.7); });
       rows.push(p3);
 
       rows.forEach(p => svg.appendChild(p.g));
@@ -1267,24 +1679,29 @@
       xlab.textContent = 'time [s]';
       svg.appendChild(xlab);
 
-      // legend + captions
+      // legend - each entry toggles its series, so a single trace can be read
+      // out of a crowded plot
       const leg = document.getElementById('benchLegend');
       leg.innerHTML = '';
-      M.forEach(m => {
-        const s = document.createElement('span');
-        s.innerHTML = '<i style="border-top-color:' + m.color + '"></i>' + m.label;
-        leg.appendChild(s);
-      });
-      if (test.has_ncf){
-        const s = document.createElement('span');
-        s.innerHTML = '<i class="dash" style="border-top-color:#686760"></i>true NCF (per implementation)';
-        leg.appendChild(s);
+      function legendItem(key, color, label, dashed, faint){
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = on(key) ? '' : 'off';
+        b.setAttribute('aria-pressed', String(on(key)));
+        b.title = on(key) ? 'hide this trace' : 'show this trace';
+        b.innerHTML = '<i class="' + (dashed ? 'dash' : '') +
+          '" style="border-top-color:' + color +
+          (faint ? '; opacity:0.4' : '') + '"></i>' + label;
+        b.addEventListener('click', () => {
+          if (hidden.has(key)) hidden.delete(key); else hidden.add(key);
+          render();
+        });
+        leg.appendChild(b);
       }
-      if (test.has_gain){
-        const s = document.createElement('span');
-        s.innerHTML = '<i class="dash" style="border-top-color:#171714"></i>diagnostic gain (right axis)';
-        leg.appendChild(s);
-      }
+      M.forEach(m => legendItem(m.key, m.color, m.label, false, false));
+      if (test.has_ncf) legendItem('ncf', '#686760', 'true NCF (per implementation)', true, false);
+      if (test.has_gain) legendItem('gain', '#171714', 'diagnostic gain (right axis)', true, false);
+      if (ghost) legendItem('ghost', ghost.color, 'simplified_5 at the committed tune', false, true);
       document.getElementById('benchMeta').textContent =
         test.group + ' test  ·  target ' + test.target;
       document.getElementById('benchNote').textContent = test.note || '';
@@ -1304,10 +1721,223 @@
       });
       sel.appendChild(og);
     });
-    sel.addEventListener('change', () => draw(D.tests[+sel.value]));
     const firstExp = D.tests.findIndex(t => t.group === 'experimental');
     sel.value = String(firstExp >= 0 ? firstExp : 0);
-    draw(D.tests[+sel.value]);
+
+    // ---- live parameter panel for simplified_5 ----------------------------
+    // The estimator is re-run in the browser on the same recorded inputs
+    // (bench2_engine.js), so a slider move produces the same curve MATLAB
+    // would, not an approximation of it.
+    const KEY = 'sol_osi_simplified_5';
+    const TUNE = window.BENCH2_TUNE, ENG = window.OSI5;
+    const tPanel = document.getElementById('tunePanel');
+    const bodyEl = document.getElementById('tuneBody');
+    const busyEl = document.getElementById('tuneBusy');
+    const subEl = document.getElementById('tuneSub');
+    const outEl = document.getElementById('tuneReadout');
+    const ghostBox = document.getElementById('tuneGhost');
+    const ghostColor = (D.methods.find(m => m.key === KEY) || {}).color || '#901500';
+
+    // label, min, max, step, decimals
+    const SPECS = [
+      ['Evidence weighting', [
+        ['rho_detect', 'ρ detect threshold', 1.05, 4, 0.05, 2],
+        ['fit_floor', 'shape-fit floor', 0, 0.5, 0.01, 2],
+        ['level_fit_gain', 'level-fit gain', 0, 1, 0.02, 2],
+        ['level_fit_start_ratio', 'level-fit start ratio', 1, 10, 0.25, 2]
+      ]],
+      ['Time constants [s]', [
+        ['margin_s', 'output smoothing', 0.04, 0.3, 0.01, 3],
+        ['residual_s', 'ρ attack', 0.2, 3, 0.02, 2],
+        ['rho_recover_s', 'ρ forgetting', 0.1, 3, 0.05, 2],
+        ['memory_s', 'spectral memory', 0.125, 1, 0.025, 3],
+        ['warm_s', 'warm-up', 1, 6, 0.25, 2]
+      ]],
+      ['Gating', [
+        ['eta_A', 'activity threshold η', 0.01, 0.3, 0.0025, 4],
+        ['hard_activity_gain', 'activity gain', 0, 1, 0.05, 2],
+        ['power_floor_db', 'power floor [dB]', 10, 50, 1, 0],
+        ['detector_max', 'fast-detector ceiling', 1, 3, 0.05, 2]
+      ]],
+      ['Reference fit', [
+        ['reference_level_beta', 'level normalisation β', 0, 1, 0.02, 2]
+      ]]
+    ];
+    // the values simplified_5 shipped with before the retune
+    const PRE_RETUNE = {residual_s: 0.84, reference_level_beta: 0.26, margin_s: 0.08};
+
+    const params = {};
+    const inputs = {};
+    let patched = null, timer = 0;
+
+    function fmtP(v, dp){ return dp === 0 ? String(Math.round(v)) : v.toFixed(dp); }
+
+    if (TUNE && ENG){
+      Object.keys(TUNE.defaults).forEach(k => { params[k] = TUNE.defaults[k]; });
+      params.no_evidence_prior = !!TUNE.defaults.no_evidence_prior;
+
+      SPECS.forEach(([title, rows]) => {
+        const g = document.createElement('div');
+        g.className = 'tune-group';
+        g.innerHTML = '<h5>' + title + '</h5>';
+        rows.forEach(([key, label, lo, hi, st, dp]) => {
+          const row = document.createElement('div');
+          row.className = 'tune-row';
+          const id = 'tune_' + key;
+          row.innerHTML = '<label for="' + id + '">' + label +
+            '<b id="' + id + '_o">' + fmtP(params[key], dp) + '</b></label>' +
+            '<input id="' + id + '" type="range" min="' + lo + '" max="' + hi +
+            '" step="' + st + '" value="' + params[key] + '">';
+          g.appendChild(row);
+          const inp = row.querySelector('input');
+          const out = row.querySelector('b');
+          inputs[key] = {input: inp, out: out, dp: dp};
+          inp.addEventListener('input', () => {
+            params[key] = +inp.value;
+            out.textContent = fmtP(params[key], dp);
+            out.classList.toggle('moved',
+              Math.abs(params[key] - TUNE.defaults[key]) > 1e-12);
+            schedule();
+          });
+        });
+        bodyEl.appendChild(g);
+      });
+
+      const gp = document.createElement('div');
+      gp.className = 'tune-group';
+      gp.innerHTML = '<h5>Fusion</h5><label class="tune-check">' +
+        '<input type="checkbox" id="tune_nep"' +
+        (params.no_evidence_prior ? ' checked' : '') +
+        '> unsupported bin reads the prior (else the cap)</label>';
+      bodyEl.appendChild(gp);
+      gp.querySelector('input').addEventListener('change', e => {
+        params.no_evidence_prior = e.target.checked; schedule();
+      });
+
+      outEl.innerHTML =
+        '<div><span>min authority</span><strong id="ro_min">—</strong></div>' +
+        '<div><span>final authority</span><strong id="ro_end">—</strong></div>' +
+        '<div><span>recovery after restore</span><strong id="ro_rec">—</strong></div>' +
+        '<div><span>worst true NCF</span><strong id="ro_ncf">—</strong></div>';
+
+      function setAll(src){
+        Object.keys(inputs).forEach(k => {
+          const v = (src[k] !== undefined) ? src[k] : TUNE.defaults[k];
+          params[k] = v;
+          inputs[k].input.value = v;
+          inputs[k].out.textContent = fmtP(v, inputs[k].dp);
+          inputs[k].out.classList.toggle('moved',
+            Math.abs(v - TUNE.defaults[k]) > 1e-12);
+        });
+        schedule();
+      }
+      document.getElementById('tuneReset').addEventListener('click', () => setAll(TUNE.defaults));
+      document.getElementById('tuneBefore').addEventListener('click',
+        () => setAll(Object.assign({}, TUNE.defaults, PRE_RETUNE)));
+      ghostBox.addEventListener('change', render);
+    }
+
+    function supported(){
+      const t = D.tests[+sel.value];
+      return !!(TUNE && ENG && TUNE.tests[t.key]);
+    }
+
+    function schedule(){
+      if (!supported()) return;
+      busyEl.classList.add('on');
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        recompute();
+        busyEl.classList.remove('on');
+      }, 45);
+    }
+
+    // MATLAB thin(): stride = ceil(N/900), samples taken from the first index
+    function thin(y, n){
+      const stride = Math.max(1, Math.ceil(y.length / 900));
+      const out = [];
+      for (let i = 0; i < y.length && out.length < n; i += stride) out.push(y[i]);
+      return out;
+    }
+
+    function recompute(){
+      const t = D.tests[+sel.value];
+      const out = ENG.run(t.key, params);
+      const p = Object.assign({}, t);
+      p.osi = Object.assign({}, t.osi); p.osi[KEY] = out.b;
+      p.auth = Object.assign({}, t.auth); p.auth[KEY] = out.a;
+      if (t.has_ncf && out.b_true){
+        p.ncf = Object.assign({}, t.ncf); p.ncf[KEY] = out.b_true;
+      }
+      if (out.dm){
+        p.dm = Object.assign({}, t.dm); p.dm[KEY] = thin(out.dm, t.dm_t.length);
+      }
+      patched = p;
+      report(t, out);
+      render();
+    }
+
+    function report(t, out){
+      const mn = Math.min.apply(null, Array.from(out.a));
+      const end = out.a[out.a.length - 1];
+      document.getElementById('ro_min').textContent = mn.toFixed(3);
+      document.getElementById('ro_end').textContent = end.toFixed(3);
+      // recovery: after the last downward step of the diagnostic gain, the
+      // first update at or above 0.95 that is never given up again
+      let rec = '—';
+      if (t.gain){
+        let k = -1;
+        for (let i = 1; i < t.gain.length; i++) if (t.gain[i] - t.gain[i-1] < -0.05) k = i;
+        if (k > 0){
+          let hit = -1;
+          for (let i = k; i < out.a.length; i++) if (out.a[i] >= 0.95) { hit = i; break; }
+          if (hit >= 0){
+            let held = true;
+            for (let i = hit; i < out.a.length; i++) if (out.a[i] < 0.95) { held = false; break; }
+            rec = held ? (t.tc[hit] - t.tc[k]).toFixed(2) + ' s' : 'not held';
+          } else { rec = 'not reached'; }
+        }
+      }
+      document.getElementById('ro_rec').textContent = rec;
+      document.getElementById('ro_ncf').textContent = out.b_true
+        ? Math.min.apply(null, Array.from(out.b_true)).toFixed(3) : '—';
+    }
+
+    // true once any slider sits away from the committed tune, which is also
+    // the only time a ghost of the committed tune is worth drawing
+    function dirty(){
+      if (!TUNE) return false;
+      if (params.no_evidence_prior !== !!TUNE.defaults.no_evidence_prior) return true;
+      return Object.keys(inputs).some(k =>
+        Math.abs(params[k] - TUNE.defaults[k]) > 1e-12);
+    }
+
+    function render(){
+      const base = D.tests[+sel.value];
+      const t = patched || base;
+      const ghost = (patched && ghostBox && ghostBox.checked && dirty())
+        ? {osi: base.osi[KEY], auth: base.auth[KEY], color: ghostColor} : null;
+      draw(t, ghost);
+    }
+
+    function onTest(){
+      patched = null;
+      const ok = supported();
+      if (tPanel){
+        tPanel.classList.toggle('idle', !ok);
+        subEl.textContent = ok
+          ? 'The estimator itself runs in your browser on the same recorded data. Move a parameter and the dark red trace is recomputed.'
+          : 'Interactive only on the two experimental records: the ten synthetic cases are generated by the MATLAB suite, whose scenario generator is not shipped to the page.';
+      }
+      if (ok) { recompute(); return; }
+      ['ro_min', 'ro_end', 'ro_rec', 'ro_ncf'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.textContent = '—';
+      });
+      render();
+    }
+    sel.addEventListener('change', onTest);
+    onTest();
 
     // ---- what each metric means (definitions of run_osi_benchmark.m) ------
     const INFO = {
@@ -1365,6 +1995,19 @@
                'Where a gate failed it is shown as gated out, because averaging a ' +
                'method that drove the loop unstable against one that did not would ' +
                'hide exactly the failure that matters.']},
+      roughness: {dir: 'down', dirText: 'lower is smoother — reported, not scored',
+        where: 'Every test: the ten synthetic cases, the live record and the GDB replay.',
+        body: ['Update-by-update fuzz on the reported margin: ' +
+               '1000·median|b(k) − 2b(k−1) + b(k−2)|, pooled over every update ' +
+               'of every test.',
+               'The second difference is what makes this a noise measure rather ' +
+               'than a penalty on responsiveness — a genuine ramp has almost no ' +
+               'second difference, and a genuine step contributes only at its own ' +
+               'edge. The median then discards those few edges, so a method is ' +
+               'not charged for reacting quickly.',
+               'Deliberately not folded into the composite: a method can always ' +
+               'buy a clean trace with more output filtering, and S3 detection is ' +
+               'where that has to be paid for. Read the two together.']},
       unstable_time_s: {dir: 'down', dirText: 'lower is better — must be 0',
         where: 'Experimental → <b>Live closed loop</b>.',
         body: ['Seconds spent with g·a at or above g_crit, the loop gain that ' +

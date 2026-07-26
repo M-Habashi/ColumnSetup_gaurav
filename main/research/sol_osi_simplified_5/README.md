@@ -116,21 +116,140 @@ experimental live and GDB records.
 | | `sol_osi` | `simplified` | `simplified_5` |
 |---|---:|---:|---:|
 | all seven gates | FAIL | FAIL | **PASS** |
-| synthetic score | 92.7 | 93.0 | 91.4 |
-| experimental score | 60.9 | 66.2 | 53.3 |
+| synthetic score | 92.7 | 93.0 | 91.9 |
+| experimental score | 60.9 | 66.2 | 65.5 |
 | S3 detection | 100.0 | 60.0 | 60.0 |
-| S4 smoothness | 77.9 | 84.8 | 85.8 |
-| S5 GDB recovery | 100.0 | 100.0 | 77.2 |
-| raw composite | 86.3 | 80.8 | **73.5** |
+| S4 smoothness | 77.9 | 84.8 | 87.0 |
+| S5 GDB recovery | 100.0 | 100.0 | 100.0 |
+| raw composite | 86.3 | 80.8 | **80.9** |
+| indicator jitter | 4.22 | 5.49 | **1.98** |
 | unstable time | 0.25 s | 2.00 s | **0.00 s** |
-| G4 tail max `a` | 0.743 | 0.806 | **0.571** |
+| G4 tail max `a` | 0.743 | 0.806 | **0.443** |
+
+`indicator jitter` is a reported fact, not a score:
+`1000*median|b(k)-2b(k-1)+b(k-2)|` pooled over every update of every test. The
+second difference makes it a noise measure rather than a penalty on
+responsiveness (a ramp has none, a step contributes only at its edge) and the
+median discards those few edges. It is kept out of the composite on purpose: a
+clean trace can always be bought with output filtering, and S3 detection is
+where that gets paid for, so the two are meant to be read together.
 
 The raw composites of the first two methods are gated out. V5 is the only
 method with zero unstable time and an end-hold authority below the `0.736`
 limit. The reference ratio now uses the full retained 2–100 Hz band except
-58–62 Hz. Tuning `rho_recover_s = 0.4`, `rho_detect = 1.75`, and
-`reference_level_beta = 0.26` preserves every gate without changing the
-estimator equations.
+58–62 Hz.
+
+## Retune, 2026-07-25
+
+The first tune (`residual_s = 0.84`, `reference_level_beta = 0.26`) passed every
+gate but was the most conservative of the three methods and the slowest to give
+authority back: on the GDB replay it rode the `a_min = 0.20` floor and took
+6.9 s to return to 0.95 after the diagnostic gain was restored.
+
+The cause was not the memory. Instrumenting the replay shows `rho` back at 1.01
+within a second of the restore while `a` crawls up for six more — the regulator
+was climbing out of a shed that was too deep to begin with. And that shed rested
+on false evidence: on this record the drive itself gets louder during the shake,
+so observed power rises for a reason that has nothing to do with loop growth,
+and the level term of the `rho` fit reads it as damage.
+
+Two constants, no equation changed:
+
+| | was | now | why |
+|---|---:|---:|---|
+| `residual_s` | 0.84 | **1.00** | slower `rho` attack, so a transient is not committed to memory |
+| `reference_level_beta` | 0.26 | **0.50** | divides more of the observed level out, leaving the fit reading shape |
+
+| GDB replay | before | after |
+|---|---:|---:|
+| authority floor | 0.200 | **0.592** |
+| authority at 70 s | 0.275 | **1.000** |
+| recovery after restore | 6.9 s | **0.0 s** |
+
+Nothing was traded for it: all seven gates still pass, the composite rises from
+73.5 to 80.6, `tail_max_a` improves from 0.571 to 0.443, and the live edges that
+are detected are detected faster (0.24/0.42 s → 0.11/0.17 s).
+
+`residual_s` was screened over 0.9–3.0 against `reference_level_beta` over
+0.26–0.65. Parts of that grid fail G3/G4 on the live scenario — `residual_s`
+1.5–2.0 at `beta` 0.26–0.50 goes unstable — so `residual_s = 1.0` was chosen
+because every `beta` in the screened range passes there, which puts the
+operating point inside a safe region rather than on its edge.
+
+An alternative with `rho_detect = 2.5` is less conservative still (floor 0.765)
+and also passes every gate, but it scores 80.1, reacts to the edges later, and
+lets the true margin fall further (`b_true_min` 0.161 against 0.198), so it was
+not taken.
+
+### Second pass: indicator jitter
+
+Taking the worst of forty-seven per-frequency estimates is an order statistic,
+so this formulation buys its per-bin honesty with a noisier trace. The output
+filter is where that gets paid back: **`margin_s` 0.08 → 0.25 s**.
+
+| | before | after |
+|---|---:|---:|
+| indicator jitter | 4.54 | **1.98** |
+| composite | 80.6 | **80.9** |
+| S3 detection | 60 | 60 |
+| S5 GDB recovery | 100 | 100 |
+| `tail_max_a` | 0.443 | 0.443 |
+| all seven gates | PASS | PASS |
+
+Jitter more than halves and lands well under the production estimator's 4.22,
+with nothing given up — the detection that survives no longer depends on the
+fast filter once the first two constants stopped manufacturing false evidence.
+Note this would not have been free before that: screened against the old
+`residual_s`/`beta`, `margin_s = 0.15` already cost S3 detection 60 → 40.
+
+`margin_s = 0.35` fails G1 (a synthetic case), so 0.25 was taken rather than
+0.30 — both of its neighbours, 0.20 and 0.30, pass. `memory_s` is a second
+smoothing lever but a worse one: 0.40 drops `fabby_score_1` to 90.96 against
+the G2 line of 90, and 0.60 fails it outright.
+
+### Why it settles lower than the other two on the damage cases
+
+On `gradual_softening` v5 settles at `a = 0.401` where both other methods hold
+`0.436`, leaving the true margin at 0.5703 against a 0.55 target (they leave
+0.5593). This looks like over-conservatism and it is, but **it is not reachable
+by tuning** — eleven overrides were screened (`rho_detect`, `fit_floor`,
+`level_fit_gain`, `power_floor_db`, `residual_s`) and every one of them left
+the settled authority at 0.4007. Two things cause it, in roughly equal parts:
+
+1. **The widened guard.** v5 reports `residual_weight = w_res` at the governing
+   bin — the honest inferred share of its own reading — and `gpt5_6_4_auth`
+   answers by widening `b_ref` from `target+0.02` to `target+0.02(1+w_res)`.
+   Where the other two report ~0, v5 regulates to a higher `b`, so it sheds
+   more. This is a policy, not an estimate.
+2. **The `min` over 47 bins**, an order statistic biased low. On the damage
+   cases v5's estimator bias is −0.0021 (gradual_softening), −0.0037
+   (damage_step_broadband), −0.0053 (damage_then_repair) where the other two
+   sit at +0.0038. This part is structural to the formulation.
+
+Softening (1) was measured, by scaling the reported share:
+
+| reported share | `a` end | tail_max_a (limit 0.736) | fabby_1 | composite | gates |
+|---:|---:|---:|---:|---:|:--|
+| ×1.00 (shipped) | 0.401 | **0.443** | 91.86 | 80.88 | PASS |
+| ×0.75 | 0.404 | 0.605 | 91.81 | 80.84 | PASS |
+| ×0.50 | 0.409 | 0.615 | 91.60 | 80.37 | PASS |
+| ×0.25 | 0.414 | 0.926 | 91.24 | 80.02 | **FAIL** G3, G4 |
+| ×0.00 | 0.418 | 0.935 | 90.87 | 79.43 | **FAIL** G3, G4 |
+
+The trade is bad and was declined: halving the guard closes under a quarter of
+the gap to 0.436 while spending most of the headroom to the G4 limit, and both
+the estimation score and the composite fall. **The widened guard is the same
+mechanism that makes v5 the only method passing G3 and G4** — it is not an
+incidental cost of the design, it is the design working.
+
+Note also that v5 is not uniformly more conservative: it beats the production
+estimator on `damage_step_lowband` (76.9 vs 66.7), `starts_damaged_improves`
+(92.6 vs 91.9) and `regime_change_healthy` (99.8 vs 97.0). Over the ten cases
+it trades rather than loses (91.86 vs 92.73).
+
+`docs/Sol_osi/index.html` runs this estimator in the browser against both
+experimental records, so these constants and eleven others can be moved
+directly against the data.
 
 ## Run it
 

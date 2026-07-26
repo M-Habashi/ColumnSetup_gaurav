@@ -70,6 +70,16 @@ function result = run_osi_benchmark(osi_fn, auth_fn, label, target_override)
 %                         requirement) to 20 s (=0, the post-restore
 %                         window the record offers) after the gain restore
 %   composite           - mean of the five, reported ONLY if all gates pass
+%
+% REPORTED FACTS (not scores, not folded into the composite):
+%   roughness           - indicator jitter, 1000*median|b(k)-2b(k-1)+b(k-2)|
+%                         pooled over every update of every test. The second
+%                         difference ignores a legitimate ramp and the median
+%                         ignores the handful of genuine fast edges, so what
+%                         is left is the update-to-update fuzz on the trace.
+%                         Lower is better; it is deliberately NOT scored,
+%                         because a method may buy a clean trace with output
+%                         filtering that S3 detection would have to pay for
 
 assert(nargin >= 3 && ischar(label) || isstring(label), ...
     'Usage: run_osi_benchmark(@osi_fn, @auth_fn, ''label'')')
@@ -130,6 +140,13 @@ scores = struct( ...
 if ~isfinite(scores.S5_gdb_recovery), scores.S5_gdb_recovery = 0; end
 composite = mean(struct2array(scores));
 
+%% ---- reported facts --------------------------------------------------------
+traces = cell(numel(suite.cases)+2, 1);
+for i = 1:numel(suite.cases), traces{i} = suite.cases(i).sim.b_est(:); end
+traces{end-1} = emu.b(:);
+traces{end} = gdb.b(:);
+roughness = indicatorJitter(traces);
+
 %% ---- scorecard ------------------------------------------------------------
 fprintf('\n=============== FABBY BENCHMARK: %s ===============\n', label)
 for i = 1:numel(gate_names)
@@ -153,6 +170,7 @@ else
 end
 fprintf('  facts: g_crit %.3f | emu unstable %.2f s | tail max a %.3f (limit %.3f)\n', ...
     emu.g_crit, emu.unstable_time_s, emu.tail_max_a, emu.g_crit/3)
+fprintf('  roughness %.2f (indicator jitter x1000, lower is smoother)\n', roughness)
 fprintf('  emu edges [%s] s | gdb edges [%s] s | b_true min %.3f\n', ...
     num2str(emu.edge_latency_s(:)', '%.2f '), ...
     num2str(gdb.edge_latency_s(:)', '%.2f '), emu.b_true_min)
@@ -161,7 +179,8 @@ fprintf('====================================================\n')
 result = struct('label', label, 'generated_at', ...
     char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
     'gates', gates, 'all_gates_pass', all_gates, 'scores', scores, ...
-    'composite', composite, 'suite', suite, 'fabby', fab, ...
+    'composite', composite, 'roughness', roughness, ...
+    'suite', suite, 'fabby', fab, ...
     'emulation', emu, 'gdb', gdb);
 resdir = fullfile(here, 'results');
 if ~exist(resdir, 'dir'), mkdir(resdir), end
@@ -386,4 +405,21 @@ end
 
 function s = passText(tf)
 if tf, s = 'PASS'; else, s = 'FAIL'; end
+end
+
+function j = indicatorJitter(traces)
+% Update-to-update fuzz on the reported margin, pooled over every test.
+%
+% The second difference is what makes this a noise metric rather than a
+% responsiveness penalty: a genuine ramp has a near-zero second difference,
+% and a genuine step contributes only at its own edge. The median then
+% discards those few edges, so a method is not charged for reacting.
+d = [];
+for i = 1:numel(traces)
+    b = traces{i};
+    b = b(isfinite(b));
+    if numel(b) < 3, continue, end
+    d = [d; abs(diff(b, 2))]; %#ok<AGROW>
+end
+if isempty(d), j = NaN; else, j = 1000*median(d); end
 end
