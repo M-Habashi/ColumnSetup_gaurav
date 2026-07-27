@@ -1,4 +1,4 @@
-function setup = prepare_gpt5_6_runtime(projectFolder, dt, hs)
+function setup = prepare_gpt5_6_runtime(projectFolder, dt, hs, pid_values)
 %PREPARE_GPT5_6_RUNTIME Prepare fixed-size target parameters for SOL_OSI.
 
 defaults = struct('target_outer_ncf', 0.45, ...
@@ -32,14 +32,19 @@ if get(H_dc_dm, 'Ts') == 0
 elseif abs(get(H_dc_dm, 'Ts') - dt) > 10*eps(dt)
     H_dc_dm = d2d(H_dc_dm, dt, 'zoh');
 end
-if isfield(exp_tf_data, 'pid_values')
-    pv = exp_tf_data.pid_values;
-else
-    pv = struct('P', 0.15, 'I', 20, 'D', 0.0015, ...
-        'derivative_filter_N', 512);
+if nargin < 4 || isempty(pid_values)
+    if isfield(exp_tf_data, 'pid_values')
+        pid_values = exp_tf_data.pid_values;
+    else
+        pid_values = struct('P', 0.15, 'I', 20, 'D', 0.0015, ...
+            'derivative_filter_N', 512);
+    end
 end
-if ~isfield(pv, 'derivative_filter_N'), pv.derivative_filter_N = 512; end
-C = pid(pv.P, pv.I, pv.D, 1/pv.derivative_filter_N, dt, ...
+if ~isfield(pid_values, 'derivative_filter_N')
+    pid_values.derivative_filter_N = 512;
+end
+C = pid(pid_values.P, pid_values.I, pid_values.D, ...
+    1/pid_values.derivative_filter_N, dt, ...
     'IFormula', 'ForwardEuler', 'DFormula', 'ForwardEuler');
 
 cfg = sol_osi('config', dt, C*H_dc_dm, override.osi);
@@ -94,6 +99,7 @@ assignin('base', 'gpt_dfm', gpt_dfm);
 
 setup = struct('exp_tf_file', exp_tf_file, 'exp_tf_name', exp_tf_name, ...
     'version', 'SOL-OSI', ...
+    'pid_values', pid_values, ...
     'cfg', cfg, 'prm', prm, 'gpts', gpts, 'gptw', gptw, ...
     'gptbins', gptbins, 'gptrho', gptrho, 'gptauth', gptauth, ...
     'gpt_reserved1', gpt_reserved1, 'gpt_reserved2', gpt_reserved2, ...
