@@ -1,0 +1,418 @@
+function [auth, b_osi, b_st, b_res, b_fast, trip_reason, valid, ...
+    decision, g_armed] = sol_osi_v1_runtime(dd, dm, en, gpts, gptw, ...
+    gptbins, gptrho, gptauth, ~, ~)
+%SOL_OSI_V1_RUNTIME Former production time-sliced Speedgoat implementation.
+% Called at 2048 Hz with scalar displacement samples. Each 0.125 s update
+% is spread over 32 ticks: window/FFT work occupies four separate ticks,
+% spectral work two ticks, and the 25 residual-fit candidates one tick
+% each. Outputs publish together at tick 32, well before the next update.
+
+%#codegen
+persistent c raw_u raw_y raw_pos samples_in sample_phase step_count ...
+    spectral_count Suu Syy Syu q_ref_samples q_ref q_ref_count ...
+    reference_ratio memory_released drive log_rho rho_drive ratio_prev ...
+    b_state a_state authority_armed phase W out_b out_st out_res ...
+    out_auth out_valid out_dec
+
+PUBLISH_PHASE = 32;
+if isempty(raw_pos)
+    c = unpackConfig(gpts, gptw, gptbins, gptrho);
+    % Two window lengths keep the boundary snapshot intact while new
+    % base-rate samples continue arriving during the scheduled pipeline.
+    raw_u = zeros(2*c.segment_n, 1);
+    raw_y = zeros(2*c.segment_n, 1);
+    raw_pos = 0;
+    samples_in = 0;
+    sample_phase = 0;
+    step_count = 0;
+    spectral_count = 0;
+    Suu = zeros(c.nf, 1);
+    Syy = zeros(c.nf, 1);
+    Syu = complex(zeros(c.nf, 1));
+    q_ref_samples = zeros(c.nf, 3);
+    q_ref = zeros(c.nf, 1);
+    q_ref_count = 0;
+    reference_ratio = 1;
+    memory_released = false;
+    drive = 0;
+    log_rho = 0;
+    rho_drive = 1;
+    ratio_prev = 0;
+    b_state = c.cap;
+    a_state = gptauth(8);
+    authority_armed = false;
+    phase = 0;
+    W = initWork(c);
+    out_b = c.cap;
+    out_st = c.cap;
+    out_res = c.cap;
+    out_auth = gptauth(8);
+    out_valid = 0;
+    out_dec = 0;
+end
+
+pause_enable = en >= 2;
+en_active = en;
+if pause_enable, en_active = en - 2; end
+if pause_enable
+    raw_u(:) = 0;
+    raw_y(:) = 0;
+    raw_pos = 0;
+    samples_in = 0;
+    sample_phase = 0;
+    step_count = 0;
+    spectral_count = 0;
+    Suu(:) = 0;
+    Syy(:) = 0;
+    Syu(:) = 0;
+    q_ref_samples(:) = 0;
+    q_ref(:) = 0;
+    q_ref_count = 0;
+    reference_ratio = 1;
+    memory_released = false;
+    drive = 0;
+    log_rho = 0;
+    rho_drive = 1;
+    ratio_prev = 0;
+    b_state = c.cap;
+    a_state = gptauth(8);
+    authority_armed = false;
+    phase = 0;
+    W = initWork(c);
+    out_b = c.cap;
+    out_st = c.cap;
+    out_res = c.cap;
+    out_auth = gptauth(8);
+    out_valid = 0;
+    out_dec = 0;
+    auth = gptauth(8);
+    [b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
+        diagnostics(out_b, out_st, out_res, out_valid, out_dec, ...
+        authority_armed);
+    return
+end
+
+raw_pos = raw_pos + 1;
+if raw_pos > 2*c.segment_n, raw_pos = 1; end
+raw_u(raw_pos) = dd;
+raw_y(raw_pos) = dm;
+samples_in = min(samples_in + 1, c.segment_n);
+sample_phase = sample_phase + 1;
+
+if sample_phase >= c.step_n
+    sample_phase = 0;
+    step_count = step_count + 1;
+    W.a_now = min(max(a_state, 0.02), 1);
+    W.snap_pos = raw_pos;
+    W.do_spectrum = samples_in >= c.segment_n;
+    W.best_loss = Inf;
+    W.best_rho = gptrho(1);
+    W.b_st = W.b_prior;
+    W.b_res = W.b_prior;
+    W.b_full = c.nominal;
+    W.res_weight = 0;
+    phase = 1;
+elseif phase > 0
+    ph = phase;
+    phase = phase + 1;
+    if ph >= PUBLISH_PHASE, phase = 0; end
+
+    if ph == 1
+        [W.wu, mean_u2] = windowedTail(raw_u, W.snap_pos, c.window);
+        W.activity = min(1, (sqrt(mean_u2)/c.quiet_rms)^4);
+        drive = drive + c.drive_alpha*(W.activity - drive);
+        W.Lprior = W.a_now*c.L0;
+        W.Tprior = W.Lprior./(1 + W.Lprior);
+        W.b_prior = minMasked(chordal(W.Lprior, c.cap), c.keep);
+        W.b_st = W.b_prior;
+        W.b_res = W.b_prior;
+    elseif ph == 2
+        if W.do_spectrum
+            U = fft(W.wu);
+            W.U = U(c.bin);
+        end
+    elseif ph == 3
+        if W.do_spectrum
+            [W.wy, ~] = windowedTail(raw_y, W.snap_pos, c.window);
+        end
+    elseif ph == 4
+        if W.do_spectrum
+            Y = fft(W.wy);
+            W.Y = Y(c.bin);
+        end
+    elseif ph == 5
+        if W.do_spectrum
+            pu = abs(W.U).^2;
+            py = abs(W.Y).^2;
+            cyu = W.Y.*conj(W.U);
+            if q_ref_count < 3 && mod(step_count, c.reference_stride) == 0
+                q_ref_count = q_ref_count + 1;
+                q_ref_samples(:, q_ref_count) = py./c.shape;
+                if q_ref_count == 3
+                    for i = 1:c.nf
+                        q_ref(i) = median3(q_ref_samples(i, 1), ...
+                            q_ref_samples(i, 2), q_ref_samples(i, 3));
+                    end
+                end
+            end
+            if spectral_count == 0
+                Suu = pu; Syy = py; Syu = cyu;
+            else
+                Suu = Suu + c.spectral_alpha*(pu - Suu);
+                Syy = Syy + c.spectral_alpha*(py - Syy);
+                Syu = Syu + c.spectral_alpha*(cyu - Syu);
+            end
+            spectral_count = spectral_count + 1;
+            W.p_rel = Suu/max(max(Suu), eps);
+            W.leverage = W.p_rel./(W.p_rel + c.power_floor);
+            gamma2 = min(1, abs(Syu).^2./max(Suu.*Syy, eps));
+            W.confidence = W.activity*gamma2.*W.leverage;
+            That = Syu./max(Suu, eps);
+            Tuse = W.confidence.*That + (1 - W.confidence).*W.Tprior;
+            den = 1 - Tuse;
+            for i = 1:c.nf
+                if abs(den(i)) < 0.02
+                    den(i) = 0.02*exp(1i*angle(den(i) + eps));
+                end
+            end
+            W.Lhat = Tuse./den;
+            W.b_st = minMasked(movMedian3(chordal(W.Lhat, c.cap)), c.keep);
+            full_curve = movMedian3(chordal( ...
+                min(1/W.a_now, 4)*W.Lhat, c.cap));
+            W.b_full = minMasked(full_curve, c.keep);
+        end
+    elseif ph == 6
+        if W.do_spectrum && step_count > c.warm_steps
+            W.qobs = Syy./c.shape;
+            if q_ref_count == 3
+                W.qobs = W.qobs./max(q_ref, eps);
+                reference_ratio = medianMasked(W.qobs, c.res_keep);
+                if memory_released
+                    if reference_ratio > c.memory_reengage_ratio
+                        memory_released = false;
+                    end
+                elseif reference_ratio < c.memory_release_ratio
+                    memory_released = true;
+                end
+                level = medianMasked(W.qobs, c.res_keep)^ ...
+                    c.reference_level_beta;
+                W.qobs = W.qobs/max(level, eps);
+            else
+                W.qobs = W.qobs/max( ...
+                    medianMasked(W.qobs, c.res_keep), eps);
+            end
+        end
+    elseif ph >= 7 && ph < 7 + c.nrho
+        if W.do_spectrum && step_count > c.warm_steps
+            k = ph - 6;
+            qmod = abs((1 + c.L0)./(1 + W.a_now*gptrho(k)*c.L0)).^2;
+            if q_ref_count == 3
+                level = medianMasked(qmod, c.res_keep)^ ...
+                    c.reference_level_beta;
+                qmod = qmod/max(level, eps);
+            else
+                qmod = qmod/max(medianMasked(qmod, c.res_keep), eps);
+            end
+            err = abs(log(max(W.qobs, eps)) - log(max(qmod, eps)));
+            loss = medianMasked(err, c.res_keep);
+            if loss < W.best_loss
+                W.best_loss = loss;
+                W.best_rho = gptrho(k);
+            end
+        end
+    elseif ph == PUBLISH_PHASE
+        if W.do_spectrum
+            drive_ratio = 1;
+            if step_count > c.warm_steps
+                weights = W.confidence.^2;
+                Lmodel = W.a_now*c.L0;
+                rho_current = real(sum(weights.*conj(Lmodel).*W.Lhat))/ ...
+                    max(sum(weights.*abs(Lmodel).^2), eps);
+                rho_current = max(rho_current, eps);
+                raw_kick = max(rho_current/rho_drive - 1, 0);
+                kick = min(min(raw_kick, ratio_prev), c.detector_max - 1);
+                ratio_prev = raw_kick;
+                drive_ratio = 1 + drive*kick;
+                rho_drive = rho_drive + c.drive_alpha*(rho_current - rho_drive);
+                coherent_weight = min(max(2*(rho_current - 1), 0), 1);
+                level_weight = max(1-c.level_fit_start_ratio/ ...
+                    max(reference_ratio, eps), 0);
+                effective_fit_floor = c.fit_floor + ...
+                    c.level_fit_gain*level_weight;
+                shape_weight = coherent_weight + ...
+                    effective_fit_floor*W.activity* ...
+                    (1 - coherent_weight);
+                rho_target = 1 + shape_weight*(W.best_rho - 1);
+                log_rho = log_rho + W.activity*c.residual_alpha* ...
+                    (log(rho_target) - log_rho);
+            end
+            log_rho = log_rho*(1 - c.leak_alpha*(1 - W.activity));
+            rho = exp(log_rho)*drive_ratio;
+            W.b_res = minMasked(movMedian3(chordal( ...
+                W.a_now*rho*c.L0, c.cap)), c.keep);
+            W.res_weight = drive* ...
+                (1 - meanMasked(W.leverage, c.res_keep))^2;
+            b_evid = W.b_st - W.res_weight*max(W.b_st - W.b_res, 0);
+            memory_gain = c.residual_memory_gain;
+            if memory_released, memory_gain = 1; end
+            memory_weight = min(max(memory_gain*(rho - 1), 0), 1);
+            b_idle = c.cap - memory_weight*(c.cap - W.b_res);
+            b_raw = W.activity*b_evid + (1 - W.activity)*b_idle;
+            b_state = min(max(b_state + c.margin_alpha* ...
+                (b_raw - b_state), 0), c.cap);
+        else
+            b_raw = W.b_prior;
+            b_state = min(max(b_state + W.activity*c.margin_alpha* ...
+                (b_raw - b_state), 0), c.cap);
+        end
+        evidence_valid = step_count >= c.warm_steps && W.activity >= 1;
+        a_old = a_state;
+        if en_active == 0
+            a_state = gptauth(8);
+            authority_armed = false;
+        elseif ~authority_armed
+            a_state = gptauth(8);
+            authority_armed = evidence_valid;
+        elseif evidence_valid
+            a_state = authorityStep(b_state, W.b_full, W.res_weight, ...
+                a_state, gptauth);
+        end
+        out_b = b_state;
+        out_st = W.b_st;
+        out_res = W.b_res;
+        out_auth = a_state;
+        out_valid = double(evidence_valid);
+        out_dec = double(a_state > a_old) + 2*double(a_state < a_old);
+    end
+end
+
+auth = publishedAuth(en_active, out_auth, gptauth(8), authority_armed);
+[b_osi, b_st, b_res, b_fast, trip_reason, valid, decision, g_armed] = ...
+    diagnostics(out_b, out_st, out_res, out_valid, out_dec, ...
+    authority_armed);
+end
+
+function c = unpackConfig(s, w, bins, rho)
+c = struct('dt', s(1), 'fs', s(2), 'step_n', round(s(3)), ...
+    'segment_n', round(s(4)), 'spectral_alpha', s(5), ...
+    'margin_alpha', s(6), 'residual_alpha', s(7), ...
+    'power_floor', s(8), 'quiet_rms', s(9), 'cap', s(10), ...
+    'warm_steps', round(s(11)), 'nf', round(s(12)), ...
+    'nominal', s(13), 'nrho', round(s(14)), ...
+    'drive_alpha', s(15), 'fit_floor', s(16), ...
+    'leak_alpha', s(17), 'detector_max', s(18), ...
+    'reference_stride', round(s(19)), ...
+    'reference_level_beta', s(20), 'residual_memory_gain', s(21), ...
+    'memory_release_ratio', s(22), 'memory_reengage_ratio', s(23), ...
+    'level_fit_gain', s(24), 'level_fit_start_ratio', s(25), ...
+    'window', w, ...
+    'bin', round(bins(:, 1)), 'keep', bins(:, 2) ~= 0, ...
+    'res_keep', bins(:, 3) ~= 0, ...
+    'L0', complex(bins(:, 4), bins(:, 5)), 'shape', bins(:, 6), ...
+    'rho', rho);
+end
+
+function W = initWork(c)
+W = struct('a_now', 1, 'activity', 0, 'Lprior', complex(zeros(c.nf, 1)), ...
+    'Tprior', complex(zeros(c.nf, 1)), 'b_prior', c.cap, ...
+    'do_spectrum', false, 'wu', zeros(c.segment_n, 1), ...
+    'wy', zeros(c.segment_n, 1), 'U', complex(zeros(c.nf, 1)), ...
+    'Y', complex(zeros(c.nf, 1)), 'p_rel', zeros(c.nf, 1), ...
+    'leverage', zeros(c.nf, 1), 'confidence', zeros(c.nf, 1), ...
+    'Lhat', complex(zeros(c.nf, 1)), 'qobs', zeros(c.nf, 1), ...
+    'best_loss', Inf, 'best_rho', 1, 'snap_pos', 0, 'b_st', c.cap, ...
+    'b_res', c.cap, 'b_full', c.nominal, 'res_weight', 0);
+end
+
+function [y, mean_square] = windowedTail(x, pos, w)
+n = numel(w);
+ring_n = numel(x);
+y = zeros(n, 1);
+sum_square = 0;
+for i = 1:n
+    j = pos - n + i;
+    if j <= 0, j = j + ring_n; end
+    value = x(j);
+    y(i) = value*w(i);
+    sum_square = sum_square + value*value;
+end
+mean_square = sum_square/n;
+end
+
+function y = chordal(L, cap)
+y = min(real(abs(1 + L)./sqrt(2*(1 + abs(L).^2))), cap);
+end
+
+function y = movMedian3(x)
+y = x;
+n = numel(x);
+for i = 2:n-1
+    y(i) = median3(x(i-1), x(i), x(i+1));
+end
+if n > 1
+    y(1) = (x(1) + x(2))/2;
+    y(n) = (x(n-1) + x(n))/2;
+end
+end
+
+function y = median3(a, b, c)
+y = a + b + c - min(a, min(b, c)) - max(a, max(b, c));
+end
+
+function y = medianMasked(x, mask)
+buf = inf(numel(x), 1);
+n = 0;
+for i = 1:numel(x)
+    if mask(i)
+        n = n + 1;
+        buf(n) = x(i);
+    end
+end
+buf = sort(buf);
+h = floor(n/2);
+if mod(n, 2) == 1
+    y = buf(h + 1);
+else
+    y = (buf(h) + buf(h + 1))/2;
+end
+end
+
+function y = minMasked(x, mask)
+y = Inf;
+for i = 1:numel(x)
+    if mask(i) && x(i) < y, y = x(i); end
+end
+end
+
+function y = meanMasked(x, mask)
+y = 0;
+n = 0;
+for i = 1:numel(x)
+    if mask(i), y = y + x(i); n = n + 1; end
+end
+y = y/max(n, 1);
+end
+
+function a = authorityStep(b, ~, rw, a, p)
+a0 = min(max(a, p(6)), p(7));
+rw = min(max(rw, 0), 1);
+b_ref = p(1) + p(2)*(1 + rw);
+e_raw = b - b_ref;
+e_margin = sign(e_raw)*max(abs(e_raw) - p(3)*(1 + rw), 0);
+recovery_weight = (b_ref*sqrt(2))^2;
+e = min(e_margin, 0) + recovery_weight*max(e_margin, 0);
+rate = p(4)*sqrt(a0);
+a_free = exp(min(max(log(a0) + rate*p(9)*e, log(p(6))), log(p(7))));
+a = a0 + min(max(a_free - a0, -p(5)), p(5));
+end
+
+function a = publishedAuth(en, a_state, a_init, armed)
+if en ~= 0 && armed, a = a_state; else, a = a_init; end
+end
+
+function [b, bst, bres, bfast, trip, valid, decision, armed] = ...
+    diagnostics(b, bst, bres, valid, decision, armed_state)
+bfast = NaN;
+trip = 0;
+armed = double(armed_state);
+end

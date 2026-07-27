@@ -1,7 +1,7 @@
 %% Run Habashi Parameters On The 10 Fable Synthetic Cases
 % Runs the fable synthetic suite once with the editable "new" parameters
 % and once with the current implementation parameters. Both run the
-% canonical SOL_OSI implementation (control_and_HS/OSI/sol_osi.m
+% historical SOL-OSI V1 implementation (control_and_HS/OSI/sol_osi_v1.m
 % + gpt5_6_4_auth.m).
 
 clear; close all; clc
@@ -63,13 +63,13 @@ method = struct('name', name, 'block_n', 256, ...
 end
 
 function ctx = localInitGpt(dt, L0, target, cm)
-cfg = sol_osi('config', dt, L0, cm.osi_override);
+cfg = sol_osi_v1('config', dt, L0, cm.osi_override);
 aovr = cm.auth_override;
 aovr.target = target;
 aovr.dt_update = cfg.step_s;
 prm = gpt5_6_4_auth('params', aovr);
 ctx = struct('cfg', cfg, ...
-    'state', sol_osi('state', cfg), ...
+    'state', sol_osi_v1('state', cfg), ...
     'prm', prm, ...
     'ast', gpt5_6_4_auth('state', prm), ...
     'a_last', prm.a_init);
@@ -77,7 +77,7 @@ end
 
 function [ctx, b, a, trip, extra] = localStepGpt(ctx, dd_blk, dm_blk)
 ctx.state.a_cmd = ctx.a_last;
-[b, ctx.state, info] = sol_osi(dd_blk, dm_blk, ctx.cfg, ctx.state);
+[b, ctx.state, info] = sol_osi_v1(dd_blk, dm_blk, ctx.cfg, ctx.state);
 [a, ctx.ast] = gpt5_6_4_auth(b, info.full_margin, ...
     info.residual_weight, ctx.ast, ctx.prm);
 ctx.a_last = a;

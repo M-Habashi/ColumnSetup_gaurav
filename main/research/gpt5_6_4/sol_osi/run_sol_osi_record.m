@@ -1,5 +1,5 @@
 function metrics = run_sol_osi_record
-%RUN_SOL_OSI_RECORD Replay the canonical SOL_OSI in the highlighted range.
+%RUN_SOL_OSI_RECORD Replay the historical SOL-OSI V1 in the highlighted range.
 
 here = fileparts(mfilename('fullpath'));
 project = fileparts(fileparts(fileparts(here)));
@@ -31,8 +31,8 @@ elseif abs(get(H, 'Ts')-dt) > 10*eps(dt)
     H = d2d(H, dt, 'zoh');
 end
 
-cfg = sol_osi('config', dt, C*H, struct());
-state = sol_osi('state', cfg);
+cfg = sol_osi_v1('config', dt, C*H, struct());
+state = sol_osi_v1('state', cfg);
 nstep = floor(min([numel(t), numel(u), numel(dm), numel(a)])/cfg.step_n);
 tc = NaN(nstep, 1);
 b = NaN(nstep, 1);
@@ -40,7 +40,7 @@ b_res = b;
 for k = 1:nstep
     ii = (k-1)*cfg.step_n+(1:cfg.step_n);
     state.a_cmd = a(ii(1));
-    [b(k), state, info] = sol_osi(u(ii), dm(ii), cfg, state);
+    [b(k), state, info] = sol_osi_v1(u(ii), dm(ii), cfg, state);
     tc(k) = t(ii(end));
     b_res(k) = info.b_res;
 end

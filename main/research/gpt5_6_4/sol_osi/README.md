@@ -45,11 +45,12 @@ The recovery hysteresis is intentionally wide: it requires strong evidence of
 restoration before releasing memory, then requires clear renewed growth before
 re-engaging it.
 
-The main implementation is `control_and_HS/OSI/sol_osi.m`.
+The historical implementation is retained as
+`control_and_HS/OSI/sol_osi_v1.m`.
 Use `run_sol_osi_record` for the highlighted-record comparison and
 `run_sol_osi_benchmark` for the complete Fabby Benchmark.
 
 Deployment note: the estimator must be initialized after pause, or its healthy
-reference state must be reset when pause ends. The time-sliced implementation
-is in `control_and_HS/OSI/gpt5_6_runtime.m`; its legacy filename is retained so
-the existing Simulink model does not require an `.slx` edit.
+reference state must be reset when pause ends. The historical time-sliced
+implementation is retained in
+`control_and_HS/OSI/sol_osi_v1_runtime.m` for V1 replay.

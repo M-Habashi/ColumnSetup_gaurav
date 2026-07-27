@@ -1,5 +1,19 @@
 # Simulink Changes
 
+## Change 5 (2026-07-27): simplified V6 becomes canonical SOL-OSI
+
+The accepted simplified V6 estimator is now the canonical
+`control_and_HS/OSI/sol_osi.m`. The former production estimator and its
+scheduled runtime are retained as `sol_osi_v1.m` and
+`sol_osi_v1_runtime.m`.
+
+The active Speedgoat path uses `sol_osi_runtime.m`, configured by
+`prepare_sol_osi_runtime.m`. The runtime preserves the 32-tick schedule:
+the two FFTs remain on separate ticks, and each of the 25 per-frequency
+residual-fit candidates has its own tick. The Simulink MATLAB Function
+block is named `SOL-OSI + Auth`, calls `sol_osi_runtime`, and uses neutral
+`osi*` parameter names. The OSI tap feedthrough gain now uses `osi_dfm`.
+
 ## Change 4 (2026-07-12): SOL_OSI promoted without an SLX edit
 
 `gpt5_6_runtime.m` now implements the canonical `sol_osi.m` healthy

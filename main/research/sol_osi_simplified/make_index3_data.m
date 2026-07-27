@@ -2,7 +2,7 @@ function make_index3_data
 %MAKE_INDEX3_DATA Generate SOL-OSI traces for the docs/Sol_osi/index3 page.
 %
 % Gradual 7k -> 5k softening (the fabby-suite gradual_softening scenario),
-% run through the CLOSED inner loop with the sol_osi_simplified estimator.
+% run through the CLOSED inner loop with the canonical sol_osi estimator.
 % Two excitation bands (high / low) x two authority modes (monitor-only /
 % adaptive) -> four cases.  Writes docs/Sol_osi/index3_data.json.
 
@@ -84,10 +84,10 @@ t = (1:N)'*dt;
 dd = bandNoise(N, fs, band)*cmd_rms;
 v = noise_std*randn(N, 1);
 
-cfg = sol_osi_simplified('config', dt, nominal_tf, struct());
+cfg = sol_osi('config', dt, nominal_tf, struct());
 prm = gpt5_6_4_auth('params', ...
     struct('target', target, 'dt_update', cfg.step_s));
-ost = sol_osi_simplified('state', cfg);
+ost = sol_osi('state', cfg);
 ast = gpt5_6_4_auth('state', prm);
 
 [Ac, Bc, Cc, Dc] = ssdata(ss(C));
@@ -122,7 +122,7 @@ for k = 1:N
     if blk_i == blkN
         blk_i = 0; ku = ku + 1;
         ost.a_cmd = a;                  % closed authority the OSI just saw
-        [b, ost, oi] = sol_osi_simplified(dd_blk, dm_blk, cfg, ost);
+        [b, ost, oi] = sol_osi(dd_blk, dm_blk, cfg, ost);
         [a_new, ast] = gpt5_6_4_auth(b, oi.full_margin, ...
             oi.residual_weight, ast, prm);
         if adapt

@@ -15,10 +15,9 @@ addpath(genpath(fullfile(project_folder, 'control_and_HS', 'OSI')))
 % noisier); segment_s is the spectrum length (longer is smoother but slower).
 % memory_s, margin_s, and residual_s are exponential memories: increasing
 % them smooths their respective terms and delays their response.
-% quiet_rms is the command activity threshold: increasing it makes quiet
-% data less influential. Canonical values, including all frequency bands,
-% healthy-reference memory, recovery hysteresis, and high-level fit logic,
-% are defined once in sol_osi.m. Add only deliberate experiment overrides.
+% eta_A is the hard command-activity threshold. Canonical values, including
+% the per-bin evidence fusion, recovery, and trimmed reduction, are defined
+% once in sol_osi.m. Add only deliberate experiment overrides.
 osi_override = struct();
 
 % Authority: target is read from the saved test when available; this fallback
@@ -70,7 +69,7 @@ assert(isfield(model_data, 'H_dc_dm'), ...
 [t, u_osi, dm, dt, sample_index] = replaySignals(result);
 loop_tf = makeLoop(model_data, dt);
 a_acted = loggedAdaptiveFactor(result, sample_index);
-replay = gpt5_6('run', t, u_osi, dm, dt, loop_tf, ...
+replay = sol_osi_replay('run', t, u_osi, dm, dt, loop_tf, ...
     struct('osi', osi_override, 'auth', auth_override), a_acted);
 replay.test_file = test_file;
 replay.exp_tf_file = exp_tf_file;

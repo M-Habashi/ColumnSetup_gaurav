@@ -2,7 +2,7 @@
 % Edit habashi_osi_parameter_sets.m, run this script, choose a saved test
 % record, and compare the replayed OSI behavior against the current
 % implementation. Both parameter sets replay through the deployed
-% control_and_HS/OSI implementation (gpt5_6_runtime.m).
+% historical control_and_HS/OSI V1 implementation.
 
 clear; close all; clc
 
@@ -21,7 +21,7 @@ addpath(genpath(fullfile(projectFolder, 'control_and_HS', 'OSI')))
 fprintf('Selected test data: %s\n', test_file)
 
 %% Plot Replay Comparison
-clear plot_habashi_osi_parameter_comparison gpt5_6_runtime
+clear plot_habashi_osi_parameter_comparison sol_osi_v1_runtime
 rehash
 habashi_osi_comparison = plot_habashi_osi_parameter_comparison( ...
     test_data, test_file, new_params, current_params);
