@@ -1,5 +1,29 @@
 # Simulink Changes
 
+## Change 6 (2026-07-28): online TSE matches specimen identification
+
+The `Online TSE Estimator` now calls
+`control_and_HS/a_specimen_id/online_tse_estimator_runtime.m`. The runtime
+uses the official 30 Hz filtered, noise-whitened TLS estimator with 0.1 s
+windows and non-overlapping KF assimilation. It no longer differentiates raw
+displacement, routes estimates to LSE, clamps the parameters, or initializes
+stiffness at 7.028 MN/m.
+
+MATLAB Coder library generation passes. Saved-record replay on
+`20260727_1647_testing_OSI.mat` matches the offline
+`windowed_noise_whitened_tls.m` result at all 8,284 candidate endpoints, with
+maximum relative error `3.30e-10`. At 177.975 s, the corrected continuous
+online stiffness is 5.915 MN/m, compared with 5.941 MN/m from the selected
+specimen-ID window.
+
+A 20 s Speedgoat timing verification activated BLWN at 3.064 s. The run
+completed in the target's IDLE state with no reported error or overload.
+TETMin/TETAvg/TETMax were 47.40/49.31/71.31 us against the 488.28 us
+base-rate budget, leaving 85.40% worst-case timing margin. The worst tick was
+at 3.733 s (pipeline phase 221), after the estimator's SVD path became active.
+The file logger did not return an importable run, so no signal MAT file was
+saved from this timing-only verification.
+
 ## Change 5 (2026-07-27): simplified V6 becomes canonical SOL-OSI
 
 The accepted simplified V6 estimator is now the canonical

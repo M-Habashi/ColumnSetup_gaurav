@@ -201,7 +201,7 @@ fprintf(['SOL_OSI setup: step %.3g s, target %.3g, initial %.3g, ' ...
 %%% 3- BLWN parameters
 % amp_2_percentile is the filtered BLWN amplitude exceeded by
 % exceed_percentile percent of the samples.
-        amp_2_percentile = 0.4;
+        amp_2_percentile = 0.3;
         exceed_percentile = 0.5;
         f1 = 5;  % cutoff frequency (MUST be changed in the Simulink filter designer)
 
@@ -237,6 +237,8 @@ fprintf('  exp_tf file: %s\n', [exp_tf_name exp_tf_ext])
 fprintf('  OSI target: %.6g, gain initial: %.6g, minimum factor: %.6g\n', ...
     sol_osi_setup.target_outer_ncf, sol_osi_setup.gain_initial, ...
     sol_osi_setup.gain_min)
+fprintf('  PID controller: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
+    pid_P, pid_I, pid_D, pid_N)
 continue_prompt = sprintf(['Continue and open Simulink? ' ...
     '(OSI minimum factor %.6g) (y/n): '], sol_osi_setup.gain_min);
 continue_response = lower(strtrim(input(continue_prompt, 's')));
