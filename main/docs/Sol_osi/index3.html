@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="../../../logo.svg">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="SOL-OSI performance under a gradual 7k to 5k stiffness change: monitor-only versus adaptive authority, high-band and low-band excitation.">
@@ -29,7 +30,8 @@
       background:#fff; border-bottom:1px solid var(--line);
       font-family:var(--mono); font-size:0.78rem; letter-spacing:0.04em;
     }
-    .topbar .brand { font-weight:600; }
+    .topbar .brand { display:inline-flex; align-items:center; gap:0.65rem; font-weight:600; }
+    .brand-logo { width:26px; height:26px; }
     .topbar .tag { color:var(--muted); }
     .wrap { max-width:900px; margin:0 auto; padding:0 22px; }
     header.hero { padding:52px 0 30px; border-bottom:1px solid var(--line); }
@@ -103,7 +105,7 @@
 </head>
 <body>
   <header class="topbar">
-    <span class="brand">SOL—OSI · PERFORMANCE</span>
+    <span class="brand"><img class="brand-logo" src="../../../logo.svg" alt="">SOL—OSI · PERFORMANCE</span>
     <span class="tag">gradual 7k → 5k · fabby benchmark</span>
   </header>
 

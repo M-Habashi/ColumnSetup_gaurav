@@ -44,7 +44,7 @@
 
 ## Deferred Detailed Instructions
 
-- Load `MATLAB_MCP_TOOLING.md` only immediately before doing work that involves MATLAB, Simulink, Speedgoat/SLRT, SAP/FEM workflows, MCP tool execution, browser/uncodixify recovery, GitHub CLI work, or recovery from a recurring command/tool failure.
-- Do not load `MATLAB_MCP_TOOLING.md` for planning-only, discussion-only, or general code-reading prompts.
-- If a MATLAB/Simulink task reaches implementation or verification, read `MATLAB_MCP_TOOLING.md` before running MATLAB, Simulink, Speedgoat, SLRT, or related MCP tools.
-- If a tool/command fails in a way that might match a known workspace issue, read `MATLAB_MCP_TOOLING.md` before retrying.
+- Load `docs/MATLAB_MCP_TOOLING.md` only immediately before doing work that involves MATLAB, Simulink, Speedgoat/SLRT, SAP/FEM workflows, MCP tool execution, browser/uncodixify recovery, GitHub CLI work, or recovery from a recurring command/tool failure.
+- Do not load `docs/MATLAB_MCP_TOOLING.md` for planning-only, discussion-only, or general code-reading prompts.
+- If a MATLAB/Simulink task reaches implementation or verification, read `docs/MATLAB_MCP_TOOLING.md` before running MATLAB, Simulink, Speedgoat, SLRT, or related MCP tools.
+- If a tool/command fails in a way that might match a known workspace issue, read `docs/MATLAB_MCP_TOOLING.md` before retrying.

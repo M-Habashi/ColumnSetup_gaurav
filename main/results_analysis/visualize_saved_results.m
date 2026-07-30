@@ -452,7 +452,11 @@ config.h_dc_dm_model_data = exp_tf_data;
 config.fem_data = fem_data;
 config.specimen_data = specimen_data;
 config.earthquake_data = earthquake_data;
-config.pid_gain_override = phaseLeadPidValues(phase_lead_data);
+if isfield(result, 'pid_values')
+    config.pid_gain_override = result.pid_values;
+else
+    config.pid_gain_override = phaseLeadPidValues(phase_lead_data);
+end
 phase_lead = normalizePhaseLeadConfig(phase_lead_data.phase_lead);
 config.phase_lead_section_count = phase_lead.section_count;
 config.save_results = false;

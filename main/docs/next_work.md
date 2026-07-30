@@ -1,3 +1,9 @@
+# Understand
+- forgtting? memory?
+- recovery
+- fix naming
+- discuss the novel phase lead
+
 # Stability:
 - Try to design the phase_lead as a notch to be more robust [the notch is arount the the crossover phase? what is that 35hz?]
 - Try to penalty the control max command whileoptimizing the PL

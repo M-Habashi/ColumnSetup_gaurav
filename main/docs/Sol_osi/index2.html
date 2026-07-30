@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="../../../logo.svg">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Technical formulation of Online Stability Indicator estimation for real-time hybrid simulation.">
@@ -69,7 +70,8 @@
       border-bottom: 1px solid var(--line);
       font-family: var(--grot);
     }
-    .brand { font-size: 0.82rem; font-weight: 720; letter-spacing: 0.08em; }
+    .brand { display: inline-flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; font-weight: 720; letter-spacing: 0.08em; }
+    .brand-logo { width: 26px; height: 26px; }
     .progress-text { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
     .progress-track { position: fixed; z-index: 30; top: 51px; left: 0; right: 0; height: 2px; background: #ece9e3; }
     .progress-fill { height: 100%; width: 0; background: var(--copper); }
@@ -264,7 +266,7 @@
 </head>
 <body>
   <header class="topbar">
-    <span class="brand">OSI</span>
+    <span class="brand"><img class="brand-logo" src="../../../logo.svg" alt="">OSI</span>
     <span class="progress-text"><span id="progressSection">Overview</span> · <span id="progressPercent">0%</span></span>
   </header>
   <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>

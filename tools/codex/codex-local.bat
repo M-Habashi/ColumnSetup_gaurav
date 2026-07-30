@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 
-set "REPO_MAIN=%~dp0main"
+set "REPO_MAIN=%~dp0..\..\main"
 set "PWSH=C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.3.0_x64__8wekyb3d8bbwe\pwsh.exe"
 
 if not exist "%PWSH%" set "PWSH=pwsh.exe"

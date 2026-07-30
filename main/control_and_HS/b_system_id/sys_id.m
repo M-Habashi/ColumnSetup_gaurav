@@ -3,10 +3,6 @@
 % the current PID loop, and provide interactive trial PID tuning.
 
 %% Inputs
-P = 0.15;
-I = 20;
-D = 0.0015;
-derivative_filter_N = 512;
 max_freq_hz = 80;
 
 % controller optimization inputs
@@ -51,6 +47,15 @@ else
     [experimental_data, data_file, data_name] = ...
         load_saved_result_file(step_root, 'tests', false, data_file);
 end
+if isfield(experimental_data, 'pid_values')
+    test_pid_values = experimental_data.pid_values;
+else
+    test_pid_values = experimental_data.dependencies.phase_lead.pid_values;
+end
+P = test_pid_values.P;
+I = test_pid_values.I;
+D = test_pid_values.D;
+derivative_filter_N = test_pid_values.derivative_filter_N;
 
 if isempty(specimen_file)
     [specimen, specimen_file, specimen_name] = ...
