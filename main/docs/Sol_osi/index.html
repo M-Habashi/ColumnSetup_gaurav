@@ -847,22 +847,11 @@
             \[b_i[n]=b(\omega_*)=b_{(2)}\!\left(\left\{b(\omega):\omega\in\Omega\right\}\right)\]
             <span class="label">The frequency reduction occurs before smoothing in time.</span>
           </div>
+          <p>For the configured sampling rate $f_s=2048\,\mathrm{Hz}$ and 0.5 s moving window, each FFT uses 1024 samples and has frequency spacing $\Delta f=f_s/1024=2\,\mathrm{Hz}$. The 2–100 Hz band therefore contains 50 bins; rejecting 58, 60, and 62 Hz leaves 47 retained bins. Thus $b_{(2)}$ is the second of 47 sorted margins, with empirical cumulative rank $2/47\approx4.3\%$—approximately the 4th percentile—and only the single lowest margin across the retained frequency bins is discarded.</p>
           <p>The reported scalar margin is a first-order lag on $b_i[n]$, with $\eta_b$ the fraction of the new reading admitted at each update:</p>
           <div class="equation accent">
             \[b[n]=(1-\eta_b)\,b[n-1]+\eta_b\,b_i[n]\]
-            <span class="label">$\eta_b=1-\exp(-\Delta t_u/\tau_b)$ with $\tau_b=0.08\,\mathrm{s}$ and $\Delta t_u=0.125\,\mathrm{s}$, so $\eta_b\approx0.7919$: the reading is mostly the current update, with a short tail of the previous one.</span>
           </div>
-        </div>
-
-        <div class="step">
-          <h3>Provenance of the governing result</h3>
-          <p>The estimator reports the three weights at the governing bin $\omega_*$, rather than averaging evidence over the band:</p>
-          <div class="equation">
-            \[\texttt{direct\_fraction}=w_{st}(\omega_*),\qquad
-            \texttt{residual\_weight}=w_{res}(\omega_*),\qquad
-            \texttt{fallback\_fraction}=w_{prior}(\omega_*)\]
-          </div>
-          <p><code>governing_freq_hz</code> is $\omega_*/(2\pi)$ in hertz. For example, direct = 0.20, residual = 0.70, and fallback = 0.10 means the selected-bin estimate is 20% identified from command–response data, 70% inferred through the $g$ model, and 10% supplied by the commissioning prior. These fields describe where the result came from; the authority law separately decides how much extra guard inferred evidence requires.</p>
         </div>
 
         <div class="step">
@@ -877,15 +866,6 @@
             \[\eta_{g,\mathrm{rec}}=0.27\]
           </div>
           <p>Each qualifying update applies the log-domain recurrence of Section 05 with the recovery correction toward $g=1$; otherwise the remembered value remains unchanged.</p>
-        </div>
-
-        <div class="lab step">
-          <div class="lab-head"><strong>Per-Bin Evidence Weighting</strong><span>what a single frequency bin contributes, given its own evidence</span></div>
-          <div class="controls">
-            <div class="control"><label for="activitySlider">confidence $c(\omega)$<output id="activityOut">0.00</output></label><input id="activitySlider" type="range" min="0" max="1" value="0" step="0.01"></div>
-            <div class="control"><label for="memorySlider">fitted growth $g(\omega)$<output id="memoryOut">1.00</output></label><input id="memorySlider" type="range" min="1" max="3" value="1" step="0.01"></div>
-          </div>
-          <div class="readout"><div><span class="metric-label">$w_{st}$ / $w_{res}$ / $w_{prior}$</span><strong id="idleReadout">0.00 / 0.00 / 1.00</strong></div><div><span class="metric-label">this bin reports</span><strong id="blendReadout">0.350</strong></div></div>
         </div>
 
         <details class="code-link step">
@@ -1295,9 +1275,6 @@
       sigmaFrame=requestAnimationFrame(settle);
     }
     sigmaSlider.addEventListener('input',()=>{cancelSigmaSpring();updateSmoothing();});sigmaSlider.addEventListener('pointerdown',()=>{sigmaActive=true;cancelSigmaSpring();});sigmaSlider.addEventListener('pointercancel',()=>{sigmaActive=false;startSigmaSpring();});sigmaSlider.addEventListener('keydown',()=>{sigmaActive=true;cancelSigmaSpring();});sigmaSlider.addEventListener('keyup',()=>{sigmaActive=false;startSigmaSpring();});sigmaSlider.addEventListener('change',startSigmaSpring);document.addEventListener('pointerup',()=>{if(sigmaActive){sigmaActive=false;startSigmaSpring();}});updateSmoothing();
-
-    function updateBlend(){const c=+document.getElementById('activitySlider').value,rho=+document.getElementById('memorySlider').value,rhoDet=1.75,cap=Math.SQRT1_2,bst=.41,bprior=.35,d=Math.min(Math.max((rho-1)/(rhoDet-1),0),1),wSt=c,wRes=(1-c)*d,wNone=1-wSt-wRes,bres=Math.min(cap,.35/rho),bbin=wSt*bst+wRes*bres+wNone*bprior;document.getElementById('activityOut').textContent=c.toFixed(2);document.getElementById('memoryOut').textContent=rho.toFixed(2);document.getElementById('idleReadout').textContent=`${wSt.toFixed(2)} / ${wRes.toFixed(2)} / ${wNone.toFixed(2)}`;document.getElementById('blendReadout').textContent=bbin.toFixed(3);}
-    ['activitySlider','memorySlider'].forEach(id=>document.getElementById(id).addEventListener('input',updateBlend));updateBlend();
 
     document.querySelectorAll('.term').forEach(button=>button.addEventListener('click',()=>{const def=button.parentElement.nextElementSibling;const open=def.classList.toggle('open');button.setAttribute('aria-expanded',open);}));
     const steps=document.querySelectorAll('.step'); const reveal=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:.16});steps.forEach(s=>reveal.observe(s));
