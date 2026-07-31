@@ -118,10 +118,10 @@ different questions:
 | merged tuning, rho_leak_s = 150 s | ALL PASS | 92.4 | 61.9 | 73.6 |
 | merged tuning, rho_leak_s = 40 s | ALL PASS | 92.4 | 57.7 | 72.8 |
 | merged tuning, rho_leak_s = 10 s (shipped default) | **G3/G4 FAIL** | 92.4 | 54.3 | gated out (73.1) |
-| **sol_osi canonical (healthy reference + hysteresis + level fit)** | ALL PASS | 92.7 | 57.9 | **74.1** |
+| **sol_osi_v1 (healthy reference + hysteresis + level fit)** | ALL PASS | 92.7 | 57.9 | **74.1** |
 | gpt5_6 baseline | **G3/G4 FAIL** | 94.8 | 43.3 | gated out (73.1) |
 
-sol_osi (control_and_HS/OSI/sol_osi.m, 2026-07-12 update) is the current
+sol_osi_v1 (control_and_HS/OSI/sol_osi_v1.m, 2026-07-12 update) was the
 composite leader. It is the only candidate that passes the stability gates
 WITH the fast 10 s leak (tail a 0.660 < 0.736: its 32x idle memory gain
 keeps b_idle pinned to the rho model while the memory decays), the only one
@@ -135,14 +135,14 @@ recovery is still its lowest score (13.5 s vs
 the 3 s requirement), the healthy reference is captured blind in the first
 1.5 s (no activity gate), and the record offers only ~14 s of held-gain quiet
 so longer holds are unexercised. The time-sliced runtime is now ported in
-control_and_HS/OSI/gpt5_6_runtime.m.
+control_and_HS/OSI/sol_osi_v1_runtime.m.
 
-The hard-activity investigation is isolated in `research/sol_osi_simplified`.
-The approved simplified estimator uses the direct gate
+The hard-activity investigation is retained in `research/sol_osi_simplified`.
+The approved simplified estimator is now the canonical
+`control_and_HS/OSI/sol_osi.m`; it uses the direct gate
 `A = double(rms(u) > eta_A)` with `eta_A = 0.0575` (approximately
-`4.54 sigma_noise_u`) and a residual-memory gain of `21.75`; its Fabby
-composite is `70.3`. It is research-only and does not replace the production
-files in `control_and_HS/OSI`.
+`4.54 sigma_noise_u`), per-frequency evidence fusion, and a second-smallest
+retained-bin reduction. Its Fabby Bench 2 composite is `80.63`.
 
 The baseline row shows why the gates exist: its would-be composite matches
 the shipped default's, but it spends 13+ s inside the unstable region — the

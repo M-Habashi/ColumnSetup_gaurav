@@ -1,9 +1,9 @@
 # SOL-OSI Simplified
 
-This folder contains the single research-only simplified SOL-OSI estimator.
-It is the method previously evaluated as V6; the numbered name has been
-retired now that this is the accepted simplified method. The implemented
-estimator remains separate in `control_and_HS/OSI`.
+This folder retains the V6 research workflow and its historical
+`sol_osi_simplified` research name. The accepted implementation is now the
+canonical `control_and_HS/OSI/sol_osi.m`. The former production estimator is
+retained as `control_and_HS/OSI/sol_osi_v1.m`.
 
 ## Formulation
 

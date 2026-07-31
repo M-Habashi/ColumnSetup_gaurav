@@ -2,7 +2,7 @@ function out = plot_habashi_osi_parameter_comparison(data, data_file, ...
         new_params, current_params)
 %PLOT_HABASHI_OSI_PARAMETER_COMPARISON Replay and plot GPT-5.6.4 tuning.
 % Replays a saved test record through the deployed Speedgoat runtime
-% (gpt5_6_runtime.m, parameters packed by prepare_gpt5_6_runtime.m) once
+% (sol_osi_v1_runtime.m, packed by prepare_sol_osi_v1_runtime.m) once
 % with the editable "new" parameters and once with the "current"
 % implementation defaults, then overlays margins and authority.
 %
@@ -169,7 +169,7 @@ hs = struct('exp_tf_file', prm.exp_tf_file, ...
     'osi_gain_initial', prm.osi_gain_initial, ...
     'gpt5_6_override', struct('osi', prm.osi_override, ...
     'auth', prm.auth_override));
-setup = prepare_gpt5_6_runtime(prm.projectFolder, record.dt, hs);
+setup = prepare_sol_osi_v1_runtime(prm.projectFolder, record.dt, hs);
 
 dd = record.dd(:);
 dm = record.dm(:);
@@ -187,10 +187,10 @@ auth = NaN(n_step, 1);
 valid = false(n_step, 1);
 decision = zeros(n_step, 1);
 
-clear gpt5_6_runtime
-fprintf('Replaying %s parameters through gpt5_6_runtime ...\n', prm.name)
+clear sol_osi_v1_runtime
+fprintf('Replaying %s parameters through sol_osi_v1_runtime ...\n', prm.name)
 for i = 1:N
-    [ai, bi, bsti, bresi, ~, ~, vi, di] = gpt5_6_runtime( ...
+    [ai, bi, bsti, bresi, ~, ~, vi, di] = sol_osi_v1_runtime( ...
         dd(i), dm(i), 1, setup.gpts, setup.gptw, setup.gptbins, ...
         setup.gptrho, setup.gptauth, 0, 0);
     k = (i - publish_ticks)/step_n;
@@ -204,7 +204,7 @@ for i = 1:N
         decision(k) = di;
     end
 end
-clear gpt5_6_runtime
+clear sol_osi_v1_runtime
 
 replay = struct('tc', tc, ...
     'auth', auth, ...

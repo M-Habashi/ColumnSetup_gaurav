@@ -1,8 +1,9 @@
-# Pending Simulink changes for the official specimen estimator
+# Online specimen estimator implementation
 
-Replace the unscaled `Online TSE Estimator` implementation in
-`model_ColumnSetup_00.slx` with the same windowed noise-whitened TLS method
-used by `TLS_scaled.m` and `create_specimen_mat.m`.
+Implemented on 2026-07-28. The `Online TSE Estimator` in
+`model_ColumnSetup_00.slx` now calls `online_tse_estimator_runtime.m`, which
+uses the same windowed noise-whitened TLS method as `TLS_scaled.m` and
+`create_specimen_mat.m`.
 
 ## Official parameters
 
@@ -55,12 +56,16 @@ code generation.
 
 ## Outputs and verification
 
-Keep the existing `m_hat`, `c_hat`, and `k_hat` outputs. Replace the current
-fallback output meaning with a status that distinguishes noise acquisition,
-low excitation/rejected TLS, overlapping candidate not assimilated, and KF
-assimilation.
+The existing `m_hat`, `c_hat`, and `k_hat` outputs are unchanged. The
+`tse_fallback` output is now a status: 0 noise acquisition, 1 rejected TLS,
+2 hold/overlapping candidate, and 3 KF assimilation.
 
-Before a target run, verify that the embedded implementation matches
-`windowed_noise_whitened_tls.m` sample-for-sample on one saved record. Then run
-the physical verification workflow and compare the logged online parameters
-against the offline result from the same record.
+Saved-record replay matches `windowed_noise_whitened_tls.m` at all 8,284
+candidate endpoints of `20260727_1647_testing_OSI.mat`, with maximum relative
+error `3.30e-10`.
+
+A 20 s Speedgoat timing run on 2026-07-28 activated BLWN at 3.064 s and
+completed without overload or target error. TETMax was 71.31 us against the
+488.28 us base-rate budget, leaving 85.40% timing margin. The target file
+logger did not produce an importable run, so this verification establishes
+real-time timing safety but does not add another saved signal record.

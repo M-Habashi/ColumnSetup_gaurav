@@ -13,10 +13,10 @@ files are not modified.
 
 It compares:
 
-1. `control_and_HS/OSI/sol_osi.m`
-2. `research/sol_osi_simplified/sol_osi_simplified.m`
+1. `control_and_HS/OSI/sol_osi_v1.m` (former production implementation)
+2. `control_and_HS/OSI/sol_osi.m` (current implementation)
 
-`sol_osi_simplified` is the accepted V6 formulation. It uses the current
+`sol_osi` is the accepted simplified V6 formulation. It uses the current
 authority-scaled commissioning prior for unsupported bins and reports the
 second-smallest retained bin so one isolated low residual does not govern.
 

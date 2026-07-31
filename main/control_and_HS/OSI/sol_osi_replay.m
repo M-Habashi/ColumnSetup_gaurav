@@ -1,7 +1,7 @@
-function out = gpt5_6(command, varargin)
-%GPT5_6 Canonical offline SOL_OSI and authority replay.
-%   cfg = gpt5_6('config', dt, initial_loop_tf, override)
-%   out = gpt5_6('run', t, u_osi, dm, dt, initial_loop_tf, override, a)
+function out = sol_osi_replay(command, varargin)
+%SOL_OSI_REPLAY Canonical offline SOL-OSI and authority replay.
+%   cfg = sol_osi_replay('config', dt, initial_loop_tf, override)
+%   out = sol_osi_replay('run', t, u_osi, dm, dt, initial_loop_tf, override, a)
 %   The optional a is the authority that acted during an open-loop replay.
 
 switch lower(command)
@@ -15,7 +15,7 @@ switch lower(command)
     case 'run'
         out = runReplay(varargin{:});
     otherwise
-        error('gpt5_6:UnknownCommand', 'Use ''config'' or ''run''.')
+        error('sol_osi_replay:UnknownCommand', 'Use ''config'' or ''run''.')
 end
 end
 
@@ -23,7 +23,7 @@ function out = runReplay(t, u, dm, dt, initial_loop_tf, override, a_acted)
 % Units: t [s], u/dm [mm], dt [s], a_acted/auth_factor [-].
 if nargin < 6 || isempty(override), override = struct(); end
 if nargin < 7, a_acted = []; end
-cfg = gpt5_6('config', dt, initial_loop_tf, override);
+cfg = sol_osi_replay('config', dt, initial_loop_tf, override);
 osi_state = sol_osi('state', cfg.osi);
 auth_state = gpt5_6_4_auth('state', cfg.auth);
 n = min([numel(t), numel(u), numel(dm)]);

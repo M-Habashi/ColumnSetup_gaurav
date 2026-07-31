@@ -1,10 +1,10 @@
 # SOL_OSI Speedgoat runtime
 
-`gpt5_6_runtime.m` is the real-time implementation of the canonical
-`sol_osi.m` and `gpt5_6_4_auth.m` algorithms. The main script builds
-its fixed-size parameters with `prepare_gpt5_6_runtime.m`. The legacy
-function and workspace-variable names remain unchanged so the existing
-Speedgoat model can use SOL_OSI without an `.slx` edit.
+`sol_osi_runtime.m` is the real-time implementation of the canonical
+simplified V6 `sol_osi.m` estimator and `gpt5_6_4_auth.m` authority law.
+The former production estimator and runtime are retained explicitly as
+`sol_osi_v1.m` and `sol_osi_v1_runtime.m`. The main script builds the
+canonical fixed-size parameters with `prepare_sol_osi_runtime.m`.
 
 ## Scheduling
 
@@ -27,7 +27,7 @@ configuration, or surrounding-model change.
 
 1. Compare the scheduled output at tick `k*step_n + 32` with the desktop
    `sol_osi` + `gpt5_6_4_auth` output for update `k`.
-2. Compile `gpt5_6_runtime.m` with all parameter arrays as
+2. Compile `sol_osi_runtime.m` with all parameter arrays as
    `coder.Constant` values.
 3. Update the diagram and run `slbuild('model_ColumnSetup_00')` from a fully
    initialized `main_ColumnSetup.m` workspace.
@@ -36,5 +36,7 @@ configuration, or surrounding-model change.
 5. Require no target error/early stop and
    `TETMax <= 0.70*(1/2048)`.
 
-The 2026-07-10 acceptance run lasted 125 s: TETMax 78.50 us, TETAvg
-53.79 us, 83.9% margin, and zero overloads.
+The 2026-07-10 V1 acceptance run lasted 125 s: TETMax 78.50 us, TETAvg
+53.79 us, 83.9% margin, and zero overloads. The simplified V6 runtime
+requires a new target timing acceptance run before that measurement can be
+claimed for the current implementation.

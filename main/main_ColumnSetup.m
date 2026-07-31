@@ -65,7 +65,7 @@ hs = struct( ...
     'osi_gain_initial', 1.0, ...
     'osi_gain_min', 0.2, ...
     'target_outer_ncf', 0.3, ... % SOL_OSI regulated NCF target.
-    ... % Canonical OSI settings are defined once in sol_osi.m.
+    ... % Canonical simplified V6 settings are defined once in sol_osi.m.
     'osi_branch_split_hz', [], ... % Used only if branch bands are empty.
     'osi_st_branch_hz', [2 10], ...
     'osi_residual_branch_hz', [30 80]);
@@ -199,14 +199,14 @@ hs_ag = hs.ag;
 hs_time_scale_factor_codegen = hs.time_scale_factor;
 hs_force_sign_codegen = hs.force_sign;
 
-gpt5_6_setup = prepare_gpt5_6_runtime(projectFolder, dt, hs, pid_values);
-exp_tf_file = gpt5_6_setup.exp_tf_file;
-exp_tf_name = gpt5_6_setup.exp_tf_name;
+sol_osi_setup = prepare_sol_osi_runtime(projectFolder, dt, hs, pid_values);
+exp_tf_file = sol_osi_setup.exp_tf_file;
+exp_tf_name = sol_osi_setup.exp_tf_name;
 fprintf('exp_tf loaded: %s\n', exp_tf_file)
 fprintf(['SOL_OSI setup: step %.3g s, target %.3g, initial %.3g, ' ...
-    'minimum %.3g, publish delay %d ticks\n'], gpt5_6_setup.cfg.step_s, ...
-    gpt5_6_setup.target_outer_ncf, gpt5_6_setup.gain_initial, ...
-    gpt5_6_setup.gain_min, gpt5_6_setup.publish_ticks)
+    'minimum %.3g, publish delay %d ticks\n'], sol_osi_setup.cfg.step_s, ...
+    sol_osi_setup.target_outer_ncf, sol_osi_setup.gain_initial, ...
+    sol_osi_setup.gain_min, sol_osi_setup.publish_ticks)
 
 %%% 1- Time history parameters
         run(fullfile(projectFolder, 'input_signals', 'sample_time_history.m'))
@@ -215,7 +215,7 @@ fprintf(['SOL_OSI setup: step %.3g s, target %.3g, initial %.3g, ' ...
 %%% 3- BLWN parameters
 % amp_2_percentile is the filtered BLWN amplitude exceeded by
 % exceed_percentile percent of the samples.
-        amp_2_percentile = 0.4;
+        amp_2_percentile = 0.3;
         exceed_percentile = 0.5;
         f1 = 5;  % cutoff frequency (MUST be changed in the Simulink filter designer)
 
@@ -249,10 +249,12 @@ fprintf('  FEM file: %s\n', [fem_name fem_ext])
 fprintf('  phase_lead file: %s\n', [phase_lead_name phase_lead_ext])
 fprintf('  exp_tf file: %s\n', [exp_tf_name exp_tf_ext])
 fprintf('  OSI target: %.6g, gain initial: %.6g, minimum factor: %.6g\n', ...
-    gpt5_6_setup.target_outer_ncf, gpt5_6_setup.gain_initial, ...
-    gpt5_6_setup.gain_min)
+    sol_osi_setup.target_outer_ncf, sol_osi_setup.gain_initial, ...
+    sol_osi_setup.gain_min)
+fprintf('  PID controller: P = %.6g, I = %.6g, D = %.6g, N = %.6g\n', ...
+    pid_P, pid_I, pid_D, pid_N)
 continue_prompt = sprintf(['Continue and open Simulink? ' ...
-    '(OSI minimum factor %.6g) (y/n): '], gpt5_6_setup.gain_min);
+    '(OSI minimum factor %.6g) (y/n): '], sol_osi_setup.gain_min);
 continue_response = lower(strtrim(input(continue_prompt, 's')));
 if ~strcmp(continue_response, 'y')
     disp('Script stopped before opening Simulink.')
