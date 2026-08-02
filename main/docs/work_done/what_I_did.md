@@ -23,7 +23,9 @@
       3. A copy of sap/template.sdb is named after the specimen and updated with the calculated base rotational stiffness and floor heights (first mode load pattern can be shown as verification).
       4. Note that we are optimizing for the first mode which creates minor errors (report). Minor errors are accepted especially with the fact that during nonlinearity this point is going to move anyway
 
-## Scaaled TSE method improvemetns
+## Bouc wen model fitting
+
+## Scaaled TSE method improvemetns with uncertainty
    - maybe try smoothing, or median idea
 
 ## RTHS is performed perfectly for the linear range RTHS_02
