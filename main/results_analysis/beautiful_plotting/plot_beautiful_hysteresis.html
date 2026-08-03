@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>beautiful.mat — Interactive Plot</title>
+  <title>Interactive Hysteresis Records</title>
   <style>
     :root {
       --page: #0b1117;
@@ -51,7 +51,7 @@
 
     .controls {
       display: grid;
-      grid-template-columns: auto auto auto auto minmax(180px, 1fr) auto;
+      grid-template-columns: auto minmax(180px, 1.4fr) auto auto auto auto 1fr;
       align-items: center;
       gap: 10px 14px;
       padding: 12px 14px;
@@ -90,7 +90,7 @@
     }
 
     .time-readout {
-      grid-column: 6;
+      grid-column: 7;
       grid-row: 1;
       min-width: 94px;
       text-align: right;
@@ -155,9 +155,10 @@
       main { width: min(100% - 18px, 1220px); padding-top: 18px; }
       header { display: block; }
       .meta { margin-top: 7px; text-align: left; }
-      .controls { grid-template-columns: auto auto auto 1fr; }
-      .controls input[type="range"] { grid-column: 1 / -1; grid-row: 2; }
-      .time-readout { grid-column: 4; }
+      .controls { grid-template-columns: auto minmax(0, 1fr); }
+      .controls input[type="range"] { grid-column: 1 / -1; grid-row: auto; }
+      .controls #fileSelect { width: 100%; }
+      .time-readout { grid-column: 2; grid-row: auto; }
       .current-values { grid-template-columns: 1fr; }
       .current-heading { grid-column: 1 / -1; }
       .chart-heading { display: block; }
@@ -170,13 +171,15 @@
   <main>
     <header>
       <div>
-        <h1>beautiful.mat — interactive record</h1>
-        <p class="subline">Drag the time slider or press Play to color the record progressively.</p>
+        <h1>Interactive force-displacement hysteresis</h1>
+        <p class="subline">Choose a saved record, then drag the time slider or press Play to color it progressively.</p>
       </div>
       <p id="meta" class="meta">Loading data…</p>
     </header>
 
-    <section class="controls" aria-label="Animation controls">
+    <section class="controls" aria-label="Record and animation controls">
+      <label for="fileSelect">File</label>
+      <select id="fileSelect" aria-label="Saved result file"></select>
       <button id="playButton" type="button">Play</button>
       <button id="resetButton" type="button">Reset</button>
       <label for="speedSelect">Speed</label>
@@ -233,7 +236,8 @@
     (function () {
       "use strict";
 
-      const data = window.beautifulPlotData;
+      const dataBundle = window.beautifulPlotData;
+      const records = dataBundle.records;
       const blue = "#007CA8";
       const red = "#901500";
       const gray = "#71808A";
@@ -241,12 +245,7 @@
       const grid = "#26343F";
       const background = "#0D151C";
       const baseAnimationMs = 30000;
-      const time = data.time;
-      const measuredDisplacement = data.dm;
-      const displacement = data.dm_filt_filt;
-      const force = data.fm;
-      const count = time.length;
-      const duration = time[count - 1] - time[0];
+      const fileSelect = document.getElementById("fileSelect");
       const slider = document.getElementById("timeSlider");
       const playButton = document.getElementById("playButton");
       const resetButton = document.getElementById("resetButton");
@@ -259,14 +258,19 @@
       const meta = document.getElementById("meta");
       const displacementCanvas = document.getElementById("displacementCanvas");
       const hysteresisCanvas = document.getElementById("hysteresisCanvas");
+      let data = null;
+      let time = [];
+      let measuredDisplacement = [];
+      let displacement = [];
+      let force = [];
+      let count = 0;
+      let dmRange = [0, 1];
+      let fmRange = [0, 1];
       let progress = 0;
       let speed = 1;
       let playing = false;
       let lastFrame = 0;
       let animationFrame = 0;
-
-      slider.max = String(count - 1);
-      meta.textContent = `${data.source} · ${formatSeconds(duration)} record · ${data.fs} Hz`;
 
       function formatSeconds(value) {
         return `${Number(value).toFixed(3)} s`;
@@ -284,12 +288,31 @@
         return [min - padding, max + padding];
       }
 
-      const dmRange = range(measuredDisplacement);
-      const fmRange = range(force);
-      dmMeter.min = String(dmRange[0]);
-      dmMeter.max = String(dmRange[1]);
-      fmMeter.min = String(fmRange[0]);
-      fmMeter.max = String(fmRange[1]);
+      function setDataset(datasetId) {
+        const nextData = records.find(record => record.id === datasetId);
+        if (!nextData) return;
+        playing = false;
+        lastFrame = 0;
+        cancelAnimationFrame(animationFrame);
+        data = nextData;
+        time = data.time;
+        measuredDisplacement = data.dm;
+        displacement = data.dm_filt_filt;
+        force = data.fm;
+        count = time.length;
+        progress = 0;
+        dmRange = range(measuredDisplacement);
+        fmRange = range(force);
+        fileSelect.value = data.id;
+        slider.max = String(count - 1);
+        dmMeter.min = String(dmRange[0]);
+        dmMeter.max = String(dmRange[1]);
+        fmMeter.min = String(fmRange[0]);
+        fmMeter.max = String(fmRange[1]);
+        meta.textContent = `${data.source} · ${formatSeconds(time[count - 1] - time[0])} record · ${data.fs} Hz`;
+        updatePlayButton();
+        render();
+      }
 
       function formatSigned(value, digits) {
         return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
@@ -466,7 +489,16 @@
         }
       });
 
-      render();
+      records.forEach(function (record) {
+        const option = document.createElement("option");
+        option.value = record.id;
+        option.textContent = record.source;
+        fileSelect.appendChild(option);
+      });
+      fileSelect.addEventListener("change", function () {
+        setDataset(fileSelect.value);
+      });
+      setDataset(dataBundle.defaultId || records[0].id);
     }());
   </script>
 </body>

@@ -25,6 +25,7 @@
 - Simpler solutions are better solutions.
 - Saved test MAT files should store one top-level `result` struct. To convert old top-level-variable test result files, run `convert_saved_result_to_struct` from `main`; it scans `saved_results/tests/**/*.mat` and rewrites old files in the new struct format.
 - MATLAB utilities under `main\helpers\utils` need three `fileparts` calls from `mfilename('fullpath')` to resolve the `main` project folder.
+- When providing repository file links, use repository-relative Markdown paths from the repository home, such as `[check_bench2_interactive.js](main/research/fabby_bench_2/check_bench2_interactive.js)`; do not use absolute filesystem paths.
 
 ## RTHS Plot Notation
 
