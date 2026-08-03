@@ -24,3 +24,7 @@ The measured broadband record lives under the ignored `saved_results/tests` tree
 2. `sudden_drop`: the system and specimen switch together from 7k to 5k at 45 s under the same broadband excitation.
 
 Generated outputs belong in `results/`.
+
+## Closed-loop response plots
+
+Open `plot_lqg_closed_loop_bode.html` to compare the identified 7k and 5k closed-loop `H_dd_dm` responses. The page includes linked magnitude and phase plots on a linear 0.1--100 Hz axis plus a 0--3 s unit-step response. Run `export_lqg_bode_data.m` from this folder to regenerate `lqg_bode_data.js` from the canonical MAT files.

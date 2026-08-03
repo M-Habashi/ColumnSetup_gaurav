@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09090b">
+  <title>7k and 5k Closed-Loop Response</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #09090b;
+      --surface: #111113;
+      --surface-raised: #18181b;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --subtle: #71717a;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-strong: rgba(255, 255, 255, 0.18);
+      --grid: #29292d;
+      --blue: #007ca8;
+      --purple: #74058a;
+      --focus: #d4d4d8;
+      --danger: #f87171;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--page); }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      background: var(--page);
+      color: var(--text);
+      font-family: Aptos, "Avenir Next", "Noto Sans", sans-serif;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button { font: inherit; }
+
+    .app-header {
+      border-bottom: 1px solid var(--border);
+      background: var(--page);
+    }
+
+    .header-inner,
+    main {
+      width: 60%;
+      max-width: 1380px;
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      display: flex;
+      min-height: 66px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      min-width: 0;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .brand-name {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-context {
+      color: var(--subtle);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .header-meta {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    main { padding: 32px 0 48px; }
+
+    .page-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: clamp(25px, 3vw, 36px);
+      font-weight: 620;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 620;
+      letter-spacing: -0.015em;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mode-group {
+      display: flex;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+    }
+
+    .tool-button {
+      display: inline-flex;
+      min-height: 34px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1;
+      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    .tool-button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+    }
+
+    .tool-button:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .tool-button.is-active {
+      border-color: var(--border-strong);
+      background: var(--surface-raised);
+      color: var(--text);
+    }
+
+    .tool-button svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.75;
+    }
+
+    .shortcut {
+      min-width: 17px;
+      padding: 2px 4px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--subtle);
+      font-family: inherit;
+      font-size: 10px;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .tool-button.is-active .shortcut,
+    .tool-button:hover .shortcut { color: var(--muted); }
+
+    .plot-section {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .plot-section + .plot-section { margin-top: 20px; }
+
+    .section-header {
+      display: flex;
+      min-height: 66px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-copy p {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .section-status {
+      flex: 0 0 auto;
+      color: var(--subtle);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    #bodePlot {
+      width: 100%;
+      height: min(760px, calc(100vh - 210px));
+      min-height: 610px;
+    }
+
+    #stepPlot {
+      width: 100%;
+      height: 450px;
+      min-height: 380px;
+    }
+
+    .plot-footer {
+      display: flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 9px 14px;
+      border-top: 1px solid var(--border);
+      color: var(--subtle);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .interaction-status {
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .load-error {
+      display: grid;
+      min-height: 380px;
+      place-items: center;
+      padding: 24px;
+      color: var(--danger);
+      text-align: center;
+    }
+
+    .modebar { background: transparent !important; }
+    .modebar-btn path { fill: var(--muted) !important; }
+    .modebar-btn:hover path,
+    .modebar-btn.active path { fill: var(--text) !important; }
+
+    @media (max-width: 820px) {
+      .header-inner,
+      main { width: min(100% - 24px, 1380px); }
+
+      .brand-context { display: none; }
+
+      .page-heading {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .toolbar { width: 100%; }
+      .mode-group { flex: 1; }
+      .mode-group .tool-button { flex: 1; }
+      .toolbar > .tool-button { flex: 1; }
+
+      #bodePlot {
+        height: 76vh;
+        min-height: 680px;
+      }
+
+      #stepPlot {
+        height: 54vh;
+        min-height: 420px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .header-inner { min-height: 56px; }
+      .header-meta { display: none; }
+      main { padding: 24px 0 32px; }
+      h1 { font-size: 27px; }
+
+      .tool-button {
+        gap: 6px;
+        padding-inline: 8px;
+      }
+
+      .shortcut { display: none; }
+
+      .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+        padding: 14px;
+      }
+
+      .section-status { white-space: normal; }
+
+      .plot-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .interaction-status { text-align: left; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tool-button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <p class="brand-name">LQG research</p>
+        <span class="brand-context">Closed-loop system identification</span>
+      </div>
+      <p class="header-meta">7k / 5k comparison</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-heading">
+      <div>
+        <h1>Closed-loop response</h1>
+        <p class="subtitle">Compare the identified response from desired displacement to measured displacement, H<sub>dd,dm</sub>, in frequency and time.</p>
+      </div>
+
+      <div class="toolbar" role="toolbar" aria-label="Plot interaction controls">
+        <div class="mode-group" aria-label="Drag mode">
+          <button id="zoomButton" class="tool-button is-active" type="button" aria-pressed="true" aria-keyshortcuts="Z" title="Zoom mode (Z)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4M11 8v6M8 11h6"></path></svg>
+            <span>Zoom</span>
+            <kbd class="shortcut">Z</kbd>
+          </button>
+          <button id="panButton" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="P" title="Pan mode (P)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11V7a2 2 0 0 1 4 0v3-5a2 2 0 0 1 4 0v5-2a2 2 0 0 1 4 0v5c0 5-3 8-8 8h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l3 2"></path></svg>
+            <span>Pan</span>
+            <kbd class="shortcut">P</kbd>
+          </button>
+        </div>
+        <button id="resetButton" class="tool-button" type="button" aria-keyshortcuts="R" title="Reset both plots (R)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>
+          <span>Reset</span>
+          <kbd class="shortcut">R</kbd>
+        </button>
+      </div>
+    </div>
+
+    <section class="plot-section" aria-labelledby="bodeHeading">
+      <div class="section-header">
+        <div class="section-copy">
+          <h2 id="bodeHeading">Frequency response</h2>
+          <p>Magnitude and phase share the same linear frequency axis from 0.1 to 100 Hz.</p>
+        </div>
+        <p id="statusText" class="section-status" aria-live="polite">Loading frequency responses…</p>
+      </div>
+      <div id="bodePlot" aria-label="Linked magnitude and phase Bode diagrams for the 7k and 5k closed-loop systems"></div>
+      <div class="plot-footer">
+        <span>Drag to magnify · Scroll to zoom · Double-click to reset</span>
+        <span class="interaction-status" data-interaction-status aria-live="polite">Zoom mode active</span>
+      </div>
+    </section>
+
+    <section class="plot-section" aria-labelledby="stepHeading">
+      <div class="section-header">
+        <div class="section-copy">
+          <h2 id="stepHeading">Unit-step response</h2>
+          <p>Closed-loop response over the first 3 seconds with the desired unit displacement shown dashed.</p>
+        </div>
+        <p id="stepStatusText" class="section-status" aria-live="polite">Loading step responses…</p>
+      </div>
+      <div id="stepPlot" aria-label="Step responses for the 7k and 5k closed-loop systems"></div>
+      <div class="plot-footer">
+        <span>The toolbar controls both plots.</span>
+        <span class="interaction-status" data-interaction-status aria-live="polite">Zoom mode active</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="lqg_bode_data.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const bodePlot = document.getElementById("bodePlot");
+      const stepPlot = document.getElementById("stepPlot");
+      const statusText = document.getElementById("statusText");
+      const stepStatusText = document.getElementById("stepStatusText");
+      const zoomButton = document.getElementById("zoomButton");
+      const panButton = document.getElementById("panButton");
+      const resetButton = document.getElementById("resetButton");
+      const interactionStatuses = document.querySelectorAll("[data-interaction-status]");
+      const bundle = window.lqgBodeData;
+
+      if (!window.Plotly || !bundle || !bundle.systems || !bundle.stepTimeSeconds) {
+        [bodePlot, stepPlot].forEach(function (plot) {
+          plot.className = "load-error";
+          plot.textContent = "The plotting library or response data could not be loaded.";
+        });
+        statusText.textContent = "Plots unavailable";
+        stepStatusText.textContent = "Plots unavailable";
+        return;
+      }
+
+      const frequency = bundle.frequencyHz;
+      const stepTime = bundle.stepTimeSeconds;
+      const colors = { "7k": "#007CA8", "5k": "#74058A" };
+      const bodeTraces = [];
+      const stepTraces = [{
+        x: stepTime,
+        y: stepTime.map(function () { return 1; }),
+        mode: "lines",
+        line: { color: "#D4D4D8", width: 2.5, dash: "dash" },
+        name: "Unit-step reference",
+        hovertemplate: "%{x:.4f} s<br>%{y:.4f}<extra>Unit-step reference</extra>"
+      }];
+
+      bundle.systems.forEach(function (system) {
+        const common = {
+          x: frequency,
+          mode: "lines",
+          line: { color: colors[system.id], width: 2.4 },
+          name: system.label,
+          legendgroup: system.id,
+          hovertemplate: "%{x:.3f} Hz<br>%{y:.3f}<extra>" + system.label + "</extra>"
+        };
+
+        bodeTraces.push(Object.assign({}, common, {
+          y: system.magnitudeDb,
+          yaxis: "y",
+          showlegend: true
+        }));
+        bodeTraces.push(Object.assign({}, common, {
+          y: system.phaseDeg,
+          yaxis: "y2",
+          showlegend: false
+        }));
+        stepTraces.push({
+          x: stepTime,
+          y: system.stepResponse,
+          mode: "lines",
+          line: { color: colors[system.id], width: 2.4 },
+          name: system.label,
+          hovertemplate: "%{x:.4f} s<br>%{y:.4f}<extra>" + system.label + "</extra>"
+        });
+      });
+
+      const axisStyle = {
+        showline: true,
+        linewidth: 1,
+        linecolor: "#52525B",
+        mirror: false,
+        ticks: "outside",
+        tickcolor: "#52525B",
+        gridcolor: "#29292D",
+        zerolinecolor: "#52525B",
+        tickfont: { size: 12, color: "#A1A1AA" },
+        fixedrange: false
+      };
+
+      const commonLayout = {
+        autosize: true,
+        dragmode: "zoom",
+        hovermode: "x",
+        paper_bgcolor: "#111113",
+        plot_bgcolor: "#111113",
+        font: { family: "Aptos, Avenir Next, Noto Sans, sans-serif", color: "#FAFAFA" },
+        hoverlabel: {
+          bgcolor: "#18181B",
+          bordercolor: "#3F3F46",
+          font: { color: "#FAFAFA", size: 12 }
+        },
+        uirevision: "lqg-dark-v1"
+      };
+
+      const bodeLayout = Object.assign({}, commonLayout, {
+        margin: { l: 82, r: 30, t: 72, b: 68 },
+        legend: {
+          orientation: "h",
+          x: 0,
+          xanchor: "left",
+          y: 1.08,
+          yanchor: "bottom",
+          font: { size: 13, color: "#D4D4D8" }
+        },
+        xaxis: Object.assign({}, axisStyle, {
+          title: { text: "Frequency (Hz)", standoff: 14, font: { color: "#D4D4D8" } },
+          type: "linear",
+          range: [0.1, 100],
+          domain: [0, 1],
+          anchor: "y2",
+          showspikes: true,
+          spikemode: "across",
+          spikesnap: "cursor",
+          spikecolor: "#71717A",
+          spikethickness: 1
+        }),
+        yaxis: Object.assign({}, axisStyle, {
+          title: { text: "Magnitude (dB)", standoff: 12, font: { color: "#D4D4D8" } },
+          domain: [0.56, 1]
+        }),
+        yaxis2: Object.assign({}, axisStyle, {
+          title: { text: "Phase (deg)", standoff: 12, font: { color: "#D4D4D8" } },
+          domain: [0, 0.42]
+        })
+      });
+
+      const stepLayout = Object.assign({}, commonLayout, {
+        margin: { l: 82, r: 30, t: 66, b: 68 },
+        legend: {
+          orientation: "h",
+          x: 0,
+          xanchor: "left",
+          y: 1.08,
+          yanchor: "bottom",
+          font: { size: 13, color: "#D4D4D8" }
+        },
+        xaxis: Object.assign({}, axisStyle, {
+          title: { text: "Time (s)", standoff: 14, font: { color: "#D4D4D8" } },
+          range: [0, 3],
+          showspikes: true,
+          spikemode: "across",
+          spikesnap: "cursor",
+          spikecolor: "#71717A",
+          spikethickness: 1
+        }),
+        yaxis: Object.assign({}, axisStyle, {
+          title: { text: "Normalized displacement", standoff: 12, font: { color: "#D4D4D8" } },
+          range: [-0.05, 1.05]
+        })
+      });
+
+      function plotConfig(filename, width, height) {
+        return {
+          responsive: true,
+          scrollZoom: true,
+          displaylogo: false,
+          doubleClick: "reset",
+          modeBarButtonsToRemove: ["select2d", "lasso2d"],
+          toImageButtonOptions: {
+            format: "png",
+            filename: filename,
+            width: width,
+            height: height,
+            scale: 1
+          }
+        };
+      }
+
+      function setInteractionStatus(message) {
+        interactionStatuses.forEach(function (status) {
+          status.textContent = message;
+        });
+      }
+
+      function relayoutBoth(update) {
+        return Promise.all([bodePlot, stepPlot].map(function (plot) {
+          return Plotly.relayout(plot, update);
+        }));
+      }
+
+      function setMode(mode) {
+        relayoutBoth({ dragmode: mode });
+        const isZoom = mode === "zoom";
+        zoomButton.classList.toggle("is-active", isZoom);
+        panButton.classList.toggle("is-active", !isZoom);
+        zoomButton.setAttribute("aria-pressed", String(isZoom));
+        panButton.setAttribute("aria-pressed", String(!isZoom));
+        setInteractionStatus((isZoom ? "Zoom" : "Pan") + " mode active");
+      }
+
+      function resetPlots() {
+        Plotly.relayout(bodePlot, {
+          "xaxis.range": [0.1, 100],
+          "yaxis.autorange": true,
+          "yaxis2.autorange": true
+        });
+        Plotly.relayout(stepPlot, {
+          "xaxis.range": [0, 3],
+          "yaxis.range": [-0.05, 1.05]
+        });
+        setInteractionStatus("Both plots reset");
+      }
+
+      zoomButton.addEventListener("click", function () { setMode("zoom"); });
+      panButton.addEventListener("click", function () { setMode("pan"); });
+      resetButton.addEventListener("click", resetPlots);
+
+      document.addEventListener("keydown", function (event) {
+        if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+        if (event.target.matches("input, textarea, select, [contenteditable]")) return;
+
+        const key = event.key.toLowerCase();
+        if (key === "z") setMode("zoom");
+        if (key === "p") setMode("pan");
+        if (key === "r") resetPlots();
+      });
+
+      Promise.all([
+        Plotly.newPlot(bodePlot, bodeTraces, bodeLayout,
+          plotConfig("lqg_closed_loop_bode", 1500, 900)),
+        Plotly.newPlot(stepPlot, stepTraces, stepLayout,
+          plotConfig("lqg_closed_loop_step", 1500, 650))
+      ]).then(function () {
+        statusText.textContent = frequency.length.toLocaleString() + " samples per system";
+        stepStatusText.textContent = stepTime.length.toLocaleString() + " samples per system";
+      });
+    }());
+  </script>
+</body>
+</html>
