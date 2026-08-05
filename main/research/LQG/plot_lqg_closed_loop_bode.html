@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#09090b">
-  <title>7k and 5k Closed-Loop Response</title>
+  <title>PID and LQR Closed-Loop Response</title>
   <style>
     :root {
       color-scheme: dark;
@@ -18,13 +18,14 @@
       --border-strong: rgba(255, 255, 255, 0.18);
       --grid: #29292d;
       --blue: #007ca8;
-      --purple: #74058a;
+      --green: #39bf5e;
+      --red: #901500;
+      --orange: #ac6420;
       --focus: #d4d4d8;
       --danger: #f87171;
     }
 
     * { box-sizing: border-box; }
-
     html { background: var(--page); }
 
     body {
@@ -37,7 +38,15 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    button { font: inherit; }
+    button,
+    input { font: inherit; }
+
+    h1,
+    h2,
+    h3,
+    p,
+    dl,
+    dd { margin: 0; }
 
     .app-header {
       border-bottom: 1px solid var(--border);
@@ -67,20 +76,14 @@
     }
 
     .brand-name {
-      margin: 0;
       font-size: 15px;
       font-weight: 650;
       letter-spacing: -0.01em;
     }
 
-    .brand-context {
-      color: var(--subtle);
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
+    .brand-context,
     .header-meta {
-      color: var(--muted);
+      color: var(--subtle);
       font-size: 13px;
       white-space: nowrap;
     }
@@ -95,10 +98,6 @@
       margin-bottom: 24px;
     }
 
-    h1,
-    h2,
-    p { margin: 0; }
-
     h1 {
       margin-bottom: 8px;
       font-size: clamp(25px, 3vw, 36px);
@@ -107,8 +106,9 @@
       line-height: 1.12;
     }
 
-    h2 {
-      font-size: 16px;
+    h2,
+    h3 {
+      font-size: 15px;
       font-weight: 620;
       letter-spacing: -0.015em;
       line-height: 1.3;
@@ -135,20 +135,24 @@
       background: var(--surface);
     }
 
-    .tool-button {
+    .tool-button,
+    .primary-button {
       display: inline-flex;
       min-height: 34px;
       align-items: center;
       justify-content: center;
       gap: 7px;
-      padding: 7px 10px;
-      border: 1px solid transparent;
       border-radius: 5px;
-      background: transparent;
-      color: var(--muted);
       cursor: pointer;
       line-height: 1;
       transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    .tool-button {
+      padding: 7px 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
     }
 
     .tool-button:hover {
@@ -156,7 +160,9 @@
       color: var(--text);
     }
 
-    .tool-button:focus-visible {
+    .tool-button:focus-visible,
+    .primary-button:focus-visible,
+    .field-input:focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
@@ -190,17 +196,22 @@
       text-align: center;
     }
 
-    .tool-button.is-active .shortcut,
-    .tool-button:hover .shortcut { color: var(--muted); }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 244px;
+      align-items: start;
+      gap: 18px;
+    }
 
-    .plot-section {
-      overflow: hidden;
+    .plot-section,
+    .tuning-panel {
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--surface);
     }
 
-    .plot-section + .plot-section { margin-top: 20px; }
+    .plot-section { overflow: hidden; }
+    .plot-section + .plot-section { margin-top: 18px; }
 
     .section-header {
       display: flex;
@@ -212,12 +223,16 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .section-copy p {
-      margin-top: 4px;
+    .section-copy p,
+    .panel-copy,
+    .field-help,
+    .panel-note {
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
+      font-size: 12px;
+      line-height: 1.5;
     }
+
+    .section-copy p { margin-top: 4px; }
 
     .section-status {
       flex: 0 0 auto;
@@ -229,13 +244,13 @@
 
     #bodePlot {
       width: 100%;
-      height: min(760px, calc(100vh - 210px));
-      min-height: 610px;
+      height: min(720px, calc(100vh - 210px));
+      min-height: 600px;
     }
 
     #stepPlot {
       width: 100%;
-      height: 450px;
+      height: 440px;
       min-height: 380px;
     }
 
@@ -257,6 +272,131 @@
       text-align: right;
     }
 
+    .tuning-panel {
+      position: sticky;
+      top: 18px;
+      overflow: hidden;
+    }
+
+    .panel-header,
+    .panel-section {
+      padding: 16px;
+    }
+
+    .panel-header,
+    .panel-section + .panel-section {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-copy { margin-top: 5px; }
+
+    .field + .field { margin-top: 14px; }
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      color: #e4e4e7;
+      font-size: 12px;
+      font-weight: 560;
+    }
+
+    .field-symbol {
+      color: var(--subtle);
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    .field-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      background: #0c0c0e;
+      color: var(--text);
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .field-input:hover { border-color: rgba(255, 255, 255, 0.27); }
+    .field-help { margin-top: 6px; }
+
+    .primary-button {
+      width: 100%;
+      margin-top: 15px;
+      padding: 8px 12px;
+      border: 1px solid #b52616;
+      background: var(--red);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .primary-button:hover { background: #a61c0c; }
+
+    .metrics {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .metric dt {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .metric dd {
+      color: var(--text);
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .model-key {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .key-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .key-line {
+      width: 22px;
+      border-top: 2px solid currentColor;
+    }
+
+    .key-line.is-dotted { border-top-style: dotted; }
+    .key-blue { color: var(--blue); }
+    .key-green { color: var(--green); }
+    .key-red { color: var(--red); }
+    .key-orange { color: var(--orange); }
+
+    .panel-note { color: var(--subtle); }
     .load-error {
       display: grid;
       min-height: 380px;
@@ -266,72 +406,69 @@
       text-align: center;
     }
 
+    .middle-panning { cursor: grabbing !important; }
     .modebar { background: transparent !important; }
     .modebar-btn path { fill: var(--muted) !important; }
     .modebar-btn:hover path,
     .modebar-btn.active path { fill: var(--text) !important; }
 
+    @media (max-width: 1180px) {
+      .workspace { grid-template-columns: 1fr; }
+      .tuning-panel {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .panel-header,
+      .panel-section + .panel-section { border-bottom: 0; }
+      .panel-section { border-left: 1px solid var(--border); }
+    }
+
     @media (max-width: 820px) {
       .header-inner,
       main { width: min(100% - 24px, 1380px); }
-
       .brand-context { display: none; }
-
       .page-heading {
         align-items: stretch;
         flex-direction: column;
         gap: 18px;
       }
-
       .toolbar { width: 100%; }
       .mode-group { flex: 1; }
-      .mode-group .tool-button { flex: 1; }
+      .mode-group .tool-button,
       .toolbar > .tool-button { flex: 1; }
-
       #bodePlot {
         height: 76vh;
         min-height: 680px;
       }
-
       #stepPlot {
         height: 54vh;
         min-height: 420px;
       }
     }
 
-    @media (max-width: 560px) {
+    @media (max-width: 620px) {
       .header-inner { min-height: 56px; }
       .header-meta { display: none; }
       main { padding: 24px 0 32px; }
       h1 { font-size: 27px; }
-
-      .tool-button {
-        gap: 6px;
-        padding-inline: 8px;
-      }
-
       .shortcut { display: none; }
-
-      .section-header {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 7px;
-        padding: 14px;
-      }
-
-      .section-status { white-space: normal; }
-
+      .section-header,
       .plot-footer {
         align-items: flex-start;
         flex-direction: column;
-        gap: 4px;
       }
-
+      .section-header { gap: 7px; padding: 14px; }
+      .plot-footer { gap: 4px; }
+      .section-status { white-space: normal; }
       .interaction-status { text-align: left; }
+      .tuning-panel { display: block; }
+      .panel-section { border-left: 0; border-top: 1px solid var(--border); }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .tool-button { transition: none; }
+      .tool-button,
+      .primary-button { transition: none; }
     }
   </style>
 </head>
@@ -340,9 +477,9 @@
     <div class="header-inner">
       <div class="brand">
         <p class="brand-name">LQG research</p>
-        <span class="brand-context">Closed-loop system identification</span>
+        <span class="brand-context">Common-coordinate LQR baseline</span>
       </div>
-      <p class="header-meta">7k / 5k comparison</p>
+      <p class="header-meta">7k design / 5k validation</p>
     </div>
   </header>
 
@@ -350,63 +487,111 @@
     <div class="page-heading">
       <div>
         <h1>Closed-loop response</h1>
-        <p class="subtitle">Compare the identified response from desired displacement to measured displacement, H<sub>dd,dm</sub>, in frequency and time.</p>
+        <p class="subtitle">Tune output tracking and command effort on the 7k six-state model, then apply the identical state-feedback gain to the 5k model.</p>
       </div>
 
       <div class="toolbar" role="toolbar" aria-label="Plot interaction controls">
-        <div class="mode-group" aria-label="Drag mode">
+        <div class="mode-group" aria-label="Left mouse drag mode">
           <button id="zoomButton" class="tool-button is-active" type="button" aria-pressed="true" aria-keyshortcuts="Z" title="Zoom mode (Z)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4M11 8v6M8 11h6"></path></svg>
-            <span>Zoom</span>
-            <kbd class="shortcut">Z</kbd>
+            <span>Zoom</span><kbd class="shortcut">Z</kbd>
           </button>
           <button id="panButton" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="P" title="Pan mode (P)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11V7a2 2 0 0 1 4 0v3-5a2 2 0 0 1 4 0v5-2a2 2 0 0 1 4 0v5c0 5-3 8-8 8h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l3 2"></path></svg>
-            <span>Pan</span>
-            <kbd class="shortcut">P</kbd>
+            <span>Pan</span><kbd class="shortcut">P</kbd>
           </button>
         </div>
         <button id="resetButton" class="tool-button" type="button" aria-keyshortcuts="R" title="Reset both plots (R)">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>
-          <span>Reset</span>
-          <kbd class="shortcut">R</kbd>
+          <span>Reset</span><kbd class="shortcut">R</kbd>
         </button>
       </div>
     </div>
 
-    <section class="plot-section" aria-labelledby="bodeHeading">
-      <div class="section-header">
-        <div class="section-copy">
-          <h2 id="bodeHeading">Frequency response</h2>
-          <p>Magnitude and phase share the same linear frequency axis from 0.1 to 100 Hz.</p>
-        </div>
-        <p id="statusText" class="section-status" aria-live="polite">Loading frequency responses…</p>
-      </div>
-      <div id="bodePlot" aria-label="Linked magnitude and phase Bode diagrams for the 7k and 5k closed-loop systems"></div>
-      <div class="plot-footer">
-        <span>Drag to magnify · Scroll to zoom · Double-click to reset</span>
-        <span class="interaction-status" data-interaction-status aria-live="polite">Zoom mode active</span>
-      </div>
-    </section>
+    <div class="workspace">
+      <div class="plot-column">
+        <section class="plot-section" aria-labelledby="bodeHeading">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2 id="bodeHeading">Frequency response</h2>
+              <p>Magnitude and phase share a linear frequency axis from 0.1 through 100 Hz.</p>
+            </div>
+            <p id="statusText" class="section-status" aria-live="polite">Loading frequency responses…</p>
+          </div>
+          <div id="bodePlot" aria-label="Linked magnitude and phase diagrams comparing PID and LQR closed-loop systems"></div>
+          <div class="plot-footer">
+            <span>Dotted blue: 7k six-state refit with the saved PID.</span>
+            <span class="interaction-status" data-interaction-status aria-live="polite">Zoom mode active</span>
+          </div>
+        </section>
 
-    <section class="plot-section" aria-labelledby="stepHeading">
-      <div class="section-header">
-        <div class="section-copy">
-          <h2 id="stepHeading">Unit-step response</h2>
-          <p>Closed-loop response over the first 3 seconds with the desired unit displacement shown dashed.</p>
+        <section class="plot-section" aria-labelledby="stepHeading">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2 id="stepHeading">Unit-step response</h2>
+              <p>Reference tracking over 3 seconds; LQR uses the same gain and 7k precompensator on both plants.</p>
+            </div>
+            <p id="stepStatusText" class="section-status" aria-live="polite">Loading step responses…</p>
+          </div>
+          <div id="stepPlot" aria-label="Unit-step responses comparing PID and LQR closed-loop systems"></div>
+          <div class="plot-footer">
+            <span>Scroll to zoom. Hold and drag the middle mouse button to pan.</span>
+            <span class="interaction-status" data-interaction-status aria-live="polite">Zoom mode active</span>
+          </div>
+        </section>
+      </div>
+
+      <aside class="tuning-panel" aria-labelledby="tuningHeading">
+        <div class="panel-header">
+          <h2 id="tuningHeading">LQR tuning</h2>
+          <p class="panel-copy">Designed on 7k. The resulting K and N̄ are reused on 5k.</p>
         </div>
-        <p id="stepStatusText" class="section-status" aria-live="polite">Loading step responses…</p>
-      </div>
-      <div id="stepPlot" aria-label="Step responses for the 7k and 5k closed-loop systems"></div>
-      <div class="plot-footer">
-        <span>The toolbar controls both plots.</span>
-        <span class="interaction-status" data-interaction-status aria-live="polite">Zoom mode active</span>
-      </div>
-    </section>
+
+        <div class="panel-section">
+          <div class="field">
+            <label class="field-label" for="qyInput"><span>Output penalty</span><span class="field-symbol">qy</span></label>
+            <input id="qyInput" class="field-input" type="number" min="1e-12" max="1e12" step="any" inputmode="decimal">
+            <p class="field-help">Larger values prioritize displacement tracking.</p>
+          </div>
+          <div class="field">
+            <label class="field-label" for="ruInput"><span>Command penalty</span><span class="field-symbol">ru</span></label>
+            <input id="ruInput" class="field-input" type="number" min="1e-12" max="1e12" step="any" inputmode="decimal">
+            <p class="field-help">Larger values reduce control effort.</p>
+          </div>
+          <button id="optimizedButton" class="primary-button" type="button">Use optimized baseline</button>
+        </div>
+
+        <div class="panel-section">
+          <h3>Live response</h3>
+          <dl class="metrics">
+            <div class="metric"><dt>qy / ru</dt><dd id="ratioMetric">—</dd></div>
+            <div class="metric"><dt>7k overshoot</dt><dd id="overshoot7kMetric">—</dd></div>
+            <div class="metric"><dt>7k settling</dt><dd id="settling7kMetric">—</dd></div>
+            <div class="metric"><dt>5k overshoot</dt><dd id="overshoot5kMetric">—</dd></div>
+            <div class="metric"><dt>5k settling</dt><dd id="settling5kMetric">—</dd></div>
+            <div class="metric"><dt>5k final value</dt><dd id="final5kMetric">—</dd></div>
+            <div class="metric"><dt>5k stability</dt><dd id="stability5kMetric">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="panel-section">
+          <h3>Trace key</h3>
+          <div class="model-key">
+            <div class="key-row"><span class="key-line key-blue"></span><span>7k PID</span></div>
+            <div class="key-row"><span class="key-line is-dotted key-blue"></span><span>7k refit + PID</span></div>
+            <div class="key-row"><span class="key-line key-green"></span><span>5k PID</span></div>
+            <div class="key-row"><span class="key-line key-red"></span><span>7k LQR</span></div>
+            <div class="key-row"><span class="key-line key-orange"></span><span>5k LQR</span></div>
+          </div>
+          <p id="tuningStatus" class="panel-note" aria-live="polite">Preparing the controller…</p>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="lqg_bode_data.js"></script>
+  <script src="lqg_lqr_data.js"></script>
   <script>
     (function () {
       "use strict";
@@ -415,147 +600,351 @@
       const stepPlot = document.getElementById("stepPlot");
       const statusText = document.getElementById("statusText");
       const stepStatusText = document.getElementById("stepStatusText");
+      const tuningStatus = document.getElementById("tuningStatus");
+      const qyInput = document.getElementById("qyInput");
+      const ruInput = document.getElementById("ruInput");
+      const optimizedButton = document.getElementById("optimizedButton");
       const zoomButton = document.getElementById("zoomButton");
       const panButton = document.getElementById("panButton");
       const resetButton = document.getElementById("resetButton");
       const interactionStatuses = document.querySelectorAll("[data-interaction-status]");
-      const bundle = window.lqgBodeData;
+      const responseData = window.lqgBodeData;
+      const lqrData = window.lqgLqrData;
 
-      if (!window.Plotly || !bundle || !bundle.systems || !bundle.stepTimeSeconds) {
+      if (!window.Plotly || !responseData || !lqrData || !responseData.systems) {
         [bodePlot, stepPlot].forEach(function (plot) {
           plot.className = "load-error";
           plot.textContent = "The plotting library or response data could not be loaded.";
         });
         statusText.textContent = "Plots unavailable";
         stepStatusText.textContent = "Plots unavailable";
+        tuningStatus.textContent = "Controller data unavailable";
         return;
       }
 
-      const frequency = bundle.frequencyHz;
-      const stepTime = bundle.stepTimeSeconds;
-      const colors = { "7k": "#007CA8", "5k": "#74058A" };
-      const bodeTraces = [];
-      const stepTraces = [{
-        x: stepTime,
-        y: stepTime.map(function () { return 1; }),
-        mode: "lines",
-        line: { color: "#D4D4D8", width: 2.5, dash: "dash" },
-        name: "Unit-step reference",
-        hovertemplate: "%{x:.4f} s<br>%{y:.4f}<extra>Unit-step reference</extra>"
-      }];
+      const frequency = responseData.frequencyHz;
+      const stepTime = responseData.stepTimeSeconds;
+      const lqrStepTime = Array.from({ length: 6001 }, function (_, index) {
+        return 3 * index / 6000;
+      });
+      const colors = {
+        "7k": "#007CA8",
+        "7k-refit": "#007CA8",
+        "5k": "#39BF5E",
+        "lqr-7k": "#901500",
+        "lqr-5k": "#AC6420"
+      };
+      const metrics = {
+        ratio: document.getElementById("ratioMetric"),
+        overshoot7k: document.getElementById("overshoot7kMetric"),
+        settling7k: document.getElementById("settling7kMetric"),
+        overshoot5k: document.getElementById("overshoot5kMetric"),
+        settling5k: document.getElementById("settling5kMetric"),
+        final5k: document.getElementById("final5kMetric"),
+        stability5k: document.getElementById("stability5kMetric")
+      };
 
-      bundle.systems.forEach(function (system) {
-        const common = {
-          x: frequency,
-          mode: "lines",
-          line: { color: colors[system.id], width: 2.4 },
-          name: system.label,
-          legendgroup: system.id,
-          hovertemplate: "%{x:.3f} Hz<br>%{y:.3f}<extra>" + system.label + "</extra>"
-        };
+      function zeros(rows, columns) {
+        return Array.from({ length: rows }, function () { return Array(columns).fill(0); });
+      }
 
-        bodeTraces.push(Object.assign({}, common, {
-          y: system.magnitudeDb,
-          yaxis: "y",
-          showlegend: true
-        }));
-        bodeTraces.push(Object.assign({}, common, {
-          y: system.phaseDeg,
-          yaxis: "y2",
-          showlegend: false
-        }));
-        stepTraces.push({
-          x: stepTime,
-          y: system.stepResponse,
-          mode: "lines",
-          line: { color: colors[system.id], width: 2.4 },
-          name: system.label,
-          hovertemplate: "%{x:.4f} s<br>%{y:.4f}<extra>" + system.label + "</extra>"
+      function identity(size) {
+        const output = zeros(size, size);
+        for (let i = 0; i < size; i += 1) output[i][i] = 1;
+        return output;
+      }
+
+      function addMatrices(left, right) {
+        return left.map(function (row, i) {
+          return row.map(function (value, j) { return value + right[i][j]; });
         });
+      }
+
+      function scaleMatrix(matrix, factor) {
+        return matrix.map(function (row) {
+          return row.map(function (value) { return value * factor; });
+        });
+      }
+
+      function multiplyMatrices(left, right) {
+        const output = zeros(left.length, right[0].length);
+        for (let i = 0; i < left.length; i += 1) {
+          for (let k = 0; k < right.length; k += 1) {
+            for (let j = 0; j < right[0].length; j += 1) {
+              output[i][j] += left[i][k] * right[k][j];
+            }
+          }
+        }
+        return output;
+      }
+
+      function multiplyMatrixVector(matrix, vector) {
+        return matrix.map(function (row) {
+          return row.reduce(function (sum, value, index) {
+            return sum + value * vector[index];
+          }, 0);
+        });
+      }
+
+      function dot(left, right) {
+        return left.reduce(function (sum, value, index) {
+          return sum + value * right[index];
+        }, 0);
+      }
+
+      function matrixNorm(matrix) {
+        return Math.max.apply(null, matrix.map(function (row) {
+          return row.reduce(function (sum, value) { return sum + Math.abs(value); }, 0);
+        }));
+      }
+
+      function solve(matrix, vector) {
+        const size = vector.length;
+        const augmented = matrix.map(function (row, i) { return row.slice().concat(vector[i]); });
+        for (let column = 0; column < size; column += 1) {
+          let pivot = column;
+          for (let row = column + 1; row < size; row += 1) {
+            if (Math.abs(augmented[row][column]) > Math.abs(augmented[pivot][column])) pivot = row;
+          }
+          const swap = augmented[column];
+          augmented[column] = augmented[pivot];
+          augmented[pivot] = swap;
+          const pivotValue = augmented[column][column];
+          for (let j = column; j <= size; j += 1) augmented[column][j] /= pivotValue;
+          for (let row = 0; row < size; row += 1) {
+            if (row === column) continue;
+            const factor = augmented[row][column];
+            for (let j = column; j <= size; j += 1) {
+              augmented[row][j] -= factor * augmented[column][j];
+            }
+          }
+        }
+        return augmented.map(function (row) { return row[size]; });
+      }
+
+      function matrixExponential(matrix) {
+        const size = matrix.length;
+        const norm = matrixNorm(matrix);
+        const squarings = Math.max(0, Math.ceil(Math.log2(Math.max(norm, 0.5) / 0.5)));
+        const scaled = scaleMatrix(matrix, 1 / Math.pow(2, squarings));
+        let output = identity(size);
+        let term = identity(size);
+        for (let order = 1; order <= 40; order += 1) {
+          term = scaleMatrix(multiplyMatrices(term, scaled), 1 / order);
+          output = addMatrices(output, term);
+          if (matrixNorm(term) < 1e-15) break;
+        }
+        for (let i = 0; i < squarings; i += 1) output = multiplyMatrices(output, output);
+        return output;
+      }
+
+      function interpolateGain(logRatio) {
+        const grid = lqrData.gainLog10Ratio;
+        const table = lqrData.gainTable;
+        const optimizedLogRatio = Math.log10(lqrData.optimized.qy / lqrData.optimized.ru);
+        if (Math.abs(logRatio - optimizedLogRatio) < 1e-7) {
+          return { gain: lqrData.optimized.K.slice(), clipped: false };
+        }
+        const clipped = Math.max(grid[0], Math.min(grid[grid.length - 1], logRatio));
+        let upper = 1;
+        while (upper < grid.length && grid[upper] < clipped) upper += 1;
+        if (upper >= grid.length) return { gain: table[table.length - 1].slice(), clipped: clipped !== logRatio };
+        const lower = upper - 1;
+        const amount = (clipped - grid[lower]) / (grid[upper] - grid[lower]);
+        return {
+          gain: table[lower].map(function (value, index) {
+            return value + amount * (table[upper][index] - value);
+          }),
+          clipped: clipped !== logRatio
+        };
+      }
+
+      function closedLoop(system, gain, nbar) {
+        const scale = lqrData.frequencyScaleRadPerSecond;
+        const normalizedA = system.A.map(function (row, i) {
+          return row.map(function (value, j) { return value - system.B[i] * gain[j]; });
+        });
+        return {
+          A: scaleMatrix(normalizedA, scale),
+          normalizedA: normalizedA,
+          B: system.B.map(function (value) { return scale * value * nbar; }),
+          C: system.C
+        };
+      }
+
+      function frequencyResponse(system) {
+        const stateCount = system.A.length;
+        const magnitudeDb = [];
+        const phaseDeg = [];
+        frequency.forEach(function (frequencyHz) {
+          const omega = 2 * Math.PI * frequencyHz;
+          const block = zeros(2 * stateCount, 2 * stateCount);
+          const rhs = system.B.concat(Array(stateCount).fill(0));
+          for (let i = 0; i < stateCount; i += 1) {
+            for (let j = 0; j < stateCount; j += 1) {
+              block[i][j] = -system.A[i][j];
+              block[i + stateCount][j + stateCount] = -system.A[i][j];
+            }
+            block[i][i + stateCount] = -omega;
+            block[i + stateCount][i] = omega;
+          }
+          const state = solve(block, rhs);
+          const real = dot(system.C, state.slice(0, stateCount));
+          const imaginary = dot(system.C, state.slice(stateCount));
+          magnitudeDb.push(20 * Math.log10(Math.max(Math.hypot(real, imaginary), 1e-15)));
+          phaseDeg.push(Math.atan2(imaginary, real) * 180 / Math.PI);
+        });
+        return { magnitudeDb: magnitudeDb, phaseDeg: phaseDeg };
+      }
+
+      function stepResponse(system, timeAxis) {
+        const stateCount = system.A.length;
+        const augmented = zeros(stateCount + 1, stateCount + 1);
+        const timeStep = timeAxis[1] - timeAxis[0];
+        for (let i = 0; i < stateCount; i += 1) {
+          for (let j = 0; j < stateCount; j += 1) augmented[i][j] = system.A[i][j] * timeStep;
+          augmented[i][stateCount] = system.B[i] * timeStep;
+        }
+        const transition = matrixExponential(augmented);
+        const stateTransition = transition.slice(0, stateCount).map(function (row) {
+          return row.slice(0, stateCount);
+        });
+        const inputTransition = transition.slice(0, stateCount).map(function (row) {
+          return row[stateCount];
+        });
+        let state = Array(stateCount).fill(0);
+        return timeAxis.map(function (_, index) {
+          if (index > 0) {
+            state = multiplyMatrixVector(stateTransition, state).map(function (value, i) {
+              return value + inputTransition[i];
+            });
+          }
+          return dot(system.C, state);
+        });
+      }
+
+      function responseMetrics(response, finalValue, timeAxis) {
+        const tolerance = 0.02 * Math.max(Math.abs(finalValue), Number.EPSILON);
+        const peak = Math.max.apply(null, response);
+        let lastOutside = -1;
+        response.forEach(function (value, index) {
+          if (Math.abs(value - finalValue) > tolerance) lastOutside = index;
+        });
+        return {
+          overshoot: Math.max(0, (peak - finalValue) / Math.max(Math.abs(finalValue), Number.EPSILON) * 100),
+          settling: lastOutside < response.length - 1 ? timeAxis[lastOutside + 1] : Infinity
+        };
+      }
+
+      function makeLineTrace(name, color, x, y, dash) {
+        return {
+          x: x,
+          y: y,
+          mode: "lines",
+          line: { color: color, width: 2.25, dash: dash || "solid" },
+          name: name,
+          hoverinfo: "skip"
+        };
+      }
+
+      const bodeTraces = [];
+      const stepTraces = [makeLineTrace("Unit-step reference", "#D4D4D8", stepTime,
+        stepTime.map(function () { return 1; }), "dash")];
+
+      responseData.systems.forEach(function (system) {
+        const magnitude = makeLineTrace(system.label, colors[system.id], frequency,
+          system.magnitudeDb, system.lineDash);
+        magnitude.legendgroup = system.id;
+        magnitude.showlegend = true;
+        bodeTraces.push(magnitude);
+        const phase = makeLineTrace(system.label, colors[system.id], frequency,
+          system.phaseDeg, system.lineDash);
+        phase.legendgroup = system.id;
+        phase.showlegend = false;
+        phase.yaxis = "y2";
+        bodeTraces.push(phase);
+        stepTraces.push(makeLineTrace(system.label, colors[system.id], stepTime,
+          system.stepResponse, system.lineDash));
+      });
+
+      ["lqr-7k", "lqr-5k"].forEach(function (id) {
+        const label = id === "lqr-7k" ? "7k LQR" : "5k LQR";
+        const magnitude = makeLineTrace(label, colors[id], frequency, [], "solid");
+        magnitude.legendgroup = id;
+        bodeTraces.push(magnitude);
+        const phase = makeLineTrace(label, colors[id], frequency, [], "solid");
+        phase.legendgroup = id;
+        phase.showlegend = false;
+        phase.yaxis = "y2";
+        bodeTraces.push(phase);
+        stepTraces.push(makeLineTrace(label, colors[id], lqrStepTime, [], "solid"));
       });
 
       const axisStyle = {
         showline: true,
         linewidth: 1,
         linecolor: "#52525B",
-        mirror: false,
         ticks: "outside",
         tickcolor: "#52525B",
         gridcolor: "#29292D",
         zerolinecolor: "#52525B",
-        tickfont: { size: 12, color: "#A1A1AA" },
-        fixedrange: false
+        tickfont: { size: 11, color: "#A1A1AA" },
+        fixedrange: false,
+        showspikes: false
       };
 
       const commonLayout = {
         autosize: true,
         dragmode: "zoom",
-        hovermode: "x",
+        hovermode: false,
         paper_bgcolor: "#111113",
         plot_bgcolor: "#111113",
         font: { family: "Aptos, Avenir Next, Noto Sans, sans-serif", color: "#FAFAFA" },
-        hoverlabel: {
-          bgcolor: "#18181B",
-          bordercolor: "#3F3F46",
-          font: { color: "#FAFAFA", size: 12 }
-        },
-        uirevision: "lqg-dark-v1"
+        uirevision: "lqr-tuning-v1"
       };
 
       const bodeLayout = Object.assign({}, commonLayout, {
-        margin: { l: 82, r: 30, t: 72, b: 68 },
+        margin: { l: 76, r: 24, t: 88, b: 62 },
         legend: {
           orientation: "h",
           x: 0,
-          xanchor: "left",
-          y: 1.08,
+          y: 1.07,
           yanchor: "bottom",
-          font: { size: 13, color: "#D4D4D8" }
+          font: { size: 11, color: "#D4D4D8" }
         },
         xaxis: Object.assign({}, axisStyle, {
-          title: { text: "Frequency (Hz)", standoff: 14, font: { color: "#D4D4D8" } },
+          title: { text: "Frequency (Hz)", standoff: 12, font: { color: "#D4D4D8" } },
           type: "linear",
           range: [0.1, 100],
           domain: [0, 1],
-          anchor: "y2",
-          showspikes: true,
-          spikemode: "across",
-          spikesnap: "cursor",
-          spikecolor: "#71717A",
-          spikethickness: 1
+          anchor: "y2"
         }),
         yaxis: Object.assign({}, axisStyle, {
-          title: { text: "Magnitude (dB)", standoff: 12, font: { color: "#D4D4D8" } },
+          title: { text: "Magnitude (dB)", standoff: 10, font: { color: "#D4D4D8" } },
           domain: [0.56, 1]
         }),
         yaxis2: Object.assign({}, axisStyle, {
-          title: { text: "Phase (deg)", standoff: 12, font: { color: "#D4D4D8" } },
+          title: { text: "Phase (deg)", standoff: 10, font: { color: "#D4D4D8" } },
           domain: [0, 0.42]
         })
       });
 
       const stepLayout = Object.assign({}, commonLayout, {
-        margin: { l: 82, r: 30, t: 66, b: 68 },
+        margin: { l: 76, r: 24, t: 82, b: 62 },
         legend: {
           orientation: "h",
           x: 0,
-          xanchor: "left",
-          y: 1.08,
+          y: 1.07,
           yanchor: "bottom",
-          font: { size: 13, color: "#D4D4D8" }
+          font: { size: 11, color: "#D4D4D8" }
         },
         xaxis: Object.assign({}, axisStyle, {
-          title: { text: "Time (s)", standoff: 14, font: { color: "#D4D4D8" } },
-          range: [0, 3],
-          showspikes: true,
-          spikemode: "across",
-          spikesnap: "cursor",
-          spikecolor: "#71717A",
-          spikethickness: 1
+          title: { text: "Time (s)", standoff: 12, font: { color: "#D4D4D8" } },
+          range: [0, 3]
         }),
         yaxis: Object.assign({}, axisStyle, {
-          title: { text: "Normalized displacement", standoff: 12, font: { color: "#D4D4D8" } },
-          range: [-0.05, 1.05]
+          title: { text: "Normalized displacement", standoff: 10, font: { color: "#D4D4D8" } },
+          range: [-0.05, 1.3]
         })
       });
 
@@ -565,31 +954,17 @@
           scrollZoom: true,
           displaylogo: false,
           doubleClick: "reset",
-          modeBarButtonsToRemove: ["select2d", "lasso2d"],
-          toImageButtonOptions: {
-            format: "png",
-            filename: filename,
-            width: width,
-            height: height,
-            scale: 1
-          }
+          modeBarButtonsToRemove: ["select2d", "lasso2d", "toggleSpikelines", "hoverClosestCartesian", "hoverCompareCartesian"],
+          toImageButtonOptions: { format: "png", filename: filename, width: width, height: height, scale: 1 }
         };
       }
 
       function setInteractionStatus(message) {
-        interactionStatuses.forEach(function (status) {
-          status.textContent = message;
-        });
-      }
-
-      function relayoutBoth(update) {
-        return Promise.all([bodePlot, stepPlot].map(function (plot) {
-          return Plotly.relayout(plot, update);
-        }));
+        interactionStatuses.forEach(function (status) { status.textContent = message; });
       }
 
       function setMode(mode) {
-        relayoutBoth({ dragmode: mode });
+        [bodePlot, stepPlot].forEach(function (plot) { Plotly.relayout(plot, { dragmode: mode }); });
         const isZoom = mode === "zoom";
         zoomButton.classList.toggle("is-active", isZoom);
         panButton.classList.toggle("is-active", !isZoom);
@@ -606,33 +981,171 @@
         });
         Plotly.relayout(stepPlot, {
           "xaxis.range": [0, 3],
-          "yaxis.range": [-0.05, 1.05]
+          "yaxis.autorange": true
         });
         setInteractionStatus("Both plots reset");
+      }
+
+      function attachMiddlePan(plot, hasSecondYAxis) {
+        let panState = null;
+        let pendingFrame = null;
+
+        plot.addEventListener("mousedown", function (event) {
+          if (event.button !== 1 || !plot._fullLayout) return;
+          event.preventDefault();
+          const layout = plot._fullLayout;
+          const bounds = plot.getBoundingClientRect();
+          const relativeY = event.clientY - bounds.top - layout._size.t;
+          panState = {
+            startX: event.clientX,
+            startY: event.clientY,
+            width: layout._size.w,
+            height: hasSecondYAxis ? layout._size.h * 0.44 : layout._size.h,
+            xRange: layout.xaxis.range.slice(),
+            yRange: layout.yaxis.range.slice(),
+            y2Range: hasSecondYAxis ? layout.yaxis2.range.slice() : null,
+            yAxis: hasSecondYAxis && relativeY > layout._size.h * 0.5 ? "yaxis2" : "yaxis"
+          };
+          plot.classList.add("middle-panning");
+        });
+
+        window.addEventListener("mousemove", function (event) {
+          if (!panState) return;
+          event.preventDefault();
+          if (pendingFrame) cancelAnimationFrame(pendingFrame);
+          pendingFrame = requestAnimationFrame(function () {
+            const dx = event.clientX - panState.startX;
+            const dy = event.clientY - panState.startY;
+            const xSpan = panState.xRange[1] - panState.xRange[0];
+            const sourceY = panState.yAxis === "yaxis2" ? panState.y2Range : panState.yRange;
+            const ySpan = sourceY[1] - sourceY[0];
+            const update = {
+              "xaxis.range": [panState.xRange[0] - dx / panState.width * xSpan,
+                panState.xRange[1] - dx / panState.width * xSpan]
+            };
+            update[panState.yAxis + ".range"] = [sourceY[0] + dy / panState.height * ySpan,
+              sourceY[1] + dy / panState.height * ySpan];
+            Plotly.relayout(plot, update);
+          });
+        }, { passive: false });
+
+        window.addEventListener("mouseup", function (event) {
+          if (!panState || event.button !== 1) return;
+          panState = null;
+          plot.classList.remove("middle-panning");
+          setInteractionStatus("Middle-button pan complete");
+        });
+        plot.addEventListener("auxclick", function (event) {
+          if (event.button === 1) event.preventDefault();
+        });
+      }
+
+      function formatSeconds(value) {
+        return Number.isFinite(value) ? value.toFixed(4) + " s" : "> 3 s";
+      }
+
+      function updateMetrics(ratio, response7k, response5k, closed7k, closed5k) {
+        const final7k = -dot(closed7k.C, solve(closed7k.A, closed7k.B));
+        const final5k = -dot(closed5k.C, solve(closed5k.A, closed5k.B));
+        const metric7k = responseMetrics(response7k, final7k, lqrStepTime);
+        const metric5k = responseMetrics(response5k, final5k, lqrStepTime);
+        metrics.ratio.textContent = ratio.toPrecision(6);
+        metrics.overshoot7k.textContent = metric7k.overshoot.toFixed(2) + "%";
+        metrics.settling7k.textContent = formatSeconds(metric7k.settling);
+        metrics.overshoot5k.textContent = metric5k.overshoot.toFixed(2) + "%";
+        metrics.settling5k.textContent = formatSeconds(metric5k.settling);
+        metrics.final5k.textContent = final5k.toFixed(4);
+        metrics.stability5k.textContent = response5k.every(Number.isFinite) ? "Stable" : "Unstable";
+      }
+
+      function updateController() {
+        const qy = Number(qyInput.value);
+        const ru = Number(ruInput.value);
+        if (!(qy > 0) || !(ru > 0) || !Number.isFinite(qy) || !Number.isFinite(ru)) {
+          tuningStatus.textContent = "Enter positive finite values for qy and ru.";
+          return;
+        }
+
+        tuningStatus.textContent = "Updating responses…";
+        window.setTimeout(function () {
+          const ratio = qy / ru;
+          const interpolation = interpolateGain(Math.log10(ratio));
+          const gain = interpolation.gain;
+          const system7k = lqrData.systems[0];
+          const system5k = lqrData.systems[1];
+          const normalizedA7k = system7k.A.map(function (row, i) {
+            return row.map(function (value, j) { return value - system7k.B[i] * gain[j]; });
+          });
+          const nbar = -1 / dot(system7k.C, solve(normalizedA7k, system7k.B));
+          const closed7k = closedLoop(system7k, gain, nbar);
+          const closed5k = closedLoop(system5k, gain, nbar);
+          const bode7k = frequencyResponse(closed7k);
+          const bode5k = frequencyResponse(closed5k);
+          const step7k = stepResponse(closed7k, lqrStepTime);
+          const step5k = stepResponse(closed5k, lqrStepTime);
+          const baselineCount = responseData.systems.length * 2;
+          const baselineStepCount = responseData.systems.length + 1;
+
+          bodeTraces[baselineCount].y = bode7k.magnitudeDb;
+          bodeTraces[baselineCount + 1].y = bode7k.phaseDeg;
+          bodeTraces[baselineCount + 2].y = bode5k.magnitudeDb;
+          bodeTraces[baselineCount + 3].y = bode5k.phaseDeg;
+          stepTraces[baselineStepCount].y = step7k;
+          stepTraces[baselineStepCount + 1].y = step5k;
+
+          Plotly.react(bodePlot, bodeTraces, bodeLayout,
+            plotConfig("lqr_closed_loop_bode", 1500, 900));
+          Plotly.react(stepPlot, stepTraces, stepLayout,
+            plotConfig("lqr_closed_loop_step", 1500, 650));
+          updateMetrics(ratio, step7k, step5k, closed7k, closed5k);
+          tuningStatus.textContent = interpolation.clipped
+            ? "Ratio limited to the exported LQR range."
+            : "Same state-feedback gain applied to both models.";
+        }, 0);
+      }
+
+      let updateTimer;
+      function queueControllerUpdate() {
+        clearTimeout(updateTimer);
+        updateTimer = window.setTimeout(updateController, 180);
+      }
+
+      function useOptimizedValues() {
+        qyInput.value = Number(lqrData.optimized.qy).toPrecision(8);
+        ruInput.value = Number(lqrData.optimized.ru).toPrecision(8);
+        updateController();
       }
 
       zoomButton.addEventListener("click", function () { setMode("zoom"); });
       panButton.addEventListener("click", function () { setMode("pan"); });
       resetButton.addEventListener("click", resetPlots);
+      optimizedButton.addEventListener("click", useOptimizedValues);
+      qyInput.addEventListener("input", queueControllerUpdate);
+      ruInput.addEventListener("input", queueControllerUpdate);
 
       document.addEventListener("keydown", function (event) {
         if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
         if (event.target.matches("input, textarea, select, [contenteditable]")) return;
-
         const key = event.key.toLowerCase();
         if (key === "z") setMode("zoom");
         if (key === "p") setMode("pan");
         if (key === "r") resetPlots();
       });
 
+      qyInput.value = Number(lqrData.optimized.qy).toPrecision(8);
+      ruInput.value = Number(lqrData.optimized.ru).toPrecision(8);
+
       Promise.all([
         Plotly.newPlot(bodePlot, bodeTraces, bodeLayout,
-          plotConfig("lqg_closed_loop_bode", 1500, 900)),
+          plotConfig("lqr_closed_loop_bode", 1500, 900)),
         Plotly.newPlot(stepPlot, stepTraces, stepLayout,
-          plotConfig("lqg_closed_loop_step", 1500, 650))
+          plotConfig("lqr_closed_loop_step", 1500, 650))
       ]).then(function () {
+        attachMiddlePan(bodePlot, true);
+        attachMiddlePan(stepPlot, false);
         statusText.textContent = frequency.length.toLocaleString() + " samples per system";
-        stepStatusText.textContent = stepTime.length.toLocaleString() + " samples per system";
+        stepStatusText.textContent = "Saved PID / live LQR response";
+        updateController();
       });
     }());
   </script>
