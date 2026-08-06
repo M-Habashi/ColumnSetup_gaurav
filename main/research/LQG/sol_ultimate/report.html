@@ -497,10 +497,10 @@
       --osi-ink: #f3f0e8;
       --osi-muted: #aaa69d;
       --osi-line: #34332e;
-      --osi-pink: #E86A92;
-      --osi-copper: var(--osi-pink);
-      --osi-red: var(--osi-pink);
-      --osi-damage: var(--osi-pink);
+      --osi-yellow: #D8B24C;
+      --osi-copper: var(--osi-yellow);
+      --osi-red: var(--osi-yellow);
+      --osi-damage: var(--osi-yellow);
       margin-top: 28px;
       padding: 0;
       border: 0;
@@ -527,7 +527,7 @@
     .damage-bode-gridline { stroke: #292824; stroke-width: 1; }
     .damage-bode-axis { stroke: #66625a; stroke-width: 1; }
     .damage-bode-reference { fill: none; stroke: #77756e; stroke-width: 2.5; }
-    .damage-bode-live { fill: none; stroke: var(--osi-pink); stroke-width: 2.7; }
+    .damage-bode-live { fill: none; stroke: var(--osi-yellow); stroke-width: 2.7; }
     .damage-bode-margin-guide { fill: none; stroke: #c8c5be; stroke-width: 1.4; stroke-dasharray: 5 4; }
     .damage-bode-margin-marker { fill: var(--osi-paper); stroke: var(--osi-damage); stroke-width: 2; }
     .damage-bode-critical-line { stroke: var(--osi-damage); stroke-width: 1.3; stroke-dasharray: 7 5; }
@@ -552,7 +552,7 @@
     .damage-bode-switch-track { position: relative; width: 34px; height: 18px; border: 1px solid #66625a; background: #34332e; }
     .damage-bode-switch-track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--osi-ink); transition: transform 160ms ease; }
     .damage-bode-mode-switch input:checked + .damage-bode-switch-track::after { transform: translateX(16px); }
-    .damage-bode-mode-switch input:focus-visible + .damage-bode-switch-track { outline: 2px solid var(--osi-pink); outline-offset: 2px; }
+    .damage-bode-mode-switch input:focus-visible + .damage-bode-switch-track { outline: 2px solid var(--osi-yellow); outline-offset: 2px; }
     .damage-bode-margin-cards { margin: 24px 0 20px; border-top: 1px solid var(--osi-line); }
     .damage-bode-margin-card { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--osi-line); }
     .damage-bode-margin-card span { color: var(--osi-ink); font-size: 12px; }
@@ -560,8 +560,37 @@
     .damage-bode-legend { color: var(--osi-ink); font-size: 11px; line-height: 1.45; }
     .damage-bode-legend-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
     .damage-bode-legend-swatch { width: 22px; height: 3px; flex: 0 0 auto; background: #77756e; }
-    .damage-bode-legend-swatch.is-live { background: var(--osi-pink); }
+    .damage-bode-legend-swatch.is-live { background: var(--osi-yellow); }
     .damage-bode-lab .damage-bode-margin-note { margin: 14px 0 0; color: var(--osi-ink); font-size: 11px; line-height: 1.45; }
+
+    .lqr-diagram {
+      --lqr-pink: #E86A92;
+      margin: 34px 0;
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: var(--background);
+    }
+
+    .lqr-diagram-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 15px;
+      font-family: var(--font-sans);
+    }
+
+    .lqr-diagram-title strong { font-size: 15px; }
+    .lqr-diagram-title span { color: var(--muted); font-size: 12px; }
+    .lqr-control-loop { display: block; width: 100%; height: auto; overflow: visible; }
+    .lqr-control-loop text { fill: var(--foreground); font-family: var(--font-serif); font-size: 15px; font-style: italic; }
+    .lqr-control-loop .diagram-note { fill: var(--muted-strong); font-family: var(--font-sans); font-size: 13px; font-style: normal; }
+    .lqr-control-loop .signal { fill: none; stroke: var(--foreground); stroke-width: 2; }
+    .lqr-control-loop .summation { fill: var(--card); stroke: var(--foreground); stroke-width: 2; }
+    .lqr-control-loop .lqr-block { fill: var(--card); stroke: var(--lqr-pink); stroke-width: 2; }
+    .lqr-control-loop .plant-block { fill: var(--card-strong); stroke: #007ca8; stroke-width: 2; }
+    .lqr-control-loop .lqr-label { fill: var(--lqr-pink); font-style: normal; }
+    .lqr-control-loop .plant-label { fill: #53b7d2; font-style: normal; }
 
     .bode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
@@ -596,7 +625,7 @@
     .inline-math {
       color: inherit;
       font-size: 1em;
-      vertical-align: -0.12em;
+      vertical-align: baseline;
     }
 
     .math-note {
@@ -1198,9 +1227,10 @@ yₖ   = C₀xₖ + γξₖC₁xₖ + vₖ</pre>
           <h2 class="rail-title">Technical sections</h2>
           <div class="nav">
             <a class="is-active" href="#damage-bode"><span class="nav-index">01</span><span>Stiffness and Bode response</span></a>
-            <a href="#damage-classical"><span class="nav-index">02</span><span>Classical LQG regulation</span></a>
-            <a href="#damage-objective"><span class="nav-index">03</span><span>Stiffness-integrated cost</span></a>
-            <a href="#damage-meaning"><span class="nav-index">04</span><span>Meaning and calculation</span></a>
+            <a href="#damage-classical"><span class="nav-index">02</span><span>Classical LQR regulation</span></a>
+            <a href="#damage-steady-state"><span class="nav-index">03</span><span>Steady-state error</span></a>
+            <a href="#damage-objective"><span class="nav-index">04</span><span>Stiffness-integrated cost</span></a>
+            <a href="#damage-meaning"><span class="nav-index">05</span><span>Meaning and calculation</span></a>
           </div>
         </nav>
       </aside>
@@ -1257,18 +1287,37 @@ yₖ   = C₀xₖ + γξₖC₁xₖ + vₖ</pre>
             </div>
           </div>
 
-          <p>The live curve uses pink as stiffness falls. The muted 7k, α = 1 reference remains fixed, making the stiffness-driven movement in magnitude, phase, gain margin, and phase margin directly visible.</p>
+          <p>The live curve uses a warm yellow accent as stiffness falls. The muted 7k, α = 1 reference remains fixed, making the stiffness-driven movement in magnitude, phase, gain margin, and phase margin directly visible.</p>
         </section>
 
         <section id="damage-classical" class="reveal">
           <div class="section-heading">
-            <h2>Classical LQG regulation</h2>
+            <h2>Classical LQR regulation</h2>
             <p>For one fixed specimen stiffness, the Riccati equation determines a feedback law that returns the system to its equilibrium while limiting control effort.</p>
+          </div>
+
+          <div class="lqr-diagram">
+            <div class="lqr-diagram-title"><strong>Classical LQR state-feedback loop</strong><span>zero-reference regulation · full-state feedback</span></div>
+            <svg class="lqr-control-loop" viewBox="0 0 760 250" role="img" aria-label="Block diagram from zero reference through the control summation and plant to the state, with state feedback through minus K">
+              <defs><marker id="lqrArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f3f0e8"/></marker></defs>
+              <line class="signal" x1="70" y1="93" x2="198" y2="93" marker-end="url(#lqrArrow)"/>
+              <circle class="summation" cx="220" cy="93" r="22"/>
+              <text x="213" y="99">+</text>
+              <line class="signal" x1="242" y1="93" x2="319" y2="93" marker-end="url(#lqrArrow)"/>
+              <rect class="plant-block" x="319" y="61" width="122" height="64"/>
+              <text class="plant-label" x="380" y="99" text-anchor="middle">Plant</text>
+              <line class="signal" x1="441" y1="93" x2="690" y2="93" marker-end="url(#lqrArrow)"/>
+              <path class="signal" d="M602 93 V197 H441" marker-end="url(#lqrArrow)"/>
+              <rect class="lqr-block" x="319" y="165" width="122" height="64"/>
+              <text class="lqr-label" x="380" y="203" text-anchor="middle">−K</text>
+              <path class="signal" d="M319 197 H220 V115" marker-end="url(#lqrArrow)"/>
+              <text x="67" y="78">r = 0</text><text x="268" y="78">u</text><text x="671" y="78">x</text>
+            </svg>
           </div>
 
           <p>Consider the linear plant <math class="inline-math" aria-label="x dot equals A x plus B u"><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></math>. The state <math class="inline-math" aria-label="x"><mi>x</mi></math> represents departure from the desired equilibrium. An initial condition <math class="inline-math" aria-label="x at zero equals x zero"><mi>x</mi><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo><mo>=</mo><msub><mi>x</mi><mn>0</mn></msub></math> produces a transient response. The controller must suppress this response without demanding excessive actuator motion. This requirement is expressed by the infinite-horizon cost</p>
 
-          <div class="math-block" aria-label="Classical infinite-horizon LQG cost">
+          <div class="math-block" aria-label="Classical infinite-horizon LQR cost">
             <math display="block">
               <mrow>
                 <mi>J</mi><mo>=</mo>
@@ -1311,46 +1360,151 @@ yₖ   = C₀xₖ + γξₖC₁xₖ + vₖ</pre>
 
           <p>The plant matrices <math class="inline-math" aria-label="A"><mi>A</mi></math> and <math class="inline-math" aria-label="B"><mi>B</mi></math> are specified. The weights <math class="inline-math" aria-label="Q"><mi>Q</mi></math> and <math class="inline-math" aria-label="R"><mi>R</mi></math> are also specified. The symmetric matrix <math class="inline-math" aria-label="P"><mi>P</mi></math> remains unknown. For <math class="inline-math" aria-label="n states"><mi>n</mi></math> states, it contains <math class="inline-math" aria-label="n times n plus one over two"><mi>n</mi><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math> independent unknowns. The Riccati equation solves for them. The feedback gain <math class="inline-math" aria-label="K"><mi>K</mi></math> is then obtained directly. The minimum cost for a given initial condition is <math class="inline-math" aria-label="J star equals x zero transpose P x zero"><msup><mi>J</mi><mo>*</mo></msup><mo>=</mo><msubsup><mi>x</mi><mn>0</mn><mi>T</mi></msubsup><mi>P</mi><msub><mi>x</mi><mn>0</mn></msub></math>.</p>
 
-          <p>This regulation result supplies the control part of LQG. Full-state feedback requires every component of <math class="inline-math" aria-label="x"><mi>x</mi></math>. In practice, the available signal is often the measured output. The stochastic model introduces process noise <math class="inline-math" aria-label="w"><mi>w</mi></math> and measurement noise <math class="inline-math" aria-label="v"><mi>v</mi></math>:</p>
+          <p>Now assume that the complete state vector is available to the controller. The same regulation objective can be expressed through a selected plant output <math class="inline-math" aria-label="y equals C x"><mi>y</mi><mo>=</mo><mi>C</mi><mi>x</mi></math>. The matrix <math class="inline-math" aria-label="C"><mi>C</mi></math> maps the state to that output. Introduce the positive-semidefinite output weight <math class="inline-math" aria-label="Q sub y"><msub><mi>Q</mi><mi>y</mi></msub></math>. The performance objective becomes</p>
 
-          <div class="math-block" aria-label="Plant and measurement models with noise">
-            <math display="block">
-              <mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi><mo>+</mo><mi>G</mi><mi>w</mi></mrow>
-              <mspace width="2em"></mspace>
-              <mrow><mi>y</mi><mo>=</mo><mi>C</mi><mi>x</mi><mo>+</mo><mi>v</mi></mrow>
-            </math>
-          </div>
-
-          <p>A Kalman filter uses <math class="inline-math" aria-label="y"><mi>y</mi></math> to construct the state estimate <math class="inline-math" aria-label="x hat"><mover><mi>x</mi><mo>^</mo></mover></math>. The implemented controller becomes</p>
-
-          <div class="math-block" aria-label="Kalman state estimate and output-feedback control law">
+          <div class="math-block" aria-label="Infinite-horizon output-weighted cost">
             <math display="block">
               <mrow>
-                <mover><mover><mi>x</mi><mo>^</mo></mover><mo>˙</mo></mover>
-                <mo>=</mo><mi>A</mi><mover><mi>x</mi><mo>^</mo></mover><mo>+</mo><mi>B</mi><mi>u</mi>
-                <mo>+</mo><mi>L</mi><mo stretchy="false">(</mo><mi>y</mi><mo>−</mo><mi>C</mi><mover><mi>x</mi><mo>^</mo></mover><mo stretchy="false">)</mo>
+                <msub><mi>J</mi><mi>y</mi></msub><mo>=</mo>
+                <munderover><mo>∫</mo><mn>0</mn><mo>∞</mo></munderover>
+                <mo stretchy="false">(</mo>
+                <msup><mi>y</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>y</mi>
+                <mo>+</mo><msup><mi>u</mi><mi>T</mi></msup><mi>R</mi><mi>u</mi>
+                <mo stretchy="false">)</mo><mi>d</mi><mi>t</mi>
               </mrow>
-              <mspace width="2em"></mspace>
-              <mrow><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mover><mi>x</mi><mo>^</mo></mover></mrow>
+              <mo>=</mo>
+              <mrow>
+                <munderover><mo>∫</mo><mn>0</mn><mo>∞</mo></munderover>
+                <mo stretchy="false">(</mo>
+                <msup><mi>x</mi><mi>T</mi></msup><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi><mi>x</mi>
+                <mo>+</mo><msup><mi>u</mi><mi>T</mi></msup><mi>R</mi><mi>u</mi>
+                <mo stretchy="false">)</mo><mi>d</mi><mi>t</mi>
+              </mrow>
             </math>
           </div>
 
-          <p>The steady-state estimation covariance <math class="inline-math" aria-label="Sigma"><mi>Σ</mi></math> satisfies a second Riccati equation:</p>
+          <p>The output formulation has the same LQR structure. Its effective state weight is <math class="inline-math" aria-label="Q equals C transpose Q sub y C"><mi>Q</mi><mo>=</mo><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi></math>. Therefore the output-weighted Riccati equation and optimal control law are</p>
 
-          <div class="math-block" aria-label="Steady-state Kalman Riccati equation and estimator gain">
+          <div class="math-block" aria-label="Output-weighted Riccati equation and optimal state-feedback gain">
             <math display="block">
               <mrow>
-                <mi>A</mi><mi>Σ</mi><mo>+</mo><mi>Σ</mi><msup><mi>A</mi><mi>T</mi></msup>
-                <mo>+</mo><mi>G</mi><mi>W</mi><msup><mi>G</mi><mi>T</mi></msup>
-                <mo>−</mo><mi>Σ</mi><msup><mi>C</mi><mi>T</mi></msup><msup><mi>V</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>C</mi><mi>Σ</mi>
+                <msup><mi>A</mi><mi>T</mi></msup><msub><mi>P</mi><mi>y</mi></msub>
+                <mo>+</mo><msub><mi>P</mi><mi>y</mi></msub><mi>A</mi>
+                <mo>−</mo><msub><mi>P</mi><mi>y</mi></msub><mi>B</mi>
+                <msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup>
+                <msup><mi>B</mi><mi>T</mi></msup><msub><mi>P</mi><mi>y</mi></msub>
+                <mo>+</mo><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi>
                 <mo>=</mo><mn>0</mn>
               </mrow>
               <mspace width="2em"></mspace>
-              <mrow><mi>L</mi><mo>=</mo><mi>Σ</mi><msup><mi>C</mi><mi>T</mi></msup><msup><mi>V</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow>
+              <mrow>
+                <msub><mi>K</mi><mi>y</mi></msub><mo>=</mo>
+                <msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup>
+                <msup><mi>B</mi><mi>T</mi></msup><msub><mi>P</mi><mi>y</mi></msub>
+              </mrow>
+              <mspace width="2em"></mspace>
+              <mrow><mi>u</mi><mo>=</mo><mo>−</mo><msub><mi>K</mi><mi>y</mi></msub><mi>x</mi></mrow>
             </math>
           </div>
 
-          <p>The two matrix unknowns are therefore the control solution <math class="inline-math" aria-label="P"><mi>P</mi></math> and the estimator covariance <math class="inline-math" aria-label="Sigma"><mi>Σ</mi></math>. The feedback gain <math class="inline-math" aria-label="K"><mi>K</mi></math> follows from the first solution. The estimator gain <math class="inline-math" aria-label="L"><mi>L</mi></math> follows from the second.</p>
+          <p>The state vector is <math class="inline-math" aria-label="x belongs to R n"><mi>x</mi><mo>∈</mo><msup><mi>R</mi><mi>n</mi></msup></math>. The control input is <math class="inline-math" aria-label="u belongs to R m"><mi>u</mi><mo>∈</mo><msup><mi>R</mi><mi>m</mi></msup></math>. The selected output is <math class="inline-math" aria-label="y belongs to R p"><mi>y</mi><mo>∈</mo><msup><mi>R</mi><mi>p</mi></msup></math>. Accordingly, <math class="inline-math" aria-label="C belongs to R p by n"><mi>C</mi><mo>∈</mo><msup><mi>R</mi><mrow><mi>p</mi><mo>×</mo><mi>n</mi></mrow></msup></math> selects or combines the states that matter to the output objective.</p>
+
+          <p>The output weight <math class="inline-math" aria-label="Q sub y belongs to R p by p"><msub><mi>Q</mi><mi>y</mi></msub><mo>∈</mo><msup><mi>R</mi><mrow><mi>p</mi><mo>×</mo><mi>p</mi></mrow></msup></math> is chosen by the designer. The input weight <math class="inline-math" aria-label="R belongs to R m by m"><mi>R</mi><mo>∈</mo><msup><mi>R</mi><mrow><mi>m</mi><mo>×</mo><mi>m</mi></mrow></msup></math> is also chosen. The symmetric matrix <math class="inline-math" aria-label="P sub y"><msub><mi>P</mi><mi>y</mi></msub></math> is the only Riccati unknown. It has <math class="inline-math" aria-label="n times n plus one over two"><mi>n</mi><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math> independent elements. The gain <math class="inline-math" aria-label="K sub y belongs to R m by n"><msub><mi>K</mi><mi>y</mi></msub><mo>∈</mo><msup><mi>R</mi><mrow><mi>m</mi><mo>×</mo><mi>n</mi></mrow></msup></math> is calculated from that solution.</p>
+
+          <p>The difference between the two formulations is only the performance weight. The first formulation assigns weights directly to the states through <math class="inline-math" aria-label="Q"><mi>Q</mi></math>. The second assigns weights to selected outputs through <math class="inline-math" aria-label="Q sub y"><msub><mi>Q</mi><mi>y</mi></msub></math>. Both produce full-state feedback of the form <math class="inline-math" aria-label="u equals minus K x"><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi>x</mi></math>. If <math class="inline-math" aria-label="Q equals C transpose Q sub y C"><mi>Q</mi><mo>=</mo><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi></math>, they produce the same optimal gain.</p>
+        </section>
+
+        <section id="damage-steady-state" class="reveal">
+          <div class="section-heading">
+            <h2>Steady-state error and the reference gain</h2>
+            <p>The LQR feedback gain regulates the state toward zero. A separate reference gain is required when the desired output is a nonzero constant.</p>
+          </div>
+
+          <p>The law <math class="inline-math" aria-label="u equals minus K x"><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi>x</mi></math> contains no reference signal. Therefore it solves a regulation problem rather than a setpoint-tracking problem. Introduce a constant desired output <math class="inline-math" aria-label="r"><mi>r</mi></math> and the feedforward gain <math class="inline-math" aria-label="N"><mi>N</mi></math> through</p>
+
+          <div class="math-block" aria-label="LQR control law with reference precompensator">
+            <math display="block">
+              <mrow><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi>x</mi><mo>+</mo><mi>N</mi><mi>r</mi></mrow>
+            </math>
+          </div>
+
+          <p>Assume <math class="inline-math" aria-label="A minus B K"><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi></math> is stable. Also assume the plant has no direct feedthrough, so <math class="inline-math" aria-label="y equals C x"><mi>y</mi><mo>=</mo><mi>C</mi><mi>x</mi></math>. For a constant reference, the steady-state equations are</p>
+
+          <div class="math-block" aria-label="LQR steady-state state and output">
+            <math display="block">
+              <mrow>
+                <mn>0</mn><mo>=</mo><mo stretchy="false">(</mo><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi><mo stretchy="false">)</mo><msub><mi>x</mi><mtext>ss</mtext></msub><mo>+</mo><mi>B</mi><mi>N</mi><mi>r</mi>
+              </mrow>
+              <mspace width="2em"></mspace>
+              <mrow>
+                <msub><mi>x</mi><mtext>ss</mtext></msub><mo>=</mo><mo>−</mo>
+                <msup><mrow><mo stretchy="false">(</mo><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup>
+                <mi>B</mi><mi>N</mi><mi>r</mi>
+              </mrow>
+            </math>
+          </div>
+
+          <div class="math-block" aria-label="LQR steady-state tracking error">
+            <math display="block">
+              <mrow>
+                <msub><mi>y</mi><mtext>ss</mtext></msub><mo>=</mo><mo>−</mo>
+                <mi>C</mi>
+                <msup><mrow><mo stretchy="false">(</mo><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup>
+                <mi>B</mi><mi>N</mi><mi>r</mi>
+              </mrow>
+              <mspace width="2em"></mspace>
+              <mrow>
+                <msub><mi>e</mi><mtext>ss</mtext></msub><mo>=</mo><mi>r</mi><mo>−</mo><msub><mi>y</mi><mtext>ss</mtext></msub>
+                <mo>=</mo><mo>[</mo><mi>I</mi><mo>+</mo><mi>C</mi>
+                <msup><mrow><mo stretchy="false">(</mo><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup>
+                <mi>B</mi><mi>N</mi><mo>]</mo><mi>r</mi>
+              </mrow>
+            </math>
+          </div>
+
+          <div class="lqr-diagram">
+            <div class="lqr-diagram-title"><strong>LQR reference precompensator</strong><span>u = −Kx + Nr</span></div>
+            <svg class="lqr-control-loop" viewBox="0 0 760 250" role="img" aria-label="Block diagram with reference r passing through the N precompensator into the control summation, state feedback through minus K, and the plant producing state x">
+              <defs><marker id="lqrReferenceArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f3f0e8"/></marker></defs>
+              <line class="signal" x1="45" y1="93" x2="140" y2="93" marker-end="url(#lqrReferenceArrow)"/>
+              <rect class="lqr-block" x="145" y="62" width="122" height="62"/>
+              <text class="lqr-label" x="206" y="100" text-anchor="middle">N</text>
+              <line class="signal" x1="267" y1="93" x2="344" y2="93" marker-end="url(#lqrReferenceArrow)"/>
+              <circle class="summation" cx="366" cy="93" r="22"/>
+              <text x="359" y="99">+</text>
+              <line class="signal" x1="388" y1="93" x2="455" y2="93" marker-end="url(#lqrReferenceArrow)"/>
+              <rect class="plant-block" x="465" y="61" width="122" height="64"/>
+              <text class="plant-label" x="526" y="99" text-anchor="middle">Plant</text>
+              <line class="signal" x1="587" y1="93" x2="700" y2="93" marker-end="url(#lqrReferenceArrow)"/>
+              <path class="signal" d="M652 93 V197 H587" marker-end="url(#lqrReferenceArrow)"/>
+              <rect class="lqr-block" x="465" y="165" width="122" height="64"/>
+              <text class="lqr-label" x="526" y="203" text-anchor="middle">−K</text>
+              <path class="signal" d="M465 197 H366 V115" marker-end="url(#lqrReferenceArrow)"/>
+              <text x="42" y="78">r</text><text x="414" y="78">u</text><text x="681" y="78">x</text>
+            </svg>
+          </div>
+
+          <p>Choose <math class="inline-math" aria-label="N"><mi>N</mi></math> so that <math class="inline-math" aria-label="y sub ss equals r"><msub><mi>y</mi><mtext>ss</mtext></msub><mo>=</mo><mi>r</mi></math>. The nominal steady-state error then becomes zero. The required closed-form gain is</p>
+
+          <div class="math-block" aria-label="Closed-form LQR reference gain">
+            <math display="block">
+              <mrow>
+                <mi>N</mi><mo>=</mo><mo>−</mo>
+                <msup>
+                  <mrow>
+                    <mo>[</mo><mi>C</mi>
+                    <msup><mrow><mo stretchy="false">(</mo><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup>
+                    <mi>B</mi><mo>]</mo>
+                  </mrow>
+                  <mrow><mo>−</mo><mn>1</mn></mrow>
+                </msup>
+              </mrow>
+            </math>
+          </div>
+
+          <p>Here <math class="inline-math" aria-label="r belongs to R p"><mi>r</mi><mo>∈</mo><msup><mi>R</mi><mi>p</mi></msup></math> is the desired output. The precompensator <math class="inline-math" aria-label="N belongs to R m by p"><mi>N</mi><mo>∈</mo><msup><mi>R</mi><mrow><mi>m</mi><mo>×</mo><mi>p</mi></mrow></msup></math> maps that reference to the plant input. For a single-input single-output plant, <math class="inline-math" aria-label="N"><mi>N</mi></math> is a scalar. The matrix inverse above requires a square nonsingular steady-state input-output map.</p>
+
+          <p>This gain cancels steady-state error only for the nominal model and a constant reference. It does not reject an unknown constant disturbance. It also cannot correct a stiffness-dependent modeling error. Integral action is introduced when those forms of offset rejection are required.</p>
         </section>
 
         <section id="damage-objective" class="reveal">
@@ -1548,8 +1702,8 @@ yₖ   = C₀xₖ + γξₖC₁xₖ + vₖ</pre>
 
         function liveColor(condition) {
           const blend = Math.min(condition, 1);
-          const start = [232, 106, 146];
-          const end = [232, 106, 146];
+          const start = [216, 178, 76];
+          const end = [216, 178, 76];
           return `rgb(${start.map((value, index) => Math.round(value + (end[index] - value) * blend)).join(",")})`;
         }
 
