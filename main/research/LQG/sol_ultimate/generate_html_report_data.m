@@ -71,7 +71,11 @@ result.bode = struct('frequency_hz', frequencyHz, ...
 
 save(fullfile(studyFolder, 'html_report_plot_data.mat'), 'result')
 json = jsonencode(result);
-outputFile = fullfile(studyFolder, 'report_plot_data.js');
+webDataFolder = fullfile(studyFolder, 'LQG_web', 'data');
+if ~isfolder(webDataFolder)
+    mkdir(webDataFolder)
+end
+outputFile = fullfile(webDataFolder, 'report-plot-data.js');
 fileId = fopen(outputFile, 'w');
 cleanup = onCleanup(@() fclose(fileId));
 fprintf(fileId, 'window.SOL_ULTIMATE_PLOT_DATA = %s;\n', json);

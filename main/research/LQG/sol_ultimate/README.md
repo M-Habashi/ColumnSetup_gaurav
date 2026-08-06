@@ -6,7 +6,9 @@ The defensible direction is a **fixed pressure-coordinate robust LQGI**: one obs
 
 The literature audit also found direct integral-LQG RTHS precedents in [Zhang et al. (2022)](https://doi.org/10.6052/j.issn.1000-4750.2021.01.0023) and [Condori Uribe et al. (2023)](https://doi.org/10.3389/fbuil.2023.1270996). Therefore neither integral LQG nor adaptive integral-LQG-plus-prediction is the novelty. A publishable RTHS contribution must instead establish the pressure coordinate experimentally, use one fixed controller, certify the complete deployed loop, and beat those baselines under fair broadband and physical-RTHS tests.
 
-Open the [interactive HTML report](main/research/LQG/sol_ultimate/report.html) for the concise visual argument, linked 7k/5k step responses, and closed-loop Bode magnitude/phase plots. Read [REPORT.md](main/research/LQG/sol_ultimate/REPORT.md) for the full evidence, mathematics, literature boundary, and falsification plan.
+Open the [interactive HTML report](main/research/LQG/sol_ultimate/LQG_web/index.html) for the concise visual argument, linked 7k/5k step responses, and closed-loop Bode magnitude/phase plots. Read [REPORT.md](main/research/LQG/sol_ultimate/REPORT.md) for the full evidence, mathematics, literature boundary, and falsification plan.
+
+The report loads its article components with JavaScript. Serve `LQG_web` through a local HTTP server instead of opening `index.html` directly from the filesystem.
 
 ## Reproduce the numerical audit
 
@@ -31,4 +33,4 @@ To regenerate the HTML report's plotted data from the saved MATLAB models, run:
 generate_html_report_data
 ```
 
-This writes `html_report_plot_data.mat` with one top-level `result` struct and the browser-ready `report_plot_data.js` used by `report.html`.
+This writes `html_report_plot_data.mat` with one top-level `result` struct and refreshes `LQG_web/data/report-plot-data.js` for the component-based report.

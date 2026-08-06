@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Evidence-based robust LQG study for the Purdue ColumnSetup real-time hybrid simulation project.">
+  <title>Pressure-coordinate LQGI research report · sol_ultimate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/content.css">
+  <link rel="stylesheet" href="styles/visualizations.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body>
+  <header class="topbar" data-slot="header">
+    <button class="article-panel-toggle" type="button" id="articlePanelToggle" aria-controls="articlePanel" aria-expanded="false">
+      <span class="menu-mark" aria-hidden="true"></span><span>Articles</span>
+    </button>
+    <div class="brand"><strong>sol_ultimate</strong><span id="articleLabel">Robust LQGI study</span></div>
+    <button class="topbar-action" type="button" id="printReport">Print report</button>
+    <div class="reading-progress" id="readingProgress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+  </header>
+
+  <aside class="article-panel" id="articlePanel" aria-label="Report articles" aria-hidden="true">
+    <div class="article-panel-head">
+      <strong>Research articles</strong>
+      <button class="article-panel-close" type="button" id="articlePanelClose" aria-label="Close article panel">×</button>
+    </div>
+    <div class="article-list">
+      <button class="article-option is-active" type="button" data-article-target="article-1" aria-pressed="true">
+        <span class="article-number">01</span>
+        <span><strong>Pressure-coordinate LQGI</strong><span class="article-summary">Evidence audit, tracking literature, responses, and the fixed-controller direction.</span></span>
+      </button>
+      <button class="article-option" type="button" data-article-target="article-2" aria-pressed="false">
+        <span class="article-number">02</span>
+        <span><strong>Damage-ensemble LQGI</strong><span class="article-summary">A stiffness-integrated objective with a full-loop stability certificate.</span></span>
+      </button>
+    </div>
+  </aside>
+
+  <button class="article-panel-backdrop" type="button" id="articlePanelBackdrop" aria-label="Close article panel"></button>
+  <div id="articleMount"><p class="sr-only" role="status">Loading report articles.</p></div>
+  <noscript><main class="load-error"><h1>JavaScript is required</h1><p>This report assembles its article components in the browser.</p></main></noscript>
+
+  <script src="data/report-plot-data.js"></script>
+  <script src="data/sol-osi-bode-data.js"></script>
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>

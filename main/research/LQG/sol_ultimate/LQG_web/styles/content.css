@@ -1,0 +1,207 @@
+    h1, h2, h3 { margin: 0; color: #fffdf8; line-height: 1.2; }
+    h1 { max-width: none; font-size: var(--font-size-h1); font-weight: 600; letter-spacing: -0.03em; }
+    h2 { font-size: var(--font-size-h2); font-weight: 600; letter-spacing: -0.02em; }
+    h3 { font-size: var(--font-size-h3); font-weight: 600; }
+
+    .intro-copy > p,
+    .section-heading p,
+    section > p,
+    .panel p,
+    .math-note {
+      color: var(--text-body);
+      font-size: var(--font-size-body);
+      line-height: var(--line-height-body);
+    }
+
+    .intro-copy > p {
+      max-width: 760px;
+      margin: 18px 0 0;
+    }
+
+    .verdict {
+      border-left: 3px solid var(--accent);
+      padding: 4px 0 4px 20px;
+    }
+
+    .verdict strong { display: block; margin-bottom: 8px; font-size: 17px; }
+    .verdict p { margin: 0; color: var(--muted); }
+
+    section {
+      padding: 64px 0;
+      border-top: 1px solid var(--border);
+      scroll-margin-top: 78px;
+    }
+
+    .section-heading {
+      margin-bottom: 32px;
+    }
+
+    .section-heading p {
+      max-width: 760px;
+      margin: 12px 0 0;
+    }
+    .section-heading strong { color: var(--foreground); }
+
+    .table-shell {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 13px 15px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 13px; font-weight: 500; }
+    td { color: var(--muted-strong); }
+    tbody tr:last-child td { border-bottom: 0; }
+    td strong { color: var(--foreground); font-weight: 500; }
+    .number { text-align: right; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .critical { color: #e88f82; }
+    .good { color: #8ec595; }
+
+    .literature-table { min-width: 940px; }
+    .literature-table th:first-child { width: 17%; }
+    .literature-table th:nth-child(2) { width: 35%; }
+    .literature-table th:nth-child(n+3) { width: 16%; }
+    .literature-table td:nth-child(n+3) { font-size: 13px; }
+    .literature-table .verdict-word { display: block; margin-bottom: 3px; color: var(--foreground); font-weight: 500; }
+
+    .paper-table { min-width: 1120px; }
+    .paper-table th:first-child { width: 17%; }
+    .paper-table th:nth-child(2) { width: 22%; }
+    .paper-table th:nth-child(3) { width: 25%; }
+    .paper-table th:nth-child(4) { width: 18%; }
+    .paper-table th:nth-child(5) { width: 18%; }
+    .paper-table td { font-size: 13px; }
+    .paper-table a { color: var(--foreground); text-decoration-color: var(--accent); text-underline-offset: 3px; }
+
+    .finding-grid,
+    .method-grid,
+    .certificate-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .finding-grid {
+      margin-top: 20px;
+    }
+
+    .panel,
+    .certificate {
+      height: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 24px;
+    }
+
+    .panel h3,
+    .certificate h3 { margin-bottom: 12px; }
+    .panel p,
+    .certificate p { margin: 0; }
+    .panel p + p,
+    .certificate p + p { margin-top: 12px; }
+
+    .failure-scale { margin-top: 18px; }
+    .scale-row {
+      display: grid;
+      grid-template-columns: 105px 1fr 72px;
+      gap: 12px;
+      align-items: center;
+      margin: 11px 0;
+    }
+
+    .scale-row span:first-child { color: var(--muted); }
+    .scale-track { position: relative; height: 8px; background: #2b2a26; }
+    .scale-fill { height: 100%; background: var(--accent); }
+    .scale-fill.target { background: #6f746c; }
+    .scale-value { text-align: right; font-family: var(--font-mono); font-size: 13px; }
+
+    .tabs {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      margin-bottom: -1px;
+      padding: 9px 1px 10px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 160ms ease, border-color 160ms ease;
+    }
+
+    .tab:hover, .tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
+
+    .plot-block + .plot-block { margin-top: 28px; }
+    .plot-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 12px;
+    }
+
+    .plot-header p { max-width: 720px; margin: 5px 0 0; color: var(--muted); }
+    .plot-action {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--foreground);
+      padding: 7px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .plot-action:hover { background: var(--card-strong); }
+
+    .plot-shell {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--plot);
+    }
+
+    .plot-shell svg { display: block; width: 100%; min-height: 320px; }
+    .plot-shell.compact svg { min-height: 280px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 18px;
+      padding: 10px 14px;
+      border-top: 1px solid #d4cfc5;
+      background: #ece8df;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      border: 0;
+      border-bottom: 1px solid transparent;
+      background: transparent;
+      color: #3c3a35;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .legend-item:hover { border-bottom-color: #777268; }
+    .legend-item[aria-pressed="false"] { opacity: 0.42; }
+    .legend-line { width: 24px; height: 0; border-top: 3px solid currentColor; }
+    .legend-line.is-dashed { border-top-style: dashed; }
+
+    .plot-note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+

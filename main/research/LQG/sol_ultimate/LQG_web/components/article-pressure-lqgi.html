@@ -1,0 +1,394 @@
+  <article class="report-article is-active" id="article-1" data-article="article-1">
+  <div class="report-intro">
+    <header class="intro reveal">
+      <div class="intro-copy">
+        <h1>A fixed pressure-coordinate LQGI direction for pressure-loss RTHS</h1>
+        <p>The existing controller fails primarily at output regulation, not state-feedback stability. The defensible direction is one fixed integral observer-controller built on an experimentally validated pressure coordinate and certified in the complete deployed loop.</p>
+      </div>
+      <aside>
+        <div class="verdict" data-slot="alert">
+          <strong>Develop the RTHS hypothesis, not a new LQG theory.</strong>
+          <p>Integral-state LQG already exists in physical RTHS. Publication depends on validating the pressure coordinate and beating those baselines under identical broadband and complete-loop conditions.</p>
+        </div>
+      </aside>
+    </header>
+  </div>
+
+  <div class="report-layout">
+    <aside class="toc-rail">
+      <nav class="toc-nav" aria-label="Report sections">
+        <h2 class="rail-title">Technical sections</h2>
+        <div class="nav">
+          <a class="is-active" href="#findings"><span class="nav-index">01</span><span>Evidence audit</span></a>
+          <a href="#tracking-literature"><span class="nav-index">02</span><span>Tracking mechanisms</span></a>
+          <a href="#responses"><span class="nav-index">03</span><span>Step and Bode responses</span></a>
+          <a href="#method"><span class="nav-index">04</span><span>Pressure-coordinate LQGI</span></a>
+          <a href="#rths"><span class="nav-index">05</span><span>RTHS integration</span></a>
+          <a href="#validation"><span class="nav-index">06</span><span>Publication gates</span></a>
+          <a href="#novelty"><span class="nav-index">07</span><span>Novelty boundary</span></a>
+        </div>
+      </nav>
+    </aside>
+
+    <main>
+    <section id="findings" class="reveal">
+      <div class="section-heading">
+        <h2>What the evidence rules out</h2>
+        <p><strong>The saved 5k metrics mask the actual error.</strong> Settling and overshoot were computed around a final response of 6.7666 rather than the unit target. A more robust state-feedback gain alone does not address that failure.</p>
+      </div>
+
+      <div class="table-shell" data-slot="table">
+        <table>
+          <thead>
+            <tr><th>Controller and condition</th><th class="number">Final value</th><th class="number">Target error</th><th class="number">Overshoot</th><th class="number">Settling</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Saved PID · 7k</td><td class="number">0.9954</td><td class="number">−0.46%</td><td class="number">≈0%</td><td class="number">0.469 s</td></tr>
+            <tr><td>Full-state LQR · 7k</td><td class="number">1.0000</td><td class="number">0%</td><td class="number">8.49%</td><td class="number">0.024 s</td></tr>
+            <tr><td>Saved PID · 5k</td><td class="number">0.9844</td><td class="number">−1.56%</td><td class="number">≈0%</td><td class="number">0.237 s</td></tr>
+            <tr><td><strong>Same full-state LQR · 5k</strong></td><td class="number critical">6.7666</td><td class="number critical">+576.66%</td><td class="number">23.44%*</td><td class="number">0.0505 s*</td></tr>
+            <tr><td><strong>Classical LQGI · 5k</strong></td><td class="number good">1.0000</td><td class="number good">0%</td><td class="number">4.65%</td><td class="number">0.0596 s</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="plot-note">*Reported around the wrong 5k final value, not around the desired value 1.</p>
+
+      <div class="finding-grid">
+        <article class="panel" data-slot="card">
+          <h3>The nominal precompensator is the first failure</h3>
+          <p>The required static gains are 7.1730 at 7k and 1.0601 at 5k. Reusing the nominal value multiplies the 5k steady response by 6.7666.</p>
+          <div class="failure-scale" aria-label="Steady response comparison">
+            <div class="scale-row"><span>Target</span><div class="scale-track"><div class="scale-fill target" style="width:14.8%"></div></div><span class="scale-value">1.000</span></div>
+            <div class="scale-row"><span>LQR · 5k</span><div class="scale-track"><div class="scale-fill" style="width:100%"></div></div><span class="scale-value critical">6.767</span></div>
+            <div class="scale-row"><span>LQGI · 5k</span><div class="scale-track"><div class="scale-fill target" style="width:14.8%"></div></div><span class="scale-value good">1.000</span></div>
+          </div>
+        </article>
+        <article class="panel" data-slot="card">
+          <h3>Ordinary LQG tuning is not a remedy</h3>
+          <p>A 161-point Kalman covariance sweep kept every 7k loop stable, but only 86 5k loops. Stable 5k final values remained between 2.4117 and 3.6845.</p>
+          <p>The best apparent tracking point had ‖L‖₂ = 1.49×10⁻⁵: the observer had nearly stopped using the measurement.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="tracking-literature" class="reveal">
+      <div class="section-heading">
+        <h2>How the literature handles stable but wrong tracking</h2>
+        <p><strong>Stability determines whether the response settles; the tracking mechanism determines where it settles.</strong> The distinction below separates exact-model tracking from robust rejection of unknown constant mismatch.</p>
+      </div>
+
+      <div class="table-shell" data-slot="table">
+        <table class="literature-table">
+          <thead>
+            <tr><th>Method</th><th>Higher-level concept</th><th>Explicit integrator?</th><th>Nominal zero error?</th><th>Robust zero error?</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>N̄ reference prefilter</strong></td>
+              <td>Calculate the exact reference scaling from the nominal closed-loop DC gain.</td>
+              <td><span class="verdict-word">No</span>N̄ is a static number.</td>
+              <td><span class="verdict-word good">Yes</span>The nominal DC gain is forced to one.</td>
+              <td><span class="verdict-word critical">No</span>Plant mismatch makes the calculated scaling wrong.</td>
+            </tr>
+            <tr>
+              <td><strong>Equilibrium / target calculation</strong></td>
+              <td>Find the state and holding input at the desired output, then regulate deviations from that point.</td>
+              <td><span class="verdict-word">No</span>The target is solved algebraically.</td>
+              <td><span class="verdict-word good">Yes</span>The nominal equilibrium satisfies y = r.</td>
+              <td><span class="verdict-word critical">No</span>The true equilibrium changes with stiffness or load.</td>
+            </tr>
+            <tr>
+              <td><strong>LQT / trajectory feedforward</strong></td>
+              <td>Predict the state and input trajectory required for the desired motion; feedback corrects deviations.</td>
+              <td><span class="verdict-word">No</span>Tracking is model-based feedforward.</td>
+              <td><span class="verdict-word good">Yes</span>When the trajectory model is exact.</td>
+              <td><span class="verdict-word critical">No</span>Persistent prediction error produces persistent tracking error.</td>
+            </tr>
+            <tr>
+              <td><strong>Inverse / predictive feedforward</strong></td>
+              <td>Undo or anticipate plant dynamics so the actuator reproduces the requested command.</td>
+              <td><span class="verdict-word">No</span>No accumulated error state is required.</td>
+              <td><span class="verdict-word good">Usually</span>If the inverse and delay model are accurate.</td>
+              <td><span class="verdict-word critical">No</span>Uncertainty and unmodeled delay corrupt the inverse.</td>
+            </tr>
+            <tr>
+              <td><strong>Adaptive feedforward</strong></td>
+              <td>Learn or update the command correction online as the plant changes.</td>
+              <td><span class="verdict-word">No</span>The inverse parameters adapt instead.</td>
+              <td><span class="verdict-word good">Potentially</span>After correct parameter convergence.</td>
+              <td><span class="verdict-word critical">Not guaranteed</span>It requires excitation, convergence, and a correct model class.</td>
+            </tr>
+            <tr>
+              <td><strong>Disturbance / bias observer</strong></td>
+              <td>Estimate the unknown constant input responsible for the offset, then cancel it.</td>
+              <td><span class="verdict-word">Hidden</span>ḋ = 0 embeds a pole at s = 0.</td>
+              <td><span class="verdict-word good">Yes</span>The augmented equilibrium includes the bias.</td>
+              <td><span class="verdict-word good">Conditional</span>For observable disturbances in the modeled disturbance subspace.</td>
+            </tr>
+            <tr>
+              <td><strong>LQI / LQGI</strong></td>
+              <td>Accumulate persistent output error until the controller discovers the required holding input.</td>
+              <td><span class="verdict-word">Yes</span>η̇ = r − y is explicit.</td>
+              <td><span class="verdict-word good">Yes</span>A stable equilibrium cannot retain nonzero constant error.</td>
+              <td><span class="verdict-word good">Conditional</span>For constant disturbances when the augmented plant is stabilizable and unsaturated.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="plot-note"><strong>N̄ and equilibrium targeting are the same control concept:</strong> if x<sub>r</sub> = Xr and u<sub>r</sub> = Ur, then u = u<sub>r</sub> − K(x − x<sub>r</sub>) = −Kx + (U + KX)r, so N̄ = U + KX and both implementations are numerically equivalent apart from roundoff.</p>
+
+      <div class="plot-header" style="margin-top:36px">
+        <div>
+          <h3>Where robustness enters the published RTHS controllers</h3>
+          <p>The label “robust” covers different mechanisms. Only the LQG/LTR designs modify the ordinary LQG loop specifically to recover feedback margins.</p>
+        </div>
+      </div>
+      <div class="table-shell" data-slot="table">
+        <table class="paper-table">
+          <thead>
+            <tr><th>Paper</th><th>Modification or addition</th><th>High-level robustness concept</th><th>Riccati impact</th><th>Main limitation</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="https://doi.org/10.1016/j.ymssp.2019.106260">Zhou et al. · 2019</a></td>
+              <td>LQG/LTR feedback plus polynomial forward prediction.</td>
+              <td>Recover the favorable full-state LQR loop shape; separately predict through actuator delay.</td>
+              <td>Standard Riccati forms remain; LTR deliberately retunes the estimator weights.</td>
+              <td>Improved margins do not create an internal model or guarantee zero offset under DC-gain error.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.1016/j.ymssp.2019.05.041">Fermandois · 2019</a></td>
+              <td>Proper inverse feedforward plus an LQG/LTR feedback regulator.</td>
+              <td>Let the inverse track the reference while loop-shaped feedback rejects disturbances and sensor noise.</td>
+              <td>Same LQG/LTR Riccati procedure; the inverse is an external two-degree-of-freedom block.</td>
+              <td>Inverse accuracy limits tracking; nonminimum-phase behavior and delay restrict achievable bandwidth.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.1061/(ASCE)ST.1943-541X.0000606">Phillips and Spencer · 2013</a></td>
+              <td>Model-inverse feedforward plus ordinary LQG feedback.</td>
+              <td>Nominal model cancellation performs tracking; feedback corrects moderate model error and disturbances.</td>
+              <td>No modified Riccati equation; conventional LQR and Kalman equations are used.</td>
+              <td>Practical tolerance, not a formal uncertainty-set guarantee; persistent gain error can leave offset.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.6052/j.issn.1000-4750.2021.01.0023">Zhang et al. · 2022</a></td>
+              <td>Fixed integral-state LQG plus online least-squares adaptive time-series prediction.</td>
+              <td>The integrator corrects persistent error; the predictor relearns changing actuator delay.</td>
+              <td>The control Riccati equation uses the integral-augmented plant; LQG gains remain fixed.</td>
+              <td>Adaptation needs informative data and a suitable predictor; it is not certified for arbitrary plant change.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.3389/fbuil.2023.1270996">Condori Uribe et al. · 2023</a></td>
+              <td>Integral tracking-error state, augmented LQR, and a conventional Kalman estimator.</td>
+              <td>Embed a constant-signal internal model so a stable equilibrium must have zero constant error.</td>
+              <td>The control Riccati equation is enlarged by the integral state; the estimator Riccati equation is conventional.</td>
+              <td>Rejects compatible constant mismatch, but does not guarantee stability for arbitrary dynamic uncertainty or delay.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.1002/eqe.2479">Ou et al. · 2015</a></td>
+              <td>H∞ loop-shaping feedback, linear-quadratic estimation, and feedforward.</td>
+              <td>Bound worst-case weighted disturbance amplification; use LQE for noise and feedforward for residual lag.</td>
+              <td>The robust feedback is H∞ synthesis, not an LQR Riccati modification; LQE remains separate.</td>
+              <td>Weight selection is demanding, the controller can be higher order, and the guarantee matches only modeled uncertainty channels.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.1016/j.ymssp.2019.06.023">Najafi and Spencer · 2019</a></td>
+              <td>Reference model, feedforward-feedback structure, and online adaptation law.</td>
+              <td>Continuously change controller parameters so the uncertain plant follows chosen reference dynamics.</td>
+              <td>No LQG Riccati modification; robustness comes from the adaptive law.</td>
+              <td>Depends on adaptation assumptions, excitation, constraints, and the uncertainty structure.</td>
+            </tr>
+            <tr>
+              <td><a href="https://doi.org/10.3389/fbuil.2024.1384235">Aguila et al. · 2024</a></td>
+              <td>Conditional adaptive time-series compensation added to baseline LQG.</td>
+              <td>Adapt the feedforward prediction when delay behavior changes; retain LQG for feedback and estimation.</td>
+              <td>No change to the LQG Riccati equations.</td>
+              <td>Robustness is primarily to changing delay, not a general guarantee against stiffness-dependent DC-gain error.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="plot-note"><strong>Interpretation rule:</strong> additive-noise optimality, parametric robustness, delay adaptation, and robust zero-offset regulation are different claims. A controller may satisfy one without satisfying the others.</p>
+    </section>
+
+    <section id="responses" class="reveal">
+      <div class="section-heading">
+        <h2>Step and Bode responses</h2>
+        <p>Every curve below is regenerated from the saved MATLAB models. Use the linked operating-condition tabs and click legend entries to isolate a controller.</p>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Operating condition">
+        <button class="tab condition-tab" type="button" role="tab" aria-selected="true" data-condition="condition7k">7k condition</button>
+        <button class="tab condition-tab" type="button" role="tab" aria-selected="false" data-condition="condition5k">5k condition</button>
+      </div>
+
+      <article class="plot-block">
+        <div class="plot-header">
+          <div>
+            <h3>Unit-reference step response</h3>
+            <p id="stepDescription">At 7k, LQR is fast but aggressive; LQGI trades some settling speed for implementable output regulation and lower command effort.</p>
+          </div>
+          <button class="plot-action" type="button" id="stepScaleButton" hidden>Focus on unit target</button>
+        </div>
+        <figure class="plot-shell" data-slot="chart">
+          <div id="stepChart" aria-label="Interactive unit step response chart"></div>
+          <figcaption id="stepLegend" class="legend"></figcaption>
+        </figure>
+        <p class="plot-note" id="stepNote">The ordinary nominal-observer LQG overlaps the nominal full-state LQR at 7k and is hidden initially.</p>
+      </article>
+
+      <article class="plot-block">
+        <div class="plot-header">
+          <div>
+            <h3>Closed-loop Bode response</h3>
+            <p>Magnitude and phase are linked over the experimentally supported 2–80 Hz band. LQGI fixes DC regulation, but its broadband error remains comparable to the saved PID.</p>
+          </div>
+        </div>
+        <div class="bode-grid">
+          <figure class="plot-shell compact" data-slot="chart">
+            <div id="bodeMagnitude" aria-label="Closed-loop Bode magnitude chart"></div>
+            <figcaption id="bodeMagnitudeLegend" class="legend"></figcaption>
+          </figure>
+          <figure class="plot-shell compact" data-slot="chart">
+            <div id="bodePhase" aria-label="Closed-loop Bode phase chart"></div>
+            <figcaption id="bodePhaseLegend" class="legend"></figcaption>
+          </figure>
+        </div>
+      </article>
+    </section>
+
+    <section id="method" class="reveal">
+      <div class="section-heading">
+        <h2>Fixed pressure-coordinate robust LQGI</h2>
+        <p>The method uses one physical idea: <strong>pressure loss may drive the observed changes in dynamics, actuation, and measurement through one common coordinate.</strong> That hypothesis must first survive identification at three or more pressure conditions.</p>
+      </div>
+
+      <div class="method-grid">
+        <article class="panel" data-slot="card">
+          <h3>One candidate pressure coordinate</h3>
+          <pre class="equation">A₀ = (A₇ + A₅) / 2     A₁ = (A₇ − A₅) / 2
+B₀ = (B₇ + B₅) / 2     B₁ = (B₇ − B₅) / 2
+C₀ = (C₇ + C₅) / 2     C₁ = (C₇ − C₅) / 2
+
+xₖ₊₁ = A₀xₖ + B₀uₖ + γξₖ(A₁xₖ + B₁uₖ) + wₖ
+yₖ   = C₀xₖ + γξₖC₁xₖ + vₖ</pre>
+          <p>One shared scalar ξ multiplies the complete secant. With only 5k and 7k, this is a model hypothesis—not evidence: any two points define a line. A common grey-box basis and a held-out pressure are required.</p>
+        </article>
+
+        <article class="panel" data-slot="card">
+          <h3>Why retain the secant diagnostic</h3>
+          <div class="tangent-figure">
+            <svg viewBox="0 0 620 250" role="img" aria-labelledby="tangentTitle tangentDesc">
+              <title id="tangentTitle">Shared endpoint secant geometry</title>
+              <desc id="tangentDesc">The 5k and 7k endpoint models define a candidate operating direction through the midpoint model.</desc>
+              <line x1="92" y1="128" x2="528" y2="128" stroke="#57554f" stroke-width="2" />
+              <line x1="310" y1="65" x2="310" y2="191" stroke="#34332e" stroke-width="1" stroke-dasharray="5 6" />
+              <circle cx="120" cy="128" r="8" fill="#39bf5e" />
+              <circle cx="310" cy="128" r="7" fill="#d8d3c8" />
+              <circle cx="500" cy="128" r="8" fill="#007ca8" />
+              <path d="M 310 104 L 462 104" fill="none" stroke="#ac6420" stroke-width="3" />
+              <path d="M 462 98 L 475 104 L 462 110" fill="#ac6420" />
+              <text x="96" y="158" fill="#c9c5bb" font-family="IBM Plex Sans" font-size="14">5k endpoint</text>
+              <text x="280" y="218" fill="#c9c5bb" font-family="IBM Plex Sans" font-size="14">midpoint</text>
+              <text x="468" y="158" fill="#c9c5bb" font-family="IBM Plex Sans" font-size="14">7k endpoint</text>
+              <text x="342" y="91" fill="#d28a49" font-family="IBM Plex Mono" font-size="13">shared ΔA, ΔB, ΔC</text>
+              <text x="226" y="35" fill="#aaa69d" font-family="IBM Plex Sans" font-size="13">ρ ∈ [−1, 1] for frozen pressure variation</text>
+            </svg>
+          </div>
+          <p>The exact discrete secant is numerically rank six, while a margin-validated rank-three approximation reproduces the integral-loop stochastic radius to 6.5×10⁻⁷ relative error. This is a useful computation, not a novelty claim.</p>
+        </article>
+      </div>
+
+      <div class="flow-diagram" aria-label="Pressure-coordinate LQGI controller flow">
+        <div class="flow-node"><strong>Measured output</strong><span>dₘ updates the fixed observer</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>State estimate</strong><span>x̂ carries the nominal midpoint dynamics</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>Error integral</strong><span>ηₖ₊₁ = ηₖ + Tₛ(rₖ − yₖ)</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>Fixed command</strong><span>uₖ = −Kx̂ₖ − kᵢηₖ</span></div>
+      </div>
+
+      <div class="certificate-grid">
+        <article class="certificate">
+          <h3>Mean-square secant diagnostic</h3>
+          <pre class="equation">ρ(M₀ ⊗ M₀ + γ² M₁ ⊗ M₁) &lt; 1</pre>
+          <p>Quantifies RMS stochastic scaling along the measured pressure direction. It couples estimator aggressiveness to uncertainty instead of invoking classical separation.</p>
+        </article>
+        <article class="certificate">
+          <h3>Frozen-parameter guaranteed cost</h3>
+          <pre class="equation">M±ᵀ P M± − P + E±ᵀ E± ≺ 0</pre>
+          <p>One common P bounds tracking and command cost at both endpoints and, by matrix convexity, over the complete affine interval.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="rths" class="reveal">
+      <div class="section-heading">
+        <h2>Fit to the live RTHS loop</h2>
+        <p>The identified d<sub>c</sub>→d<sub>m</sub> plant is only one part of the experiment. A valid journal certificate must contain force feedback, the numerical FEM, phase lead, fixed delay, and applied-command scaling.</p>
+      </div>
+
+      <div class="flow-diagram" aria-label="Current live RTHS signal loop">
+        <div class="flow-node"><strong>Measured force fₘ</strong><span>Feeds the numerical substructure</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>step_HS</strong><span>Produces raw interface target dₙ</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>Phase lead G<sub>T</sub></strong><span>Produces controller target d<sub>d</sub></span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>Fixed robust LQGI</strong><span>Observer, integral state, command</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>2a<sub>OSI</sub> + saturation</strong><span>Applied command d<sub>c</sub>, ±70 mm</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><strong>Actuator + specimen</strong><span>Returns dₘ and fₘ</span></div>
+      </div>
+
+      <div class="callout" data-slot="alert">
+        <strong>Required architecture correction</strong>
+        <p>For the formal pressure-coordinate LQGI experiment, either make the external gain unity and retain SOL-OSI only as a monitor, or feed the post-authority, post-saturation d<sub>c</sub> back to the observer and anti-windup logic. Otherwise the deployed plant input differs from the input assumed by the certificate.</p>
+      </div>
+    </section>
+
+    <section id="validation" class="reveal">
+      <div class="section-heading">
+        <h2>Publication gates</h2>
+        <p>The proposal is intentionally falsifiable. Failure of any of the first three gates means the one-coordinate paper should be rejected or reframed.</p>
+      </div>
+
+      <div class="table-shell" data-slot="table">
+        <table class="gate-table">
+          <thead><tr><th>Gate</th><th>Required test</th><th>Pass condition</th></tr></thead>
+          <tbody>
+            <tr><td>Model</td><td>Identify at least three pressure conditions in one common basis; hold out an intermediate condition, preferably 6k.</td><td>Affine-family residual stays within independent identification uncertainty in state-space and FRF tests.</td></tr>
+            <tr><td>Comparator</td><td>Tune PID, realizable LQG, classical LQGI, Zhang ALQG, Condori LQG, RLQG/LTR, oracle scheduling, and the proposed fixed controller under the same limits.</td><td>The proposed controller improves worst-case RTHS accuracy at comparable noise and command effort.</td></tr>
+            <tr><td>Certificate</td><td>Include numerical FEM states, fₘ→dₙ feedthrough, phase lead, delay, and fixed scaling.</td><td>One common guaranteed-cost certificate covers both endpoints and the interval.</td></tr>
+            <tr><td>Bandwidth</td><td>Use raw-band magnitude, phase, coherence, and 2–80 Hz error in addition to J1–J7.</td><td>Improvement survives broadband and seismic records, not only unit steps.</td></tr>
+            <tr><td>Experiment</td><td>Run abrupt 7k→5k, slow drift, unseen ground motions, noise repetitions, and initialization errors.</td><td>No saturation-dominated result, estimator divergence, pause, or safety trip.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="novelty" class="reveal">
+      <div class="section-heading">
+        <h2>Defensible novelty boundary</h2>
+        <p>Do not claim a new multiplicative-noise LQG, integral LQG, low-rank mean-square radius, common-P test, or generic robust LQG. The possible contribution is an experimentally established pressure coordinate, one fixed controller, and a complete deployed-RTHS-loop certificate.</p>
+      </div>
+
+      <div class="table-shell" data-slot="table">
+        <table>
+          <thead><tr><th>Claim element</th><th>Prior-art result</th><th>Decision</th></tr></thead>
+          <tbody>
+            <tr><td>Integral-state LQG in physical RTHS</td><td>Zhang et al. 2022; Condori Uribe et al. 2023</td><td class="critical">Already published</td></tr>
+            <tr><td>One shared stochastic scalar in A, B, and C</td><td>Bernstein 1987 and later multiplicative-noise output-feedback theory</td><td class="critical">Already published</td></tr>
+            <tr><td>Proposed RTHS contribution</td><td>Validated pressure coordinate + fixed LQGI + complete-loop certificate + physical comparison</td><td class="good">Conditionally defensible</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sources">
+        <p><a href="https://doi.org/10.1061/(ASCE)ST.1943-541X.0000606">Phillips and Spencer · Feedforward-feedback RTHS control</a><br>Uses model-based feedforward for tracking while feedback corrects deviations, illustrating the non-integral nominal-tracking route.</p>
+        <p><a href="https://doi.org/10.6052/j.issn.1000-4750.2021.01.0023">Zhang et al. · Adaptive LQG for RTHS</a><br>Uses a fixed integral-state LQG with an online least-squares ATS predictor in physical train–bridge RTHS.</p>
+        <p><a href="https://doi.org/10.3389/fbuil.2023.1270996">Condori Uribe et al. · Integral-state LQG for maRTHS</a><br>Augments tracking error, applies LQR, and estimates unavailable states with a Kalman filter in physical two-actuator maRTHS.</p>
+        <p><a href="https://doi.org/10.1016/j.ymssp.2019.106260">Zhou et al. · Robust LQG/LTR for RTHS</a><br>Establishes that robust LQG and loop-transfer recovery are already present in the field.</p>
+        <p><a href="https://doi.org/10.1016/0005-1098(76)90006-6">Francis and Wonham · Internal-model principle</a><br>Establishes why robust rejection of an unknown constant requires a controller-internal model of a constant signal.</p>
+        <p><a href="https://doi.org/10.1016/S0959-1524(01)00051-8">Muske and Badgwell · Offset-free disturbance modeling</a><br>Shows the disturbance-state route: estimate a constant bias and recompute the steady-state target rather than display an explicit integral gain.</p>
+        <p><a href="https://doi.org/10.1109/TAC.1987.1104517">Bernstein · Structured stochastic uncertainty</a><br>Uses shared stochastic parameters in structured plant directions, precluding that general theory claim.</p>
+        <p><a href="REPORT.md">Complete technical report</a><br>Contains derivations, numerical provenance, rejected alternatives, and the full falsification plan.</p>
+      </div>
+    </section>
+    </main>
+  </div>
+  </article>
