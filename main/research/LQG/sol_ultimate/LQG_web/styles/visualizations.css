@@ -42,6 +42,8 @@
     .damage-bode-margin-label { fill: var(--osi-ink); font-weight: 700; }
 
     .damage-bode-controls {
+      position: sticky;
+      top: 78px;
       padding-left: 18px;
       border-left: 1px solid var(--osi-line);
       color: var(--osi-ink);

@@ -47,7 +47,7 @@
       .plot-header { flex-direction: column; }
       .plot-shell svg { min-height: 280px; }
       .damage-bode-explorer { grid-template-columns: 1fr; }
-      .damage-bode-controls { padding: 17px 0 0; border-top: 1px solid var(--osi-line); border-left: 0; }
+      .damage-bode-controls { position: static; padding: 17px 0 0; border-top: 1px solid var(--osi-line); border-left: 0; }
     }
 
     @media (max-width: 720px) {
