@@ -1,6 +1,7 @@
 "use strict";
 
-import { createParametricStepResponse } from "./step-response.js?v=20260806-10";
+import { attachAxisZoom, formatAxisTick, linearTicks, scaleLinear } from "./axis-zoom.js?v=20260808-1";
+import { createParametricStepResponse } from "./step-response.js?v=20260808-1";
 
 const chartNamespace = "http://www.w3.org/2000/svg";
 
@@ -16,9 +17,11 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
         const updateStep = createParametricStepResponse("damage", reportData?.stiffness_step);
 
         const box = { left: 66, right: 650, top: 26, bottom: 222 };
-        const xScale = frequency => box.left + frequency / 100 * (box.right - box.left);
-        const magnitudeScale = db => box.bottom - (db + 30) / 70 * (box.bottom - box.top);
-        const phaseScale = degrees => box.bottom - (degrees + 450) / 450 * (box.bottom - box.top);
+        const frequencies = osiBodeData.map(row => row[0]);
+        const magnitudeDomain = { x: [0, 100], y: [-30, 40] };
+        const phaseDomain = { x: [0, 100], y: [-450, 0] };
+        const magnitudeScale = db => scaleLinear(db, magnitudeDomain.y, [box.bottom, box.top]);
+        const phaseScale = degrees => scaleLinear(degrees, phaseDomain.y, [box.bottom, box.top]);
         const complex = (re, im) => ({ re, im });
         const magnitudeDb = value => 20 * Math.log10(Math.max(Math.hypot(value.re, value.im), 1e-12));
         const pathFrom = points => points.map((point, index) => `${index ? "L" : "M"}${point[0].toFixed(1)},${point[1].toFixed(1)}`).join(" ");
@@ -42,16 +45,17 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
           group.appendChild(text);
         }
 
-        function drawGrid(group, yTicks, yMap, title, showFrequency) {
-          [0, 20, 40, 60, 80, 100].forEach(frequency => {
-            const x = xScale(frequency);
+        function drawGrid(group, domain, yMap, title, showFrequency) {
+          group.replaceChildren();
+          linearTicks(domain.x, 5).forEach(frequency => {
+            const x = scaleLinear(frequency, domain.x, [box.left, box.right]);
             addLine(group, x, box.top, x, box.bottom);
-            if (showFrequency) addText(group, x, box.bottom + 20, frequency);
+            if (showFrequency) addText(group, x, box.bottom + 20, formatAxisTick(frequency, domain.x[1] - domain.x[0]));
           });
-          yTicks.forEach(value => {
+          linearTicks(domain.y, 5).forEach(value => {
             const y = yMap(value);
             addLine(group, box.left, y, box.right, y);
-            addText(group, box.left - 10, y + 4, value, "end");
+            addText(group, box.left - 10, y + 4, formatAxisTick(value, domain.y[1] - domain.y[0]), "end");
           });
           addLine(group, box.left, box.top, box.left, box.bottom, "damage-bode-axis");
           addLine(group, box.left, box.bottom, box.right, box.bottom, "damage-bode-axis");
@@ -115,21 +119,31 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
           return `${stiffness.toFixed(1)}k (${damage}%)${note}`;
         }
 
-        drawGrid(document.getElementById("damageBodeMagGrid"), [-30, -20, -10, 0, 10, 20, 30, 40], magnitudeScale, "Magnitude (dB)", false);
-        drawGrid(document.getElementById("damageBodePhaseGrid"), [-450, -360, -270, -180, -90, 0], phaseScale, "Phase (deg)", true);
-        const criticalY = phaseScale(-180);
+        const magnitudeGrid = document.getElementById("damageBodeMagGrid");
+        const phaseGrid = document.getElementById("damageBodePhaseGrid");
         const criticalLine = document.getElementById("damagePhaseCritical");
-        Object.entries({ x1: box.left, x2: box.right, y1: criticalY, y2: criticalY }).forEach(([key, value]) => criticalLine.setAttribute(key, value));
         const criticalLabel = document.getElementById("damagePhaseCriticalLabel");
-        criticalLabel.setAttribute("x", box.right - 5);
-        criticalLabel.setAttribute("y", criticalY - 6);
-        criticalLabel.setAttribute("text-anchor", "end");
+        let criticalY;
+
+        function drawAxes() {
+          drawGrid(magnitudeGrid, magnitudeDomain, magnitudeScale, "Magnitude (dB)", false);
+          drawGrid(phaseGrid, phaseDomain, phaseScale, "Phase (deg)", true);
+          criticalY = phaseScale(-180);
+          const showCritical = -180 >= phaseDomain.y[0] && -180 <= phaseDomain.y[1];
+          criticalLine.style.display = showCritical ? "" : "none";
+          criticalLabel.style.display = showCritical ? "" : "none";
+          Object.entries({ x1: box.left, x2: box.right, y1: criticalY, y2: criticalY }).forEach(([key, value]) => criticalLine.setAttribute(key, value));
+          criticalLabel.setAttribute("x", box.right - 5);
+          criticalLabel.setAttribute("y", criticalY - 6);
+          criticalLabel.setAttribute("text-anchor", "end");
+        }
+
+        drawAxes();
 
         function update() {
           const condition = Number(document.getElementById("damagePlantSlider").value);
           const alpha = Number(document.getElementById("damageAlphaSlider").value);
           const closed = document.getElementById("damageLoopModeSwitch").checked;
-          const frequencies = osiBodeData.map(row => row[0]);
           const openLive = osiBodeData.map(row => complex(
             alpha * (row[1] + (row[3] - row[1]) * condition),
             alpha * (row[2] + (row[4] - row[2]) * condition)
@@ -141,10 +155,10 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
           const referenceMagnitude = shownReference.map(magnitudeDb);
           const livePhase = unwrapPhase(shownLive);
           const referencePhase = unwrapPhase(shownReference);
-          document.getElementById("damageBodeMagLive").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [xScale(frequency), magnitudeScale(liveMagnitude[index])])));
-          document.getElementById("damageBodeMagReference").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [xScale(frequency), magnitudeScale(referenceMagnitude[index])])));
-          document.getElementById("damageBodePhaseLive").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [xScale(frequency), phaseScale(livePhase[index])])));
-          document.getElementById("damageBodePhaseReference").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [xScale(frequency), phaseScale(referencePhase[index])])));
+          document.getElementById("damageBodeMagLive").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [scaleLinear(frequency, magnitudeDomain.x, [box.left, box.right]), magnitudeScale(liveMagnitude[index])])));
+          document.getElementById("damageBodeMagReference").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [scaleLinear(frequency, magnitudeDomain.x, [box.left, box.right]), magnitudeScale(referenceMagnitude[index])])));
+          document.getElementById("damageBodePhaseLive").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [scaleLinear(frequency, phaseDomain.x, [box.left, box.right]), phaseScale(livePhase[index])])));
+          document.getElementById("damageBodePhaseReference").setAttribute("d", pathFrom(frequencies.map((frequency, index) => [scaleLinear(frequency, phaseDomain.x, [box.left, box.right]), phaseScale(referencePhase[index])])));
           const color = liveColor(condition);
           document.getElementById("damageBodeMagLive").style.stroke = color;
           document.getElementById("damageBodePhaseLive").style.stroke = color;
@@ -165,7 +179,7 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
           clearGroup(gainGroup);
           clearGroup(phaseGroup);
           if (phaseCross) {
-            const x = xScale(phaseCross.frequency);
+            const x = scaleLinear(phaseCross.frequency, magnitudeDomain.x, [box.left, box.right]);
             const curveY = magnitudeScale(interpolateAt(openMagnitude, phaseCross));
             addLine(gainGroup, x, closed ? box.top : curveY, x, closed ? box.bottom : magnitudeScale(0), "damage-bode-margin-guide");
             if (!closed) {
@@ -175,7 +189,7 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
             addMarginLabel(gainGroup, x - 7, box.top + 13, `GM ${gainMargin.toFixed(1)} dB`, "end");
           }
           if (gainCross) {
-            const x = xScale(gainCross.frequency);
+            const x = scaleLinear(gainCross.frequency, phaseDomain.x, [box.left, box.right]);
             const curveY = phaseScale(interpolateAt(openPhase, gainCross));
             addLine(phaseGroup, x, closed ? box.top : curveY, x, closed ? box.bottom : criticalY, "damage-bode-margin-guide");
             if (!closed) {
@@ -191,6 +205,16 @@ export function initDamageBodeExplorer(osiBodeData, reportData) {
           updateStep(condition, alpha);
         }
 
+        attachAxisZoom({
+          svg: magnitudeGrid.closest("svg"), box, xDomain: magnitudeDomain.x, yDomain: magnitudeDomain.y,
+          clipElements: [document.getElementById("damageBodeMagReference"), document.getElementById("damageBodeMagLive"), document.getElementById("damageGainMarginMark")],
+          onChange: (x, y) => { magnitudeDomain.x = x; magnitudeDomain.y = y; drawAxes(); update(); }
+        });
+        attachAxisZoom({
+          svg: phaseGrid.closest("svg"), box, xDomain: phaseDomain.x, yDomain: phaseDomain.y,
+          clipElements: [document.getElementById("damageBodePhaseReference"), document.getElementById("damageBodePhaseLive"), document.getElementById("damagePhaseMarginMark")],
+          onChange: (x, y) => { phaseDomain.x = x; phaseDomain.y = y; drawAxes(); update(); }
+        });
         ["damagePlantSlider", "damageAlphaSlider", "damageLoopModeSwitch"].forEach(id => document.getElementById(id).addEventListener("input", update));
         update();
       }

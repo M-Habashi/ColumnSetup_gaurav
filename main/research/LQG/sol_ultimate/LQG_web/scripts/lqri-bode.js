@@ -1,6 +1,7 @@
 "use strict";
 
-import { createStepResponse } from "./step-response.js?v=20260806-10";
+import { attachAxisZoom, formatAxisTick, linearTicks, scaleLinear } from "./axis-zoom.js?v=20260808-1";
+import { createStepResponse } from "./step-response.js?v=20260808-1";
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 
@@ -20,11 +21,12 @@ export function initLqriBode(reportData) {
   const visible = new Set(["pid", "lqri"]);
   const updateStep = createStepResponse("lqriTracking", design.step, ["pid", "lqri"]);
   const box = { left: 66, right: 650, top: 26, bottom: 222 };
-  const xMaximum = frequencies[frequencies.length - 1];
-  const xScale = frequency => box.left + frequency / xMaximum * (box.right - box.left);
-  const magnitudeScale = db => box.bottom - (db + 65) / 90 * (box.bottom - box.top);
-  const phaseScale = degrees => box.bottom - (degrees + 540) / 540 * (box.bottom - box.top);
-  const pathFrom = points => points.map((point, index) => `${index ? "L" : "M"}${point[0].toFixed(1)},${point[1].toFixed(1)}`).join(" ");
+  const magnitudeDomain = { x: [0, frequencies[frequencies.length - 1]], y: [-65, 25] };
+  const phaseDomain = { x: [0, frequencies[frequencies.length - 1]], y: [-540, 0] };
+  const magnitudeGrid = document.getElementById("lqriTrackingBodeMagGrid");
+  const phaseGrid = document.getElementById("lqriTrackingBodePhaseGrid");
+  const magnitudePaths = [document.getElementById("lqriTrackingBodeMagPid"), document.getElementById("lqriTrackingBodeMagLqri")];
+  const phasePaths = [document.getElementById("lqriTrackingBodePhasePid"), document.getElementById("lqriTrackingBodePhaseLqri")];
 
   function addLine(group, x1, y1, x2, y2, className = "damage-bode-gridline") {
     group.appendChild(svgNode("line", { x1, y1, x2, y2, class: className }));
@@ -36,16 +38,17 @@ export function initLqriBode(reportData) {
     group.appendChild(label);
   }
 
-  function drawGrid(group, yTicks, yMap, title, showFrequency) {
-    [0, 10, 20, 30, 40, 50, 60, 70, 80].forEach(frequency => {
-      const x = xScale(frequency);
+  function drawGrid(group, domain, title, showFrequency) {
+    group.replaceChildren();
+    linearTicks(domain.x, 8).forEach(value => {
+      const x = scaleLinear(value, domain.x, [box.left, box.right]);
       addLine(group, x, box.top, x, box.bottom);
-      if (showFrequency) addText(group, x, box.bottom + 20, frequency);
+      if (showFrequency) addText(group, x, box.bottom + 20, formatAxisTick(value, domain.x[1] - domain.x[0]));
     });
-    yTicks.forEach(value => {
-      const y = yMap(value);
+    linearTicks(domain.y, 6).forEach(value => {
+      const y = scaleLinear(value, domain.y, [box.bottom, box.top]);
       addLine(group, box.left, y, box.right, y);
-      addText(group, box.left - 10, y + 4, value, "end");
+      addText(group, box.left - 10, y + 4, formatAxisTick(value, domain.y[1] - domain.y[0]), "end");
     });
     addLine(group, box.left, box.top, box.left, box.bottom, "damage-bode-axis");
     addLine(group, box.left, box.bottom, box.right, box.bottom, "damage-bode-axis");
@@ -83,15 +86,20 @@ export function initLqriBode(reportData) {
     const values = frequencies.map((frequency, index) => {
       const start = polar(nominal.magnitude_db[index], nominal.phase_deg[index]);
       const end = polar(damaged.magnitude_db[index], damaged.phase_deg[index]);
-      return {
-        re: start.re + condition * (end.re - start.re),
-        im: start.im + condition * (end.im - start.im)
-      };
+      return { re: start.re + condition * (end.re - start.re), im: start.im + condition * (end.im - start.im) };
     });
     return {
       magnitude: values.map(value => 20 * Math.log10(Math.max(Math.hypot(value.re, value.im), 1e-12))),
       phase: unwrapPhase(values)
     };
+  }
+
+  function pathFrom(values, domain) {
+    return values.map((value, index) => {
+      const x = scaleLinear(frequencies[index], domain.x, [box.left, box.right]);
+      const y = scaleLinear(value, domain.y, [box.bottom, box.top]);
+      return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
   }
 
   function conditionLabel(condition) {
@@ -105,8 +113,7 @@ export function initLqriBode(reportData) {
     const position = condition * (values.length - 1);
     const lower = Math.floor(position);
     const upper = Math.min(lower + 1, values.length - 1);
-    const fraction = position - lower;
-    return values[lower] + fraction * (values[upper] - values[lower]);
+    return values[lower] + (position - lower) * (values[upper] - values[lower]);
   }
 
   function setCurveVisibility(key) {
@@ -122,8 +129,8 @@ export function initLqriBode(reportData) {
     ["pid", "lqri"].forEach(key => {
       const response = interpolateSeries(key, condition);
       const suffix = key === "pid" ? "Pid" : "Lqri";
-      document.getElementById(`lqriTrackingBodeMag${suffix}`).setAttribute("d", pathFrom(frequencies.map((frequency, index) => [xScale(frequency), magnitudeScale(response.magnitude[index])])));
-      document.getElementById(`lqriTrackingBodePhase${suffix}`).setAttribute("d", pathFrom(frequencies.map((frequency, index) => [xScale(frequency), phaseScale(response.phase[index])])));
+      document.getElementById(`lqriTrackingBodeMag${suffix}`).setAttribute("d", pathFrom(response.magnitude, magnitudeDomain));
+      document.getElementById(`lqriTrackingBodePhase${suffix}`).setAttribute("d", pathFrom(response.phase, phaseDomain));
       setCurveVisibility(key);
     });
     document.getElementById("lqriTrackingPlantOut").textContent = conditionLabel(condition);
@@ -132,8 +139,16 @@ export function initLqriBode(reportData) {
     updateStep(condition);
   }
 
-  drawGrid(document.getElementById("lqriTrackingBodeMagGrid"), [-60, -45, -30, -15, 0, 15], magnitudeScale, "Magnitude (dB)", false);
-  drawGrid(document.getElementById("lqriTrackingBodePhaseGrid"), [-540, -450, -360, -270, -180, -90, 0], phaseScale, "Phase (deg)", true);
+  drawGrid(magnitudeGrid, magnitudeDomain, "Magnitude (dB)", false);
+  drawGrid(phaseGrid, phaseDomain, "Phase (deg)", true);
+  attachAxisZoom({
+    svg: magnitudeGrid.closest("svg"), box, xDomain: magnitudeDomain.x, yDomain: magnitudeDomain.y, clipElements: magnitudePaths,
+    onChange: (x, y) => { magnitudeDomain.x = x; magnitudeDomain.y = y; drawGrid(magnitudeGrid, magnitudeDomain, "Magnitude (dB)", false); update(); }
+  });
+  attachAxisZoom({
+    svg: phaseGrid.closest("svg"), box, xDomain: phaseDomain.x, yDomain: phaseDomain.y, clipElements: phasePaths,
+    onChange: (x, y) => { phaseDomain.x = x; phaseDomain.y = y; drawGrid(phaseGrid, phaseDomain, "Phase (deg)", true); update(); }
+  });
   const qy = Number(design.qy).toPrecision(8);
   const qi = Number(design.qi).toPrecision(8);
   document.getElementById("lqriTrackingLegend").textContent = `LQRI (Qy = ${qy}, Qi = ${qi}, R = ${design.ru})`;

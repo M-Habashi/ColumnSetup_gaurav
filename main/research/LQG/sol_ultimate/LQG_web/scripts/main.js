@@ -1,10 +1,10 @@
 "use strict";
 
 import { initAppShell } from "./app-shell.js";
-import { initDamageBodeExplorer } from "./damage-bode.js?v=20260806-10";
+import { initDamageBodeExplorer } from "./damage-bode.js?v=20260808-1";
 import { initReportCharts } from "./report-charts.js?v=20260806-6";
-import { initTrackingBode } from "./tracking-bode.js?v=20260806-10";
-import { initLqriBode } from "./lqri-bode.js?v=20260806-10";
+import { initTrackingBode } from "./tracking-bode.js?v=20260808-1";
+import { initLqriBode } from "./lqri-bode.js?v=20260808-1";
 
 const contentRevision = "20260806-11";
 

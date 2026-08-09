@@ -29,6 +29,23 @@
     .damage-bode-plots { min-width: 0; }
     .damage-bode-plot { display: block; width: 100%; height: auto; overflow: visible; }
     .damage-bode-plot + .damage-bode-plot { margin-top: 8px; }
+    .axis-zoom-shell { position: relative; }
+    .axis-zoom-shell + .axis-zoom-shell { margin-top: 8px; }
+    .axis-zoom-toolbar { position: absolute; z-index: 2; top: 1px; right: 8px; display: flex; align-items: center; gap: 5px; }
+    .axis-zoom-button,
+    .axis-zoom-reset { height: 25px; border: 1px solid #4a4842; border-radius: 2px; background: #171714; color: var(--osi-muted); cursor: pointer; }
+    .axis-zoom-button { display: grid; width: 29px; padding: 3px; place-items: center; }
+    .axis-zoom-button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+    .axis-zoom-reset { padding: 0 8px; font-size: 11px; }
+    .axis-zoom-button:hover,
+    .axis-zoom-reset:hover,
+    .axis-zoom-button[aria-pressed="true"] { border-color: var(--osi-yellow); color: var(--osi-ink); }
+    .axis-zoom-button:focus-visible,
+    .axis-zoom-reset:focus-visible { outline: 2px solid var(--osi-yellow); outline-offset: 2px; }
+    .axis-zoom-target { fill: transparent; pointer-events: none; }
+    .axis-zoom-shell.is-zooming .axis-zoom-target { cursor: crosshair; pointer-events: all; }
+    .axis-zoom-selection { fill: rgb(216 178 76 / 14%); stroke: var(--osi-yellow); stroke-width: 1.25; stroke-dasharray: 4 3; pointer-events: none; }
+    .axis-zoom-selection[hidden] { display: none; }
     .damage-bode-step-wrap { margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--osi-line); }
     .damage-bode-plot text { fill: var(--osi-ink); font-family: var(--font-sans); font-size: 12px; }
     .damage-bode-gridline { stroke: #292824; stroke-width: 1; }
