@@ -16,8 +16,10 @@
             <a class="is-active" href="#damage-bode"><span class="nav-index">01</span><span>Stiffness and Bode response</span></a>
             <a href="#damage-classical"><span class="nav-index">02</span><span>Classical LQR regulation</span></a>
             <a href="#damage-steady-state"><span class="nav-index">03</span><span>Steady-state error</span></a>
-            <a href="#damage-objective"><span class="nav-index">04</span><span>Stiffness-integrated cost</span></a>
-            <a href="#damage-meaning"><span class="nav-index">05</span><span>Meaning and calculation</span></a>
+            <a href="#damage-lqr-tuning"><span class="nav-index">04</span><span>LQR design</span></a>
+            <a href="#damage-lqri"><span class="nav-index">05</span><span>LQRI</span></a>
+            <a href="#damage-objective"><span class="nav-index">06</span><span>Stiffness-integrated cost</span></a>
+            <a href="#damage-meaning"><span class="nav-index">07</span><span>Meaning and calculation</span></a>
           </div>
         </nav>
       </aside>
@@ -44,10 +46,17 @@
                   <line id="damagePhaseCritical" class="damage-bode-critical-line"></line>
                   <text id="damagePhaseCriticalLabel" class="damage-bode-critical-label">−180°</text>
                   <path id="damageBodePhaseReference" class="damage-bode-reference"></path>
-                  <path id="damageBodePhaseLive" class="damage-bode-live"></path>
-                  <g id="damagePhaseMarginMark"></g>
+                <path id="damageBodePhaseLive" class="damage-bode-live"></path>
+                <g id="damagePhaseMarginMark"></g>
+              </svg>
+              <div class="damage-bode-step-wrap">
+                <svg class="damage-bode-plot" viewBox="0 0 680 270" role="img" aria-label="Closed-loop PID unit-step response across specimen stiffness and adaptive factor">
+                  <g id="damageStepGrid"></g>
+                  <path id="damageStepReference" class="damage-bode-reference"></path>
+                  <path id="damageStepLive" class="damage-bode-live"></path>
                 </svg>
               </div>
+            </div>
               <aside class="damage-bode-controls" aria-label="Bode plot controls">
                 <h3>Frequency-response parameters</h3>
                 <label class="damage-bode-mode-switch" for="damageLoopModeSwitch"><span>Open</span><input id="damageLoopModeSwitch" type="checkbox" role="switch"><span class="damage-bode-switch-track" aria-hidden="true"></span><span>Closed</span></label>
@@ -293,6 +302,10 @@
 
           <p>This gain cancels steady-state error only for the nominal model and a constant reference. It does not reject an unknown constant disturbance. It also cannot correct a stiffness-dependent modeling error. Integral action is introduced when those forms of offset rejection are required.</p>
         </section>
+
+        <div id="lqrDesignMount"></div>
+
+        <div id="lqriDesignMount"></div>
 
         <section id="damage-objective" class="reveal">
           <div class="section-heading">

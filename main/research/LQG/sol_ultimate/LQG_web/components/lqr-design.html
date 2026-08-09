@@ -1,0 +1,42 @@
+<section id="damage-lqr-tuning" class="reveal">
+  <div class="section-heading">
+    <h2>LQR Design</h2>
+    <p>The nominal LQR is designed to reproduce the saved PID controller's loop-only normalized NCF measure. Its feedback and reference gains are then held fixed while the specimen stiffness changes.</p>
+  </div>
+
+  <p>For each trial ratio between the output and input penalties, define <math class="inline-math" aria-label="Q equals C transpose Q y C"><mi>Q</mi><mo>=</mo><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi></math>. The corresponding infinite-horizon objective is</p>
+
+  <div class="math-block" aria-label="Output-weighted LQR objective">
+    <math display="block"><mrow>
+      <mi>J</mi><mo>=</mo><munderover><mo>∫</mo><mn>0</mn><mo>∞</mo></munderover>
+      <mo>(</mo><msup><mi>x</mi><mi>T</mi></msup><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi><mi>x</mi>
+      <mo>+</mo><msup><mi>u</mi><mi>T</mi></msup><mi>R</mi><mi>u</mi><mo>)</mo><mi>d</mi><mi>t</mi>
+    </mrow></math>
+  </div>
+
+  <p>The algebraic Riccati equation is solved for every trial. Each solution gives a matrix <math class="inline-math" aria-label="P"><mi>P</mi></math>, a feedback gain <math class="inline-math" aria-label="K equals R inverse B transpose P"><mi>K</mi><mo>=</mo><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi>T</mi></msup><mi>P</mi></math>, and a nominal reference gain <math class="inline-math" aria-label="N"><mi>N</mi></math>.</p>
+
+  <p>The comparison uses the exact calculation in the main identification script. For either open-loop return ratio <math class="inline-math" aria-label="L"><mi>L</mi></math>, it finds the smallest normalized distance to the critical point over the saved frequency band:</p>
+
+  <div class="math-block" aria-label="Band-limited loop-only normalized NCF measure">
+    <math display="block"><mrow>
+      <mi>b</mi><mo stretchy="false">(</mo><mi>L</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>min</mo><mrow><mn>0.1</mn><mo>≤</mo><mi>f</mi><mo>≤</mo><mn>80</mn><mspace width="0.3em"></mspace><mtext>Hz</mtext></mrow></munder>
+      <mfrac><mrow><mo>|</mo><mn>1</mn><mo>+</mo><mi>L</mi><mo stretchy="false">(</mo><mi>j</mi><mn>2</mn><mi>π</mi><mi>f</mi><mo stretchy="false">)</mo><mo>|</mo></mrow><msqrt><mrow><mn>2</mn><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mo>|</mo><mi>L</mi><mo stretchy="false">(</mo><mi>j</mi><mn>2</mn><mi>π</mi><mi>f</mi><mo stretchy="false">)</mo><msup><mo>|</mo><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></msqrt></mfrac>
+    </mrow></math>
+  </div>
+
+  <p>The PID return ratio is <math class="inline-math" aria-label="L PID equals C PID G"><msub><mi>L</mi><mtext>PID</mtext></msub><mo>=</mo><msub><mi>C</mi><mtext>PID</mtext></msub><mi>G</mi></math>. The LQR return ratio is <math class="inline-math" aria-label="L LQR equals K G x"><msub><mi>L</mi><mtext>LQR</mtext></msub><mo>=</mo><mi>K</mi><msub><mi>G</mi><mi>x</mi></msub></math>, where <math class="inline-math" aria-label="G x"><msub><mi>G</mi><mi>x</mi></msub></math> maps the plant input to the full state.</p>
+
+  <div class="math-block" aria-label="Normalized NCF matching criterion">
+    <math display="block"><mrow>
+      <msup><mi>ρ</mi><mo>*</mo></msup><mo>=</mo><munder><mo>arg min</mo><mi>ρ</mi></munder>
+      <mo>|</mo><mi>b</mi><mo stretchy="false">(</mo><msub><mi>L</mi><mtext>LQR</mtext></msub><mo stretchy="false">(</mo><mi>ρ</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo>
+      <mo>−</mo><mi>b</mi><mo stretchy="false">(</mo><msub><mi>L</mi><mtext>PID</mtext></msub><mo stretchy="false">)</mo><mo>|</mo>
+      <mo>,</mo><mspace width="1em"></mspace><mi>ρ</mi><mo>=</mo><msub><mi>Q</mi><mi>y</mi></msub><mo>/</mo><mi>R</mi>
+    </mrow></math>
+  </div>
+
+  <p>The selected penalty ratio minimizes the absolute margin difference. The accepted difference is at most 0.01. The plot then reuses the resulting <math class="inline-math" aria-label="K"><mi>K</mi></math> and <math class="inline-math" aria-label="N"><mi>N</mi></math> across the stiffness interval; only the plant changes.</p>
+
+  <div id="trackingBodeMount"></div>
+</section>

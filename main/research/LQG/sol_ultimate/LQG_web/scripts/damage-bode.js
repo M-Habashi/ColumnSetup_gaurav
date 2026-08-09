@@ -1,5 +1,7 @@
 "use strict";
 
+import { createParametricStepResponse } from "./step-response.js?v=20260806-10";
+
 const chartNamespace = "http://www.w3.org/2000/svg";
 
 function svgNode(name, attributes = {}) {
@@ -8,11 +10,13 @@ function svgNode(name, attributes = {}) {
   return node;
 }
 
-export function initDamageBodeExplorer(osiBodeData) {
+export function initDamageBodeExplorer(osiBodeData, reportData) {
         if (!osiBodeData || !document.getElementById("damageBodeLab")) return;
 
+        const updateStep = createParametricStepResponse("damage", reportData?.stiffness_step);
+
         const box = { left: 66, right: 650, top: 26, bottom: 222 };
-        const xScale = frequency => box.left + Math.log10(frequency / 0.2) / Math.log10(500) * (box.right - box.left);
+        const xScale = frequency => box.left + frequency / 100 * (box.right - box.left);
         const magnitudeScale = db => box.bottom - (db + 30) / 70 * (box.bottom - box.top);
         const phaseScale = degrees => box.bottom - (degrees + 450) / 450 * (box.bottom - box.top);
         const complex = (re, im) => ({ re, im });
@@ -39,7 +43,7 @@ export function initDamageBodeExplorer(osiBodeData) {
         }
 
         function drawGrid(group, yTicks, yMap, title, showFrequency) {
-          [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100].forEach(frequency => {
+          [0, 20, 40, 60, 80, 100].forEach(frequency => {
             const x = xScale(frequency);
             addLine(group, x, box.top, x, box.bottom);
             if (showFrequency) addText(group, x, box.bottom + 20, frequency);
@@ -144,6 +148,7 @@ export function initDamageBodeExplorer(osiBodeData) {
           const color = liveColor(condition);
           document.getElementById("damageBodeMagLive").style.stroke = color;
           document.getElementById("damageBodePhaseLive").style.stroke = color;
+          document.getElementById("damageStepLive").style.stroke = color;
           document.getElementById("damageLiveSwatch").style.background = color;
 
           const openMagnitude = openLive.map(magnitudeDb);
@@ -183,6 +188,7 @@ export function initDamageBodeExplorer(osiBodeData) {
           document.getElementById("damagePlantOut").textContent = conditionLabel(condition);
           document.getElementById("damageAlphaOut").textContent = alpha.toFixed(2);
           document.getElementById("damageLiveLegend").textContent = `live ${conditionLabel(condition)}, α = ${alpha.toFixed(2)}`;
+          updateStep(condition, alpha);
         }
 
         ["damagePlantSlider", "damageAlphaSlider", "damageLoopModeSwitch"].forEach(id => document.getElementById(id).addEventListener("input", update));

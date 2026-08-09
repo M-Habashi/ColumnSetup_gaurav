@@ -1,0 +1,47 @@
+<div class="damage-bode-lab" id="lqriTrackingBodeLab">
+  <div class="damage-bode-head">
+    <strong>Closed-loop reference response</strong>
+    <span>fixed 7k controllers · varying plant stiffness</span>
+  </div>
+  <div class="damage-bode-explorer">
+    <div class="damage-bode-plots">
+      <svg class="damage-bode-plot" viewBox="0 0 680 265" role="img" aria-label="Magnitude response comparing fixed PID and LQRI controllers">
+        <g id="lqriTrackingBodeMagGrid"></g>
+        <path id="lqriTrackingBodeMagPid" class="damage-bode-live tracking-bode-pid"></path>
+        <path id="lqriTrackingBodeMagLqri" class="damage-bode-live tracking-bode-lqr"></path>
+      </svg>
+      <svg class="damage-bode-plot" viewBox="0 0 680 270" role="img" aria-label="Phase response comparing fixed PID and LQRI controllers">
+        <g id="lqriTrackingBodePhaseGrid"></g>
+        <path id="lqriTrackingBodePhasePid" class="damage-bode-live tracking-bode-pid"></path>
+        <path id="lqriTrackingBodePhaseLqri" class="damage-bode-live tracking-bode-lqr"></path>
+      </svg>
+      <div class="damage-bode-step-wrap">
+        <svg class="damage-bode-plot" viewBox="0 0 680 270" role="img" aria-label="Unit-step response comparing fixed PID and LQRI controllers">
+          <g id="lqriTrackingStepGrid"></g>
+          <path id="lqriTrackingStepPid" class="damage-bode-live tracking-bode-pid"></path>
+          <path id="lqriTrackingStepLqri" class="damage-bode-live tracking-bode-lqr"></path>
+        </svg>
+      </div>
+    </div>
+
+    <aside class="damage-bode-controls" aria-label="Fixed LQRI response controls">
+      <h3>Plant condition</h3>
+      <div class="damage-bode-control">
+        <label for="lqriTrackingPlantSlider"><span>Specimen stiffness</span><output id="lqriTrackingPlantOut">7.0k (0%)</output></label>
+        <input id="lqriTrackingPlantSlider" type="range" min="0" max="1" value="0" step="0.01">
+        <div class="damage-bode-range-ends"><span>7k</span><span>5k</span></div>
+      </div>
+
+      <div class="damage-bode-margin-cards" aria-label="Normalized NCF measures">
+        <div class="damage-bode-margin-card"><span>PID normalized NCF</span><strong id="lqriTrackingPidNcfOut">0.59</strong></div>
+        <div class="damage-bode-margin-card"><span>LQRI normalized NCF</span><strong id="lqriTrackingLqriNcfOut">0.59</strong></div>
+      </div>
+
+      <div class="damage-bode-legend tracking-bode-legend" role="group" aria-label="Visible response curves">
+        <button class="damage-bode-legend-button is-active" type="button" data-lqri-series="pid" aria-pressed="true"><i class="damage-bode-legend-swatch tracking-bode-pid-swatch" aria-hidden="true"></i><span>PID</span></button>
+        <button class="damage-bode-legend-button is-active" type="button" data-lqri-series="lqri" aria-pressed="true"><i class="damage-bode-legend-swatch tracking-bode-lqr-swatch" aria-hidden="true"></i><span id="lqriTrackingLegend">LQRI (independent Qy and Qi, R = 1)</span></button>
+      </div>
+      <p class="damage-bode-margin-note">Select either legend entry to show or hide its curve. Gain and phase margins are omitted.</p>
+    </aside>
+  </div>
+</div>

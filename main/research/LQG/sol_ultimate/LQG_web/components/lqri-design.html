@@ -1,0 +1,65 @@
+<section id="damage-lqri" class="reveal">
+  <div class="section-heading">
+    <h2>Linear Quadratic Regulator with Integral action (LQRI)</h2>
+    <p>LQRI removes the stiffness-dependent steady-state error by making the accumulated output error part of the controller state.</p>
+  </div>
+
+  <p>The nominal precompensator gives exact tracking only when the plant model is exact. A stiffness change alters the steady-state gain. The same precompensator can therefore leave a constant offset even when the feedback loop remains stable.</p>
+
+  <p>Introduce the integral state <math class="inline-math" aria-label="eta"><mi>η</mi></math> through the tracking error:</p>
+
+  <div class="math-block" aria-label="Integral tracking state and augmented LQRI dynamics">
+    <math display="block"><mtable rowspacing="0.8em">
+      <mtr><mtd><mover><mi>η</mi><mo>˙</mo></mover><mo>=</mo><mi>r</mi><mo>−</mo><mi>y</mi><mo>=</mo><mi>r</mi><mo>−</mo><mi>C</mi><mi>x</mi></mtd></mtr>
+      <mtr><mtd><mi>z</mi><mo>=</mo><mo>[</mo><msup><mi>x</mi><mi>T</mi></msup><mspace width="0.5em"></mspace><mi>η</mi><msup><mo>]</mo><mi>T</mi></msup><mo>,</mo><mspace width="1em"></mspace><mover><mi>z</mi><mo>˙</mo></mover><mo>=</mo><msub><mi>A</mi><mi>a</mi></msub><mi>z</mi><mo>+</mo><msub><mi>B</mi><mi>a</mi></msub><mi>u</mi><mo>+</mo><msub><mi>E</mi><mi>a</mi></msub><mi>r</mi></mtd></mtr>
+      <mtr><mtd><msub><mi>A</mi><mi>a</mi></msub><mo>=</mo><mo>[</mo><mtable><mtr><mtd><mi>A</mi></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mo>−</mo><mi>C</mi></mtd><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo><mo>,</mo><mspace width="1em"></mspace><msub><mi>B</mi><mi>a</mi></msub><mo>=</mo><mo>[</mo><mtable><mtr><mtd><mi>B</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo><mo>,</mo><mspace width="1em"></mspace><msub><mi>E</mi><mi>a</mi></msub><mo>=</mo><mo>[</mo><mtable><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mi>I</mi></mtd></mtr></mtable><mo>]</mo></mtd></mtr>
+    </mtable></math>
+  </div>
+
+  <p>The augmented cost penalizes the measured output, accumulated error, and control input:</p>
+
+  <div class="math-block" aria-label="LQRI infinite-horizon cost">
+    <math display="block"><mrow>
+      <msub><mi>J</mi><mi>I</mi></msub><mo>=</mo><munderover><mo>∫</mo><mn>0</mn><mo>∞</mo></munderover>
+      <mo stretchy="false">(</mo><msup><mi>x</mi><mi>T</mi></msup><msup><mi>C</mi><mi>T</mi></msup><msub><mi>Q</mi><mi>y</mi></msub><mi>C</mi><mi>x</mi><mo>+</mo><msub><mi>q</mi><mi>I</mi></msub><msup><mi>η</mi><mn>2</mn></msup><mo>+</mo><msup><mi>u</mi><mi>T</mi></msup><mi>R</mi><mi>u</mi><mo stretchy="false">)</mo><mi>d</mi><mi>t</mi>
+    </mrow></math>
+  </div>
+
+  <p>The Riccati equation now uses the augmented matrices. Its solution gives the state gain and the integral gain together:</p>
+
+  <div class="math-block" aria-label="LQRI Riccati equation and optimal gain">
+    <math display="block"><mtable rowspacing="0.8em">
+      <mtr><mtd><msubsup><mi>A</mi><mi>a</mi><mi>T</mi></msubsup><msub><mi>P</mi><mi>a</mi></msub><mo>+</mo><msub><mi>P</mi><mi>a</mi></msub><msub><mi>A</mi><mi>a</mi></msub><mo>−</mo><msub><mi>P</mi><mi>a</mi></msub><msub><mi>B</mi><mi>a</mi></msub><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msubsup><mi>B</mi><mi>a</mi><mi>T</mi></msubsup><msub><mi>P</mi><mi>a</mi></msub><mo>+</mo><msub><mi>Q</mi><mi>a</mi></msub><mo>=</mo><mn>0</mn></mtd></mtr>
+      <mtr><mtd><msub><mi>K</mi><mi>a</mi></msub><mo>=</mo><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msubsup><mi>B</mi><mi>a</mi><mi>T</mi></msubsup><msub><mi>P</mi><mi>a</mi></msub><mo>=</mo><mo>[</mo><msub><mi>K</mi><mi>x</mi></msub><mspace width="0.5em"></mspace><msub><mi>k</mi><mi>I</mi></msub><mo>]</mo><mo>,</mo><mspace width="1em"></mspace><mi>u</mi><mo>=</mo><mo>−</mo><msub><mi>K</mi><mi>x</mi></msub><mi>x</mi><mo>−</mo><msub><mi>k</mi><mi>I</mi></msub><mi>η</mi></mtd></mtr>
+    </mtable></math>
+  </div>
+
+  <p>The output weight <math class="inline-math" aria-label="Q y"><msub><mi>Q</mi><mi>y</mi></msub></math> and integral-state weight <math class="inline-math" aria-label="q I"><msub><mi>q</mi><mi>I</mi></msub></math> are selected independently. MATLAB's built-in <code>lqi</code> function solves every candidate and returns the combined state and integral gain.</p>
+
+  <p>Bryson's rule supplies physically scaled starting values from the nominal PID unit-step loop. Let <math class="inline-math" aria-label="e max"><msub><mi>e</mi><mtext>max</mtext></msub></math> be the largest tracking error. Let <math class="inline-math" aria-label="x I max"><msub><mi>x</mi><mrow><mi>I</mi><mo>,</mo><mtext>max</mtext></mrow></msub></math> be the largest accumulated error and <math class="inline-math" aria-label="u max"><msub><mi>u</mi><mtext>max</mtext></msub></math> the largest PID control input. The raw Bryson weights are normalized by the input weight so that <math class="inline-math" aria-label="R equals one"><mi>R</mi><mo>=</mo><mn>1</mn></math>:</p>
+
+  <div class="math-block" aria-label="Bryson normalized LQRI weights">
+    <math display="block"><mtable rowspacing="0.8em">
+      <mtr><mtd><msub><mi>Q</mi><mrow><mi>y</mi><mo>,</mo><mi>B</mi></mrow></msub><mo>=</mo><mfrac><mn>1</mn><msubsup><mi>e</mi><mtext>max</mtext><mn>2</mn></msubsup></mfrac><mo>,</mo><mspace width="1em"></mspace><msub><mi>q</mi><mrow><mi>I</mi><mo>,</mo><mi>B</mi></mrow></msub><mo>=</mo><mfrac><mn>1</mn><msubsup><mi>x</mi><mrow><mi>I</mi><mo>,</mo><mtext>max</mtext></mrow><mn>2</mn></msubsup></mfrac><mo>,</mo><mspace width="1em"></mspace><msub><mi>R</mi><mi>B</mi></msub><mo>=</mo><mfrac><mn>1</mn><msubsup><mi>u</mi><mtext>max</mtext><mn>2</mn></msubsup></mfrac></mtd></mtr>
+      <mtr><mtd><msub><mover><mi>Q</mi><mo>¯</mo></mover><mrow><mi>y</mi><mo>,</mo><mi>B</mi></mrow></msub><mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mfrac><msub><mi>u</mi><mtext>max</mtext></msub><msub><mi>e</mi><mtext>max</mtext></msub></mfrac><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>,</mo><mspace width="1em"></mspace><msub><mover><mi>q</mi><mo>¯</mo></mover><mrow><mi>I</mi><mo>,</mo><mi>B</mi></mrow></msub><mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mfrac><msub><mi>u</mi><mtext>max</mtext></msub><msub><mi>x</mi><mrow><mi>I</mi><mo>,</mo><mtext>max</mtext></mrow></msub></mfrac><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mtd></mtr>
+    </mtable></math>
+  </div>
+
+  <p>Independent multipliers <math class="inline-math" aria-label="rho y"><msub><mi>ρ</mi><mi>y</mi></msub></math> and <math class="inline-math" aria-label="rho I"><msub><mi>ρ</mi><mi>I</mi></msub></math> span two decades below and above unity. This grid initializes a continuous positive log-space refinement without imposing an upper bound on either weight. Costs from different weights are not compared because each pair changes the definition of <math class="inline-math" aria-label="J"><mi>J</mi></math>. The selected pair instead makes the smallest logarithmic departure from the Bryson scaling while satisfying the NCF requirement.</p>
+
+  <p>Every candidate uses the same initial rest condition for a unit reference. If <math class="inline-math" aria-label="x r and eta r"><msub><mi>x</mi><mi>r</mi></msub></math> and <math class="inline-math" aria-label="eta r"><msub><mi>η</mi><mi>r</mi></msub></math> denote the corresponding equilibrium, then the initial deviation is <math class="inline-math" aria-label="z zero"><msub><mi>z</mi><mn>0</mn></msub><mo>=</mo><msup><mrow><mo>[</mo><mo>−</mo><msubsup><mi>x</mi><mi>r</mi><mi>T</mi></msubsup><mspace width="0.4em"></mspace><mo>−</mo><msub><mi>η</mi><mi>r</mi></msub><mo>]</mo></mrow><mi>T</mi></msup></math>. The Riccati solution gives the optimal value <math class="inline-math" aria-label="J star equals z zero transpose P a z zero"><msup><mi>J</mi><mo>*</mo></msup><mo>=</mo><msubsup><mi>z</mi><mn>0</mn><mi>T</mi></msubsup><msub><mi>P</mi><mi>a</mi></msub><msub><mi>z</mi><mn>0</mn></msub></math> for that fixed condition.</p>
+
+  <div class="math-block" aria-label="LQRI normalized NCF matching criterion">
+    <math display="block"><mrow>
+      <mo stretchy="false">(</mo><msubsup><mi>Q</mi><mi>y</mi><mo>*</mo></msubsup><mo>,</mo><msubsup><mi>q</mi><mi>I</mi><mo>*</mo></msubsup><mo stretchy="false">)</mo>
+      <mo>=</mo><munder><mo>arg min</mo><mrow><msub><mi>ρ</mi><mi>y</mi></msub><mo>,</mo><msub><mi>ρ</mi><mi>I</mi></msub><mo>&gt;</mo><mn>0</mn></mrow></munder>
+      <msup><mrow><mo stretchy="false">(</mo><msub><mi>log</mi><mn>10</mn></msub><msub><mi>ρ</mi><mi>y</mi></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo stretchy="false">(</mo><msub><mi>log</mi><mn>10</mn></msub><msub><mi>ρ</mi><mi>I</mi></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup>
+      <mspace width="1em"></mspace><mtext>subject to</mtext><mspace width="0.6em"></mspace>
+      <mi>b</mi><mo stretchy="false">(</mo><msub><mi>L</mi><mtext>LQRI</mtext></msub><mo stretchy="false">)</mo><mo>=</mo><mi>b</mi><mo stretchy="false">(</mo><msub><mi>L</mi><mtext>PID</mtext></msub><mo stretchy="false">)</mo>
+    </mrow></math>
+  </div>
+
+  <p>At the 7k design condition, the normalized NCF values are equal. The independently selected LQRI gain is then held fixed across the stiffness interval. Integral action removes constant offset whenever the augmented closed loop is stable and the actuator is not saturated.</p>
+
+  <div id="lqriTrackingBodeMount"></div>
+</section>

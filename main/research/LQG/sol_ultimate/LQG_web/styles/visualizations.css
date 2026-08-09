@@ -29,6 +29,7 @@
     .damage-bode-plots { min-width: 0; }
     .damage-bode-plot { display: block; width: 100%; height: auto; overflow: visible; }
     .damage-bode-plot + .damage-bode-plot { margin-top: 8px; }
+    .damage-bode-step-wrap { margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--osi-line); }
     .damage-bode-plot text { fill: var(--osi-ink); font-family: var(--font-sans); font-size: 12px; }
     .damage-bode-gridline { stroke: #292824; stroke-width: 1; }
     .damage-bode-axis { stroke: #66625a; stroke-width: 1; }
@@ -68,6 +69,28 @@
     .damage-bode-legend-swatch { width: 22px; height: 3px; flex: 0 0 auto; background: #77756e; }
     .damage-bode-legend-swatch.is-live { background: var(--osi-yellow); }
     .damage-bode-lab .damage-bode-margin-note { margin: 14px 0 0; color: var(--osi-ink); font-size: 11px; line-height: 1.45; }
+
+    .tracking-bode-pid { stroke: var(--osi-yellow); }
+    .tracking-bode-lqr { stroke: #007ca8; }
+    .tracking-bode-legend { border-top: 1px solid var(--osi-line); padding-top: 12px; }
+    .damage-bode-legend-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 6px 0;
+      border: 0;
+      background: transparent;
+      color: var(--osi-muted);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      opacity: .55;
+    }
+    .damage-bode-legend-button.is-active { color: var(--osi-ink); opacity: 1; }
+    .damage-bode-legend-button:focus-visible { outline: 2px solid var(--osi-yellow); outline-offset: 3px; }
+    .tracking-bode-pid-swatch { background: var(--osi-yellow); }
+    .tracking-bode-lqr-swatch { background: #007ca8; }
 
     .lqr-diagram {
       --lqr-pink: #E86A92;

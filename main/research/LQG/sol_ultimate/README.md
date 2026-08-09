@@ -30,7 +30,9 @@ The generated MAT files each contain one top-level `result` struct. No physical 
 To regenerate the HTML report's plotted data from the saved MATLAB models, run:
 
 ```matlab
+design_lqr_ncf_match
+design_lqri_ncf_match
 generate_html_report_data
 ```
 
-This writes `html_report_plot_data.mat` with one top-level `result` struct and refreshes `LQG_web/data/report-plot-data.js` for the component-based report.
+The first two functions design the Section 04 LQR and Section 05 LQRI by matching the loop-only normalized NCF measure used by `custom_stability_margins` to the nominal PID result. The LQRI design uses MATLAB's built-in `lqi` function. PID unit-step limits provide Bryson-normalized starting weights for independent logarithmic grids, followed by an unbounded positive refinement that minimizes logarithmic departure from the Bryson scaling under the exact NCF constraint. The generator writes `html_report_plot_data.mat` with one top-level `result` struct and refreshes `LQG_web/data/report-plot-data.js` for the component-based report.

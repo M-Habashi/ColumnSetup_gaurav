@@ -190,11 +190,11 @@ const chartNamespace = "http://www.w3.org/2000/svg";
         const keys = ["pid", "lqr", "lqgi"];
         const magnitudeSeries = keys.map(key => ({ key, values: condition[key].magnitude_db }));
         const phaseSeries = keys.map(key => ({ key, values: condition[key].phase_deg }));
-        const xTicks = [2, 5, 10, 20, 40, 80];
+        const xTicks = [0, 10, 20, 30, 40, 50, 60, 70, 80];
         renderChart("bodeMagnitude", data.bode.frequency_hz, magnitudeSeries, {
           visible: state.bodeVisible,
-          logX: true,
-          xDomain: [2, 80],
+          logX: false,
+          xDomain: [0, 80],
           xTicks,
           xLabel: "Frequency (Hz)",
           yLabel: "Magnitude (dB)",
@@ -203,8 +203,8 @@ const chartNamespace = "http://www.w3.org/2000/svg";
         });
         renderChart("bodePhase", data.bode.frequency_hz, phaseSeries, {
           visible: state.bodeVisible,
-          logX: true,
-          xDomain: [2, 80],
+          logX: false,
+          xDomain: [0, 80],
           xTicks,
           xLabel: "Frequency (Hz)",
           yLabel: "Phase (degrees)",
