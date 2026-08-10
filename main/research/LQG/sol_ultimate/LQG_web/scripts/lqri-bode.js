@@ -1,7 +1,7 @@
 "use strict";
 
 import { attachAxisZoom, formatAxisTick, linearTicks, scaleLinear } from "./axis-zoom.js?v=20260808-1";
-import { createStepResponse } from "./step-response.js?v=20260808-1";
+import { createStepResponse } from "./step-response.js?v=20260809-2";
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 
@@ -19,7 +19,13 @@ export function initLqriBode(reportData) {
   const data = design.bode;
   const frequencies = data.frequency_hz;
   const visible = new Set(["pid", "lqri"]);
-  const updateStep = createStepResponse("lqriTracking", design.step, ["pid", "lqri"]);
+  let lqriStable = true;
+  const updateStep = createStepResponse(
+    "lqriTracking",
+    design.step,
+    ["pid", "lqri"],
+    { scaleFromNominal: true, valueLimit: 1e6, breakOutsideDomain: true }
+  );
   const box = { left: 66, right: 650, top: 26, bottom: 222 };
   const magnitudeDomain = { x: [0, frequencies[frequencies.length - 1]], y: [-65, 25] };
   const phaseDomain = { x: [0, frequencies[frequencies.length - 1]], y: [-540, 0] };
@@ -119,13 +125,19 @@ export function initLqriBode(reportData) {
   function setCurveVisibility(key) {
     const suffix = key === "pid" ? "Pid" : "Lqri";
     const display = visible.has(key) ? "" : "none";
+    const stepDisplay = key === "lqri" && !lqriStable ? "none" : display;
     document.getElementById(`lqriTrackingBodeMag${suffix}`).style.display = display;
     document.getElementById(`lqriTrackingBodePhase${suffix}`).style.display = display;
-    document.getElementById(`lqriTrackingStep${suffix}`).style.display = display;
+    document.getElementById(`lqriTrackingStep${suffix}`).style.display = stepDisplay;
+    document.getElementById(`lqriTrackingStep${suffix}Command`).style.display = stepDisplay;
   }
 
   function update() {
     const condition = Number(document.getElementById("lqriTrackingPlantSlider").value);
+    const spectralAbscissa = interpolateMargin("lqri_spectral_abscissa_per_s", condition);
+    const stabilityOutput = document.getElementById("lqriTrackingStabilityOut");
+    const stepStatus = document.getElementById("lqriTrackingStepStatus");
+    lqriStable = spectralAbscissa < 0;
     ["pid", "lqri"].forEach(key => {
       const response = interpolateSeries(key, condition);
       const suffix = key === "pid" ? "Pid" : "Lqri";
@@ -136,7 +148,15 @@ export function initLqriBode(reportData) {
     document.getElementById("lqriTrackingPlantOut").textContent = conditionLabel(condition);
     document.getElementById("lqriTrackingPidNcfOut").textContent = interpolateMargin("pid", condition).toFixed(2);
     document.getElementById("lqriTrackingLqriNcfOut").textContent = interpolateMargin("lqri", condition).toFixed(2);
+    document.getElementById("lqriTrackingCommandOut").textContent = Number(design.command_peak_7k).toFixed(4);
+    document.getElementById("lqriTrackingCommand5kOut").textContent = Number(design.command_peak_5k).toFixed(4);
+    document.getElementById("lqriTrackingLossOut").textContent = Number(design.tracking_loss_7k).toPrecision(4);
+    document.getElementById("lqriTrackingLoss5kOut").textContent = Number(design.tracking_loss_5k).toPrecision(4);
     updateStep(condition);
+    ["pid", "lqri"].forEach(setCurveVisibility);
+    stabilityOutput.textContent = `${lqriStable ? "stable" : "unstable"} (${spectralAbscissa >= 0 ? "+" : ""}${spectralAbscissa.toFixed(1)} s⁻¹)`;
+    stabilityOutput.classList.toggle("lqri-stability-unstable", !lqriStable);
+    stepStatus.textContent = lqriStable ? "" : `LQI unstable · max Re(λ) = +${spectralAbscissa.toFixed(1)} s⁻¹`;
   }
 
   drawGrid(magnitudeGrid, magnitudeDomain, "Magnitude (dB)", false);
@@ -149,9 +169,9 @@ export function initLqriBode(reportData) {
     svg: phaseGrid.closest("svg"), box, xDomain: phaseDomain.x, yDomain: phaseDomain.y, clipElements: phasePaths,
     onChange: (x, y) => { phaseDomain.x = x; phaseDomain.y = y; drawGrid(phaseGrid, phaseDomain, "Phase (deg)", true); update(); }
   });
-  const qy = Number(design.qy).toPrecision(8);
-  const qi = Number(design.qi).toPrecision(8);
-  document.getElementById("lqriTrackingLegend").textContent = `LQRI (Qy = ${qy}, Qi = ${qi}, R = ${design.ru})`;
+  const qi = Number(design.qi).toPrecision(6);
+  const commandPeak = Number(design.command_peak).toFixed(3);
+  document.getElementById("lqriTrackingLegend").textContent = `LQI (gradient Q, QI = ${qi}, R = ${design.ru}, |u|max = ${commandPeak})`;
   document.getElementById("lqriTrackingPlantSlider").addEventListener("input", update);
   document.querySelectorAll("[data-lqri-series]").forEach(button => {
     button.addEventListener("click", () => {

@@ -1,7 +1,7 @@
 "use strict";
 
 import { attachAxisZoom, formatAxisTick, linearTicks, scaleLinear } from "./axis-zoom.js?v=20260808-1";
-import { createParametricStepResponse } from "./step-response.js?v=20260808-1";
+import { createParametricStepResponse } from "./step-response.js?v=20260809-2";
 
 const chartNamespace = "http://www.w3.org/2000/svg";
 

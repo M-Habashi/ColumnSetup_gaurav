@@ -28,42 +28,85 @@ function drawGrid(grid, box, domain, title) {
     grid.appendChild(svgNode("line", { x1: box.left, y1: y, x2: box.right, y2: y, class: "damage-bode-gridline" }));
     addText(grid, box.left - 10, y + 4, formatAxisTick(value, domain.y[1] - domain.y[0]), "end");
   });
+  if (domain.y[0] < 0 && domain.y[1] > 0) {
+    const zeroY = scaleLinear(0, domain.y, [box.bottom, box.top]);
+    grid.appendChild(svgNode("line", { x1: box.left, y1: zeroY, x2: box.right, y2: zeroY, class: "step-zero-line" }));
+  }
   grid.appendChild(svgNode("line", { x1: box.left, y1: box.top, x2: box.left, y2: box.bottom, class: "damage-bode-axis" }));
   grid.appendChild(svgNode("line", { x1: box.left, y1: box.bottom, x2: box.right, y2: box.bottom, class: "damage-bode-axis" }));
   addText(grid, box.left, 16, title, "start");
   addText(grid, (box.left + box.right) / 2, 260, "Time (s)");
 }
 
-export function createStepResponse(prefix, data, series) {
+export function createStepResponse(prefix, data, series, options = {}) {
   if (!data?.time_s) return () => {};
   const time = data.time_s;
   const box = { left: 66, right: 650, top: 26, bottom: 222 };
   const allValues = [0, 1];
-  [data.condition7k, data.condition5k].forEach(condition => {
-    series.forEach(key => allValues.push(...condition[key]));
+  const scaleConditions = options.scaleFromNominal ? [data.condition7k] : [data.condition7k, data.condition5k];
+  scaleConditions.forEach(condition => {
+    series.forEach(key => allValues.push(...condition[key], ...condition.command[key]));
   });
-  const domain = { x: [0, time[time.length - 1]], y: [0, 1.08 * Math.max(1, ...allValues)] };
+  const minimum = Math.min(0, ...allValues);
+  const maximum = Math.max(1, ...allValues);
+  const padding = 0.08 * (maximum - minimum);
+  const domain = { x: [0, time[time.length - 1]], y: [minimum < 0 ? minimum - padding : 0, maximum + padding] };
   const grid = document.getElementById(`${prefix}StepGrid`);
   const svg = grid.closest("svg");
-  const paths = series.map(key => document.getElementById(`${prefix}Step${key[0].toUpperCase()}${key.slice(1)}`));
+  const paths = series.flatMap(key => {
+    const suffix = `${key[0].toUpperCase()}${key.slice(1)}`;
+    return [document.getElementById(`${prefix}Step${suffix}`), document.getElementById(`${prefix}Step${suffix}Command`)];
+  });
   let currentCondition = 0;
+
+  function boundedValue(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 0;
+    const limit = options.valueLimit ?? Number.POSITIVE_INFINITY;
+    return Math.max(-limit, Math.min(limit, numeric));
+  }
 
   function render() {
     series.forEach(key => {
       const start = data.condition7k[key];
       const end = data.condition5k[key];
+      let responseDrawing = false;
       const suffix = `${key[0].toUpperCase()}${key.slice(1)}`;
       const path = time.map((value, index) => {
-        const response = start[index] + currentCondition * (end[index] - start[index]);
+        const rawResponse = start[index] + currentCondition * (end[index] - start[index]);
+        if (options.breakOutsideDomain && (!Number.isFinite(rawResponse) || rawResponse < domain.y[0] || rawResponse > domain.y[1])) {
+          responseDrawing = false;
+          return "";
+        }
+        const response = boundedValue(rawResponse);
         const x = scaleLinear(value, domain.x, [box.left, box.right]);
         const y = scaleLinear(response, domain.y, [box.bottom, box.top]);
-        return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
-      }).join(" ");
+        const pathCommand = responseDrawing ? "L" : "M";
+        responseDrawing = true;
+        return `${pathCommand}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).filter(Boolean).join(" ");
       document.getElementById(`${prefix}Step${suffix}`).setAttribute("d", path);
+      let commandDrawing = false;
+      const commandPath = time.map((value, index) => {
+        const startCommand = data.condition7k.command[key][index];
+        const endCommand = data.condition5k.command[key][index];
+        const rawCommand = startCommand + currentCondition * (endCommand - startCommand);
+        if (options.breakOutsideDomain && (!Number.isFinite(rawCommand) || rawCommand < domain.y[0] || rawCommand > domain.y[1])) {
+          commandDrawing = false;
+          return "";
+        }
+        const command = boundedValue(rawCommand);
+        const x = scaleLinear(value, domain.x, [box.left, box.right]);
+        const y = scaleLinear(command, domain.y, [box.bottom, box.top]);
+        const pathCommand = commandDrawing ? "L" : "M";
+        commandDrawing = true;
+        return `${pathCommand}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).filter(Boolean).join(" ");
+      document.getElementById(`${prefix}Step${suffix}Command`).setAttribute("d", commandPath);
     });
   }
 
-  drawGrid(grid, box, domain, "Unit-step response");
+  drawGrid(grid, box, domain, "Unit-step response · dashed = command to plant");
   attachAxisZoom({
     svg,
     box,
@@ -73,7 +116,7 @@ export function createStepResponse(prefix, data, series) {
     onChange: (x, y) => {
       domain.x = x;
       domain.y = y;
-      drawGrid(grid, box, domain, "Unit-step response");
+      drawGrid(grid, box, domain, "Unit-step response · dashed = command to plant");
       render();
     }
   });

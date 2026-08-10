@@ -1,0 +1,218 @@
+  <article class="report-article" id="article-3" data-article="article-3" hidden>
+    <div class="report-intro">
+      <header class="intro reveal">
+        <div class="intro-copy">
+          <h1>Calculating the LQR normalized coprime-factor margin</h1>
+          <p>The reference precompensator, scalar return ratio, and full coprime-factor operator answer different questions. This article derives each transfer explicitly, shows why the plotted reference response cannot be inserted into the complementary-sensitivity identity, and records the normalized full-state calculation used in this report.</p>
+        </div>
+      </header>
+    </div>
+
+    <div class="report-layout">
+      <aside class="toc-rail">
+        <nav class="toc-nav" aria-label="LQR NCF margin article sections">
+          <h2 class="rail-title">Technical sections</h2>
+          <div class="nav">
+            <a class="is-active" href="#ncf-architecture"><span class="nav-index">01</span><span>Two-degree-of-freedom loop</span></a>
+            <a href="#ncf-reference"><span class="nav-index">02</span><span>Reference response</span></a>
+            <a href="#ncf-reconstruction"><span class="nav-index">03</span><span>Open-loop reconstruction</span></a>
+            <a href="#ncf-full"><span class="nav-index">04</span><span>Full NCF operator</span></a>
+            <a href="#ncf-normalization"><span class="nav-index">05</span><span>State normalization</span></a>
+            <a href="#ncf-algorithm"><span class="nav-index">06</span><span>Calculation procedure</span></a>
+            <a href="#ncf-results"><span class="nav-index">07</span><span>Current results</span></a>
+          </div>
+        </nav>
+      </aside>
+
+      <main>
+        <section id="ncf-architecture" class="reveal">
+          <div class="section-heading">
+            <h2>The LQR tracker has separate feedforward and feedback paths</h2>
+            <p>The precompensator acts only on the reference. The gain <math class="inline-math" aria-label="K"><mi>K</mi></math> closes the robustness-determining feedback loop.</p>
+          </div>
+
+          <div class="lqr-diagram">
+            <div class="lqr-diagram-title"><strong>Full-state LQR reference tracker</strong><span>feedforward tracking · negative state feedback</span></div>
+            <svg class="lqr-control-loop" viewBox="0 0 760 250" role="img" aria-label="Reference passes through N bar into the control summation and plant, while the state is returned through minus K">
+              <defs><marker id="ncfArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f3f0e8"/></marker></defs>
+              <text class="label" x="38" y="86">r</text>
+              <line class="signal" x1="55" y1="82" x2="112" y2="82" marker-end="url(#ncfArrow)"/>
+              <rect class="block" x="120" y="52" width="90" height="60"/>
+              <text class="block-label" x="165" y="88">N̄</text>
+              <line class="signal" x1="210" y1="82" x2="270" y2="82" marker-end="url(#ncfArrow)"/>
+              <circle class="summation" cx="292" cy="82" r="22"/>
+              <text class="sum-label" x="284" y="88">+</text>
+              <text class="sum-label" x="286" y="121">−</text>
+              <line class="signal" x1="314" y1="82" x2="380" y2="82" marker-end="url(#ncfArrow)"/>
+              <text class="label" x="340" y="70">u</text>
+              <rect class="block" x="388" y="43" width="138" height="78"/>
+              <text class="block-label" x="457" y="76">Gₓ(s)</text>
+              <text class="small-label" x="457" y="99">state plant</text>
+              <line class="signal" x1="526" y1="82" x2="666" y2="82" marker-end="url(#ncfArrow)"/>
+              <text class="label" x="681" y="87">x</text>
+              <line class="signal" x1="626" y1="82" x2="626" y2="177"/>
+              <line class="signal" x1="626" y1="177" x2="519" y2="177" marker-end="url(#ncfArrow)"/>
+              <rect class="block" x="421" y="147" width="90" height="60"/>
+              <text class="block-label" x="466" y="183">K</text>
+              <line class="signal" x1="421" y1="177" x2="292" y2="177"/>
+              <line class="signal" x1="292" y1="177" x2="292" y2="104" marker-end="url(#ncfArrow)"/>
+            </svg>
+          </div>
+
+          <div class="math-block" aria-label="Plant and LQR control law">
+            <math display="block"><mtable rowspacing="0.7em">
+              <mtr><mtd><msub><mi>G</mi><mi>x</mi></msub><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mrow><mo>[</mo><mi>s</mi><mi>I</mi><mo>−</mo><mi>A</mi><mo>]</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>B</mi></mtd></mtr>
+              <mtr><mtd><mi>u</mi><mo>=</mo><mover><mi>N</mi><mo>¯</mo></mover><mi>r</mi><mo>−</mo><mi>K</mi><mi>x</mi></mtd></mtr>
+              <mtr><mtd><mi>y</mi><mo>=</mo><mi>C</mi><mi>x</mi></mtd></mtr>
+            </mtable></math>
+          </div>
+
+          <p>The feedforward gain <math class="inline-math" aria-label="N bar"><mover><mi>N</mi><mo>¯</mo></mover></math> changes reference tracking and the requested command. It does not appear in the feedback return ratio, characteristic equation, gain margin, phase margin, or feedback NCF margin.</p>
+        </section>
+
+        <section id="ncf-reference" class="reveal">
+          <div class="section-heading">
+            <h2>Deriving the actual reference/output response</h2>
+            <p>The plotted step response includes the 7k precompensator. Its transfer is not complementary sensitivity.</p>
+          </div>
+
+          <p>Substitute the control law into <math class="inline-math" aria-label="x equals G x u"><mi>x</mi><mo>=</mo><msub><mi>G</mi><mi>x</mi></msub><mi>u</mi></math>:</p>
+
+          <div class="math-block" aria-label="Closed-loop LQR state equation">
+            <math display="block"><mtable rowspacing="0.7em">
+              <mtr><mtd><mi>x</mi><mo>=</mo><msub><mi>G</mi><mi>x</mi></msub><mo stretchy="false">(</mo><mover><mi>N</mi><mo>¯</mo></mover><mi>r</mi><mo>−</mo><mi>K</mi><mi>x</mi><mo stretchy="false">)</mo></mtd></mtr>
+              <mtr><mtd><mo stretchy="false">(</mo><mi>I</mi><mo>+</mo><msub><mi>G</mi><mi>x</mi></msub><mi>K</mi><mo stretchy="false">)</mo><mi>x</mi><mo>=</mo><msub><mi>G</mi><mi>x</mi></msub><mover><mi>N</mi><mo>¯</mo></mover><mi>r</mi></mtd></mtr>
+            </mtable></math>
+          </div>
+
+          <p>Define the physical output plant <math class="inline-math" aria-label="G y equals C G x"><msub><mi>G</mi><mi>y</mi></msub><mo>=</mo><mi>C</mi><msub><mi>G</mi><mi>x</mi></msub></math> and the scalar actuator return ratio <math class="inline-math" aria-label="L equals K G x"><mi>L</mi><mo>=</mo><mi>K</mi><msub><mi>G</mi><mi>x</mi></msub></math>. The matrix inversion lemma gives</p>
+
+          <div class="math-block" aria-label="Reference response with N bar">
+            <math display="block"><mfrac><mi>y</mi><mi>r</mi></mfrac><mo>=</mo><msub><mi>T</mi><mi>r</mi></msub><mo>=</mo><mfrac><mrow><mover><mi>N</mi><mo>¯</mo></mover><msub><mi>G</mi><mi>y</mi></msub></mrow><mrow><mn>1</mn><mo>+</mo><mi>L</mi></mrow></mfrac></math>
+          </div>
+
+          <p>The nominal precompensator is selected so that <math class="inline-math" aria-label="T r at zero equals one"><msub><mi>T</mi><mi>r</mi></msub><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn></math>. This is a tracking condition, not a statement that the plotted curve equals <math class="inline-math" aria-label="L over one plus L"><mi>L</mi><mo>/</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>L</mi><mo stretchy="false">)</mo></math>.</p>
+        </section>
+
+        <section id="ncf-reconstruction" class="reveal">
+          <div class="section-heading">
+            <h2>Why the naive reconstruction fails—and the corrected one works</h2>
+            <p>The identity used to recover an open loop depends on which closed-loop transfer was measured.</p>
+          </div>
+
+          <p>For the complementary sensitivity at a feedback loop break,</p>
+
+          <div class="math-block" aria-label="Complementary sensitivity reconstruction">
+            <math display="block"><mtable rowspacing="0.7em">
+              <mtr><mtd><msub><mi>T</mi><mi>L</mi></msub><mo>=</mo><mfrac><mi>L</mi><mrow><mn>1</mn><mo>+</mo><mi>L</mi></mrow></mfrac></mtd></mtr>
+              <mtr><mtd><mi>L</mi><mo>=</mo><msub><mi>T</mi><mi>L</mi></msub><msup><mrow><mo stretchy="false">(</mo><mi>I</mi><mo>−</mo><msub><mi>T</mi><mi>L</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mtd></mtr>
+            </mtable></math>
+          </div>
+
+          <p>The plotted transfer is <math class="inline-math" aria-label="T r"><msub><mi>T</mi><mi>r</mi></msub></math>, not <math class="inline-math" aria-label="T L"><msub><mi>T</mi><mi>L</mi></msub></math>. Substituting it into <math class="inline-math" aria-label="T r over one minus T r"><msub><mi>T</mi><mi>r</mi></msub><mo>/</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>T</mi><mi>r</mi></msub><mo stretchy="false">)</mo></math> incorrectly treats the prefiltered physical output as the loop-break complementary sensitivity. At DC, the nominal tracking condition makes the denominator zero, so the false reconstruction produces infinite DC loop gain.</p>
+
+          <p>If the nominal physical plant and precompensator are known, the correct scalar reconstruction follows directly from the reference-response equation:</p>
+
+          <div class="math-block" aria-label="Correct scalar return-ratio reconstruction">
+            <math display="block"><mi>L</mi><mo>=</mo><mfrac><mrow><mover><mi>N</mi><mo>¯</mo></mover><msub><mi>G</mi><mi>y</mi></msub></mrow><msub><mi>T</mi><mi>r</mi></msub></mfrac><mo>−</mo><mn>1</mn></math>
+          </div>
+
+          <p>This reconstruction requires the same <math class="inline-math" aria-label="N bar"><mover><mi>N</mi><mo>¯</mo></mover></math> and <math class="inline-math" aria-label="G y"><msub><mi>G</mi><mi>y</mi></msub></math> used to generate the response. It becomes poorly conditioned where <math class="inline-math" aria-label="T r"><msub><mi>T</mi><mi>r</mi></msub></math> is small. The report nevertheless uses this corrected reconstruction as requested, then checks it point by point against <math class="inline-math" aria-label="L equals K G x"><mi>L</mi><mo>=</mo><mi>K</mi><msub><mi>G</mi><mi>x</mi></msub></math> before calculating the margin.</p>
+        </section>
+
+        <section id="ncf-full" class="reveal">
+          <div class="section-heading">
+            <h2>The scalar return ratio is not the full NCF calculation</h2>
+            <p>Gain and phase margins depend on <math class="inline-math" aria-label="L"><mi>L</mi></math>. The full normalized coprime-factor margin depends on the plant and controller factors separately.</p>
+          </div>
+
+          <p>The primary report comparison uses the same normalized loop expression for PID and LQR:</p>
+
+          <div class="math-block" aria-label="Loop-only normalized Nyquist-distance proxy">
+            <math display="block"><msub><mi>b</mi><mtext>proxy</mtext></msub><mo>=</mo><munder><mo>min</mo><mi>ω</mi></munder><mfrac><mrow><mo>|</mo><mn>1</mn><mo>+</mo><mi>L</mi><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo stretchy="false">)</mo><mo>|</mo></mrow><msqrt><mrow><mn>2</mn><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mrow><mo>|</mo><mi>L</mi><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo stretchy="false">)</mo><mo>|</mo></mrow><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></msqrt></mfrac></math>
+          </div>
+
+          <p>For LQR, <math class="inline-math" aria-label="L"><mi>L</mi></math> in this expression is the return ratio reconstructed from the closed-loop response. When the loop gain becomes small, the expression approaches <math class="inline-math" aria-label="one over square root two"><mn>1</mn><mo>/</mo><msqrt><mn>2</mn></msqrt></math>; this explains the value near 0.707. It is a fair scalar loop comparison when the identical formula and frequency band are used for both controllers, but it is not the full factor-based margin below.</p>
+
+          <p>For the normalized full-state plant <math class="inline-math" aria-label="G n"><msub><mi>G</mi><mi>n</mi></msub></math> and its corresponding feedback gain <math class="inline-math" aria-label="K n"><msub><mi>K</mi><mi>n</mi></msub></math>, construct</p>
+
+          <div class="math-block" aria-label="Full normalized coprime-factor operator and margin">
+            <math display="block"><mtable rowspacing="0.8em">
+              <mtr><mtd><msub><mi>T</mi><mtext>NCF</mtext></msub><mo>=</mo><mrow><mo>[</mo><mtable><mtr><mtd><mi>I</mi></mtd></mtr><mtr><mtd><msub><mi>K</mi><mi>n</mi></msub></mtd></mtr></mtable><mo>]</mo></mrow><msup><mrow><mo stretchy="false">(</mo><mi>I</mi><mo>+</mo><msub><mi>G</mi><mi>n</mi></msub><msub><mi>K</mi><mi>n</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><mrow><mo>[</mo><mi>I</mi><mspace width="0.5em"></mspace><msub><mi>G</mi><mi>n</mi></msub><mo>]</mo></mrow></mtd></mtr>
+              <mtr><mtd><msub><mi>γ</mi><mtext>NCF</mtext></msub><mo>=</mo><msub><mrow><mo>||</mo><msub><mi>T</mi><mtext>NCF</mtext></msub><mo>||</mo></mrow><mi>∞</mi></msub></mtd></mtr>
+              <mtr><mtd><msub><mi>b</mi><mtext>NCF</mtext></msub><mo>=</mo><mfrac><mn>1</mn><msub><mi>γ</mi><mtext>NCF</mtext></msub></mfrac></mtd></mtr>
+            </mtable></math>
+          </div>
+
+          <p>The factors <math class="inline-math" aria-label="I over K n"><mrow><mo>[</mo><mi>I</mi><mo>;</mo><msub><mi>K</mi><mi>n</mi></msub><mo>]</mo></mrow></math> and <math class="inline-math" aria-label="I and G n"><mrow><mo>[</mo><mi>I</mi><mo>,</mo><msub><mi>G</mi><mi>n</mi></msub><mo>]</mo></mrow></math> cannot be recovered from the scalar product <math class="inline-math" aria-label="L equals K n G n"><mi>L</mi><mo>=</mo><msub><mi>K</mi><mi>n</mi></msub><msub><mi>G</mi><mi>n</mi></msub></math> alone. Different plant/controller factorizations can have the same return ratio and different full NCF margins.</p>
+        </section>
+
+        <section id="ncf-normalization" class="reveal">
+          <div class="section-heading">
+            <h2>Full-state coordinates must be normalized</h2>
+            <p>Raw identified states have different units and arbitrary realization scales. A full-state NCF value changes under a non-unitary state rescaling unless the uncertainty coordinates are fixed.</p>
+          </div>
+
+          <p>The report uses one normalization calculated from the nominal 7k continuous-time plant. Let the controllability Gramian satisfy</p>
+
+          <div class="math-block" aria-label="Nominal controllability-Gramian normalization">
+            <math display="block"><mtable rowspacing="0.8em">
+              <mtr><mtd><mi>A</mi><msub><mi>W</mi><mi>c</mi></msub><mo>+</mo><msub><mi>W</mi><mi>c</mi></msub><msup><mi>A</mi><mi>T</mi></msup><mo>+</mo><mi>B</mi><msup><mi>B</mi><mi>T</mi></msup><mo>=</mo><mn>0</mn></mtd></mtr>
+              <mtr><mtd><msub><mi>D</mi><mi>x</mi></msub><mo>=</mo><mtext>diag</mtext><mo stretchy="false">(</mo><msqrt><mrow><mtext>diag</mtext><mo stretchy="false">(</mo><msub><mi>W</mi><mi>c</mi></msub><mo stretchy="false">)</mo></mrow></msqrt><mo stretchy="false">)</mo></mtd></mtr>
+              <mtr><mtd><msub><mi>x</mi><mi>n</mi></msub><mo>=</mo><msubsup><mi>D</mi><mi>x</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mi>x</mi></mtd></mtr>
+              <mtr><mtd><msub><mi>G</mi><mi>n</mi></msub><mo>=</mo><msubsup><mi>D</mi><mi>x</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><msub><mi>G</mi><mi>x</mi></msub><mo>,</mo><mspace width="0.5em"></mspace><msub><mi>K</mi><mi>n</mi></msub><mo>=</mo><mi>K</mi><msub><mi>D</mi><mi>x</mi></msub></mtd></mtr>
+            </mtable></math>
+          </div>
+
+          <p>The transformation preserves the actuator return ratio exactly:</p>
+
+          <div class="math-block" aria-label="Return-ratio invariance under state normalization">
+            <math display="block"><msub><mi>K</mi><mi>n</mi></msub><msub><mi>G</mi><mi>n</mi></msub><mo>=</mo><mi>K</mi><msub><mi>D</mi><mi>x</mi></msub><msubsup><mi>D</mi><mi>x</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><msub><mi>G</mi><mi>x</mi></msub><mo>=</mo><mi>K</mi><msub><mi>G</mi><mi>x</mi></msub><mo>=</mo><mi>L</mi></math>
+          </div>
+
+          <p>The same nominal 7k matrix <math class="inline-math" aria-label="D x"><msub><mi>D</mi><mi>x</mi></msub></math> is retained from 7k through 5k. Recomputing it for every stiffness would change the uncertainty definition along with the plant and contaminate the robustness trend.</p>
+        </section>
+
+        <section id="ncf-algorithm" class="reveal">
+          <div class="section-heading">
+            <h2>Reproducible calculation procedure</h2>
+            <p>The report generator evaluates the reconstructed loop metric and the secondary exact norm independently at 101 stiffness conditions.</p>
+          </div>
+
+          <ol>
+            <li>Interpolate the identified <math class="inline-math" aria-label="A alpha B alpha C alpha"><mi>A</mi><mo stretchy="false">(</mo><mi>α</mi><mo stretchy="false">)</mo><mo>,</mo><mi>B</mi><mo stretchy="false">(</mo><mi>α</mi><mo stretchy="false">)</mo><mo>,</mo><mi>C</mi><mo stretchy="false">(</mo><mi>α</mi><mo stretchy="false">)</mo></math> matrices between 7k and 5k.</li>
+            <li>Keep the optimized gain <math class="inline-math" aria-label="K"><mi>K</mi></math> and the nominal normalization <math class="inline-math" aria-label="D x"><msub><mi>D</mi><mi>x</mi></msub></math> fixed.</li>
+            <li>Calculate the closed-loop reference transfer <math class="inline-math" aria-label="T r"><msub><mi>T</mi><mi>r</mi></msub></math> and reconstruct <math class="inline-math" aria-label="L reconstructed"><msub><mi>L</mi><mtext>rec</mtext></msub></math> using <math class="inline-math" aria-label="N bar G y over T r minus one"><mover><mi>N</mi><mo>¯</mo></mover><msub><mi>G</mi><mi>y</mi></msub><mo>/</mo><msub><mi>T</mi><mi>r</mi></msub><mo>−</mo><mn>1</mn></math>.</li>
+            <li>Verify the sampled reconstruction against <math class="inline-math" aria-label="K G x"><mi>K</mi><msub><mi>G</mi><mi>x</mi></msub></math>, then minimize the normalized scalar expression over 0.1–80 Hz.</li>
+            <li>Separately build <math class="inline-math" aria-label="G n and K n"><msub><mi>G</mi><mi>n</mi></msub><mo>,</mo><msub><mi>K</mi><mi>n</mi></msub></math> and the complete <math class="inline-math" aria-label="T NCF"><msub><mi>T</mi><mtext>NCF</mtext></msub></math> interconnection.</li>
+            <li>Remove only numerical pole-zero cancellations with a tolerance of <math class="inline-math" aria-label="ten to minus nine"><msup><mn>10</mn><mrow><mo>−</mo><mn>9</mn></mrow></msup></math>, then use MATLAB <code>hinfnorm</code> to find the global <math class="inline-math" aria-label="H infinity"><msub><mi>H</mi><mi>∞</mi></msub></math> norm.</li>
+            <li>Keep the reconstructed scalar margin as the primary display. Retain <math class="inline-math" aria-label="b NCF equals one over gamma NCF"><msub><mi>b</mi><mtext>NCF</mtext></msub><mo>=</mo><mn>1</mn><mo>/</mo><msub><mi>γ</mi><mtext>NCF</mtext></msub></math> as a secondary diagnostic and calculate gain and phase margins from the return ratio.</li>
+          </ol>
+
+          <div class="callout" data-slot="alert">
+            <strong>Where the precompensator is used</strong>
+            <p>The 7k <math class="inline-math" aria-label="N bar"><mover><mi>N</mi><mo>¯</mo></mover></math> remains in the closed-loop step and dashed command calculations. It is intentionally excluded from the feedback robustness interconnection because it lies outside the feedback loop.</p>
+          </div>
+        </section>
+
+        <section id="ncf-results" class="reveal">
+          <div class="section-heading">
+            <h2>Current controller results</h2>
+            <p>The sidebar reports the reconstructed scalar loop metric; the full factor-based values remain available here as a secondary diagnostic.</p>
+          </div>
+
+          <table>
+            <thead><tr><th>Plant condition</th><th>PID normalized loop</th><th>LQR reconstructed loop</th><th>PID full NCF</th><th>LQR full-state NCF</th></tr></thead>
+            <tbody>
+              <tr><td>7k nominal</td><td>0.5876</td><td>0.7072</td><td>0.3909</td><td>0.1281</td></tr>
+              <tr><td>5k endpoint</td><td>0.3438</td><td>0.7079</td><td>0.3003</td><td>0.1290</td></tr>
+            </tbody>
+          </table>
+
+          <p>The corresponding PID/LQR gain margins are 16.35 dB/∞ at 7k and 6.88 dB/∞ at 5k. The infinite LQR gain margin means that the scalar return ratio has no destabilizing gain crossing in the evaluated band; it does not imply an infinite full NCF margin.</p>
+
+          <p>PID uses the physical scalar displacement-output plant. LQR uses the normalized full-state plant. Their uncertainty structures are therefore explicit but not identical. The LQR values are comparable across stiffness because one fixed normalization is used; comparison against PID must retain this distinction.</p>
+        </section>
+      </main>
+    </div>
+  </article>

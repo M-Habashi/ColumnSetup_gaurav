@@ -8,7 +8,8 @@ export function initAppShell() {
       const articleLabel = document.getElementById("articleLabel");
       const articleNames = {
         "article-1": "Pressure-coordinate LQGI",
-        "article-2": "Damage-ensemble LQGI"
+        "article-2": "Damage-ensemble LQGI",
+        "article-3": "LQR NCF margin"
       };
 
       function setArticlePanel(open) {
@@ -84,7 +85,9 @@ export function initAppShell() {
       document.querySelectorAll("main section[id]").forEach(section => sectionObserver.observe(section));
 
       document.getElementById("printReport").addEventListener("click", () => window.print());
-      const initialArticle = location.hash === "#article-2" || location.hash.startsWith("#damage-") ? "article-2" : "article-1";
+      let initialArticle = "article-1";
+      if (location.hash === "#article-2" || location.hash.startsWith("#damage-")) initialArticle = "article-2";
+      if (location.hash === "#article-3" || location.hash.startsWith("#ncf-")) initialArticle = "article-3";
       activateArticle(initialArticle, false);
 }
 

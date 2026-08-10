@@ -1,16 +1,17 @@
 "use strict";
 
-import { initAppShell } from "./app-shell.js";
+import { initAppShell } from "./app-shell.js?v=20260809-1";
 import { initDamageBodeExplorer } from "./damage-bode.js?v=20260808-1";
 import { initReportCharts } from "./report-charts.js?v=20260806-6";
-import { initTrackingBode } from "./tracking-bode.js?v=20260808-1";
-import { initLqriBode } from "./lqri-bode.js?v=20260808-1";
+import { initTrackingBode } from "./tracking-bode.js?v=20260809-2";
+import { initLqriBode } from "./lqri-bode.js?v=20260809-5";
 
-const contentRevision = "20260806-11";
+const contentRevision = "20260809-8";
 
 const componentPaths = [
   "components/article-pressure-lqgi.html",
-  "components/article-damage-ensemble.html"
+  "components/article-damage-ensemble.html",
+  "components/article-lqr-ncf.html"
 ];
 
 async function loadComponent(path) {

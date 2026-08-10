@@ -1,0 +1,193 @@
+<article class="report-article is-active" id="article-1" data-article="article-1">
+  <div class="report-intro">
+    <header class="intro">
+      <div class="intro-copy">
+        <span class="context-line">Literature review · searched 09 Aug 2026</span>
+        <h1>H∞ is credible. The novelty is not H∞.</h1>
+        <p>Robust H∞ control has a serious history in real-time hybrid simulation. The useful question is narrower: what did prior designs leave unresolved for a stiff actuator–specimen interaction that moves from the identified 7k condition to 5k?</p>
+        <div class="status-line"><strong>STATUS</strong><span>Evidence map and research hypothesis only. No new H∞ gain or performance result is claimed yet.</span></div>
+      </div>
+      <aside class="intro-aside verdict">
+        <strong>Review verdict</strong>
+        <p>Generic loop shaping, mixed sensitivity, parametric modeling, predictors, filtering, μ synthesis, and optimizer-tuned H∞ are occupied. A simple closed-loop specimen-sensitivity term remains worth testing.</p>
+      </aside>
+    </header>
+  </div>
+
+  <div class="report-layout">
+    <aside class="toc-rail">
+      <nav class="toc-nav" aria-label="Evidence-map sections">
+        <h2 class="rail-title">Evidence map</h2>
+        <div class="nav">
+          <a class="is-active" href="#evidence-decision"><span class="nav-index">01</span><span>Decision</span></a>
+          <a href="#evidence-local"><span class="nav-index">02</span><span>Local evidence</span></a>
+          <a href="#evidence-prior"><span class="nav-index">03</span><span>Direct prior art</span></a>
+          <a href="#evidence-gap"><span class="nav-index">04</span><span>The stiff-specimen gap</span></a>
+          <a href="#evidence-slow"><span class="nav-index">05</span><span>Slow hybrid simulation</span></a>
+          <a href="#evidence-claims"><span class="nav-index">06</span><span>Novelty audit</span></a>
+          <a href="#evidence-method"><span class="nav-index">07</span><span>Review method</span></a>
+        </div>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="evidence-decision">
+        <div class="section-heading">
+          <h2>The clean paper question</h2>
+          <p>Can one extra mathematical output make a fixed H∞ controller less sensitive to the measured specimen coordinate, while preserving tracking and the 2.5 command requirement?</p>
+        </div>
+
+        <div class="split">
+          <div class="note is-accent">
+            <h3>Primary hypothesis</h3>
+            <p>Penalize the derivative of the complete closed-loop response with respect to the normalized 7k–5k parameter. This asks the response itself—not merely stability—to remain insensitive to the specimen change.</p>
+          </div>
+          <div class="note">
+            <h3>Claim level</h3>
+            <p>The equation uses established robust-control ideas. The possible novelty is the stiff-specimen RTHS formulation, its use of the measured parameter family, and a physical demonstration against PID and ordinary H∞.</p>
+          </div>
+        </div>
+
+        <p>The recommendation is intentionally not a combination of learning, scheduling, μ synthesis, prediction, and anti-windup. Those methods remain useful comparators or later remedies. The first experiment should isolate one change so its effect can be understood and defended.</p>
+      </section>
+
+      <section id="evidence-local">
+        <div class="section-heading">
+          <h2>The local change is dynamic, not a gain knob</h2>
+          <p>The identified endpoint data show correlated changes in effective mass, damping, stiffness, resonance, magnitude, and phase. A scalar amplification model alone cannot represent this.</p>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric"><span>Stiffness</span><strong>−25.27%</strong><span class="metric-detail">7.2006 to 5.3808 MN/m</span></div>
+          <div class="metric"><span>Natural frequency</span><strong>−22.48%</strong><span class="metric-detail">64.29 to 49.83 Hz</span></div>
+          <div class="metric"><span>Damping</span><strong>×29.02</strong><span class="metric-detail">34.31 to 995.88 N·s/m</span></div>
+          <div class="metric"><span>Endpoint FRF magnitude</span><strong>9.27 dB</strong><span class="metric-detail">RMS difference over 2–79.75 Hz</span></div>
+          <div class="metric"><span>Endpoint FRF phase</span><strong>11.66°</strong><span class="metric-detail">RMS difference over the same band</span></div>
+          <div class="metric"><span>Available models</span><strong>2</strong><span class="metric-detail">Enough for a secant; not enough to validate a continuous physical family</span></div>
+        </div>
+
+        <div class="math-block" aria-label="Diagnostic affine endpoint family">
+          <math display="block">
+            <mtable rowspacing="0.65em">
+              <mtr><mtd><mi>A</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>A</mi><mn>7</mn></msub><mo>+</mo><mi>θ</mi><mo stretchy="false">(</mo><msub><mi>A</mi><mn>5</mn></msub><mo>−</mo><msub><mi>A</mi><mn>7</mn></msub><mo stretchy="false">)</mo></mtd></mtr>
+              <mtr><mtd><mi>B</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi>B</mi></mtd></mtr>
+              <mtr><mtd><mi>C</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>C</mi><mn>7</mn></msub><mo>+</mo><mi>θ</mi><mo stretchy="false">(</mo><msub><mi>C</mi><mn>5</mn></msub><mo>−</mo><msub><mi>C</mi><mn>7</mn></msub><mo stretchy="false">)</mo><mo>,</mo><mspace width="0.8em"></mspace><mi>θ</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo></mtd></mtr>
+            </mtable>
+          </math>
+        </div>
+        <p class="equation-caption">This family is a useful design hypothesis. An intermediate identification point and a separate blind holdout are required before it becomes physical evidence.</p>
+      </section>
+
+      <section id="evidence-prior">
+        <div class="section-heading">
+          <h2>Direct H∞ work in RTHS already covers a lot</h2>
+          <p>The chronology moved from robust loop shaping to MIMO, mixed sensitivity, delay reconstruction, multi-axis compensation, and automated weight tuning.</p>
+        </div>
+
+        <div class="table-shell">
+          <table class="source-table">
+            <thead><tr><th>Primary source</th><th>Design</th><th>Uncertainty or imperfection</th><th>Boundary for this project</th></tr></thead>
+            <tbody>
+              <tr><td><strong><a href="https://doi.org/10.1002/eqe.2246">Gao et al., 2013</a></strong><br>Earthquake Engineering &amp; Structural Dynamics</td><td>Normalized-coprime-factor H∞ loop shaping for actuator motion control.</td><td>Parametric error, unmodeled high-frequency dynamics, mass, stiffness, and inner-loop gain changes; feedback filtering for sensor noise.</td><td>Blocks “first H∞ loop shaping in RTHS.” It did not synthesize one controller against an exact continuous specimen family.</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.1016/j.ymssp.2014.03.001">Qian et al., 2014</a></strong><br>Mechanical Systems and Signal Processing</td><td>Reusable parametric servo-hydraulic actuator model followed by H∞ design.</td><td>Specimen mass/stiffness combinations and inner-loop gains.</td><td>Blocks “first use of an actuator–specimen parametric model for H∞.”</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.1002/eqe.2479">Ou et al., 2015</a></strong><br>Earthquake Engineering &amp; Structural Dynamics</td><td>H∞ loop-shaping feedback plus LQE and feedforward.</td><td>Noise, residual delay, lag, and plant variation on slow and fast actuators.</td><td>Blocks a simple H∞ + estimator + feedforward novelty claim.</td></tr>
+              <tr><td><strong><a href="https://jvs.sjtu.edu.cn/EN/Y2017/V36/I15/57">Ning et al., 2017</a></strong><br>Journal of Vibration and Shock</td><td>Inner-loop mixed-sensitivity H∞.</td><td>Nonlinear actuator/specimen behavior and delay.</td><td>Blocks “first inner-loop mixed-sensitivity H∞ in RTHS.”</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.1016/j.ymssp.2019.05.038">Ning et al., 2019</a></strong><br>Mechanical Systems and Signal Processing</td><td>Mixed-sensitivity H∞, polynomial extrapolation, and adaptive/Kalman displacement reconstruction.</td><td>Parameter error, high-frequency dynamics, delay, disturbance, and noise.</td><td>Predictor and filter additions are established; virtual benchmark only.</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.3390/sym13050840">Ning, 2021</a></strong><br>Symmetry</td><td>Explicit RTHS mixed-sensitivity weights and weight-influence study.</td><td>Multiplicative uncertainty, nonlinear actuator, stiffness/damping changes, and noise.</td><td>The standard weighted objective and manual weight study are occupied.</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.1002/stc.3017">Botelho et al., 2022</a></strong><br>Structural Control and Health Monitoring</td><td>MIMO robust stability/performance analysis.</td><td>Measured/modeled actuator dynamics as multiplicative uncertainty.</td><td>Multiplicative-uncertainty analysis is prior art; this was analysis rather than the proposed synthesis term.</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.3389/fbuil.2023.1270996">Condori Uribe et al., 2023</a></strong><br>Frontiers in Built Environment</td><td>Multi-axial benchmark and reference control architectures.</td><td>Coupling, actuator limitations, delay, and implementation effects.</td><td>A plant-only SISO result is not enough for a complete RTHS claim.</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.1002/eer2.70003">Xie et al., 2025</a></strong><br>Earthquake Engineering and Resilience</td><td>MIMO H∞ loop shaping plus polynomial extrapolation.</td><td>Multi-axis coupling, lag, and actuator interaction.</td><td>Generic multi-axis H∞ + extrapolation is occupied.</td></tr>
+              <tr><td><strong><a href="https://doi.org/10.1155/stc/8053214">Chen et al., 2026</a></strong><br>Structural Control and Health Monitoring</td><td>PSO-optimized H∞ using amplitude- and delay-error indices.</td><td>Parameter perturbations, nonlinear specimen, single/dual actuators; command-demand penalty.</td><td>Blocks “intelligent optimization of H∞ weights” and a simple peak-command penalty as novelty.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="evidence-gap">
+        <div class="section-heading">
+          <h2>A specific opening: stiff control–structure interaction</h2>
+          <p>The most useful gap is not hidden in a fashionable algorithm. It appears in the limitations of the foundational Purdue work.</p>
+        </div>
+
+        <div class="split">
+          <div class="split-copy">
+            <p><a href="https://engineering.purdue.edu/IISL/Publications/DSc_Dissertations/Xiuyu_Gao.pdf">Gao’s dissertation</a>, which underpins the 2013 loop-shaping paper, varied specimen stiffness, mass, and inner-loop gain. In that setup, stiffness was less influential than mass and gain.</p>
+            <p>The dissertation nevertheless cautioned that stiffness sensitivity required more validation when specimen stiffness becomes comparable to actuator loading capacity. That is unusually close to the present column problem, where the measured endpoint change moves resonance, damping, magnitude, and phase substantially.</p>
+          </div>
+          <div class="note is-warning">
+            <h3>Defensible gap statement</h3>
+            <p>Stiff-specimen RTHS in the control–structure-interaction regime remains a credible application gap—provided the project demonstrates that its specimen/load-frame condition is actually in that regime.</p>
+          </div>
+        </div>
+
+        <p>Earlier loop-shaping studies also documented noise amplification, artificial high-frequency closed-loop modes, and saturation risk. Those are important validation checks, but adding a filter and a command penalty would not be a new idea. The proposed contribution should remain the parameter-sensitivity term.</p>
+      </section>
+
+      <section id="evidence-slow">
+        <div class="section-heading">
+          <h2>Slow hybrid simulation is a different control problem</h2>
+          <p>No direct peer-reviewed H∞ transfer-system study for classical slow or quasi-static hybrid simulation was identified in this review. That is not proof of absence.</p>
+        </div>
+
+        <div class="system-strip" aria-label="Control priorities from slow hybrid simulation to RTHS">
+          <div class="system-node"><strong>Slow test</strong><span>settling and equilibrium iteration</span></div>
+          <div class="system-node"><strong>Faster test</strong><span>friction, drift, force accuracy</span></div>
+          <div class="system-node"><strong>Continuous PsD</strong><span>lag and phase alignment</span></div>
+          <div class="system-node"><strong>RTHS</strong><span>delay and stability margin</span></div>
+          <div class="system-node"><strong>Multi-axis RTHS</strong><span>coupling and synchronization</span></div>
+        </div>
+
+        <p>At slow rates, broadband delay robustness is less central because the actuator can settle between integration steps. H∞ becomes more compelling as the test becomes continuous or real time, or when multi-axis coupling, force/displacement filtering, and noisy dynamics remain active. The present project belongs on the RTHS side of that spectrum.</p>
+      </section>
+
+      <section id="evidence-claims">
+        <div class="section-heading">
+          <h2>Novelty claims, audited before implementation</h2>
+          <p>The safest paper starts by stating what it will not claim.</p>
+        </div>
+
+        <div class="table-shell">
+          <table class="audit-table">
+            <thead><tr><th>Potential claim</th><th>Status</th><th>Reason</th></tr></thead>
+            <tbody>
+              <tr><td>H∞ control for RTHS</td><td class="claim-blocked">Blocked</td><td>Gao 2013 and later work.</td></tr>
+              <tr><td>Mixed-sensitivity RTHS control</td><td class="claim-blocked">Blocked</td><td>Ning 2017 and 2021.</td></tr>
+              <tr><td>Parametric actuator/specimen H∞</td><td class="claim-blocked">Blocked</td><td>Qian 2014.</td></tr>
+              <tr><td>H∞ plus predictor, filter, or anti-windup</td><td class="claim-blocked">Blocked</td><td>Direct RTHS and dynamically substructured-system precedents.</td></tr>
+              <tr><td>PSO or intelligent H∞ weight tuning</td><td class="claim-blocked">Blocked</td><td>Chen 2026.</td></tr>
+              <tr><td>Continuous-family parameter-sensitivity output for stiff-specimen RTHS</td><td class="claim-open">Testable</td><td>A simple project-specific formulation; novelty depends on intermediate-condition and physical evidence.</td></tr>
+              <tr><td>New general H∞ theory</td><td class="claim-known">Not supported</td><td>The mathematical tools are established. Aim for a rigorous RTHS method and experiment.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="evidence-method">
+        <div class="section-heading">
+          <h2>Scope, method, and source trail</h2>
+          <p>This is a structured scoping review, not a PRISMA systematic review. Searches combined RTHS, real-time/slow hybrid simulation, H∞, loop shaping, mixed sensitivity, actuator compensation, parameter uncertainty, gain, delay, LPV, and μ synthesis. Primary papers and publisher records were preferred.</p>
+        </div>
+
+        <ul class="source-list">
+          <li><a href="https://doi.org/10.1002/stc.174">Gawthrop et al., 2007 — robust real-time substructuring</a></li>
+          <li><a href="https://doi.org/10.1002/eqe.2246">Gao et al., 2013 — H∞ loop shaping</a></li>
+          <li><a href="https://doi.org/10.1061/(ASCE)EM.1943-7889.0000696">Gao et al., 2014 — MIMO extension</a></li>
+          <li><a href="https://doi.org/10.1016/j.ymssp.2014.03.001">Qian et al., 2014 — parametric actuator identification</a></li>
+          <li><a href="https://doi.org/10.1002/eqe.2479">Ou et al., 2015 — robust integrated actuator control</a></li>
+          <li><a href="https://doi.org/10.1016/j.ymssp.2019.05.038">Ning et al., 2019 — robust compensation</a></li>
+          <li><a href="https://doi.org/10.3390/sym13050840">Ning, 2021 — mixed sensitivity</a></li>
+          <li><a href="https://doi.org/10.1002/stc.3017">Botelho et al., 2022 — MIMO robust analysis</a></li>
+          <li><a href="https://doi.org/10.3389/fbuil.2023.1270996">Condori Uribe et al., 2023 — maRTHS benchmark</a></li>
+          <li><a href="https://doi.org/10.1002/eer2.70003">Xie et al., 2025 — multi-axial H∞ compensation</a></li>
+          <li><a href="https://doi.org/10.1155/stc/8053214">Chen et al., 2026 — PSO-optimized H∞</a></li>
+          <li><a href="https://doi.org/10.1177/0959651820959003">Peiris et al., 2021 — passivity comparator</a></li>
+        </ul>
+
+        <div class="note is-warning">
+          <h3>Literature-review limit</h3>
+          <p>“Not identified” is not “does not exist.” Before submission, repeat the search in Scopus/Web of Science and perform backward/forward citation screening around Gao 2013, Qian 2014, Ning 2021, and Chen 2026.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</article>

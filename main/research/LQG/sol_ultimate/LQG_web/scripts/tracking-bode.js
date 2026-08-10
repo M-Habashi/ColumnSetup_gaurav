@@ -1,7 +1,7 @@
 "use strict";
 
 import { attachAxisZoom, formatAxisTick, linearTicks, scaleLinear } from "./axis-zoom.js?v=20260808-1";
-import { createStepResponse } from "./step-response.js?v=20260808-1";
+import { createStepResponse } from "./step-response.js?v=20260809-2";
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 
@@ -21,8 +21,17 @@ export function initTrackingBode(reportData) {
   const visible = new Set(["pid", "lqr"]);
   const updateStep = createStepResponse("tracking", design.step, ["pid", "lqr"]);
   const box = { left: 66, right: 650, top: 26, bottom: 222 };
-  const magnitudeDomain = { x: [0, frequencies[frequencies.length - 1]], y: [-35, 25] };
-  const phaseDomain = { x: [0, frequencies[frequencies.length - 1]], y: [-450, 0] };
+  const endpointSeries = [data.condition7k, data.condition5k].flatMap(condition => [condition.pid, condition.lqr]);
+  const magnitudes = endpointSeries.flatMap(series => series.magnitude_db).filter(Number.isFinite);
+  const phases = endpointSeries.flatMap(series => series.phase_deg).filter(Number.isFinite);
+  const magnitudeDomain = {
+    x: [0, frequencies[frequencies.length - 1]],
+    y: [Math.floor((Math.min(...magnitudes) - 3) / 10) * 10, Math.ceil((Math.max(...magnitudes) + 3) / 10) * 10]
+  };
+  const phaseDomain = {
+    x: [0, frequencies[frequencies.length - 1]],
+    y: [Math.floor((Math.min(...phases) - 10) / 30) * 30, Math.ceil((Math.max(0, ...phases) + 10) / 30) * 30]
+  };
   const magnitudeGrid = document.getElementById("trackingBodeMagGrid");
   const phaseGrid = document.getElementById("trackingBodePhaseGrid");
   const magnitudePaths = [document.getElementById("trackingBodeMagPid"), document.getElementById("trackingBodeMagLqr")];
@@ -116,11 +125,16 @@ export function initTrackingBode(reportData) {
     return values[lower] + (position - lower) * (values[upper] - values[lower]);
   }
 
+  function formatGainMargin(value) {
+    return value >= 1e5 ? "∞" : `${value.toFixed(1)} dB`;
+  }
+
   function setCurveVisibility(key) {
     const display = visible.has(key) ? "" : "none";
     document.getElementById(`trackingBodeMag${key === "pid" ? "Pid" : "Lqr"}`).style.display = display;
     document.getElementById(`trackingBodePhase${key === "pid" ? "Pid" : "Lqr"}`).style.display = display;
     document.getElementById(`trackingStep${key === "pid" ? "Pid" : "Lqr"}`).style.display = display;
+    document.getElementById(`trackingStep${key === "pid" ? "Pid" : "Lqr"}Command`).style.display = display;
   }
 
   function update() {
@@ -135,20 +149,30 @@ export function initTrackingBode(reportData) {
     document.getElementById("trackingPlantOut").textContent = conditionLabel(condition);
     document.getElementById("trackingPidNcfOut").textContent = interpolateMargin("pid", condition).toFixed(2);
     document.getElementById("trackingLqrNcfOut").textContent = interpolateMargin("lqr", condition).toFixed(2);
+    const gainMargins = design.margin.gain_margin_db;
+    const marginAt = key => {
+      const values = gainMargins[key];
+      const position = condition * (values.length - 1);
+      const lower = Math.floor(position);
+      const upper = Math.min(lower + 1, values.length - 1);
+      return values[lower] + (position - lower) * (values[upper] - values[lower]);
+    };
+    document.getElementById("trackingPidGmOut").textContent = formatGainMargin(marginAt("pid"));
+    document.getElementById("trackingLqrGmOut").textContent = formatGainMargin(marginAt("lqr"));
     updateStep(condition);
   }
 
-  drawGrid(magnitudeGrid, magnitudeDomain, "Magnitude (dB)", false);
-  drawGrid(phaseGrid, phaseDomain, "Phase (deg)", true);
+  drawGrid(magnitudeGrid, magnitudeDomain, "Return-ratio magnitude (dB)", false);
+  drawGrid(phaseGrid, phaseDomain, "Return-ratio phase (deg)", true);
   attachAxisZoom({
     svg: magnitudeGrid.closest("svg"), box, xDomain: magnitudeDomain.x, yDomain: magnitudeDomain.y, clipElements: magnitudePaths,
-    onChange: (x, y) => { magnitudeDomain.x = x; magnitudeDomain.y = y; drawGrid(magnitudeGrid, magnitudeDomain, "Magnitude (dB)", false); update(); }
+    onChange: (x, y) => { magnitudeDomain.x = x; magnitudeDomain.y = y; drawGrid(magnitudeGrid, magnitudeDomain, "Return-ratio magnitude (dB)", false); update(); }
   });
   attachAxisZoom({
     svg: phaseGrid.closest("svg"), box, xDomain: phaseDomain.x, yDomain: phaseDomain.y, clipElements: phasePaths,
-    onChange: (x, y) => { phaseDomain.x = x; phaseDomain.y = y; drawGrid(phaseGrid, phaseDomain, "Phase (deg)", true); update(); }
+    onChange: (x, y) => { phaseDomain.x = x; phaseDomain.y = y; drawGrid(phaseGrid, phaseDomain, "Return-ratio phase (deg)", true); update(); }
   });
-  document.getElementById("trackingLqrLegend").textContent = `LQR (Qy = ${Number(design.qy).toPrecision(8)}, R = ${design.ru})`;
+  document.getElementById("trackingLqrLegend").textContent = `LQR (command-constrained, R = ${design.ru})`;
   document.getElementById("trackingPlantSlider").addEventListener("input", update);
   document.querySelectorAll("[data-tracking-series]").forEach(button => {
     button.addEventListener("click", () => {

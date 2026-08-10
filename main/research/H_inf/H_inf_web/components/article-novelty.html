@@ -1,0 +1,215 @@
+<article class="report-article" id="article-3" data-article="article-3" hidden>
+  <div class="report-intro">
+    <header class="intro">
+      <div class="intro-copy">
+        <span class="context-line">Recommended research hypothesis</span>
+        <h1>One extra output: make the response insensitive to the specimen</h1>
+        <p>The proposal keeps a fixed H∞ controller and adds one mathematically explicit performance output. It does not require an online estimator, switching law, neural network, predictor, or bundle of robust-control techniques.</p>
+      </div>
+      <aside class="intro-aside verdict">
+        <strong>Why this idea</strong>
+        <p>The available model already tells us how the plant moves from 7k to 5k. Penalizing the derivative of the closed-loop response uses that information at the exact point where the current designs struggle.</p>
+      </aside>
+    </header>
+  </div>
+
+  <div class="report-layout">
+    <aside class="toc-rail">
+      <nav class="toc-nav" aria-label="Novelty proposal sections">
+        <h2 class="rail-title">One-term proposal</h2>
+        <div class="nav">
+          <a class="is-active" href="#idea-question"><span class="nav-index">01</span><span>Research question</span></a>
+          <a href="#idea-plant"><span class="nav-index">02</span><span>Plant derivative</span></a>
+          <a href="#idea-loop"><span class="nav-index">03</span><span>Closed-loop derivative</span></a>
+          <a href="#idea-objective"><span class="nav-index">04</span><span>Minimal objective</span></a>
+          <a href="#idea-command"><span class="nav-index">05</span><span>Command constraint</span></a>
+          <a href="#idea-pid"><span class="nav-index">06</span><span>Fair PID test</span></a>
+          <a href="#idea-experiment"><span class="nav-index">07</span><span>Decisive experiment</span></a>
+          <a href="#idea-alternatives"><span class="nav-index">08</span><span>Alternatives</span></a>
+        </div>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="idea-question">
+        <div class="section-heading">
+          <h2>A falsifiable question, not a controller slogan</h2>
+          <p>Does directly reducing closed-loop sensitivity to the identified specimen coordinate improve both endpoint responses and an unseen intermediate condition under the same command limit?</p>
+        </div>
+
+        <div class="idea-rank"><span>01</span><div><h3>Keep one fixed controller</h3><p>No pressure measurement, scheduling, switching, or adaptation is required during the test.</p></div></div>
+        <div class="idea-rank"><span>02</span><div><h3>Add one term</h3><p>Penalize <math class="inline-math" aria-label="partial T over partial theta"><mo>∂</mo><mi>T</mi><mo>/</mo><mo>∂</mo><mi>θ</mi></math>, the change in complete closed-loop response per unit specimen change.</p></div></div>
+        <div class="idea-rank"><span>03</span><div><h3>Isolate its value</h3><p>Compare the same controller order, weights, initialization, and solver with the term off and on.</p></div></div>
+
+        <div class="note is-accent">
+          <h3>Possible contribution statement</h3>
+          <p>A specimen-sensitivity performance output for fixed H∞ control of stiff RTHS actuator–structure interaction, validated across identified endpoints and a blind intermediate condition.</p>
+        </div>
+      </section>
+
+      <section id="idea-plant">
+        <div class="section-heading">
+          <h2>The existing parametric model gives the derivative</h2>
+          <p>No learned surrogate is necessary. Differentiate the identified state-space transfer with respect to its dimensionless specimen coordinate.</p>
+        </div>
+
+        <div class="math-block" aria-label="Parametric state-space plant">
+          <math display="block">
+            <mtable rowspacing="0.7em">
+              <mtr><mtd><mi>G</mi><mo stretchy="false">(</mo><mi>s</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi>C</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><msup><mrow><mo>[</mo><mi>s</mi><mi>I</mi><mo>−</mo><mi>A</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>]</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>B</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>+</mo><mi>D</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mtd></mtr>
+              <mtr><mtd><msub><mi>R</mi><mi>s</mi></msub><mo>=</mo><msup><mrow><mo>[</mo><mi>s</mi><mi>I</mi><mo>−</mo><mi>A</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>]</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mtd></mtr>
+            </mtable>
+          </math>
+        </div>
+
+        <div class="math-block is-key" aria-label="Analytic plant parameter derivative">
+          <math display="block">
+            <mfrac><mrow><mo>∂</mo><mi>G</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>=</mo><msub><mi>C</mi><mi>θ</mi></msub><msub><mi>R</mi><mi>s</mi></msub><mi>B</mi><mo>+</mo><mi>C</mi><msub><mi>R</mi><mi>s</mi></msub><msub><mi>A</mi><mi>θ</mi></msub><msub><mi>R</mi><mi>s</mi></msub><mi>B</mi><mo>+</mo><mi>C</mi><msub><mi>R</mi><mi>s</mi></msub><msub><mi>B</mi><mi>θ</mi></msub><mo>+</mo><msub><mi>D</mi><mi>θ</mi></msub>
+          </math>
+        </div>
+
+        <p>For the current affine diagnostic family, <math class="inline-math" aria-label="A theta"><msub><mi>A</mi><mi>θ</mi></msub></math> and <math class="inline-math" aria-label="C theta"><msub><mi>C</mi><mi>θ</mi></msub></math> are simply the endpoint secants, while <math class="inline-math" aria-label="B theta equals zero"><msub><mi>B</mi><mi>θ</mi></msub><mo>=</mo><mn>0</mn></math>. The same derivation works after a better physical family is identified.</p>
+      </section>
+
+      <section id="idea-loop">
+        <div class="section-heading">
+          <h2>The complete tracker derivative has a compact form</h2>
+          <p>Include the reference precompensator or feedforward block explicitly. Do not infer a feedback loop from a closed-loop curve that already contains it.</p>
+        </div>
+
+        <div class="system-strip" aria-label="Two-degree-of-freedom closed-loop architecture">
+          <div class="system-node"><strong>Reference</strong><span>unit step or RTHS command</span></div>
+          <div class="system-node"><strong>K<sub>r</sub></strong><span>feedforward / precompensator</span></div>
+          <div class="system-node"><strong>Plant G(θ)</strong><span>actuator + specimen</span></div>
+          <div class="system-node"><strong>Measured y</strong><span>displacement feedback</span></div>
+          <div class="system-node"><strong>−K<sub>y</sub></strong><span>shared fixed feedback</span></div>
+        </div>
+
+        <div class="math-block" aria-label="Two degree of freedom closed loop">
+          <math display="block">
+            <mtable rowspacing="0.7em">
+              <mtr><mtd><mi>u</mi><mo>=</mo><msub><mi>K</mi><mi>r</mi></msub><mi>r</mi><mo>−</mo><msub><mi>K</mi><mi>y</mi></msub><mi>y</mi></mtd></mtr>
+              <mtr><mtd><msub><mi>S</mi><mi>o</mi></msub><mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mi>I</mi><mo>+</mo><mi>G</mi><msub><mi>K</mi><mi>y</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><mo>,</mo><mspace width="0.8em"></mspace><msub><mi>S</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mi>I</mi><mo>+</mo><msub><mi>K</mi><mi>y</mi></msub><mi>G</mi><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mtd></mtr>
+              <mtr><mtd><msub><mi>T</mi><mi>K</mi></msub><mo>=</mo><msub><mi>S</mi><mi>o</mi></msub><mi>G</mi><msub><mi>K</mi><mi>r</mi></msub></mtd></mtr>
+            </mtable>
+          </math>
+        </div>
+
+        <div class="math-block is-key" aria-label="Exact closed loop parameter derivative">
+          <math display="block">
+            <mfrac><mrow><mo>∂</mo><msub><mi>T</mi><mi>K</mi></msub></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>=</mo><msub><mi>S</mi><mi>o</mi></msub><mfrac><mrow><mo>∂</mo><mi>G</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><msub><mi>S</mi><mi>i</mi></msub><msub><mi>K</mi><mi>r</mi></msub>
+          </math>
+        </div>
+
+        <p>This identity is exact for the stated fixed controller architecture. In SISO form it becomes <math class="inline-math" aria-label="K r S squared G theta"><msub><mi>K</mi><mi>r</mi></msub><msup><mi>S</mi><mn>2</mn></msup><msub><mi>G</mi><mi>θ</mi></msub></math>. It exposes the mechanism clearly: the new term discourages the sensitivity functions from amplifying the plant’s known parameter direction.</p>
+      </section>
+
+      <section id="idea-objective">
+        <div class="section-heading">
+          <h2>The complete proposal is one line</h2>
+          <p>Tracking and command are the ordinary baseline. The final row is the only proposed addition.</p>
+        </div>
+
+        <div class="math-block" aria-label="Tracking error and command maps">
+          <math display="block">
+            <msub><mi>E</mi><mi>θ</mi></msub><mo>=</mo><mi>I</mi><mo>−</mo><msub><mi>T</mi><mi>K</mi></msub><mo stretchy="false">(</mo><mi>s</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.2em"></mspace><msub><mi>U</mi><mi>θ</mi></msub><mo>=</mo><mfrac><mi>u</mi><mi>r</mi></mfrac><mo>=</mo><msub><mi>S</mi><mi>i</mi></msub><msub><mi>K</mi><mi>r</mi></msub>
+          </math>
+        </div>
+
+        <div class="math-block is-key" aria-label="Minimal parameter sensitivity H infinity objective">
+          <math display="block">
+            <msub><mi>J</mi><mi>λ</mi></msub><mo stretchy="false">(</mo><mi>K</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>sup</mo><mrow><mi>θ</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo></mrow></munder><msub><mrow><mo>||</mo><mrow><mo>[</mo><mtable rowspacing="0.45em"><mtr><mtd><msub><mi>W</mi><mi>e</mi></msub><msub><mi>E</mi><mi>θ</mi></msub></mtd></mtr><mtr><mtd><msub><mi>W</mi><mi>u</mi></msub><msub><mi>U</mi><mi>θ</mi></msub></mtd></mtr><mtr><mtd><mi>λ</mi><msub><mi>W</mi><mi>θ</mi></msub><mfrac><mrow><mo>∂</mo><msub><mi>T</mi><mi>θ</mi></msub></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac></mtd></mtr></mtable><mo>]</mo></mrow><mo>||</mo></mrow><mi>∞</mi></msub>
+          </math>
+        </div>
+
+        <ul class="plain-list">
+          <li><strong><math class="inline-math" aria-label="W e E theta"><msub><mi>W</mi><mi>e</mi></msub><msub><mi>E</mi><mi>θ</mi></msub></math></strong> prevents two equally bad responses from appearing “consistent.”</li>
+          <li><strong><math class="inline-math" aria-label="W u U theta"><msub><mi>W</mi><mi>u</mi></msub><msub><mi>U</mi><mi>θ</mi></msub></math></strong> discourages command amplification but does not replace the hard peak constraint.</li>
+          <li><strong><math class="inline-math" aria-label="lambda W theta partial T"><mi>λ</mi><msub><mi>W</mi><mi>θ</mi></msub><mo>∂</mo><msub><mi>T</mi><mi>θ</mi></msub><mo>/</mo><mo>∂</mo><mi>θ</mi></math></strong> is the experiment: set <math class="inline-math" aria-label="lambda zero"><mi>λ</mi><mo>=</mo><mn>0</mn></math> for the baseline and turn it on without changing anything else.</li>
+        </ul>
+
+        <div class="math-block" aria-label="Endpoint spread bound from derivative">
+          <math display="block">
+            <mrow><mo>||</mo><msub><mi>T</mi><mn>5</mn></msub><mo>−</mo><msub><mi>T</mi><mn>7</mn></msub><mo>||</mo></mrow><mo>=</mo><mrow><mo>||</mo><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mfrac><mrow><mo>∂</mo><mi>T</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mi>d</mi><mi>θ</mi><mo>||</mo></mrow><mo>≤</mo><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mrow><mo>||</mo><mfrac><mrow><mo>∂</mo><mi>T</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>||</mo></mrow><mi>d</mi><mi>θ</mi>
+          </math>
+        </div>
+        <p class="equation-caption">This is the mathematical justification: controlling the parameter derivative controls the maximum response spread across the family.</p>
+
+        <div class="note is-warning">
+          <h3>Honest limitation</h3>
+          <p>Fixed-order H∞ tuning with a repeated controller and a continuous parameter is generally nonsmooth and nonconvex. The equation is sound, but a numerical solution is not a proof of global optimality. Use multiple starts and independent dense-parameter verification.</p>
+        </div>
+      </section>
+
+      <section id="idea-command">
+        <div class="section-heading">
+          <h2>Keep the actuator limit separate and visible</h2>
+          <p>A standard H∞ norm cannot promise the maximum of a step trajectory. The optimization must check the family’s raw command directly.</p>
+        </div>
+
+        <div class="math-block is-key" aria-label="Command peak constraint with accepted tolerance">
+          <math display="block">
+            <munder><mo>max</mo><mrow><mi>θ</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>,</mo><mspace width="0.4em"></mspace><mi>t</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mi>T</mi><mo>]</mo></mrow></munder><mo>|</mo><msub><mi>u</mi><mtext>step</mtext></msub><mo stretchy="false">(</mo><mi>t</mi><mo>;</mo><mi>θ</mi><mo>,</mo><mi>K</mi><mo stretchy="false">)</mo><mo>|</mo><mo>−</mo><mn>2.5</mn><mo>≤</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup>
+          </math>
+        </div>
+
+        <p>The specification is still 2.5; <math class="inline-math" aria-label="ten to the minus two"><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup></math> is the accepted feasibility tolerance. Report the worst <math class="inline-math" aria-label="theta t"><mo stretchy="false">(</mo><mi>θ</mi><mo>,</mo><mi>t</mi><mo stretchy="false">)</mo></math>, raw peak, saturated peak, and whether the solution is tolerance-active. This separates a real physical requirement from a soft command weight.</p>
+      </section>
+
+      <section id="idea-pid">
+        <div class="section-heading">
+          <h2>“Better than PID” needs a frozen comparison</h2>
+          <p>The PID is not inserted into the proposed equation. It is the success threshold, evaluated through exactly the same deployed architecture.</p>
+        </div>
+
+        <div class="table-shell">
+          <table class="audit-table">
+            <thead><tr><th>Must be identical</th><th>Why it matters</th></tr></thead>
+            <tbody>
+              <tr><td>7k, 5k, and held-out plant models</td><td>Prevents different uncertainty sets from deciding the winner.</td></tr>
+              <tr><td>Reference precompensator / feedforward definition</td><td>A closed-loop curve containing <math class="inline-math" aria-label="K r"><msub><mi>K</mi><mi>r</mi></msub></math> is not a loop-break response.</td></tr>
+              <tr><td>Sample rate, delay, filters, and numerical substructure</td><td>Plant-only margins can reverse in the deployed RTHS loop.</td></tr>
+              <tr><td>2.5 command, rate, and saturation model</td><td>An aggressive controller cannot buy performance with unavailable command.</td></tr>
+              <tr><td>Noise and excitation records</td><td>Prior H∞ work found noise-driven high-frequency modes and command amplification.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Predeclare the score: lower worst-condition tracking error and response spread than PID, with no worse command peak, saturation exposure, or stability failure. Show each condition separately and the worst case; a mean can hide one bad endpoint.</p>
+      </section>
+
+      <section id="idea-experiment">
+        <div class="section-heading">
+          <h2>The decisive experiment is small</h2>
+          <p>Only one switch—<math class="inline-math" aria-label="lambda"><mi>λ</mi></math>—is needed to establish whether the proposed term adds value.</p>
+        </div>
+
+        <ol class="gate-list">
+          <li>Identify an intermediate condition and fit the specimen coordinate; reserve a different intermediate condition as a blind holdout.</li>
+          <li>Freeze controller order, ordinary weights, solver settings, random starts, and the 2.5 command constraint.</li>
+          <li>Tune the baseline with <math class="inline-math" aria-label="lambda equals zero"><mi>λ</mi><mo>=</mo><mn>0</mn></math>.</li>
+          <li>Tune a short, declared sweep of <math class="inline-math" aria-label="lambda greater than zero"><mi>λ</mi><mo>&gt;</mo><mn>0</mn></math>; select before opening the blind holdout.</li>
+          <li>Compare PID, ordinary H∞, and the one-term design at 7k, 5k, the holdout, and the complete nonlinear RTHS loop.</li>
+          <li>Reject the novelty hypothesis if the added term does not improve worst-condition tracking/consistency under the same command budget.</li>
+        </ol>
+
+        <div class="note is-accent">
+          <h3>Why this is publishable if it works</h3>
+          <p>The ablation isolates a physically motivated mathematical change; the holdout tests whether the model generalizes; and the command constraint prevents a false performance win. That evidence is more defensible than a large optimizer with many untraceable ingredients.</p>
+        </div>
+      </section>
+
+      <section id="idea-alternatives">
+        <div class="section-heading">
+          <h2>Two simple fallback ideas—test separately</h2>
+          <p>If the parameter-derivative term fails, do not immediately combine more methods. Change one assumption at a time.</p>
+        </div>
+
+        <div class="idea-rank"><span>A</span><div><h3>PID-envelope tracking weight</h3><p>Fit the ordinary H∞ error weight to the worst PID error envelope, with a finite floor near PID zeros. This directly asks the design to beat the benchmark, but uses less specimen physics.</p></div></div>
+        <div class="idea-rank"><span>B</span><div><h3>Physics-scaled break frequency</h3><p>Scale the tracking-weight bandwidth with <math class="inline-math" aria-label="omega n equals square root k over m"><msub><mi>ω</mi><mi>n</mi></msub><mo>=</mo><msqrt><mrow><msub><mi>k</mi><mtext>eff</mtext></msub><mo>/</mo><msub><mi>m</mi><mtext>eff</mtext></msub></mrow></msqrt></math> so the desired response is constant relative to the moving structural mode.</p></div></div>
+
+        <p>Neither fallback should be stacked with the primary term until its independent contribution is measured. Simplicity is part of the research design, not merely an implementation preference.</p>
+      </section>
+    </main>
+  </div>
+</article>

@@ -91,6 +91,10 @@
 
     .tracking-bode-pid { stroke: var(--osi-yellow); }
     .tracking-bode-lqr { stroke: #007ca8; }
+    .lqri-step-status { fill: #901500 !important; font-size: 13px !important; font-weight: 700; }
+    .lqri-stability-unstable { color: #901500 !important; }
+    .step-command { stroke-width: 2; stroke-dasharray: 7 5; }
+    .step-zero-line { stroke: #8a877f; stroke-width: 1.2; }
     .tracking-bode-legend { border-top: 1px solid var(--osi-line); padding-top: 12px; }
     .damage-bode-legend-button {
       display: flex;

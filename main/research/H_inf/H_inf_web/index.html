@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Evidence map and minimal novelty proposal for H-infinity control of the Purdue pressure-varying RTHS actuator/specimen system.">
+  <title>H∞ research map · ColumnSetup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/content.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="article-panel-toggle" type="button" id="articlePanelToggle" aria-controls="articlePanel" aria-expanded="false">
+      <span class="menu-mark" aria-hidden="true"></span><span>Articles</span>
+    </button>
+    <div class="brand"><strong>H∞ / ColumnSetup</strong><span id="articleLabel">Evidence map</span></div>
+    <button class="topbar-action" type="button" id="printReport">Print</button>
+    <div class="reading-progress" id="readingProgress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+  </header>
+
+  <aside class="article-panel" id="articlePanel" aria-label="Research articles" aria-hidden="true">
+    <div class="article-panel-head">
+      <strong>H∞ research articles</strong>
+      <button class="article-panel-close" type="button" id="articlePanelClose" aria-label="Close article panel">×</button>
+    </div>
+    <div class="article-list">
+      <button class="article-option is-active" type="button" data-article-target="article-1" aria-pressed="true">
+        <span class="article-number">01</span>
+        <span><strong>Evidence map</strong><span class="article-summary">What RTHS H∞ work already did, what it modeled, and which claims are closed.</span></span>
+      </button>
+      <button class="article-option" type="button" data-article-target="article-2" aria-pressed="false">
+        <span class="article-number">02</span>
+        <span><strong>Uncertainty, honestly</strong><span class="article-summary">Specimen parameters, gain amplification, residual dynamics, delay, and saturation.</span></span>
+      </button>
+      <button class="article-option" type="button" data-article-target="article-3" aria-pressed="false">
+        <span class="article-number">03</span>
+        <span><strong>One-term proposal</strong><span class="article-summary">A minimal parameter-sensitivity addition, command constraint, and decisive experiment.</span></span>
+      </button>
+    </div>
+  </aside>
+
+  <button class="article-panel-backdrop" type="button" id="articlePanelBackdrop" aria-label="Close article panel"></button>
+  <div id="articleMount"><p class="sr-only" role="status">Loading research articles.</p></div>
+  <noscript><main class="load-error"><h1>JavaScript is required</h1><p>This report loads its articles as local HTML components.</p></main></noscript>
+
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>
+

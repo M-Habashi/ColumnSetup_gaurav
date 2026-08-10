@@ -1,0 +1,171 @@
+<article class="report-article" id="article-2" data-article="article-2" hidden>
+  <div class="report-intro">
+    <header class="intro">
+      <div class="intro-copy">
+        <span class="context-line">Modeling guide</span>
+        <h1>Robust to what, exactly?</h1>
+        <p>An H∞ label does not create robustness. The generalized plant has to say which changes are correlated physics, which are unexplained dynamics, and which are nonlinear limits that a linear norm cannot guarantee.</p>
+      </div>
+      <aside class="intro-aside verdict">
+        <strong>First-study rule</strong>
+        <p>Put the validated specimen coordinate inside synthesis. Use gain, delay, noise, and saturation as explicit stress tests first. Add another uncertainty block only when data show it is needed.</p>
+      </aside>
+    </header>
+  </div>
+
+  <div class="report-layout">
+    <aside class="toc-rail">
+      <nav class="toc-nav" aria-label="Uncertainty article sections">
+        <h2 class="rail-title">Uncertainty guide</h2>
+        <div class="nav">
+          <a class="is-active" href="#unc-principle"><span class="nav-index">01</span><span>Modeling principle</span></a>
+          <a href="#unc-physics"><span class="nav-index">02</span><span>Specimen coordinate</span></a>
+          <a href="#unc-gain"><span class="nav-index">03</span><span>Gain amplification</span></a>
+          <a href="#unc-dynamics"><span class="nav-index">04</span><span>Residual dynamics</span></a>
+          <a href="#unc-delay"><span class="nav-index">05</span><span>Delay and jitter</span></a>
+          <a href="#unc-command"><span class="nav-index">06</span><span>Saturation and command</span></a>
+          <a href="#unc-choice"><span class="nav-index">07</span><span>Minimal choice</span></a>
+        </div>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="unc-principle">
+        <div class="section-heading">
+          <h2>Separate knowledge from ignorance</h2>
+          <p>The 7k–5k motion is measured structure. Residual high-frequency error is uncertainty. Treating both as one generic multiplicative envelope throws away the most useful information in the project.</p>
+        </div>
+
+        <div class="uncertainty-map">
+          <div class="uncertainty-item"><span>KNOWN SHAPE</span><h3>Specimen coordinate</h3><p>One correlated real parameter moves the identified mass, damping, stiffness, and state-space coefficients.</p></div>
+          <div class="uncertainty-item"><span>REAL SCALE</span><h3>Gain amplification</h3><p>A bounded real block is appropriate only when the error is essentially static over frequency.</p></div>
+          <div class="uncertainty-item"><span>UNKNOWN SHAPE</span><h3>Residual dynamics</h3><p>A norm-bounded dynamic block covers FRF error left after the specimen model is removed.</p></div>
+          <div class="uncertainty-item"><span>NONLINEAR LIMIT</span><h3>Saturation</h3><p>The 2.5 command cap is a trajectory constraint, not an ordinary H∞ guarantee.</p></div>
+        </div>
+
+        <p>A later structured model could use</p>
+
+        <div class="math-block" aria-label="Structured uncertainty block">
+          <math display="block">
+            <mi>Δ</mi><mo>=</mo><mtext>diag</mtext><mo stretchy="false">(</mo><msub><mi>δ</mi><mi>θ</mi></msub><msub><mi>I</mi><mi>r</mi></msub><mo>,</mo><mspace width="0.5em"></mspace><msub><mi>δ</mi><mi>g</mi></msub><msub><mi>I</mi><mi>q</mi></msub><mo>,</mo><mspace width="0.5em"></mspace><msub><mi>Δ</mi><mi>m</mi></msub><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="0.5em"></mspace><msub><mi>Δ</mi><mi>τ</mi></msub><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo>
+          </math>
+        </div>
+
+        <p>That is a clean uncertainty taxonomy, but it is not the recommended first synthesis. The first study should isolate the specimen-sensitivity idea rather than make every block active at once.</p>
+      </section>
+
+      <section id="unc-physics">
+        <div class="section-heading">
+          <h2>Use one dimensionless specimen coordinate</h2>
+          <p>A repeated real parameter preserves correlation: every place where the specimen change enters the model moves together.</p>
+        </div>
+
+        <div class="math-block is-key" aria-label="Normalized specimen parameter">
+          <math display="block">
+            <mi>θ</mi><mo>=</mo><mfrac><mrow><mi>p</mi><mo>−</mo><msub><mi>p</mi><mn>7</mn></msub></mrow><mrow><msub><mi>p</mi><mn>5</mn></msub><mo>−</mo><msub><mi>p</mi><mn>7</mn></msub></mrow></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>θ</mi><mo>=</mo><mn>0</mn><mtext> at 7k</mtext><mo>,</mo><mspace width="0.7em"></mspace><mi>θ</mi><mo>=</mo><mn>1</mn><mtext> at 5k</mtext>
+          </math>
+        </div>
+
+        <p>The scheduling quantity <math class="inline-math" aria-label="p"><mi>p</mi></math> may ultimately be pressure, measured stiffness, or a fitted coordinate from <math class="inline-math" aria-label="mass damping stiffness"><mo stretchy="false">(</mo><mi>m</mi><mo>,</mo><mi>c</mi><mo>,</mo><mi>k</mi><mo stretchy="false">)</mo></math>. It should be chosen by cross-validation, not by naming whichever sensor is convenient.</p>
+
+        <div class="note is-warning">
+          <h3>Two endpoints are not validation</h3>
+          <p>Any two models define a line. Identify at least one intermediate condition, then keep another condition unseen until the controller and weights are frozen.</p>
+        </div>
+      </section>
+
+      <section id="unc-gain">
+        <div class="section-heading">
+          <h2>Gain amplification needs the right model</h2>
+          <p>If the amplitude change is flat with frequency, a real scalar is simple and physically interpretable. If amplitude and phase change with frequency, it is not “just gain.”</p>
+        </div>
+
+        <div class="split">
+          <div>
+            <h3>Static real amplification</h3>
+            <div class="math-block" aria-label="Static gain uncertainty">
+              <math display="block"><mi>g</mi><mo>=</mo><msub><mi>g</mi><mn>0</mn></msub><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msub><mi>ρ</mi><mi>g</mi></msub><msub><mi>δ</mi><mi>g</mi></msub><mo stretchy="false">)</mo><mo>,</mo><mspace width="0.7em"></mspace><mo>|</mo><msub><mi>δ</mi><mi>g</mi></msub><mo>|</mo><mo>≤</mo><mn>1</mn></math>
+            </div>
+            <p>Use this for calibrated load-cell or actuator-gain variation whose phase is unchanged.</p>
+          </div>
+          <div>
+            <h3>Frequency-dependent amplification</h3>
+            <div class="math-block" aria-label="Multiplicative dynamic uncertainty">
+              <math display="block"><mi>G</mi><mo>=</mo><msub><mi>G</mi><mn>0</mn></msub><mo stretchy="false">[</mo><mn>1</mn><mo>+</mo><msub><mi>W</mi><mi>m</mi></msub><msub><mi>Δ</mi><mi>m</mi></msub><mo stretchy="false">]</mo><mo>,</mo><mspace width="0.7em"></mspace><msub><mrow><mo>||</mo><msub><mi>Δ</mi><mi>m</mi></msub><mo>||</mo></mrow><mi>∞</mi></msub><mo>≤</mo><mn>1</mn></math>
+            </div>
+            <p>Use this only for the residual after the known specimen trend is removed.</p>
+          </div>
+        </div>
+
+        <p>The local 9.27 dB / 11.66° endpoint difference shows why a lone scalar-gain sweep is inadequate. A disk gain/phase perturbation can be a useful stress test, but it should not replace the measured family.</p>
+      </section>
+
+      <section id="unc-dynamics">
+        <div class="section-heading">
+          <h2>Fit residual dynamics after the physics model</h2>
+          <p>For output multiplicative uncertainty, the uncertainty weight must upper-bound the relative model error over the declared band.</p>
+        </div>
+
+        <div class="math-block" aria-label="Multiplicative uncertainty cover and robust stability condition">
+          <math display="block">
+            <mtable rowspacing="0.75em">
+              <mtr><mtd><mo>|</mo><msub><mi>W</mi><mi>m</mi></msub><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo stretchy="false">)</mo><mo>|</mo><mo>≥</mo><munder><mo>max</mo><mi>θ</mi></munder><mo>|</mo><mfrac><mrow><mi>G</mi><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>G</mi><mn>0</mn></msub><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><msub><mi>G</mi><mn>0</mn></msub><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo></mfrac><mo>|</mo></mtd></mtr>
+              <mtr><mtd><msub><mrow><mo>||</mo><msub><mi>W</mi><mi>m</mi></msub><mi>T</mi><mo>||</mo></mrow><mi>∞</mi></msub><mo>&lt;</mo><mn>1</mn><mspace width="1em"></mspace><mtext>for small-gain robust stability</mtext></mtd></mtr>
+            </mtable>
+          </math>
+        </div>
+
+        <p>Near nominal zeros, relative error becomes ill-conditioned. Fit an additive envelope there. Always plot the data and the fitted upper bound together; a smooth weight that cuts through the data is not a certificate.</p>
+      </section>
+
+      <section id="unc-delay">
+        <div class="section-heading">
+          <h2>Delay uncertainty is phase uncertainty with a known shape</h2>
+          <p>A delay error grows with frequency until its relative error reaches two. A low-order Padé model may be convenient for synthesis, but it is not an all-frequency bound.</p>
+        </div>
+
+        <div class="math-block" aria-label="Exact relative delay error">
+          <math display="block">
+            <mrow><mo>|</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mi>ω</mi><msub><mi>δ</mi><mi>τ</mi></msub></mrow></msup><mo>−</mo><mn>1</mn><mo>|</mo></mrow><mo>=</mo><mn>2</mn><mrow><mo>|</mo><mi>sin</mi><mo stretchy="false">(</mo><mfrac><mrow><mi>ω</mi><msub><mi>δ</mi><mi>τ</mi></msub></mrow><mn>2</mn></mfrac><mo stretchy="false">)</mo><mo>|</mo></mrow><mo>≤</mo><mrow><mi>min</mi><mo stretchy="false">(</mo><mi>ω</mi><mi>Δ</mi><mi>τ</mi><mo>,</mo><mn>2</mn><mo stretchy="false">)</mo></mrow>
+          </math>
+        </div>
+
+        <p>Time-varying delay also needs a rate or jitter description. Prior RTHS studies show that feedback H∞ alone does not erase delay; prediction and synchronization are separate mechanisms. For the first study, measure delay/jitter and use them as held-out stress tests rather than adding a predictor to the proposed controller.</p>
+      </section>
+
+      <section id="unc-command">
+        <div class="section-heading">
+          <h2>The 2.5 command is not an H∞ theorem</h2>
+          <p>The H∞ norm is an induced <math class="inline-math" aria-label="L two"><msub><mi>L</mi><mn>2</mn></msub></math> gain. A persistent step is not in <math class="inline-math" aria-label="L two"><msub><mi>L</mi><mn>2</mn></msub></math> on an infinite horizon, and a small command weight does not imply a pointwise actuator limit.</p>
+        </div>
+
+        <div class="math-block is-key" aria-label="Worst family step command constraint">
+          <math display="block"><msub><mi>g</mi><mi>u</mi></msub><mo stretchy="false">(</mo><mi>K</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>max</mo><mrow><mi>θ</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>,</mo><mspace width="0.4em"></mspace><mi>t</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mi>T</mi><mo>]</mo></mrow></munder><mo>|</mo><msub><mi>u</mi><mtext>step</mtext></msub><mo stretchy="false">(</mo><mi>t</mi><mo>;</mo><mi>θ</mi><mo>,</mo><mi>K</mi><mo stretchy="false">)</mo><mo>|</mo><mo>−</mo><mn>2.5</mn><mo>≤</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup></math>
+        </div>
+
+        <p>The engineering target remains 2.5. The accepted <math class="inline-math" aria-label="ten to the minus two"><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup></math> is the solver feasibility residual, so a 2.51 result must be labeled tolerance-active rather than silently called 2.5. Simulate raw and saturated commands and report both.</p>
+      </section>
+
+      <section id="unc-choice">
+        <div class="section-heading">
+          <h2>What goes into the first design</h2>
+          <p>The literature offers many correct tools. The disciplined choice is to use only what is needed to answer one new question.</p>
+        </div>
+
+        <div class="table-shell">
+          <table class="audit-table">
+            <thead><tr><th>Item</th><th>First design</th><th>Reason</th></tr></thead>
+            <tbody>
+              <tr><td>Continuous 7k–5k parameter family</td><td class="claim-open">Inside synthesis</td><td>It is the physical phenomenon the proposal targets.</td></tr>
+              <tr><td>Tracking and command weights</td><td class="claim-open">Inside synthesis</td><td>Minimum fair H∞ baseline.</td></tr>
+              <tr><td>Closed-loop parameter derivative</td><td class="claim-open">One proposed term</td><td>Directly penalizes performance drift.</td></tr>
+              <tr><td>2.5 step-command peak</td><td class="claim-open">Separate constraint</td><td>Physical requirement; not implied by H∞.</td></tr>
+              <tr><td>Gain, delay, noise, intermediate stiffness</td><td class="claim-known">Stress tests</td><td>Reveal whether another modeled block is actually necessary.</td></tr>
+              <tr><td>LPV, μ, predictor, learner</td><td class="claim-blocked">Not in first design</td><td>They obscure attribution and are not needed to test the hypothesis.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</article>
