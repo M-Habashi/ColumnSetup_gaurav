@@ -1,6 +1,10 @@
 .plot-block { margin-top: 28px; }
 .plot-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
 .plot-header p { max-width: 700px; margin: 5px 0 0; color: var(--muted); }
+.alpha-control { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; min-width: 190px; color: var(--muted-strong); font-size: 12px; }
+.alpha-control output { color: var(--foreground); font-family: var(--font-mono); }
+.alpha-control input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.alpha-control input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .plot-toolbar { display: flex; gap: 6px; }
 .plot-action { min-height: 31px; padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--foreground); cursor: pointer; }
 .plot-action:hover,
@@ -85,7 +89,12 @@
 .empty-state strong { font-size: 17px; }
 .empty-state p { max-width: 330px; margin: 7px 0 0; color: var(--muted); font-size: 14px; }
 .selected-details { display: grid; gap: 14px; }
-.selected-file { padding-left: 10px; border-left: 3px solid var(--series); }
+.color-hint { margin: -4px 0 14px; color: var(--muted); font-size: 11px; }
+.selected-file { position: relative; padding-left: 14px; }
+.series-color-picker { position: absolute; inset: 0 auto 0 0; width: 7px; background: var(--series); cursor: pointer; }
+.series-color-picker:hover { width: 9px; }
+.series-color-picker input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.series-color-picker:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .selected-file > strong,
 .selected-file > span { display: block; overflow-wrap: anywhere; }
 .selected-file > strong { font-size: 13px; }
@@ -94,8 +103,3 @@
 .selected-file dl div { min-width: 0; }
 .selected-file dt { color: var(--muted); font-size: 10px; }
 .selected-file dd { margin: 0; overflow: hidden; color: var(--muted-strong); font-family: var(--font-mono); font-size: 10px; text-overflow: ellipsis; }
-.palette-note { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border); }
-.palette-note strong { font-size: 12px; }
-.palette-note p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
-.palette-swatches { display: grid; grid-template-columns: repeat(4, 1fr); height: 5px; margin-top: 8px; }
-.palette-swatches span { background: var(--swatch); }

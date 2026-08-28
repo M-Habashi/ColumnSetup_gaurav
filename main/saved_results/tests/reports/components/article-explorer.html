@@ -38,6 +38,11 @@
             <h2>Hysteresis overlay</h2>
             <p id="plotSummary">Select a test file to begin.</p>
           </div>
+          <label class="alpha-control" for="alphaSlider">
+            <span>Density alpha</span>
+            <output id="alphaValue" for="alphaSlider">0.10</output>
+            <input id="alphaSlider" type="range" min="0.10" max="1.00" step="0.01" value="0.10">
+          </label>
         </div>
 
         <div class="plot-shell hysteresis-shell" id="plotShell">
@@ -48,7 +53,7 @@
           </div>
         </div>
 
-        <p class="plot-note">Repeated passes darken where they overlap: each WebGL line uses density alpha 0.08 inside a trace with opacity 0.7. Click a Plotly legend item to hide or show a trace; double-click to isolate it. Drag or scroll to zoom, then use the modebar to reset.</p>
+        <p class="plot-note">Repeated passes darken where they overlap. Adjust Density alpha to control the contrast while trace opacity remains 0.7. Click a Plotly legend item to hide or show a trace; double-click to isolate it. Drag or scroll to zoom, then use the modebar to reset.</p>
       </section>
 
       <section id="hysteresis-method" class="reveal">
@@ -62,15 +67,9 @@
 
     <aside class="context-rail" aria-label="Selected test details">
       <h2 class="rail-title">Selected tests</h2>
+      <p class="color-hint">Click a color bar to change its trace.</p>
       <div id="selectedDetails" class="selected-details">
         <p class="muted-copy">No files selected.</p>
-      </div>
-      <div class="palette-note">
-        <strong>Default palette</strong>
-        <div class="palette-swatches" aria-label="Paul Tol Bright palette: blue, red, green, gold">
-          <span style="--swatch:#4477AA"></span><span style="--swatch:#EE6677"></span><span style="--swatch:#228833"></span><span style="--swatch:#CCBB44"></span>
-        </div>
-        <p>Paul Tol Bright, ordered blue · red · green · gold.</p>
       </div>
     </aside>
   </div>

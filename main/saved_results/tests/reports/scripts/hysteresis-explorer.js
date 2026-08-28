@@ -1,8 +1,6 @@
 "use strict";
 
-const PALETTE = ["#4477AA", "#EE6677", "#228833", "#CCBB44"];
-const DASHES = ["solid", "dash", "dot", "dashdot"];
-const DENSITY_ALPHA = 0.08;
+const DEFAULT_COLORS = ["#4477AA", "#EE6677", "#228833", "#CCBB44"];
 
 function rgba(hex, alpha) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -53,7 +51,9 @@ export async function initHysteresisExplorer(container) {
   const summary = container.querySelector("#plotSummary");
   const details = container.querySelector("#selectedDetails");
   const count = container.querySelector("#selectionCount");
-  const state = { manifest: [], selected: new Map() };
+  const alphaSlider = container.querySelector("#alphaSlider");
+  const alphaValue = container.querySelector("#alphaValue");
+  const state = { manifest: [], selected: new Map(), alpha: Number(alphaSlider.value), frame: null };
 
   const response = await fetch("data/test-manifest.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Could not load test manifest: ${response.status}`);
@@ -74,7 +74,7 @@ export async function initHysteresisExplorer(container) {
     try {
       const result = await fetch(entry.data, { cache: "no-store" });
       if (!result.ok) throw new Error(`HTTP ${result.status}`);
-      state.selected.set(id, { ...entry, ...(await result.json()) });
+      state.selected.set(id, { ...entry, ...(await result.json()), color: DEFAULT_COLORS[state.selected.size % DEFAULT_COLORS.length] });
     } catch (error) {
       checkbox.checked = false;
       alert(`Could not load ${entry.path}: ${error.message}`);
@@ -103,29 +103,50 @@ export async function initHysteresisExplorer(container) {
     state.selected.clear();
     render();
   });
+  alphaSlider.addEventListener("input", () => {
+    state.alpha = Number(alphaSlider.value);
+    alphaValue.value = state.alpha.toFixed(2);
+    if (state.frame) cancelAnimationFrame(state.frame);
+    state.frame = requestAnimationFrame(() => {
+      state.frame = null;
+      render();
+    });
+  });
+  details.addEventListener("input", event => {
+    if (!event.target.matches('.series-color-picker input[type="color"]')) return;
+    const file = state.selected.get(event.target.dataset.id);
+    file.color = event.target.value;
+    event.target.closest(".series-color-picker").style.setProperty("--series", file.color);
+    Plotly.restyle(plot, { "line.color": rgba(file.color, state.alpha) }, [[...state.selected.keys()].indexOf(file.id)]);
+  });
 
   function render() {
     const selected = [...state.selected.values()];
     count.textContent = `${selected.length} selected`;
     empty.hidden = selected.length > 0;
     summary.textContent = selected.length ? `${selected.length} test${selected.length === 1 ? "" : "s"} on shared axes` : "Select a test file to begin.";
-    details.innerHTML = selected.length ? selected.map((file, index) => `
-      <div class="selected-file" style="--series:${PALETTE[index % PALETTE.length]}">
+    details.innerHTML = selected.length ? selected.map(file => `
+      <div class="selected-file">
+        <label class="series-color-picker" style="--series:${file.color}" title="Change trace color">
+          <span class="sr-only">Choose color for ${file.name}</span>
+          <input type="color" value="${file.color}" data-id="${file.id}" aria-label="Choose color for ${file.name}">
+        </label>
         <strong>${file.name}</strong><span>${file.path}</span>
         <dl><div><dt>Samples</dt><dd>${Number(file.sample_count).toLocaleString()}</dd></div><div><dt>Rendered</dt><dd>${file.x.length.toLocaleString()}</dd></div><div><dt>Rate</dt><dd>${Number(file.fs).toLocaleString()} Hz</dd></div></dl>
       </div>`).join("") : '<p class="muted-copy">No files selected.</p>';
 
-    const traces = selected.map((file, index) => ({
+    const traces = selected.map(file => ({
       type: "scattergl",
       mode: "lines",
+      uid: file.id,
       name: file.name,
       x: file.x,
       y: file.y,
       opacity: 0.7,
       line: {
-        color: rgba(PALETTE[index % PALETTE.length], DENSITY_ALPHA),
+        color: rgba(file.color, state.alpha),
         width: 1.5,
-        dash: DASHES[Math.floor(index / PALETTE.length) % DASHES.length]
+        dash: "solid"
       },
       hovertemplate: `${file.name}<br>dm %{x:.3f} mm<br>fm %{y:.1f} N<extra></extra>`
     }));
@@ -136,7 +157,7 @@ export async function initHysteresisExplorer(container) {
       font: { color: "#d6d4cb", family: "IBM Plex Sans, sans-serif", size: 12 },
       margin: { l: 82, r: 24, t: 24, b: 68 },
       showlegend: true,
-      legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", itemclick: "toggle", itemdoubleclick: "toggleothers" },
+      legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", itemclick: "toggle", itemdoubleclick: "toggleothers", uirevision: "hysteresis-series" },
       hovermode: "closest",
       dragmode: "zoom",
       uirevision: selected.map(file => file.id).join("|"),

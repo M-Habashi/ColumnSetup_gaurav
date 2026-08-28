@@ -40,6 +40,7 @@
   section { padding: 48px 0; }
   .metric-grid { grid-template-columns: 1fr; }
   .plot-header { display: block; }
+  .alpha-control { width: 100%; margin-top: 14px; }
   .plot-toolbar { margin-top: 12px; }
   .hysteresis-shell, .plotly-host { min-height: 400px; }
   .status-line { grid-template-columns: 1fr; }
