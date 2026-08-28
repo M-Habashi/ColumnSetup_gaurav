@@ -7,6 +7,17 @@ function rgba(hex, alpha) {
   return `rgba(${value >> 16},${value >> 8 & 255},${value & 255},${alpha})`;
 }
 
+function upperBound(values, limit) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (values[middle] <= limit) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
 function buildTree(entries) {
   const root = { folders: new Map(), files: [] };
   entries.forEach(entry => {
@@ -53,7 +64,10 @@ export async function initHysteresisExplorer(container) {
   const count = container.querySelector("#selectionCount");
   const alphaSlider = container.querySelector("#alphaSlider");
   const alphaValue = container.querySelector("#alphaValue");
-  const state = { manifest: [], selected: new Map(), alpha: Number(alphaSlider.value), frame: null };
+  const timeSlider = container.querySelector("#earthquakeTimeSlider");
+  const timeValue = container.querySelector("#earthquakeTimeValue");
+  const timeMax = container.querySelector("#earthquakeTimeMax");
+  const state = { manifest: [], selected: new Map(), alpha: Number(alphaSlider.value), timeCutoff: Infinity, frame: null };
 
   const response = await fetch("data/test-manifest.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Could not load test manifest: ${response.status}`);
@@ -64,6 +78,7 @@ export async function initHysteresisExplorer(container) {
   async function setSelected(id, selected) {
     if (!selected) {
       state.selected.delete(id);
+      state.timeCutoff = Infinity;
       render();
       return;
     }
@@ -74,7 +89,9 @@ export async function initHysteresisExplorer(container) {
     try {
       const result = await fetch(entry.data, { cache: "no-store" });
       if (!result.ok) throw new Error(`HTTP ${result.status}`);
-      state.selected.set(id, { ...entry, ...(await result.json()), color: DEFAULT_COLORS[state.selected.size % DEFAULT_COLORS.length] });
+      const data = await result.json();
+      state.selected.set(id, { ...entry, ...data, color: DEFAULT_COLORS[state.selected.size % DEFAULT_COLORS.length] });
+      state.timeCutoff = Infinity;
     } catch (error) {
       checkbox.checked = false;
       alert(`Could not load ${entry.path}: ${error.message}`);
@@ -101,7 +118,17 @@ export async function initHysteresisExplorer(container) {
   container.querySelector("#clearAll").addEventListener("click", () => {
     tree.querySelectorAll('input[type="checkbox"]:checked').forEach(input => input.checked = false);
     state.selected.clear();
+    state.timeCutoff = Infinity;
     render();
+  });
+  timeSlider.addEventListener("input", () => {
+    state.timeCutoff = Number(timeSlider.value);
+    timeValue.value = `${state.timeCutoff.toFixed(1)} s`;
+    if (state.frame) cancelAnimationFrame(state.frame);
+    state.frame = requestAnimationFrame(() => {
+      state.frame = null;
+      render();
+    });
   });
   alphaSlider.addEventListener("input", () => {
     state.alpha = Number(alphaSlider.value);
@@ -122,6 +149,13 @@ export async function initHysteresisExplorer(container) {
 
   function render() {
     const selected = [...state.selected.values()];
+    const maximumTime = selected.length ? Math.max(...selected.map(file => file.t.at(-1))) : 0;
+    const cutoff = Math.min(state.timeCutoff, maximumTime);
+    timeSlider.disabled = !selected.length;
+    timeSlider.max = maximumTime || 1;
+    timeSlider.value = selected.length ? cutoff : 0;
+    timeValue.value = selected.length ? `${cutoff.toFixed(1)} s` : "—";
+    timeMax.textContent = selected.length ? `${maximumTime.toFixed(1)} s` : "—";
     count.textContent = `${selected.length} selected`;
     empty.hidden = selected.length > 0;
     summary.textContent = selected.length ? `${selected.length} test${selected.length === 1 ? "" : "s"} on shared axes` : "Select a test file to begin.";
@@ -135,13 +169,15 @@ export async function initHysteresisExplorer(container) {
         <dl><div><dt>Samples</dt><dd>${Number(file.sample_count).toLocaleString()}</dd></div><div><dt>Rendered</dt><dd>${file.x.length.toLocaleString()}</dd></div><div><dt>Rate</dt><dd>${Number(file.fs).toLocaleString()} Hz</dd></div></dl>
       </div>`).join("") : '<p class="muted-copy">No files selected.</p>';
 
-    const traces = selected.map(file => ({
+    const traces = selected.map(file => {
+      const end = upperBound(file.t, cutoff);
+      return {
       type: "scattergl",
       mode: "lines",
       uid: file.id,
       name: file.name,
-      x: file.x,
-      y: file.y,
+      x: file.x.slice(0, end),
+      y: file.y.slice(0, end),
       opacity: 0.7,
       line: {
         color: rgba(file.color, state.alpha),
@@ -149,7 +185,8 @@ export async function initHysteresisExplorer(container) {
         dash: "solid"
       },
       hovertemplate: `${file.name}<br>dm %{x:.3f} mm<br>fm %{y:.1f} N<extra></extra>`
-    }));
+    };
+    });
 
     Plotly.react(plot, traces, {
       paper_bgcolor: "#141412",

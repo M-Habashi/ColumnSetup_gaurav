@@ -48,7 +48,13 @@
           </div>
         </div>
 
-        <p class="plot-note">Repeated passes darken where they overlap. Adjust Density alpha to control the contrast while trace opacity remains 0.7. Click a Plotly legend item to hide or show a trace; double-click to isolate it. Drag or scroll to zoom, then use the modebar to reset.</p>
+        <div class="time-control">
+          <label for="earthquakeTimeSlider"><span>Earthquake Time (s)</span><output id="earthquakeTimeValue" for="earthquakeTimeSlider">—</output></label>
+          <input id="earthquakeTimeSlider" type="range" min="0" max="1" step="0.1" value="1" disabled>
+          <div class="time-range"><span>0 s</span><span id="earthquakeTimeMax">—</span></div>
+        </div>
+
+        <p class="plot-note">The cutoff follows MATLAB’s active HS interval and shows earthquake time only: effective HS time ÷ each test’s scale factor, capped at the earthquake record duration. Repeated passes darken where they overlap. Adjust Density alpha to control contrast while trace opacity remains 0.7. Click a legend item to hide or show a trace; double-click to isolate it.</p>
       </section>
 
       <section id="hysteresis-method" class="reveal">

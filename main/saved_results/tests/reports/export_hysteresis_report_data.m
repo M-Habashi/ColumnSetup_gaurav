@@ -36,13 +36,33 @@ for k = 1:numel(files)
         dm = result.dm(:);
         fm = result.fm(:);
         fs = double(result.fs);
+        assert(isfield(result, 'hs') && isfield(result.hs, 'time') && ...
+            isfield(result.hs, 'time_scale_factor'), ...
+            'No earthquake-time metadata is stored in this result.')
+        timeScaleFactor = double(result.hs.time_scale_factor);
+        earthquakeDuration = double(result.hs.time(end));
         dmFiltered = filtfiltDm(dm, fs, 30, 4);
-        sampleCount = min(numel(dmFiltered), numel(fm));
-        plotIndex = unique([1:ceil(sampleCount / 20000):sampleCount, ...
-            sampleCount]);
+        pauseEnable = getPauseEnable(result);
+        sampleCount = min([numel(dmFiltered), numel(fm), ...
+            numel(pauseEnable)]);
+        pauseEnable = pauseEnable(1:sampleCount);
+        effectiveTime = zeros(sampleCount, 1);
+        effectiveTime(2:end) = cumsum(pauseEnable(2:end) == 0) / fs;
+        earthquakeTime = effectiveTime / timeScaleFactor;
+        earthquakeIndex = find(pauseEnable == 0 & ...
+            earthquakeTime <= earthquakeDuration);
+        assert(~isempty(earthquakeIndex), ...
+            'No active earthquake samples are stored in this result.')
+        plotStep = ceil(numel(earthquakeIndex) / 20000);
+        plotIndex = unique([1:plotStep:numel(earthquakeIndex), ...
+            numel(earthquakeIndex)]);
+        plotIndex = earthquakeIndex(plotIndex);
         plotData = struct('id', id, 'name', files(k).name, ...
             'path', char(relativePath), 'x', dmFiltered(plotIndex).', ...
-            'y', fm(plotIndex).', 'sample_count', sampleCount, 'fs', fs, ...
+            'y', fm(plotIndex).', 't', earthquakeTime(plotIndex).', ...
+            'sample_count', sampleCount, 'fs', fs, ...
+            'time_scale_factor', timeScaleFactor, ...
+            'earthquake_duration', earthquakeDuration, ...
             'filter_cutoff_hz', 30, 'filter_order', 4);
         writeJson(fullfile(dataFolder, outputName), plotData)
         entry.available = true;
@@ -60,6 +80,21 @@ manifest = struct('root', 'saved_results/tests', ...
     'yyyy-MM-dd''T''HH:mm:ssXXX')), 'files', {manifestFiles});
 writeJson(fullfile(reportFolder, 'data', 'test-manifest.json'), manifest)
 fprintf('Wrote %d test entries to the hysteresis explorer.\n', numel(files))
+end
+
+function pauseEnable = getPauseEnable(result)
+    if isfield(result, 'dd_pause_enable_log') && ...
+            ~isempty(result.dd_pause_enable_log)
+        pauseEnable = result.dd_pause_enable_log(:);
+    elseif isfield(result, 'dd_pause_enable') && ...
+            ~isempty(result.dd_pause_enable)
+        pauseEnable = result.dd_pause_enable(:);
+    elseif isfield(result, 'Results') && ~isempty(result.Results) && ...
+            size(result.Results{1}, 2) >= 10
+        pauseEnable = result.Results{1}(:, 10);
+    else
+        error('No HS pause/run log is stored in this result.')
+    end
 end
 
 function y = filtfiltDm(dm, fs, cutoffHz, order)
