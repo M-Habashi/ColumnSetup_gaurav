@@ -5,6 +5,7 @@
 .alpha-control output { color: var(--foreground); font-family: var(--font-mono); }
 .alpha-control input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
 .alpha-control input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rail-alpha-control { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 .plot-toolbar { display: flex; gap: 6px; }
 .plot-action { min-height: 31px; padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--foreground); cursor: pointer; }
 .plot-action:hover,

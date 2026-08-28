@@ -38,11 +38,6 @@
             <h2>Hysteresis overlay</h2>
             <p id="plotSummary">Select a test file to begin.</p>
           </div>
-          <label class="alpha-control" for="alphaSlider">
-            <span>Density alpha</span>
-            <output id="alphaValue" for="alphaSlider">0.10</output>
-            <input id="alphaSlider" type="range" min="0.10" max="1.00" step="0.01" value="0.10">
-          </label>
         </div>
 
         <div class="plot-shell hysteresis-shell" id="plotShell">
@@ -68,6 +63,11 @@
     <aside class="context-rail" aria-label="Selected test details">
       <h2 class="rail-title">Selected tests</h2>
       <p class="color-hint">Click a color bar to change its trace.</p>
+      <label class="alpha-control rail-alpha-control" for="alphaSlider">
+        <span>Density alpha</span>
+        <output id="alphaValue" for="alphaSlider">0.10</output>
+        <input id="alphaSlider" type="range" min="0.10" max="1.00" step="0.01" value="0.10">
+      </label>
       <div id="selectedDetails" class="selected-details">
         <p class="muted-copy">No files selected.</p>
       </div>
