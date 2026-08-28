@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Browse saved RTHS tests and compare force-displacement hysteresis loops.">
+  <title>RTHS Hysteresis Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/content.css">
+  <link rel="stylesheet" href="styles/plots.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body data-report-config="data/report-config.json">
+  <header class="topbar">
+    <button class="article-panel-toggle" type="button" id="articlePanelToggle" aria-controls="articlePanel" aria-expanded="false">
+      <span class="menu-mark" aria-hidden="true"></span><span>About</span>
+    </button>
+    <div class="brand"><strong id="reportBrand">Technical Report</strong><span id="articleLabel">Loading</span></div>
+    <button class="topbar-action" type="button" id="printReport">Print</button>
+    <div class="reading-progress" id="readingProgress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+  </header>
+
+  <aside class="article-panel" id="articlePanel" aria-label="Report articles" aria-hidden="true">
+    <div class="article-panel-head">
+      <strong id="drawerTitle">Report articles</strong>
+      <button class="article-panel-close" type="button" id="articlePanelClose" aria-label="Close article panel">×</button>
+    </div>
+    <div class="article-list" id="articleList"></div>
+  </aside>
+
+  <button class="article-panel-backdrop" type="button" id="articlePanelBackdrop" aria-label="Close article panel"></button>
+  <div id="articleMount"><p class="sr-only" role="status">Loading report articles.</p></div>
+  <noscript><main class="load-error"><h1>JavaScript is required</h1><p>This report loads article components in the browser.</p></main></noscript>
+
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>

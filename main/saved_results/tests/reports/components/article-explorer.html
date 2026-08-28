@@ -1,0 +1,82 @@
+<article class="report-article" id="article-1" data-article="article-1">
+  <div class="report-intro">
+    <header class="intro reveal">
+      <div class="intro-copy">
+        <span class="context-line">Measured RTHS response</span>
+        <h1>Compare force–displacement hysteresis</h1>
+        <p>Select one or more saved tests from the folder tree. Every selected <code>fm</code> versus filtered <code>dm</code> trace is drawn on the same axes for direct comparison.</p>
+        <div class="status-line"><strong>DATA SOURCE</strong><span><code>saved_results/tests/**/*.mat</code> · 30 Hz zero-phase displacement filter · plot opacity 0.7</span></div>
+      </div>
+      <aside class="intro-aside verdict">
+        <strong>Plot convention</strong>
+        <p>Horizontal axis: measured displacement <code>dm</code> in mm. Vertical axis: measured force <code>fm</code> in N.</p>
+      </aside>
+    </header>
+  </div>
+
+  <div class="report-layout explorer-layout" id="hysteresisExplorer">
+    <aside class="toc-rail file-rail" aria-label="Test file explorer">
+      <div class="file-browser-head">
+        <h2 class="rail-title">Test files</h2>
+        <span class="selection-count" id="selectionCount">0 selected</span>
+      </div>
+      <label class="field-label" for="fileSearch">Filter files</label>
+      <input class="input" id="fileSearch" type="search" placeholder="Search .mat files" autocomplete="off">
+      <div class="tree-actions">
+        <button class="button button-outline" id="expandAll" type="button">Expand all</button>
+        <button class="button button-ghost" id="clearAll" type="button">Clear</button>
+      </div>
+      <div class="file-tree scroll-area" id="fileTree" role="tree" aria-label="Saved result folders">
+        <div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div>
+      </div>
+    </aside>
+
+    <main>
+      <section id="hysteresis-plot" class="reveal plot-section">
+        <div class="plot-header">
+          <div>
+            <h2>Hysteresis overlay</h2>
+            <p id="plotSummary">Select a test file to begin.</p>
+          </div>
+          <div class="plot-toolbar" role="group" aria-label="Plot view controls">
+            <button class="button button-outline" id="zoomButton" type="button" aria-pressed="false">Zoom</button>
+            <button class="button button-outline" id="resetView" type="button" hidden>Reset view</button>
+          </div>
+        </div>
+
+        <div class="plot-shell hysteresis-shell" id="plotShell">
+          <svg id="hysteresisPlot" viewBox="0 0 900 590" role="img" aria-label="Overlaid measured force versus displacement hysteresis curves"></svg>
+          <div class="empty-state" id="plotEmpty">
+            <strong>No tests selected</strong>
+            <p>Choose files from the explorer to overlay their hysteresis loops.</p>
+          </div>
+        </div>
+
+        <div class="plot-legend overlay-legend" id="plotLegend" aria-label="Hysteresis series visibility"></div>
+        <p class="plot-note">Click a legend item to hide or show its trace. Color is paired with a line pattern when the four-color palette repeats. Drag a rectangle in Zoom mode to inspect a region.</p>
+      </section>
+
+      <section id="hysteresis-method" class="reveal">
+        <div class="section-heading">
+          <h2>Data treatment</h2>
+          <p>The exporter unwraps the top-level <code>result</code> struct, filters <code>dm</code> with the repository’s established fourth-order 30 Hz zero-phase low-pass treatment, pairs it with <code>fm</code>, and uniformly limits each rendered record to 20,000 points.</p>
+        </div>
+        <div class="note"><h3>Interpretation limit</h3><p>Overlaying loops supports visual comparison. It does not normalize amplitude, test duration, specimen condition, or excitation intensity.</p></div>
+      </section>
+    </main>
+
+    <aside class="context-rail" aria-label="Selected test details">
+      <h2 class="rail-title">Selected tests</h2>
+      <div id="selectedDetails" class="selected-details">
+        <p class="muted-copy">No files selected.</p>
+      </div>
+      <div class="palette-note">
+        <strong>Default palette</strong>
+        <div class="palette-swatches" aria-label="Paul Tol Bright palette: blue, red, green, gold">
+          <span style="--swatch:#4477AA"></span><span style="--swatch:#EE6677"></span><span style="--swatch:#228833"></span><span style="--swatch:#CCBB44"></span>
+        </div>
+        <p>Paul Tol Bright, ordered blue · red · green · gold.</p>
+      </div>
+    </aside>
+  </div>
+</article>

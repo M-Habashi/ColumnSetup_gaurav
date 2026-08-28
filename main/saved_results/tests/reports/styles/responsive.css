@@ -1,0 +1,67 @@
+@media (max-width: 1180px) {
+  .intro { grid-template-columns: 220px minmax(0, 1fr); }
+  .intro-copy { grid-column: 2; padding-right: 44px; padding-left: 44px; }
+  .intro-aside { grid-column: 2; padding: 28px 44px 0; }
+  .report-layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .toc-rail { width: 100%; padding: 32px 20px 0; }
+  main { grid-column: 2; padding-right: 44px; padding-left: 44px; }
+  .context-rail { display: none; }
+}
+
+@media (max-width: 900px) {
+  .intro { grid-template-columns: 200px minmax(0, 1fr); }
+  .intro-copy { padding-right: 32px; padding-left: 32px; }
+  .intro-aside { padding: 24px 32px 0; }
+  .report-layout { grid-template-columns: 200px minmax(0, 1fr); }
+  .toc-rail { padding: 32px 18px 0; }
+  main { padding: 0 32px 80px; }
+  .split { grid-template-columns: 1fr; }
+  .plot-workbench { grid-template-columns: 1fr; }
+  .plot-controls { position: static; padding: 16px 0 0; border-top: 1px solid var(--border); border-left: 0; }
+}
+
+@media (max-width: 720px) {
+  .topbar { position: static; padding: 0 16px; }
+  .article-panel { top: 54px; }
+  .article-panel-backdrop { top: 54px; }
+  .article-panel-toggle { margin-right: 12px; }
+  .brand span { display: none; }
+  .report-intro { padding-top: 34px; }
+  .intro { display: block; }
+  .intro-copy { padding: 0 24px; }
+  .intro-aside { padding: 24px 24px 0; }
+  .report-layout { display: block; }
+  .toc-rail { position: static; justify-self: auto; width: 100%; padding: 28px 24px 0; }
+  .file-rail { max-height: none; overflow: visible; }
+  .file-tree { max-height: 360px; }
+  .nav a { min-height: 40px; align-items: center; }
+  main { width: 100%; padding: 0 24px 72px; }
+  h1 { font-size: 34px; }
+  section { padding: 48px 0; }
+  .metric-grid { grid-template-columns: 1fr; }
+  .plot-header { display: block; }
+  .plot-toolbar { margin-top: 12px; }
+  .plot-shell svg { min-height: 300px; }
+  .hysteresis-shell { min-height: 360px; }
+  .status-line { grid-template-columns: 1fr; }
+  .status-line span { border-top: 1px solid var(--border); border-left: 0; }
+}
+
+@media print {
+  :root { color-scheme: light; --background: #fff; --foreground: #171714; --surface: #fff; --surface-strong: #f6f4ef; --muted: #5e5b54; --muted-strong: #33312d; --border: #cbc7bd; --border-soft: #dedad1; }
+  body { background: #fff; color: #171714; }
+  .report-intro { padding-top: 30px; }
+  .intro, .report-layout { display: block; }
+  .intro-copy, .intro-aside { padding: 0 30px 24px; }
+  .topbar, .toc-rail, .context-rail, .article-panel, .article-panel-backdrop, .plot-toolbar, .plot-controls, .overlay-legend { display: none; }
+  main { width: 100%; padding: 30px; }
+  section, .plot-block, .math-block, .table-shell { break-inside: avoid; }
+  .note, .math-block, .plot-shell { background: #fff; }
+  .reveal { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .reveal { opacity: 1; transform: none; }
+}
