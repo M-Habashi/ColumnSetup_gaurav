@@ -1,0 +1,22 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      plotly.js-gl2d-dist-min:
+        specifier: 3.7.0
+        version: 3.7.0
+
+packages:
+
+  plotly.js-gl2d-dist-min@3.7.0:
+    resolution: {integrity: sha512-3vR+89HBYkuLNIx/DmIQbIG6JW+4Ok6MMuWVNYO4OsghZR2n0fB+XL241buc0YsvNWKtLV1YtRrPUiZmOdvBsw==}
+
+snapshots:
+
+  plotly.js-gl2d-dist-min@3.7.0: {}

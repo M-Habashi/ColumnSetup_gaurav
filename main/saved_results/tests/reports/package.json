@@ -1,0 +1,8 @@
+{
+  "name": "rths-hysteresis-explorer",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "plotly.js-gl2d-dist-min": "3.7.0"
+  }
+}

@@ -5,7 +5,7 @@
         <span class="context-line">Measured RTHS response</span>
         <h1>Compare force–displacement hysteresis</h1>
         <p>Select one or more saved tests from the folder tree. Every selected <code>fm</code> versus filtered <code>dm</code> trace is drawn on the same axes for direct comparison.</p>
-        <div class="status-line"><strong>DATA SOURCE</strong><span><code>saved_results/tests/**/*.mat</code> · 30 Hz zero-phase displacement filter · plot opacity 0.7</span></div>
+        <div class="status-line"><strong>DATA SOURCE</strong><span><code>saved_results/tests/**/*.mat</code> · 30 Hz zero-phase displacement filter · Plotly WebGL</span></div>
       </div>
       <aside class="intro-aside verdict">
         <strong>Plot convention</strong>
@@ -38,22 +38,17 @@
             <h2>Hysteresis overlay</h2>
             <p id="plotSummary">Select a test file to begin.</p>
           </div>
-          <div class="plot-toolbar" role="group" aria-label="Plot view controls">
-            <button class="button button-outline" id="zoomButton" type="button" aria-pressed="false">Zoom</button>
-            <button class="button button-outline" id="resetView" type="button" hidden>Reset view</button>
-          </div>
         </div>
 
         <div class="plot-shell hysteresis-shell" id="plotShell">
-          <svg id="hysteresisPlot" viewBox="0 0 900 590" role="img" aria-label="Overlaid measured force versus displacement hysteresis curves"></svg>
+          <div id="hysteresisPlot" class="plotly-host" role="img" aria-label="Overlaid measured force versus displacement hysteresis curves"></div>
           <div class="empty-state" id="plotEmpty">
             <strong>No tests selected</strong>
             <p>Choose files from the explorer to overlay their hysteresis loops.</p>
           </div>
         </div>
 
-        <div class="plot-legend overlay-legend" id="plotLegend" aria-label="Hysteresis series visibility"></div>
-        <p class="plot-note">Click a legend item to hide or show its trace. Color is paired with a line pattern when the four-color palette repeats. Drag a rectangle in Zoom mode to inspect a region.</p>
+        <p class="plot-note">Repeated passes darken where they overlap: each WebGL line uses density alpha 0.08 inside a trace with opacity 0.7. Click a Plotly legend item to hide or show a trace; double-click to isolate it. Drag or scroll to zoom, then use the modebar to reset.</p>
       </section>
 
       <section id="hysteresis-method" class="reveal">

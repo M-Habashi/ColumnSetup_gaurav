@@ -11,8 +11,6 @@
 .plot-workbench { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 20px; align-items: start; }
 .plot-main { min-width: 0; }
 .plot-shell { position: relative; overflow: hidden; border: 1px solid var(--border); background: #141412; }
-.plot-shell svg { display: block; width: 100%; min-height: 340px; user-select: none; touch-action: none; }
-.plot-shell.is-zooming svg { cursor: crosshair; }
 .plot-controls { position: sticky; top: 78px; padding: 16px; border-left: 1px solid var(--border); }
 .control-label { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: var(--muted-strong); font-size: 13px; }
 .control-value { color: var(--foreground); font-family: var(--font-mono); }
@@ -77,18 +75,15 @@
 .tree-file.is-loading .file-name { opacity: 0.5; }
 .skeleton-line { height: 12px; margin: 10px 0; background: var(--border-soft); }
 .skeleton-line.short { width: 68%; }
-.hysteresis-shell { min-height: 500px; }
-.hysteresis-shell svg { min-height: 500px; }
+.hysteresis-shell { min-height: 560px; }
+.plotly-host { width: 100%; min-height: 560px; }
+.plotly-host .modebar { right: 8px !important; top: 8px !important; }
+.plotly-host .modebar-btn path { fill: var(--muted-strong) !important; }
+.plotly-host .modebar-btn:hover path { fill: var(--foreground) !important; }
 .empty-state { position: absolute; inset: 0; display: grid; place-content: center; padding: 28px; text-align: center; pointer-events: none; }
 .empty-state[hidden] { display: none; }
 .empty-state strong { font-size: 17px; }
 .empty-state p { max-width: 330px; margin: 7px 0 0; color: var(--muted); font-size: 14px; }
-.plot-frame { fill: none; stroke: var(--border); stroke-width: 1; }
-.hysteresis-shell.is-zooming svg { cursor: crosshair; }
-.overlay-legend { display: flex; flex-wrap: wrap; gap: 5px 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-.overlay-legend .legend-item { grid-template-columns: 30px minmax(0, 1fr); max-width: 280px; padding: 4px 0; }
-.legend-item svg { width: 30px; height: 8px; color: var(--series); }
-.legend-item line { stroke: currentColor; stroke-width: 3; stroke-dasharray: var(--dash); opacity: 0.7; }
 .selected-details { display: grid; gap: 14px; }
 .selected-file { padding-left: 10px; border-left: 3px solid var(--series); }
 .selected-file > strong,

@@ -41,8 +41,7 @@
   .metric-grid { grid-template-columns: 1fr; }
   .plot-header { display: block; }
   .plot-toolbar { margin-top: 12px; }
-  .plot-shell svg { min-height: 300px; }
-  .hysteresis-shell { min-height: 360px; }
+  .hysteresis-shell, .plotly-host { min-height: 400px; }
   .status-line { grid-template-columns: 1fr; }
   .status-line span { border-top: 1px solid var(--border); border-left: 0; }
 }
