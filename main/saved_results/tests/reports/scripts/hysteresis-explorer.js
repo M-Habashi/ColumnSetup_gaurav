@@ -13,6 +13,14 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function visibleName(value) {
+  return String(value).trim().replace(/\.mat$/i, "");
+}
+
+function visiblePath(value) {
+  return String(value).replace(/\.mat$/i, "");
+}
+
 function rgba(hex, alpha) {
   const value = Number.parseInt(hex.slice(1), 16);
   return `rgba(${value >> 16},${value >> 8 & 255},${value & 255},${alpha})`;
@@ -78,9 +86,9 @@ function treeMarkup(branch, metadata, depth = 0) {
     ...files.map(file => {
       const fileMetadata = metadata.files[file.path];
       const searchable = `${fileMetadata.display_name} ${file.path}`.toLowerCase();
-      const title = fileMetadata.display_name === file.name
-        ? file.path
-        : `${fileMetadata.display_name}\nOriginal: ${file.path}`;
+      const title = fileMetadata.display_name === visibleName(file.name)
+        ? visiblePath(file.path)
+        : `${fileMetadata.display_name}\nOriginal: ${visiblePath(file.path)}`;
       return `
       <label class="tree-file" role="treeitem" tabindex="0" data-path="${escapeHtml(file.path)}" data-search="${escapeHtml(searchable)}" title="${escapeHtml(title)}">
         <input type="checkbox" value="${escapeHtml(file.path)}" ${fileMetadata.selected ? "checked" : ""} ${file.available ? "" : "disabled"}>
@@ -118,10 +126,11 @@ function normalizeMetadata(source, manifest) {
   manifest.forEach((entry, index) => {
     const stored = source?.files?.[entry.path] || {};
     const archived = Boolean(stored.archived);
+    const storedDisplayName = typeof stored.display_name === "string" ? visibleName(stored.display_name) : "";
     metadata.files[entry.path] = {
       original_name: entry.name,
       original_path: entry.path,
-      display_name: typeof stored.display_name === "string" && stored.display_name.trim() ? stored.display_name.trim() : entry.name,
+      display_name: storedDisplayName || visibleName(entry.name),
       archived,
       selected: Boolean(stored.selected) && !archived && entry.available,
       color: typeof stored.color === "string" && HEX_COLOR.test(stored.color) ? stored.color.toUpperCase() : DEFAULT_COLORS[index % DEFAULT_COLORS.length],
@@ -297,7 +306,7 @@ export async function initHysteresisExplorer(container, initialMetadata) {
       fileMetadata.selected = false;
       const checkbox = checkboxForPath(path);
       if (checkbox) checkbox.checked = false;
-      alert(`Could not load ${path}: ${error.message}`);
+      alert(`Could not load ${visiblePath(path)}: ${error.message}`);
     }
     render();
     scheduleMetadataSave();
@@ -333,7 +342,7 @@ export async function initHysteresisExplorer(container, initialMetadata) {
     const fileMetadata = metadata.files[path];
     renameInput.value = fileMetadata.display_name;
     renameInput.setCustomValidity("");
-    renameOriginalName.textContent = `Original MAT: ${fileMetadata.original_path}`;
+    renameOriginalName.textContent = `Original MAT: ${visiblePath(fileMetadata.original_path)}`;
     renameDialog.showModal();
     renameInput.focus();
     renameInput.select();
@@ -395,7 +404,7 @@ export async function initHysteresisExplorer(container, initialMetadata) {
 
   renameForm.addEventListener("submit", event => {
     event.preventDefault();
-    const displayName = renameInput.value.trim();
+    const displayName = visibleName(renameInput.value);
     if (!displayName) {
       renameInput.setCustomValidity("Enter a display name.");
       renameInput.reportValidity();
@@ -519,7 +528,7 @@ export async function initHysteresisExplorer(container, initialMetadata) {
           <span class="sr-only">Choose color for ${escapeHtml(fileMetadata.display_name)}</span>
           <input type="color" value="${fileMetadata.color}" data-path="${escapeHtml(file.path)}" aria-label="Choose color for ${escapeHtml(fileMetadata.display_name)}">
         </label>
-        <strong>${escapeHtml(fileMetadata.display_name)}</strong><span>Original: ${escapeHtml(fileMetadata.original_path)}</span>
+        <strong>${escapeHtml(fileMetadata.display_name)}</strong><span>Original: ${escapeHtml(visiblePath(fileMetadata.original_path))}</span>
         <dl><div><dt>Samples</dt><dd>${Number(file.sample_count).toLocaleString()}</dd></div><div><dt>Rendered</dt><dd>${file.x.length.toLocaleString()}</dd></div><div><dt>Rate</dt><dd>${Number(file.fs).toLocaleString()} Hz</dd></div></dl>
       </div>`;
     }).join("") : '<p class="muted-copy">No files selected.</p>';
@@ -545,9 +554,9 @@ export async function initHysteresisExplorer(container, initialMetadata) {
       paper_bgcolor: "#141412",
       plot_bgcolor: "#141412",
       font: { color: "#d6d4cb", family: "IBM Plex Sans, sans-serif", size: 12 },
-      margin: { l: 82, r: 24, t: 24, b: 68 },
+      margin: { l: 82, r: 24, t: 72, b: 68 },
       showlegend: true,
-      legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", itemclick: "toggle", itemdoubleclick: "toggleothers", uirevision: "hysteresis-series" },
+      legend: { orientation: "h", x: 0, y: 1, yanchor: "bottom", itemclick: "toggle", itemdoubleclick: "toggleothers", uirevision: "hysteresis-series" },
       hovermode: "closest",
       dragmode: "zoom",
       uirevision: `${selected.map(file => file.path).join("|")}|${state.forceUnit}`,

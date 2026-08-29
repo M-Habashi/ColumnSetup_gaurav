@@ -16,15 +16,24 @@
   "settings": {
     "density_alpha": 1,
     "earthquake_time_cutoff": null,
-    "custom_view": null,
+    "custom_view": {
+      "x": [
+        1.5628260355058634,
+        5.808540653494296
+      ],
+      "y": [
+        0.7762337040380336,
+        3.8088870026012
+      ]
+    },
     "force_unit": "kip",
-    "archived_tree_collapsed": false
+    "archived_tree_collapsed": true
   },
   "files": {
     "20260731/20260731_1347_testing_OSI.mat": {
       "original_name": "20260731_1347_testing_OSI.mat",
       "original_path": "20260731/20260731_1347_testing_OSI.mat",
-      "display_name": "20260731_1347_testing_OSI.mat",
+      "display_name": "20260731_1347_testing_OSI",
       "archived": true,
       "selected": false,
       "color": "#4477AA",
@@ -33,7 +42,7 @@
     "20260731/20260731_1631_testing_OSI.mat": {
       "original_name": "20260731_1631_testing_OSI.mat",
       "original_path": "20260731/20260731_1631_testing_OSI.mat",
-      "display_name": "20260731_1631_testing_OSI.mat",
+      "display_name": "20260731_1631_testing_OSI",
       "archived": true,
       "selected": false,
       "color": "#EE6677",
@@ -42,7 +51,7 @@
     "20260731/20260731_1651_testing_OSI.mat": {
       "original_name": "20260731_1651_testing_OSI.mat",
       "original_path": "20260731/20260731_1651_testing_OSI.mat",
-      "display_name": "20260731_1651_testing_OSI.mat",
+      "display_name": "20260731_1651_testing_OSI",
       "archived": true,
       "selected": false,
       "color": "#228833",
@@ -51,7 +60,7 @@
     "20260731/instability.mat": {
       "original_name": "instability.mat",
       "original_path": "20260731/instability.mat",
-      "display_name": "instability.mat",
+      "display_name": "instability",
       "archived": true,
       "selected": false,
       "color": "#CCBB44",
@@ -60,7 +69,7 @@
     "20260731/sp2_RTHS_linear_10x.mat": {
       "original_name": "sp2_RTHS_linear_10x.mat",
       "original_path": "20260731/sp2_RTHS_linear_10x.mat",
-      "display_name": "sp2_RTHS_linear_10x.mat",
+      "display_name": "sp2_RTHS_linear_10x",
       "archived": true,
       "selected": false,
       "color": "#4477AA",
@@ -69,7 +78,7 @@
     "20260731/sp2_blwn2.mat": {
       "original_name": "sp2_blwn2.mat",
       "original_path": "20260731/sp2_blwn2.mat",
-      "display_name": "sp2_blwn2.mat",
+      "display_name": "sp2_blwn2",
       "archived": true,
       "selected": false,
       "color": "#EE6677",
@@ -78,7 +87,7 @@
     "gpt5_6_tests/20260710_1803_RTHS_5k_baseline.mat": {
       "original_name": "20260710_1803_RTHS_5k_baseline.mat",
       "original_path": "gpt5_6_tests/20260710_1803_RTHS_5k_baseline.mat",
-      "display_name": "20260710_1803_RTHS_5k_baseline.mat",
+      "display_name": "20260710_1803_RTHS_5k_baseline",
       "archived": true,
       "selected": false,
       "color": "#228833",
@@ -87,7 +96,7 @@
     "gpt5_6_tests/20260710_1818_RTHS_unstable.mat": {
       "original_name": "20260710_1818_RTHS_unstable.mat",
       "original_path": "gpt5_6_tests/20260710_1818_RTHS_unstable.mat",
-      "display_name": "20260710_1818_RTHS_unstable.mat",
+      "display_name": "20260710_1818_RTHS_unstable",
       "archived": true,
       "selected": false,
       "color": "#CCBB44",
@@ -96,7 +105,7 @@
     "gpt5_6_tests/20260710_1831_testing_OSI.mat": {
       "original_name": "20260710_1831_testing_OSI.mat",
       "original_path": "gpt5_6_tests/20260710_1831_testing_OSI.mat",
-      "display_name": "20260710_1831_testing_OSI.mat",
+      "display_name": "20260710_1831_testing_OSI",
       "archived": true,
       "selected": false,
       "color": "#4477AA",
@@ -105,7 +114,7 @@
     "gpt5_6_tests/20260710_1838_plNew_authOff_almostUnstable_studyAccuracy.mat": {
       "original_name": "20260710_1838_plNew_authOff_almostUnstable_studyAccuracy.mat",
       "original_path": "gpt5_6_tests/20260710_1838_plNew_authOff_almostUnstable_studyAccuracy.mat",
-      "display_name": "20260710_1838_plNew_authOff_almostUnstable_studyAccuracy.mat",
+      "display_name": "20260710_1838_plNew_authOff_almostUnstable_studyAccuracy",
       "archived": true,
       "selected": false,
       "color": "#EE6677",
@@ -114,7 +123,7 @@
     "gpt5_6_tests/20260710_1845_plNew_authON_oscillations_unstableAtEnd.mat": {
       "original_name": "20260710_1845_plNew_authON_oscillations_unstableAtEnd.mat",
       "original_path": "gpt5_6_tests/20260710_1845_plNew_authON_oscillations_unstableAtEnd.mat",
-      "display_name": "20260710_1845_plNew_authON_oscillations_unstableAtEnd.mat",
+      "display_name": "20260710_1845_plNew_authON_oscillations_unstableAtEnd",
       "archived": true,
       "selected": false,
       "color": "#228833",
@@ -123,7 +132,7 @@
     "gpt5_6_tests/20260710_1852_plNEw_baseline.mat": {
       "original_name": "20260710_1852_plNEw_baseline.mat",
       "original_path": "gpt5_6_tests/20260710_1852_plNEw_baseline.mat",
-      "display_name": "20260710_1852_plNEw_baseline.mat",
+      "display_name": "20260710_1852_plNEw_baseline",
       "archived": true,
       "selected": false,
       "color": "#CCBB44",
@@ -132,7 +141,7 @@
     "gpt5_6_tests/osi_calibration_test.mat": {
       "original_name": "osi_calibration_test.mat",
       "original_path": "gpt5_6_tests/osi_calibration_test.mat",
-      "display_name": "osi_calibration_test.mat",
+      "display_name": "osi_calibration_test",
       "archived": true,
       "selected": false,
       "color": "#4477AA",
@@ -141,7 +150,7 @@
     "important/20260617_1623_sp1_ori_P30_I0_D0001_Po_015_Io_20_Do_00015.mat": {
       "original_name": "20260617_1623_sp1_ori_P30_I0_D0001_Po_015_Io_20_Do_00015.mat",
       "original_path": "important/20260617_1623_sp1_ori_P30_I0_D0001_Po_015_Io_20_Do_00015.mat",
-      "display_name": "20260617_1623_sp1_ori_P30_I0_D0001_Po_015_Io_20_Do_00015.mat",
+      "display_name": "20260617_1623_sp1_ori_P30_I0_D0001_Po_015_Io_20_Do_00015",
       "archived": true,
       "selected": false,
       "color": "#EE6677",
@@ -150,7 +159,7 @@
     "important/20260617_1655_sp1_ori_P30_I10_D0001_Po_015_Io_20_Do_00015.mat": {
       "original_name": "20260617_1655_sp1_ori_P30_I10_D0001_Po_015_Io_20_Do_00015.mat",
       "original_path": "important/20260617_1655_sp1_ori_P30_I10_D0001_Po_015_Io_20_Do_00015.mat",
-      "display_name": "20260617_1655_sp1_ori_P30_I10_D0001_Po_015_Io_20_Do_00015.mat",
+      "display_name": "20260617_1655_sp1_ori_P30_I10_D0001_Po_015_Io_20_Do_00015",
       "archived": true,
       "selected": false,
       "color": "#228833",
@@ -159,7 +168,7 @@
     "important/20260617_1708_sp1_ori_P30_I30_D0001_Po_015_Io_20_Do_00015.mat": {
       "original_name": "20260617_1708_sp1_ori_P30_I30_D0001_Po_015_Io_20_Do_00015.mat",
       "original_path": "important/20260617_1708_sp1_ori_P30_I30_D0001_Po_015_Io_20_Do_00015.mat",
-      "display_name": "20260617_1708_sp1_ori_P30_I30_D0001_Po_015_Io_20_Do_00015.mat",
+      "display_name": "20260617_1708_sp1_ori_P30_I30_D0001_Po_015_Io_20_Do_00015",
       "archived": true,
       "selected": false,
       "color": "#CCBB44",
@@ -168,7 +177,7 @@
     "important/20260617_1719_sp1_ori_P50_I30_D0001_Po_015_Io_20_Do_00015.mat": {
       "original_name": "20260617_1719_sp1_ori_P50_I30_D0001_Po_015_Io_20_Do_00015.mat",
       "original_path": "important/20260617_1719_sp1_ori_P50_I30_D0001_Po_015_Io_20_Do_00015.mat",
-      "display_name": "20260617_1719_sp1_ori_P50_I30_D0001_Po_015_Io_20_Do_00015.mat",
+      "display_name": "20260617_1719_sp1_ori_P50_I30_D0001_Po_015_Io_20_Do_00015",
       "archived": true,
       "selected": false,
       "color": "#4477AA",
@@ -177,7 +186,7 @@
     "important/20260617_1731_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat": {
       "original_name": "20260617_1731_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat",
       "original_path": "important/20260617_1731_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat",
-      "display_name": "20260617_1731_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat",
+      "display_name": "20260617_1731_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015",
       "archived": true,
       "selected": false,
       "color": "#EE6677",
@@ -186,7 +195,7 @@
     "important/20260617_1749_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat": {
       "original_name": "20260617_1749_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat",
       "original_path": "important/20260617_1749_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat",
-      "display_name": "20260617_1749_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015.mat",
+      "display_name": "20260617_1749_sp1_ori_Pvar_I30_D0001_Po_015_Io_20_Do_00015",
       "archived": true,
       "selected": false,
       "color": "#228833",
@@ -195,16 +204,16 @@
     "sp1_tests/sp1_test1.mat": {
       "original_name": "sp1_test1.mat",
       "original_path": "sp1_tests/sp1_test1.mat",
-      "display_name": "sp1_test1.mat",
+      "display_name": "sp1_test1",
       "archived": false,
-      "selected": true,
+      "selected": false,
       "color": "#CCBB44",
       "visible": true
     },
     "important/20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat": {
       "original_name": "20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat",
       "original_path": "important/20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat",
-      "display_name": "20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat",
+      "display_name": "20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015",
       "archived": true,
       "selected": false,
       "color": "#4477AA",
@@ -213,7 +222,7 @@
     "important/20260630_1930_testing_OSI.mat": {
       "original_name": "20260630_1930_testing_OSI.mat",
       "original_path": "important/20260630_1930_testing_OSI.mat",
-      "display_name": "20260630_1930_testing_OSI.mat",
+      "display_name": "20260630_1930_testing_OSI",
       "archived": true,
       "selected": false,
       "color": "#EE6677",
@@ -222,53 +231,53 @@
     "sp1_tests/beautiful.mat": {
       "original_name": "beautiful.mat",
       "original_path": "sp1_tests/beautiful.mat",
-      "display_name": "sp1_test2.mat",
+      "display_name": "sp1_test2",
       "archived": false,
-      "selected": true,
+      "selected": false,
       "color": "#228833",
       "visible": true
     },
     "sp1_tests/beautiful2.mat": {
       "original_name": "beautiful2.mat",
       "original_path": "sp1_tests/beautiful2.mat",
-      "display_name": "sp1_test3.mat",
+      "display_name": "sp1_test3",
       "archived": false,
-      "selected": true,
+      "selected": false,
       "color": "#CCBB44",
       "visible": true
     },
     "sp1_tests/beautiful3.mat": {
       "original_name": "beautiful3.mat",
       "original_path": "sp1_tests/beautiful3.mat",
-      "display_name": "sp1_test4.mat",
+      "display_name": "sp1_test4",
       "archived": false,
-      "selected": true,
+      "selected": false,
       "color": "#4477AA",
       "visible": true
     },
     "sp1_tests/beautiful4.mat": {
       "original_name": "beautiful4.mat",
       "original_path": "sp1_tests/beautiful4.mat",
-      "display_name": "sp1_test5.mat",
+      "display_name": "sp1_test5",
       "archived": false,
-      "selected": true,
+      "selected": false,
       "color": "#EE6677",
       "visible": true
     },
     "sp1_tests/beautiful5.mat": {
       "original_name": "beautiful5.mat",
       "original_path": "sp1_tests/beautiful5.mat",
-      "display_name": "sp1_test6.mat",
+      "display_name": "sp1_test6",
       "archived": false,
-      "selected": true,
+      "selected": false,
       "color": "#228833",
       "visible": true
     },
     "sp1_tests/successful_osi.mat": {
       "original_name": "successful_osi.mat",
       "original_path": "sp1_tests/successful_osi.mat",
-      "display_name": "successful_osi.mat",
-      "archived": false,
+      "display_name": "successful_osi",
+      "archived": true,
       "selected": false,
       "color": "#CCBB44",
       "visible": true
@@ -276,8 +285,8 @@
     "sp2_or/20260727_1647_testing_OSI.mat": {
       "original_name": "20260727_1647_testing_OSI.mat",
       "original_path": "sp2_or/20260727_1647_testing_OSI.mat",
-      "display_name": "20260727_1647_testing_OSI.mat",
-      "archived": false,
+      "display_name": "20260727_1647_testing_OSI",
+      "archived": true,
       "selected": false,
       "color": "#4477AA",
       "visible": true
@@ -285,8 +294,8 @@
     "sp2_or/20260727_1705_testing_OSI.mat": {
       "original_name": "20260727_1705_testing_OSI.mat",
       "original_path": "sp2_or/20260727_1705_testing_OSI.mat",
-      "display_name": "20260727_1705_testing_OSI.mat",
-      "archived": false,
+      "display_name": "20260727_1705_testing_OSI",
+      "archived": true,
       "selected": false,
       "color": "#EE6677",
       "visible": true
@@ -294,7 +303,7 @@
     "sp2_or/SP2_HS.mat": {
       "original_name": "SP2_HS.mat",
       "original_path": "sp2_or/SP2_HS.mat",
-      "display_name": "SP2_HS.mat",
+      "display_name": "sp2_test2",
       "archived": false,
       "selected": false,
       "color": "#228833",
@@ -303,7 +312,7 @@
     "sp2_or/sp2_RTHS_linear_10x.mat": {
       "original_name": "sp2_RTHS_linear_10x.mat",
       "original_path": "sp2_or/sp2_RTHS_linear_10x.mat",
-      "display_name": "sp2_RTHS_linear_10x.mat",
+      "display_name": "sp2_test1",
       "archived": false,
       "selected": false,
       "color": "#CCBB44",
@@ -312,8 +321,8 @@
     "sp2_retrofitted/20260826_1505_testing_OSI.mat": {
       "original_name": "20260826_1505_testing_OSI.mat",
       "original_path": "sp2_retrofitted/20260826_1505_testing_OSI.mat",
-      "display_name": "20260826_1505_testing_OSI.mat",
-      "archived": false,
+      "display_name": "20260826_1505_testing_OSI",
+      "archived": true,
       "selected": false,
       "color": "#4477AA",
       "visible": true
@@ -321,7 +330,7 @@
     "sp2_retrofitted/20260826_1601_testing_OSI.mat": {
       "original_name": "20260826_1601_testing_OSI.mat",
       "original_path": "sp2_retrofitted/20260826_1601_testing_OSI.mat",
-      "display_name": "20260826_1601_testing_OSI.mat",
+      "display_name": "sp2_test3",
       "archived": false,
       "selected": false,
       "color": "#EE6677",
@@ -330,7 +339,7 @@
     "sp2_retrofitted/20260826_1652_testing_OSI.mat": {
       "original_name": "20260826_1652_testing_OSI.mat",
       "original_path": "sp2_retrofitted/20260826_1652_testing_OSI.mat",
-      "display_name": "20260826_1652_testing_OSI.mat",
+      "display_name": "sp2_test4",
       "archived": false,
       "selected": false,
       "color": "#228833",
@@ -339,7 +348,7 @@
     "sp2_retrofitted/20260826_1732_testing_OSI.mat": {
       "original_name": "20260826_1732_testing_OSI.mat",
       "original_path": "sp2_retrofitted/20260826_1732_testing_OSI.mat",
-      "display_name": "20260826_1732_testing_OSI.mat",
+      "display_name": "sp2_test5",
       "archived": false,
       "selected": false,
       "color": "#CCBB44",
@@ -348,8 +357,8 @@
     "tsting_osi/20260704_1129_testing_OSI.mat": {
       "original_name": "20260704_1129_testing_OSI.mat",
       "original_path": "tsting_osi/20260704_1129_testing_OSI.mat",
-      "display_name": "20260704_1129_testing_OSI.mat",
-      "archived": false,
+      "display_name": "20260704_1129_testing_OSI",
+      "archived": true,
       "selected": false,
       "color": "#4477AA",
       "visible": true
@@ -357,8 +366,8 @@
     "tsting_osi/GDBqFpKb.mat": {
       "original_name": "GDBqFpKb.mat",
       "original_path": "tsting_osi/GDBqFpKb.mat",
-      "display_name": "GDBqFpKb.mat",
-      "archived": false,
+      "display_name": "GDBqFpKb",
+      "archived": true,
       "selected": false,
       "color": "#EE6677",
       "visible": true
@@ -366,8 +375,8 @@
     "tsting_osi/RHTS_no_inst_butindicators_jump.mat": {
       "original_name": "RHTS_no_inst_butindicators_jump.mat",
       "original_path": "tsting_osi/RHTS_no_inst_butindicators_jump.mat",
-      "display_name": "RHTS_no_inst_butindicators_jump.mat",
-      "archived": false,
+      "display_name": "RHTS_no_inst_butindicators_jump",
+      "archived": true,
       "selected": false,
       "color": "#228833",
       "visible": true
@@ -375,8 +384,8 @@
     "tsting_osi/RTHS_5k.mat": {
       "original_name": "RTHS_5k.mat",
       "original_path": "tsting_osi/RTHS_5k.mat",
-      "display_name": "RTHS_5k.mat",
-      "archived": false,
+      "display_name": "RTHS_5k",
+      "archived": true,
       "selected": false,
       "color": "#CCBB44",
       "visible": true
@@ -384,8 +393,8 @@
     "tsting_osi/RTHS_instability_at_the_end.mat": {
       "original_name": "RTHS_instability_at_the_end.mat",
       "original_path": "tsting_osi/RTHS_instability_at_the_end.mat",
-      "display_name": "RTHS_instability_at_the_end.mat",
-      "archived": false,
+      "display_name": "RTHS_instability_at_the_end",
+      "archived": true,
       "selected": false,
       "color": "#4477AA",
       "visible": true
@@ -393,8 +402,8 @@
     "tsting_osi/RTHS_instability_during_eq.mat": {
       "original_name": "RTHS_instability_during_eq.mat",
       "original_path": "tsting_osi/RTHS_instability_during_eq.mat",
-      "display_name": "RTHS_instability_during_eq.mat",
-      "archived": false,
+      "display_name": "RTHS_instability_during_eq",
+      "archived": true,
       "selected": false,
       "color": "#EE6677",
       "visible": true
@@ -402,8 +411,8 @@
     "tsting_osi/RTHS_osi_rising_emergency.mat": {
       "original_name": "RTHS_osi_rising_emergency.mat",
       "original_path": "tsting_osi/RTHS_osi_rising_emergency.mat",
-      "display_name": "RTHS_osi_rising_emergency.mat",
-      "archived": false,
+      "display_name": "RTHS_osi_rising_emergency",
+      "archived": true,
       "selected": false,
       "color": "#228833",
       "visible": true
@@ -411,8 +420,8 @@
     "tsting_osi/osi_highband.mat": {
       "original_name": "osi_highband.mat",
       "original_path": "tsting_osi/osi_highband.mat",
-      "display_name": "osi_highband.mat",
-      "archived": false,
+      "display_name": "osi_highband",
+      "archived": true,
       "selected": false,
       "color": "#CCBB44",
       "visible": true
@@ -420,12 +429,12 @@
     "tsting_osi/osi_lowband.mat": {
       "original_name": "osi_lowband.mat",
       "original_path": "tsting_osi/osi_lowband.mat",
-      "display_name": "osi_lowband.mat",
-      "archived": false,
+      "display_name": "osi_lowband",
+      "archived": true,
       "selected": false,
       "color": "#4477AA",
       "visible": true
     }
   },
-  "updated_at": "Sat, 29 Aug 2026 00:41:12 GMT"
+  "updated_at": "Sat, 29 Aug 2026 00:55:24 GMT"
 }
