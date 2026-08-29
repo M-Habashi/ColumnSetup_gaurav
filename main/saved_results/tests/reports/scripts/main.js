@@ -1,7 +1,7 @@
 "use strict";
 
 import { initAppShell } from "./app-shell.js?v=20260828-1";
-import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-4";
+import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-5";
 import { initGuidedTour } from "./guided-tour.js?v=20260829-7";
 
 async function fetchJson(path) {
@@ -52,7 +52,15 @@ async function start() {
     initAppShell(config);
     const explorer = document.getElementById("hysteresisExplorer");
     if (explorer) {
-      await initHysteresisExplorer(explorer, metadata, metadataWritable);
+      let downloadLinks = {};
+      if (!metadataWritable) {
+        try {
+          downloadLinks = await fetchJson("data/box-download-links.json");
+        } catch {
+          // Local report exports remain the fallback when no cloud links exist.
+        }
+      }
+      await initHysteresisExplorer(explorer, metadata, metadataWritable, downloadLinks);
       initGuidedTour(explorer);
     }
   } catch (error) {

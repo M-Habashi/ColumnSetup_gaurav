@@ -106,8 +106,11 @@ function treeMarkup(branch, metadata, depth = 0) {
       const title = fileMetadata.display_name === visibleName(file.name)
         ? visiblePath(file.path)
         : `${fileMetadata.display_name}\nOriginal: ${visiblePath(file.path)}`;
+      const downloadBehavior = /^https?:\/\//i.test(file.xlsx)
+        ? 'target="_blank" rel="noopener"'
+        : `download="${escapeHtml(fileMetadata.display_name)}.xlsx"`;
       const download = file.xlsx_available
-        ? `<a class="file-download" href="${escapeHtml(file.xlsx)}" download="${escapeHtml(fileMetadata.display_name)}.xlsx" title="Download ${escapeHtml(fileMetadata.display_name)} as XLSX">XLSX</a>`
+        ? `<a class="file-download" href="${escapeHtml(file.xlsx)}" ${downloadBehavior} title="Download ${escapeHtml(fileMetadata.display_name)} as XLSX">XLSX</a>`
         : `<span class="file-download is-disabled" title="XLSX unavailable">XLSX</span>`;
       return `
       <div class="tree-file" role="treeitem" tabindex="0" data-path="${escapeHtml(file.path)}" data-search="${escapeHtml(searchable)}">
@@ -166,7 +169,7 @@ function normalizeMetadata(source, manifest) {
   return metadata;
 }
 
-export async function initHysteresisExplorer(container, initialMetadata, canPersistMetadata = true) {
+export async function initHysteresisExplorer(container, initialMetadata, canPersistMetadata = true, downloadLinks = {}) {
   const plot = container.querySelector("#hysteresisPlot");
   const fileLists = container.querySelector("#fileLists");
   const tree = container.querySelector("#fileTree");
@@ -197,6 +200,11 @@ export async function initHysteresisExplorer(container, initialMetadata, canPers
   const manifestResponse = await fetch("data/test-manifest.json", { cache: "no-store" });
   if (!manifestResponse.ok) throw new Error(`Could not load test manifest: ${manifestResponse.status}`);
   const manifest = await manifestResponse.json();
+  manifest.files.forEach(entry => {
+    if (!downloadLinks[entry.path]) return;
+    entry.xlsx = downloadLinks[entry.path];
+    entry.xlsx_available = true;
+  });
   const metadata = normalizeMetadata(initialMetadata, manifest.files);
   const state = {
     manifest: manifest.files,
