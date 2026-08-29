@@ -26,9 +26,26 @@
         <button class="button button-outline" id="expandAll" type="button">Expand all</button>
         <button class="button button-ghost" id="clearAll" type="button">Clear</button>
       </div>
-      <div class="file-tree scroll-area" id="fileTree" role="tree" aria-label="Saved result folders">
-        <div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div>
+      <p class="metadata-status" id="metadataStatus" role="status" hidden></p>
+      <div class="file-lists scroll-area" id="fileLists">
+        <section class="file-list-section" aria-labelledby="currentFilesHeading">
+          <div class="file-list-heading"><h3 id="currentFilesHeading">Current</h3><span id="currentFileCount">—</span></div>
+          <div class="file-tree" id="fileTree" role="tree" aria-label="Current saved result folders">
+            <div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div>
+          </div>
+        </section>
+        <section class="file-list-section archived-files" aria-labelledby="archivedFilesHeading">
+          <div class="file-list-heading">
+            <h3 id="archivedFilesHeading">Archived</h3>
+            <div class="tree-section-controls">
+              <span id="archivedFileCount">0</span>
+              <button class="tree-section-toggle" id="archivedTreeToggle" type="button" aria-expanded="true" aria-controls="archivedFileTree">Collapse</button>
+            </div>
+          </div>
+          <div class="file-tree" id="archivedFileTree" role="tree" aria-label="Archived saved result folders"></div>
+        </section>
       </div>
+      <p class="file-menu-hint">Right-click a file to rename or archive it.</p>
     </aside>
 
     <main>
@@ -79,4 +96,26 @@
       </div>
     </aside>
   </div>
+
+  <div class="context-menu" id="fileContextMenu" role="menu" aria-label="File actions" hidden>
+    <div class="context-menu-label" id="contextMenuFile"></div>
+    <div class="context-menu-separator" role="separator"></div>
+    <button class="context-menu-item" type="button" role="menuitem" data-action="rename">Rename</button>
+    <button class="context-menu-item" type="button" role="menuitem" data-action="archive">Archive</button>
+  </div>
+
+  <dialog class="rename-dialog" id="renameDialog" aria-labelledby="renameDialogTitle">
+    <form id="renameForm">
+      <header>
+        <h2 id="renameDialogTitle">Rename test</h2>
+        <p id="renameOriginalName"></p>
+      </header>
+      <label class="field-label" for="renameInput">Display name</label>
+      <input class="input" id="renameInput" name="displayName" autocomplete="off" required>
+      <footer>
+        <button class="button button-ghost" id="renameCancel" type="button">Cancel</button>
+        <button class="button" type="submit">Save name</button>
+      </footer>
+    </form>
+  </dialog>
 </article>

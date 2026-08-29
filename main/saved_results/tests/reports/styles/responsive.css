@@ -33,7 +33,7 @@
   .report-layout { display: block; }
   .toc-rail { position: static; justify-self: auto; width: 100%; padding: 28px 24px 0; }
   .file-rail { max-height: none; overflow: visible; }
-  .file-tree { max-height: 360px; }
+  .file-lists { max-height: 420px; }
   .nav a { min-height: 40px; align-items: center; }
   main { width: 100%; padding: 0 24px 72px; }
   h1 { font-size: 34px; }

@@ -29,8 +29,15 @@ async function start() {
   const mount = document.getElementById("articleMount");
 
   try {
-    const configPath = document.body.dataset.reportConfig || "data/report-config.json";
-    const config = await fetchJson(configPath);
+    const metadataApi = document.body.dataset.reportMetadataApi;
+    const metadataPath = document.body.dataset.reportMetadata || "data/report-metadata.json";
+    let metadata;
+    try {
+      metadata = await fetchJson(metadataApi);
+    } catch {
+      metadata = await fetchJson(metadataPath);
+    }
+    const config = metadata.report;
     const components = await Promise.all(config.articles.map(article => fetchText(article.component)));
 
     document.documentElement.style.setProperty("--accent", config.accent);
@@ -41,7 +48,7 @@ async function start() {
 
     initAppShell(config);
     const explorer = document.getElementById("hysteresisExplorer");
-    if (explorer) await initHysteresisExplorer(explorer);
+    if (explorer) await initHysteresisExplorer(explorer, metadata);
   } catch (error) {
     mount.innerHTML = `<main class="load-error"><h1>Report unavailable</h1><p>${error.message}</p></main>`;
     console.error(error);

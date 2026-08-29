@@ -1,6 +1,17 @@
 "use strict";
 
 const DEFAULT_COLORS = ["#4477AA", "#EE6677", "#228833", "#CCBB44"];
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+const FORCE_UNITS = {
+  kN: { divisor: 1000, next: "kip" },
+  kip: { divisor: 4448.2216152605, next: "kN" }
+};
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[character]);
+}
 
 function rgba(hex, alpha) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -18,17 +29,23 @@ function upperBound(values, limit) {
   return low;
 }
 
-function fullRange(files, key) {
+function fullRange(files, key, divisor = 1) {
   let minimum = Infinity;
   let maximum = -Infinity;
   files.forEach(file => file[key].forEach(value => {
     if (!Number.isFinite(value)) return;
+    value /= divisor;
     minimum = Math.min(minimum, value);
     maximum = Math.max(maximum, value);
   }));
   if (!Number.isFinite(minimum)) return null;
   const padding = minimum === maximum ? Math.max(Math.abs(minimum) * 0.06, 1) : (maximum - minimum) * 0.06;
   return [minimum - padding, maximum + padding];
+}
+
+function validView(view) {
+  return view && [view.x, view.y].every(range => Array.isArray(range)
+    && range.length === 2 && range.every(Number.isFinite));
 }
 
 function buildTree(entries) {
@@ -49,28 +66,80 @@ function countFiles(branch) {
   return branch.files.length + [...branch.folders.values()].reduce((sum, child) => sum + countFiles(child), 0);
 }
 
-function treeMarkup(branch, depth = 0) {
+function treeMarkup(branch, metadata, depth = 0) {
   const folders = [...branch.folders.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const files = [...branch.files].sort((a, b) => a.name.localeCompare(b.name));
+  const files = [...branch.files].sort((a, b) => metadata.files[a.path].display_name.localeCompare(metadata.files[b.path].display_name));
   return [
     ...folders.map(([name, child]) => `
       <details class="tree-folder" ${depth === 0 ? "open" : ""}>
-        <summary role="treeitem"><span class="folder-mark" aria-hidden="true"></span><span>${name}</span><span class="folder-count">${countFiles(child)}</span></summary>
-        <div role="group">${treeMarkup(child, depth + 1)}</div>
+        <summary role="treeitem"><span class="folder-mark" aria-hidden="true"></span><span>${escapeHtml(name)}</span><span class="folder-count">${countFiles(child)}</span></summary>
+        <div role="group">${treeMarkup(child, metadata, depth + 1)}</div>
       </details>`),
-    ...files.map(file => `
-      <label class="tree-file" role="treeitem" data-search="${file.path.toLowerCase()}">
-        <input type="checkbox" value="${file.id}" ${file.available ? "" : "disabled"}>
+    ...files.map(file => {
+      const fileMetadata = metadata.files[file.path];
+      const searchable = `${fileMetadata.display_name} ${file.path}`.toLowerCase();
+      const title = fileMetadata.display_name === file.name
+        ? file.path
+        : `${fileMetadata.display_name}\nOriginal: ${file.path}`;
+      return `
+      <label class="tree-file" role="treeitem" tabindex="0" data-path="${escapeHtml(file.path)}" data-search="${escapeHtml(searchable)}" title="${escapeHtml(title)}">
+        <input type="checkbox" value="${escapeHtml(file.path)}" ${fileMetadata.selected ? "checked" : ""} ${file.available ? "" : "disabled"}>
         <span class="file-mark" aria-hidden="true">MAT</span>
-        <span class="file-name" title="${file.path}">${file.name}</span>
-        ${file.available ? "" : `<span class="file-error" title="${file.error || "Unavailable"}">!</span>`}
-      </label>`)
+        <span class="file-name">${escapeHtml(fileMetadata.display_name)}</span>
+        ${file.available ? "" : `<span class="file-error" title="${escapeHtml(file.error || "Unavailable")}">!</span>`}
+      </label>`;
+    })
   ].join("");
 }
 
-export async function initHysteresisExplorer(container) {
+function normalizeMetadata(source, manifest) {
+  const alpha = Number(source?.settings?.density_alpha);
+  const storedCutoff = source?.settings?.earthquake_time_cutoff;
+  const cutoff = storedCutoff === null || storedCutoff === undefined ? NaN : Number(storedCutoff);
+  const storedForceUnit = source?.settings?.force_unit;
+  const forceUnit = storedForceUnit === "kip" ? "kip" : "kN";
+  const storedView = validView(source?.settings?.custom_view) ? source.settings.custom_view : null;
+  const customView = storedView && !["kN", "kip"].includes(storedForceUnit)
+    ? { x: [...storedView.x], y: storedView.y.map(value => value / 1000) }
+    : storedView;
+  const metadata = {
+    version: 1,
+    report: source.report,
+    settings: {
+      density_alpha: Number.isFinite(alpha) ? Math.min(1, Math.max(0.1, alpha)) : 0.1,
+      earthquake_time_cutoff: Number.isFinite(cutoff) ? cutoff : null,
+      custom_view: customView,
+      force_unit: forceUnit,
+      archived_tree_collapsed: Boolean(source?.settings?.archived_tree_collapsed)
+    },
+    files: {}
+  };
+
+  manifest.forEach((entry, index) => {
+    const stored = source?.files?.[entry.path] || {};
+    const archived = Boolean(stored.archived);
+    metadata.files[entry.path] = {
+      original_name: entry.name,
+      original_path: entry.path,
+      display_name: typeof stored.display_name === "string" && stored.display_name.trim() ? stored.display_name.trim() : entry.name,
+      archived,
+      selected: Boolean(stored.selected) && !archived && entry.available,
+      color: typeof stored.color === "string" && HEX_COLOR.test(stored.color) ? stored.color.toUpperCase() : DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+      visible: stored.visible !== false
+    };
+  });
+  return metadata;
+}
+
+export async function initHysteresisExplorer(container, initialMetadata) {
   const plot = container.querySelector("#hysteresisPlot");
+  const fileLists = container.querySelector("#fileLists");
   const tree = container.querySelector("#fileTree");
+  const archivedTree = container.querySelector("#archivedFileTree");
+  const archivedTreeToggle = container.querySelector("#archivedTreeToggle");
+  const currentFileCount = container.querySelector("#currentFileCount");
+  const archivedFileCount = container.querySelector("#archivedFileCount");
+  const metadataStatus = container.querySelector("#metadataStatus");
   const empty = container.querySelector("#plotEmpty");
   const summary = container.querySelector("#plotSummary");
   const details = container.querySelector("#selectedDetails");
@@ -80,93 +149,357 @@ export async function initHysteresisExplorer(container) {
   const timeSlider = container.querySelector("#earthquakeTimeSlider");
   const timeValue = container.querySelector("#earthquakeTimeValue");
   const timeMax = container.querySelector("#earthquakeTimeMax");
-  const state = { manifest: [], selected: new Map(), alpha: Number(alphaSlider.value), timeCutoff: Infinity, customView: null, frame: null };
+  const contextMenu = document.getElementById("fileContextMenu");
+  const contextMenuFile = document.getElementById("contextMenuFile");
+  const archiveAction = contextMenu.querySelector('[data-action="archive"]');
+  const renameDialog = document.getElementById("renameDialog");
+  const renameForm = document.getElementById("renameForm");
+  const renameInput = document.getElementById("renameInput");
+  const renameOriginalName = document.getElementById("renameOriginalName");
+  const metadataApi = document.body.dataset.reportMetadataApi || "api/report-metadata";
+  const manifestResponse = await fetch("data/test-manifest.json", { cache: "no-store" });
+  if (!manifestResponse.ok) throw new Error(`Could not load test manifest: ${manifestResponse.status}`);
+  const manifest = await manifestResponse.json();
+  const metadata = normalizeMetadata(initialMetadata, manifest.files);
+  const state = {
+    manifest: manifest.files,
+    selected: new Map(),
+    alpha: metadata.settings.density_alpha,
+    timeCutoff: metadata.settings.earthquake_time_cutoff ?? Infinity,
+    customView: metadata.settings.custom_view,
+    forceUnit: metadata.settings.force_unit,
+    archivedTreeCollapsed: metadata.settings.archived_tree_collapsed,
+    frame: null
+  };
+  let contextTargetPath = null;
+  let renameTargetPath = null;
   let relayoutListenerReady = false;
+  let saveTimer = null;
+  let saveQueue = Promise.resolve();
+  let metadataWritable = true;
 
-  const response = await fetch("data/test-manifest.json", { cache: "no-store" });
-  if (!response.ok) throw new Error(`Could not load test manifest: ${response.status}`);
-  const manifest = await response.json();
-  state.manifest = manifest.files;
-  tree.innerHTML = treeMarkup(buildTree(manifest.files));
+  alphaSlider.value = state.alpha;
+  alphaValue.value = state.alpha.toFixed(2);
 
-  async function setSelected(id, selected) {
-    if (!selected) {
-      state.selected.delete(id);
-      state.timeCutoff = Infinity;
-      state.customView = null;
-      render();
-      return;
-    }
-    const entry = state.manifest.find(file => file.id === id);
-    const checkbox = tree.querySelector(`input[value="${CSS.escape(id)}"]`);
-    checkbox.disabled = true;
-    checkbox.closest(".tree-file").classList.add("is-loading");
+  function entryForPath(path) {
+    return state.manifest.find(entry => entry.path === path);
+  }
+
+  function checkboxForPath(path) {
+    return fileLists.querySelector(`input[value="${CSS.escape(path)}"]`);
+  }
+
+  function syncSettings() {
+    metadata.settings.density_alpha = state.alpha;
+    metadata.settings.earthquake_time_cutoff = Number.isFinite(state.timeCutoff) ? state.timeCutoff : null;
+    metadata.settings.custom_view = state.customView;
+    metadata.settings.force_unit = state.forceUnit;
+  }
+
+  function persistMetadata() {
+    if (!metadataWritable) return Promise.resolve();
+    syncSettings();
+    const payload = JSON.stringify(metadata);
+    saveQueue = saveQueue.catch(() => {}).then(async () => {
+      const response = await fetch(metadataApi, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: payload
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      metadataStatus.hidden = true;
+    }).catch(error => {
+      metadataWritable = false;
+      metadataStatus.textContent = `State could not be saved (${error.message}). Start the report with serve_report.py.`;
+      metadataStatus.classList.add("is-error");
+      metadataStatus.hidden = false;
+    });
+    return saveQueue;
+  }
+
+  function scheduleMetadataSave(delay = 160) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      persistMetadata();
+    }, delay);
+  }
+
+  function resetViewState() {
+    state.timeCutoff = Infinity;
+    state.customView = null;
+    syncSettings();
+  }
+
+  function applySearch() {
+    const query = container.querySelector("#fileSearch").value.trim().toLowerCase();
+    fileLists.querySelectorAll(".tree-file").forEach(row => {
+      row.hidden = Boolean(query) && !row.dataset.search.includes(query);
+    });
+    fileLists.querySelectorAll("details").forEach(folder => {
+      if (query) folder.open = true;
+    });
+  }
+
+  function renderTrees() {
+    const current = state.manifest.filter(entry => !metadata.files[entry.path].archived);
+    const archived = state.manifest.filter(entry => metadata.files[entry.path].archived);
+    tree.innerHTML = current.length
+      ? treeMarkup(buildTree(current), metadata)
+      : '<p class="tree-empty">No current files.</p>';
+    archivedTree.innerHTML = archived.length
+      ? treeMarkup(buildTree(archived), metadata)
+      : '<p class="tree-empty">No archived files.</p>';
+    currentFileCount.textContent = current.length;
+    archivedFileCount.textContent = archived.length;
+    archivedTree.hidden = state.archivedTreeCollapsed;
+    archivedTreeToggle.disabled = !archived.length;
+    archivedTreeToggle.setAttribute("aria-expanded", String(!state.archivedTreeCollapsed));
+    archivedTreeToggle.textContent = state.archivedTreeCollapsed ? "Expand" : "Collapse";
+    applySearch();
+  }
+
+  function setRowLoading(path, loading) {
+    const checkbox = checkboxForPath(path);
+    if (!checkbox) return;
+    checkbox.disabled = loading || !entryForPath(path).available;
+    checkbox.closest(".tree-file").classList.toggle("is-loading", loading);
+  }
+
+  async function loadEntry(entry) {
+    setRowLoading(entry.path, true);
     try {
-      const result = await fetch(entry.data, { cache: "no-store" });
-      if (!result.ok) throw new Error(`HTTP ${result.status}`);
-      const data = await result.json();
-      state.selected.set(id, { ...entry, ...data, color: DEFAULT_COLORS[state.selected.size % DEFAULT_COLORS.length] });
-      state.timeCutoff = Infinity;
-      state.customView = null;
-    } catch (error) {
-      checkbox.checked = false;
-      alert(`Could not load ${entry.path}: ${error.message}`);
+      const response = await fetch(entry.data, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      state.selected.set(entry.path, { ...data, ...entry });
+      metadata.files[entry.path].selected = true;
     } finally {
-      checkbox.disabled = false;
-      checkbox.closest(".tree-file").classList.remove("is-loading");
-      render();
+      setRowLoading(entry.path, false);
     }
   }
 
-  tree.addEventListener("change", event => {
+  async function setSelected(path, selected) {
+    const fileMetadata = metadata.files[path];
+    if (!selected) {
+      state.selected.delete(path);
+      fileMetadata.selected = false;
+      resetViewState();
+      render();
+      scheduleMetadataSave();
+      return;
+    }
+
+    try {
+      await loadEntry(entryForPath(path));
+      resetViewState();
+    } catch (error) {
+      fileMetadata.selected = false;
+      const checkbox = checkboxForPath(path);
+      if (checkbox) checkbox.checked = false;
+      alert(`Could not load ${path}: ${error.message}`);
+    }
+    render();
+    scheduleMetadataSave();
+  }
+
+  function closeContextMenu(returnFocus = false) {
+    if (contextMenu.hidden) return;
+    contextMenu.hidden = true;
+    if (returnFocus && contextTargetPath) {
+      fileLists.querySelector(`.tree-file[data-path="${CSS.escape(contextTargetPath)}"]`)?.focus();
+    }
+  }
+
+  function openContextMenu(event, row) {
+    event.preventDefault();
+    contextTargetPath = row.dataset.path;
+    const fileMetadata = metadata.files[contextTargetPath];
+    contextMenuFile.textContent = fileMetadata.display_name;
+    archiveAction.textContent = fileMetadata.archived ? "Restore" : "Archive";
+    contextMenu.hidden = false;
+    const rowRect = row.getBoundingClientRect();
+    const requestedX = event.clientX || rowRect.left + 18;
+    const requestedY = event.clientY || rowRect.top + 18;
+    const left = Math.max(8, Math.min(requestedX, window.innerWidth - contextMenu.offsetWidth - 8));
+    const top = Math.max(8, Math.min(requestedY, window.innerHeight - contextMenu.offsetHeight - 8));
+    contextMenu.style.left = `${left}px`;
+    contextMenu.style.top = `${top}px`;
+    contextMenu.querySelector(".context-menu-item").focus();
+  }
+
+  function openRenameDialog(path) {
+    renameTargetPath = path;
+    const fileMetadata = metadata.files[path];
+    renameInput.value = fileMetadata.display_name;
+    renameInput.setCustomValidity("");
+    renameOriginalName.textContent = `Original MAT: ${fileMetadata.original_path}`;
+    renameDialog.showModal();
+    renameInput.focus();
+    renameInput.select();
+  }
+
+  function toggleArchived(path) {
+    const fileMetadata = metadata.files[path];
+    fileMetadata.archived = !fileMetadata.archived;
+    if (fileMetadata.archived) {
+      fileMetadata.selected = false;
+      state.selected.delete(path);
+      resetViewState();
+    }
+    renderTrees();
+    render();
+    scheduleMetadataSave(0);
+  }
+
+  fileLists.addEventListener("change", event => {
     if (event.target.matches('input[type="checkbox"]')) setSelected(event.target.value, event.target.checked);
   });
-  container.querySelector("#fileSearch").addEventListener("input", event => {
-    const query = event.target.value.trim().toLowerCase();
-    tree.querySelectorAll(".tree-file").forEach(row => row.hidden = query && !row.dataset.search.includes(query));
-    tree.querySelectorAll("details").forEach(folder => { if (query) folder.open = true; });
+  fileLists.addEventListener("contextmenu", event => {
+    const row = event.target.closest(".tree-file");
+    if (row) openContextMenu(event, row);
   });
-  container.querySelector("#expandAll").addEventListener("click", () => {
-    const folders = [...tree.querySelectorAll("details")];
+  fileLists.addEventListener("keydown", event => {
+    const row = event.target.closest(".tree-file");
+    if (row && (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))) openContextMenu(event, row);
+  });
+  document.addEventListener("pointerdown", event => {
+    if (!contextMenu.contains(event.target)) closeContextMenu();
+  });
+  contextMenu.addEventListener("keydown", event => {
+    const items = [...contextMenu.querySelectorAll(".context-menu-item")];
+    const index = items.indexOf(document.activeElement);
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeContextMenu(true);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      items[(index + 1) % items.length].focus();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      items[(index - 1 + items.length) % items.length].focus();
+    } else if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      items[event.key === "Home" ? 0 : items.length - 1].focus();
+    }
+  });
+  contextMenu.addEventListener("click", event => {
+    const action = event.target.closest("[data-action]")?.dataset.action;
+    if (!action || !contextTargetPath) return;
+    closeContextMenu();
+    if (action === "rename") openRenameDialog(contextTargetPath);
+    if (action === "archive") toggleArchived(contextTargetPath);
+  });
+  window.addEventListener("blur", () => closeContextMenu());
+  window.addEventListener("scroll", () => closeContextMenu(), true);
+
+  renameForm.addEventListener("submit", event => {
+    event.preventDefault();
+    const displayName = renameInput.value.trim();
+    if (!displayName) {
+      renameInput.setCustomValidity("Enter a display name.");
+      renameInput.reportValidity();
+      return;
+    }
+    metadata.files[renameTargetPath].display_name = displayName;
+    renameDialog.close();
+    renderTrees();
+    render();
+    scheduleMetadataSave(0);
+  });
+  renameInput.addEventListener("input", () => renameInput.setCustomValidity(""));
+  document.getElementById("renameCancel").addEventListener("click", () => renameDialog.close());
+
+  container.querySelector("#fileSearch").addEventListener("input", applySearch);
+  container.querySelector("#expandAll").addEventListener("click", event => {
+    const folders = [...fileLists.querySelectorAll("details")];
     const open = folders.some(folder => !folder.open);
-    folders.forEach(folder => folder.open = open);
+    folders.forEach(folder => { folder.open = open; });
+    event.currentTarget.textContent = open ? "Collapse all" : "Expand all";
+  });
+  archivedTreeToggle.addEventListener("click", () => {
+    state.archivedTreeCollapsed = !state.archivedTreeCollapsed;
+    metadata.settings.archived_tree_collapsed = state.archivedTreeCollapsed;
+    renderTrees();
+    scheduleMetadataSave(0);
   });
   container.querySelector("#clearAll").addEventListener("click", () => {
-    tree.querySelectorAll('input[type="checkbox"]:checked').forEach(input => input.checked = false);
     state.selected.clear();
-    state.timeCutoff = Infinity;
-    state.customView = null;
+    Object.values(metadata.files).forEach(file => { file.selected = false; });
+    resetViewState();
+    renderTrees();
     render();
+    scheduleMetadataSave(0);
   });
   timeSlider.addEventListener("input", () => {
     state.timeCutoff = Number(timeSlider.value);
     timeValue.value = `${state.timeCutoff.toFixed(1)} s`;
+    syncSettings();
+    scheduleMetadataSave();
     if (state.frame) cancelAnimationFrame(state.frame);
     state.frame = requestAnimationFrame(() => {
       state.frame = null;
       render();
     });
   });
+  timeSlider.addEventListener("change", () => scheduleMetadataSave(0));
   alphaSlider.addEventListener("input", () => {
     state.alpha = Number(alphaSlider.value);
     alphaValue.value = state.alpha.toFixed(2);
+    syncSettings();
+    scheduleMetadataSave();
     if (state.frame) cancelAnimationFrame(state.frame);
     state.frame = requestAnimationFrame(() => {
       state.frame = null;
       render();
     });
   });
+  alphaSlider.addEventListener("change", () => scheduleMetadataSave(0));
   details.addEventListener("input", event => {
     if (!event.target.matches('.series-color-picker input[type="color"]')) return;
-    const file = state.selected.get(event.target.dataset.id);
-    file.color = event.target.value;
-    event.target.closest(".series-color-picker").style.setProperty("--series", file.color);
-    Plotly.restyle(plot, { "line.color": rgba(file.color, state.alpha) }, [[...state.selected.keys()].indexOf(file.id)]);
+    const path = event.target.dataset.path;
+    metadata.files[path].color = event.target.value.toUpperCase();
+    event.target.closest(".series-color-picker").style.setProperty("--series", metadata.files[path].color);
+    const index = [...state.selected.keys()].indexOf(path);
+    Plotly.restyle(plot, { "line.color": rgba(metadata.files[path].color, state.alpha) }, [index]);
+    scheduleMetadataSave();
   });
+  details.addEventListener("change", () => scheduleMetadataSave(0));
+
+  function toggleForceUnit() {
+    const previousUnit = FORCE_UNITS[state.forceUnit];
+    state.forceUnit = previousUnit.next;
+    const nextUnit = FORCE_UNITS[state.forceUnit];
+    if (state.customView) {
+      state.customView = {
+        x: [...state.customView.x],
+        y: state.customView.y.map(value => value * previousUnit.divisor / nextUnit.divisor)
+      };
+    }
+    syncSettings();
+    render();
+    scheduleMetadataSave(0);
+  }
+
+  function bindForceUnitToggle() {
+    const axisTitle = plot.querySelector(".ytitle");
+    if (!axisTitle) return;
+    const nextUnit = FORCE_UNITS[state.forceUnit].next;
+    axisTitle.setAttribute("role", "button");
+    axisTitle.setAttribute("tabindex", "0");
+    axisTitle.setAttribute("aria-label", `Force axis in ${state.forceUnit}. Activate to convert to ${nextUnit}.`);
+    axisTitle.onclick = toggleForceUnit;
+    axisTitle.onkeydown = event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      toggleForceUnit();
+    };
+  }
 
   function render() {
     const selected = [...state.selected.values()];
-    const fullView = selected.length ? { x: fullRange(selected, "x"), y: fullRange(selected, "y") } : null;
+    const forceUnit = FORCE_UNITS[state.forceUnit];
+    const fullView = selected.length ? { x: fullRange(selected, "x"), y: fullRange(selected, "y", forceUnit.divisor) } : null;
     const view = state.customView || fullView;
     const maximumTime = selected.length ? Math.max(...selected.map(file => file.t.at(-1))) : 0;
     const cutoff = Math.min(state.timeCutoff, maximumTime);
@@ -178,33 +511,34 @@ export async function initHysteresisExplorer(container) {
     count.textContent = `${selected.length} selected`;
     empty.hidden = selected.length > 0;
     summary.textContent = selected.length ? `${selected.length} test${selected.length === 1 ? "" : "s"} on shared axes` : "Select a test file to begin.";
-    details.innerHTML = selected.length ? selected.map(file => `
+    details.innerHTML = selected.length ? selected.map(file => {
+      const fileMetadata = metadata.files[file.path];
+      return `
       <div class="selected-file">
-        <label class="series-color-picker" style="--series:${file.color}" title="Change trace color">
-          <span class="sr-only">Choose color for ${file.name}</span>
-          <input type="color" value="${file.color}" data-id="${file.id}" aria-label="Choose color for ${file.name}">
+        <label class="series-color-picker" style="--series:${fileMetadata.color}" title="Change trace color">
+          <span class="sr-only">Choose color for ${escapeHtml(fileMetadata.display_name)}</span>
+          <input type="color" value="${fileMetadata.color}" data-path="${escapeHtml(file.path)}" aria-label="Choose color for ${escapeHtml(fileMetadata.display_name)}">
         </label>
-        <strong>${file.name}</strong><span>${file.path}</span>
+        <strong>${escapeHtml(fileMetadata.display_name)}</strong><span>Original: ${escapeHtml(fileMetadata.original_path)}</span>
         <dl><div><dt>Samples</dt><dd>${Number(file.sample_count).toLocaleString()}</dd></div><div><dt>Rendered</dt><dd>${file.x.length.toLocaleString()}</dd></div><div><dt>Rate</dt><dd>${Number(file.fs).toLocaleString()} Hz</dd></div></dl>
-      </div>`).join("") : '<p class="muted-copy">No files selected.</p>';
+      </div>`;
+    }).join("") : '<p class="muted-copy">No files selected.</p>';
 
     const traces = selected.map(file => {
+      const fileMetadata = metadata.files[file.path];
       const end = upperBound(file.t, cutoff);
       return {
-      type: "scattergl",
-      mode: "lines",
-      uid: file.id,
-      name: file.name,
-      x: file.x.slice(0, end),
-      y: file.y.slice(0, end),
-      opacity: 0.7,
-      line: {
-        color: rgba(file.color, state.alpha),
-        width: 1.5,
-        dash: "solid"
-      },
-      hovertemplate: `${file.name}<br>dm %{x:.3f} mm<br>fm %{y:.1f} N<extra></extra>`
-    };
+        type: "scattergl",
+        mode: "lines",
+        uid: file.id,
+        name: fileMetadata.display_name,
+        x: file.x.slice(0, end),
+        y: file.y.slice(0, end).map(value => value / forceUnit.divisor),
+        visible: fileMetadata.visible ? true : "legendonly",
+        opacity: 0.7,
+        line: { color: rgba(fileMetadata.color, state.alpha), width: 1.5, dash: "solid" },
+        hovertemplate: `${escapeHtml(fileMetadata.display_name)}<br>dm %{x:.3f} mm<br>fm %{y:.3f} ${state.forceUnit}<extra></extra>`
+      };
     });
 
     Plotly.react(plot, traces, {
@@ -216,9 +550,9 @@ export async function initHysteresisExplorer(container) {
       legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", itemclick: "toggle", itemdoubleclick: "toggleothers", uirevision: "hysteresis-series" },
       hovermode: "closest",
       dragmode: "zoom",
-      uirevision: selected.map(file => file.id).join("|"),
+      uirevision: `${selected.map(file => file.path).join("|")}|${state.forceUnit}`,
       xaxis: { title: { text: "Filtered measured displacement, dm (mm)", standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true, ...(view ? { range: view.x, autorange: false } : { autorange: true }) },
-      yaxis: { title: { text: "Measured force, fm (N)", standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true, ...(view ? { range: view.y, autorange: false } : { autorange: true }) }
+      yaxis: { title: { text: `Measured force, fm (${state.forceUnit})`, standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true, ...(view ? { range: view.y, autorange: false } : { autorange: true }) }
     }, {
       responsive: true,
       scrollZoom: true,
@@ -226,24 +560,43 @@ export async function initHysteresisExplorer(container) {
       doubleClick: "reset+autosize",
       modeBarButtonsToRemove: ["select2d", "lasso2d"]
     }).then(() => {
+      bindForceUnitToggle();
       if (relayoutListenerReady) return;
       relayoutListenerReady = true;
       plot.on("plotly_relayout", event => {
         if (event["xaxis.autorange"] || event["yaxis.autorange"]) {
           state.customView = null;
+          syncSettings();
           render();
+          scheduleMetadataSave();
           return;
         }
-        const changedRange = ["xaxis.range[0]", "xaxis.range[1]", "yaxis.range[0]", "yaxis.range[1]"].some(key => key in event);
+        const changedRange = Object.keys(event).some(key => key.startsWith("xaxis.range") || key.startsWith("yaxis.range"));
         if (!changedRange) return;
-        state.customView = {
-          x: [...plot._fullLayout.xaxis.range],
-          y: [...plot._fullLayout.yaxis.range]
-        };
+        state.customView = { x: [...plot._fullLayout.xaxis.range], y: [...plot._fullLayout.yaxis.range] };
+        syncSettings();
+        scheduleMetadataSave();
       });
+      plot.on("plotly_restyle", () => requestAnimationFrame(() => {
+        [...state.selected.keys()].forEach((path, index) => {
+          metadata.files[path].visible = plot.data[index]?.visible !== "legendonly";
+        });
+        scheduleMetadataSave();
+      }));
     });
   }
 
-  window.addEventListener("resize", () => Plotly.Plots.resize(plot), { passive: true });
+  renderTrees();
+  const selectedEntries = state.manifest.filter(entry => metadata.files[entry.path].selected);
+  await Promise.all(selectedEntries.map(async entry => {
+    try {
+      await loadEntry(entry);
+    } catch {
+      metadata.files[entry.path].selected = false;
+    }
+  }));
+  renderTrees();
   render();
+  scheduleMetadataSave(0);
+  window.addEventListener("resize", () => Plotly.Plots.resize(plot), { passive: true });
 }

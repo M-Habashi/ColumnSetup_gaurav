@@ -50,7 +50,24 @@
 .file-browser-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .selection-count { color: var(--muted); font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
 .tree-actions { display: flex; gap: 6px; margin: 9px 0 12px; }
-.file-tree { max-height: calc(100vh - 230px); overflow: auto; padding: 4px 4px 24px 0; scrollbar-color: var(--border) transparent; }
+.metadata-status { margin: 0 0 10px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.metadata-status.is-error { color: var(--danger); }
+.file-lists { max-height: calc(100vh - 260px); overflow: auto; padding: 0 4px 24px 0; scrollbar-color: var(--border) transparent; }
+.file-list-section { padding: 0; border: 0; }
+.file-list-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 7px 0 6px; border-bottom: 1px solid var(--border-soft); background: var(--background); }
+.file-list-heading h3 { color: var(--muted-strong); font-size: 12px; font-weight: 500; }
+.file-list-heading span { color: #77736b; font-family: var(--font-mono); font-size: 10px; }
+.tree-section-controls { display: flex; align-items: center; gap: 7px; }
+.tree-section-toggle { min-height: 24px; padding: 2px 5px; border: 0; border-radius: var(--radius); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; }
+.tree-section-toggle:hover { background: var(--surface); color: var(--foreground); }
+.tree-section-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tree-section-toggle:disabled { opacity: 0.45; cursor: default; }
+.file-tree { padding: 4px 0 10px; }
+.file-tree[hidden] { display: none; }
+.archived-files { margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--border); }
+.archived-files .tree-file { opacity: 0.72; }
+.tree-empty { margin: 7px 0 12px; color: var(--muted); font-size: 11px; }
+.file-menu-hint { margin: 8px 0 0; color: #77736b; font-size: 10px; }
 .tree-folder summary {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto;
@@ -78,6 +95,7 @@
   cursor: pointer;
 }
 .tree-file:hover { color: var(--foreground); }
+.tree-file:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tree-file[hidden] { display: none; }
 .tree-file input { accent-color: var(--accent); }
 .file-mark { color: #77736b; font-family: var(--font-mono); font-size: 9px; }
@@ -91,6 +109,9 @@
 .plotly-host .modebar { right: 8px !important; top: 8px !important; }
 .plotly-host .modebar-btn path { fill: var(--muted-strong) !important; }
 .plotly-host .modebar-btn:hover path { fill: var(--foreground) !important; }
+.plotly-host .ytitle { pointer-events: all; cursor: pointer; }
+.plotly-host .ytitle:hover,
+.plotly-host .ytitle:focus { fill: var(--accent-strong) !important; text-decoration: underline; outline: none; }
 .empty-state { position: absolute; inset: 0; display: grid; place-content: center; padding: 28px; text-align: center; pointer-events: none; }
 .empty-state[hidden] { display: none; }
 .empty-state strong { font-size: 17px; }
@@ -110,3 +131,29 @@
 .selected-file dl div { min-width: 0; }
 .selected-file dt { color: var(--muted); font-size: 10px; }
 .selected-file dd { margin: 0; overflow: hidden; color: var(--muted-strong); font-family: var(--font-mono); font-size: 10px; text-overflow: ellipsis; }
+
+.context-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 168px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+  color: var(--foreground);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+.context-menu-label { overflow: hidden; padding: 6px 8px; color: var(--muted); font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.context-menu-separator { height: 1px; margin: 4px -4px; background: var(--border); }
+.context-menu-item { display: flex; align-items: center; width: 100%; min-height: 30px; padding: 5px 8px; border: 0; border-radius: var(--radius); background: transparent; color: var(--foreground); font-size: 13px; text-align: left; cursor: default; }
+.context-menu-item:hover,
+.context-menu-item:focus-visible { outline: 0; background: color-mix(in srgb, var(--accent) 18%, var(--surface-strong)); }
+
+.rename-dialog { width: min(440px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--foreground); }
+.rename-dialog::backdrop { background: rgb(0 0 0 / 62%); }
+.rename-dialog form { padding: 20px; }
+.rename-dialog header { margin-bottom: 18px; }
+.rename-dialog h2 { font-size: 19px; }
+.rename-dialog header p { margin: 7px 0 0; overflow-wrap: anywhere; color: var(--muted); font-family: var(--font-mono); font-size: 10px; line-height: 1.45; }
+.rename-dialog footer { display: flex; justify-content: flex-end; gap: 7px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
