@@ -166,7 +166,7 @@ function normalizeMetadata(source, manifest) {
   return metadata;
 }
 
-export async function initHysteresisExplorer(container, initialMetadata) {
+export async function initHysteresisExplorer(container, initialMetadata, canPersistMetadata = true) {
   const plot = container.querySelector("#hysteresisPlot");
   const fileLists = container.querySelector("#fileLists");
   const tree = container.querySelector("#fileTree");
@@ -214,7 +214,7 @@ export async function initHysteresisExplorer(container, initialMetadata) {
   let relayoutListenerReady = false;
   let saveTimer = null;
   let saveQueue = Promise.resolve();
-  let metadataWritable = true;
+  let metadataWritable = canPersistMetadata;
 
   alphaSlider.value = state.alpha;
   alphaValue.value = state.alpha.toFixed(2);

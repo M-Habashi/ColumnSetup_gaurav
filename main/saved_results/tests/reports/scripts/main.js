@@ -1,7 +1,7 @@
 "use strict";
 
 import { initAppShell } from "./app-shell.js?v=20260828-1";
-import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-3";
+import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-4";
 import { initGuidedTour } from "./guided-tour.js?v=20260829-7";
 
 async function fetchJson(path) {
@@ -33,10 +33,12 @@ async function start() {
     const metadataApi = document.body.dataset.reportMetadataApi;
     const metadataPath = document.body.dataset.reportMetadata || "data/report-metadata.json";
     let metadata;
+    let metadataWritable = true;
     try {
       metadata = await fetchJson(metadataApi);
     } catch {
       metadata = await fetchJson(metadataPath);
+      metadataWritable = false;
     }
     const config = metadata.report;
     const components = await Promise.all(config.articles.map(article => fetchText(article.component)));
@@ -50,7 +52,7 @@ async function start() {
     initAppShell(config);
     const explorer = document.getElementById("hysteresisExplorer");
     if (explorer) {
-      await initHysteresisExplorer(explorer, metadata);
+      await initHysteresisExplorer(explorer, metadata, metadataWritable);
       initGuidedTour(explorer);
     }
   } catch (error) {
