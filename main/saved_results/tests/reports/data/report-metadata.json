@@ -23,11 +23,11 @@
         1.193159895415701
       ],
       "y": [
-        -1.3810243424910384,
-        1.3756115236235535
+        -6.1431023314695565,
+        6.11902491358372
       ]
     },
-    "force_unit": "kip",
+    "force_unit": "kN",
     "archived_tree_collapsed": true
   },
   "files": {
@@ -347,5 +347,5 @@
       "visible": true
     }
   },
-  "updated_at": "Sat, 29 Aug 2026 17:01:02 GMT"
+  "updated_at": "Sat, 29 Aug 2026 17:08:16 GMT"
 }

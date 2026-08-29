@@ -2,6 +2,8 @@
 
 import { driver } from "./vendor/driver.js.mjs";
 
+const TOUR_SEEN_KEY = "rths-hysteresis-tour-seen";
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({
     "&": "&amp;",
@@ -74,7 +76,8 @@ function fileStep(container, path, folderName) {
 export function initGuidedTour(container) {
   const launcher = document.getElementById("tourLauncher");
 
-  launcher.addEventListener("click", () => {
+  const startTour = () => {
+    localStorage.setItem(TOUR_SEEN_KEY, "true");
     const search = container.querySelector("#fileSearch");
     search.value = "";
     search.dispatchEvent(new Event("input", { bubbles: true }));
@@ -169,5 +172,8 @@ export function initGuidedTour(container) {
     });
 
     tour.drive();
-  });
+  };
+
+  launcher.addEventListener("click", startTour);
+  if (!localStorage.getItem(TOUR_SEEN_KEY)) requestAnimationFrame(startTour);
 }

@@ -2,7 +2,7 @@
 
 import { initAppShell } from "./app-shell.js?v=20260828-1";
 import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-3";
-import { initGuidedTour } from "./guided-tour.js?v=20260829-6";
+import { initGuidedTour } from "./guided-tour.js?v=20260829-7";
 
 async function fetchJson(path) {
   const response = await fetch(path, { cache: "no-store" });
