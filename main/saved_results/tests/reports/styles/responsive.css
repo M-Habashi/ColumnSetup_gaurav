@@ -51,7 +51,7 @@
   .report-intro { padding-top: 30px; }
   .intro, .report-layout { display: block; }
   .intro-copy, .intro-aside { padding: 0 30px 24px; }
-  .topbar, .toc-rail, .context-rail, .article-panel, .article-panel-backdrop, .plot-toolbar, .plot-controls, .overlay-legend { display: none; }
+  .topbar, .tour-launcher, .toc-rail, .context-rail, .article-panel, .article-panel-backdrop, .plot-toolbar, .plot-controls, .overlay-legend { display: none; }
   main { width: 100%; padding: 30px; }
   section, .plot-block, .math-block, .table-shell { break-inside: avoid; }
   .note, .math-block, .plot-shell { background: #fff; }

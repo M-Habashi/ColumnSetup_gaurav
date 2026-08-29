@@ -76,6 +76,7 @@ code, pre, .mono { font-family: var(--font-mono); }
 .brand { display: flex; align-items: baseline; gap: 10px; }
 .brand strong { font-size: 14px; font-weight: 600; }
 .brand span { color: var(--muted); font-size: 13px; }
+.tour-launcher { min-height: 30px; margin-left: auto; padding: 4px 9px; font-size: 12px; }
 .reading-progress { position: absolute; left: 0; bottom: -1px; width: 0; height: 2px; background: var(--accent); }
 .article-panel {
   position: fixed;

@@ -1,7 +1,8 @@
 "use strict";
 
 import { initAppShell } from "./app-shell.js?v=20260828-1";
-import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260828-2";
+import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-3";
+import { initGuidedTour } from "./guided-tour.js?v=20260829-6";
 
 async function fetchJson(path) {
   const response = await fetch(path, { cache: "no-store" });
@@ -48,7 +49,10 @@ async function start() {
 
     initAppShell(config);
     const explorer = document.getElementById("hysteresisExplorer");
-    if (explorer) await initHysteresisExplorer(explorer, metadata);
+    if (explorer) {
+      await initHysteresisExplorer(explorer, metadata);
+      initGuidedTour(explorer);
+    }
   } catch (error) {
     mount.innerHTML = `<main class="load-error"><h1>Report unavailable</h1><p>${error.message}</p></main>`;
     console.error(error);

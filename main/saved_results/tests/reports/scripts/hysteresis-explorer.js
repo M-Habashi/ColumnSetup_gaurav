@@ -1,7 +1,6 @@
 "use strict";
 
 const DEFAULT_COLORS = ["#4477AA", "#EE6677", "#228833", "#CCBB44"];
-const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const FORCE_UNITS = {
   kN: { divisor: 1000, next: "kip" },
   kip: { divisor: 4448.2216152605, next: "kN" }
@@ -150,7 +149,7 @@ function normalizeMetadata(source, manifest) {
     files: {}
   };
 
-  manifest.forEach((entry, index) => {
+  manifest.forEach(entry => {
     const stored = source?.files?.[entry.path] || {};
     const archived = Boolean(stored.archived);
     const storedDisplayName = typeof stored.display_name === "string" ? visibleName(stored.display_name) : "";
@@ -159,8 +158,8 @@ function normalizeMetadata(source, manifest) {
       original_path: entry.path,
       display_name: storedDisplayName || visibleName(entry.name),
       archived,
-      selected: Boolean(stored.selected) && !archived && entry.available,
-      color: typeof stored.color === "string" && HEX_COLOR.test(stored.color) ? stored.color.toUpperCase() : DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+      selected: false,
+      color: DEFAULT_COLORS[0],
       visible: stored.visible !== false
     };
   });
@@ -239,7 +238,13 @@ export async function initHysteresisExplorer(container, initialMetadata) {
   function persistMetadata() {
     if (!metadataWritable) return Promise.resolve();
     syncSettings();
-    const payload = JSON.stringify(metadata);
+    const files = Object.fromEntries(state.manifest.map(entry => {
+      const file = { ...metadata.files[entry.path] };
+      delete file.selected;
+      delete file.color;
+      return [entry.path, file];
+    }));
+    const payload = JSON.stringify({ ...metadata, files });
     saveQueue = saveQueue.catch(() => {}).then(async () => {
       const response = await fetch(metadataApi, {
         method: "PUT",
@@ -313,6 +318,9 @@ export async function initHysteresisExplorer(container, initialMetadata) {
       const response = await fetch(entry.data, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      if (!state.selected.has(entry.path)) {
+        metadata.files[entry.path].color = DEFAULT_COLORS[state.selected.size % DEFAULT_COLORS.length];
+      }
       state.selected.set(entry.path, { ...data, ...entry });
       metadata.files[entry.path].selected = true;
     } finally {
@@ -574,7 +582,7 @@ export async function initHysteresisExplorer(container, initialMetadata) {
       const fileMetadata = metadata.files[file.path];
       return `
       <div class="selected-file">
-        <label class="series-color-picker" style="--series:${fileMetadata.color}" title="Change trace color">
+        <label class="series-color-picker" data-path="${escapeHtml(file.path)}" style="--series:${fileMetadata.color}" title="Change trace color">
           <span class="sr-only">Choose color for ${escapeHtml(fileMetadata.display_name)}</span>
           <input type="color" value="${fileMetadata.color}" data-path="${escapeHtml(file.path)}" aria-label="Choose color for ${escapeHtml(fileMetadata.display_name)}">
         </label>
@@ -647,7 +655,11 @@ export async function initHysteresisExplorer(container, initialMetadata) {
   }
 
   renderTrees();
-  const selectedEntries = state.manifest.filter(entry => metadata.files[entry.path].selected);
+  let selectedEntries = state.manifest.filter(entry => metadata.files[entry.path].selected);
+  if (!selectedEntries.length) {
+    const firstPath = tree.querySelector('input[type="checkbox"]:not(:disabled)')?.value;
+    if (firstPath) selectedEntries = [entryForPath(firstPath)];
+  }
   await Promise.all(selectedEntries.map(async entry => {
     try {
       await loadEntry(entry);
