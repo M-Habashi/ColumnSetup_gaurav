@@ -18,6 +18,19 @@ function upperBound(values, limit) {
   return low;
 }
 
+function fullRange(files, key) {
+  let minimum = Infinity;
+  let maximum = -Infinity;
+  files.forEach(file => file[key].forEach(value => {
+    if (!Number.isFinite(value)) return;
+    minimum = Math.min(minimum, value);
+    maximum = Math.max(maximum, value);
+  }));
+  if (!Number.isFinite(minimum)) return null;
+  const padding = minimum === maximum ? Math.max(Math.abs(minimum) * 0.06, 1) : (maximum - minimum) * 0.06;
+  return [minimum - padding, maximum + padding];
+}
+
 function buildTree(entries) {
   const root = { folders: new Map(), files: [] };
   entries.forEach(entry => {
@@ -67,7 +80,8 @@ export async function initHysteresisExplorer(container) {
   const timeSlider = container.querySelector("#earthquakeTimeSlider");
   const timeValue = container.querySelector("#earthquakeTimeValue");
   const timeMax = container.querySelector("#earthquakeTimeMax");
-  const state = { manifest: [], selected: new Map(), alpha: Number(alphaSlider.value), timeCutoff: Infinity, frame: null };
+  const state = { manifest: [], selected: new Map(), alpha: Number(alphaSlider.value), timeCutoff: Infinity, customView: null, frame: null };
+  let relayoutListenerReady = false;
 
   const response = await fetch("data/test-manifest.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Could not load test manifest: ${response.status}`);
@@ -79,6 +93,7 @@ export async function initHysteresisExplorer(container) {
     if (!selected) {
       state.selected.delete(id);
       state.timeCutoff = Infinity;
+      state.customView = null;
       render();
       return;
     }
@@ -92,6 +107,7 @@ export async function initHysteresisExplorer(container) {
       const data = await result.json();
       state.selected.set(id, { ...entry, ...data, color: DEFAULT_COLORS[state.selected.size % DEFAULT_COLORS.length] });
       state.timeCutoff = Infinity;
+      state.customView = null;
     } catch (error) {
       checkbox.checked = false;
       alert(`Could not load ${entry.path}: ${error.message}`);
@@ -119,6 +135,7 @@ export async function initHysteresisExplorer(container) {
     tree.querySelectorAll('input[type="checkbox"]:checked').forEach(input => input.checked = false);
     state.selected.clear();
     state.timeCutoff = Infinity;
+    state.customView = null;
     render();
   });
   timeSlider.addEventListener("input", () => {
@@ -149,6 +166,8 @@ export async function initHysteresisExplorer(container) {
 
   function render() {
     const selected = [...state.selected.values()];
+    const fullView = selected.length ? { x: fullRange(selected, "x"), y: fullRange(selected, "y") } : null;
+    const view = state.customView || fullView;
     const maximumTime = selected.length ? Math.max(...selected.map(file => file.t.at(-1))) : 0;
     const cutoff = Math.min(state.timeCutoff, maximumTime);
     timeSlider.disabled = !selected.length;
@@ -198,14 +217,30 @@ export async function initHysteresisExplorer(container) {
       hovermode: "closest",
       dragmode: "zoom",
       uirevision: selected.map(file => file.id).join("|"),
-      xaxis: { title: { text: "Filtered measured displacement, dm (mm)", standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true },
-      yaxis: { title: { text: "Measured force, fm (N)", standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true }
+      xaxis: { title: { text: "Filtered measured displacement, dm (mm)", standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true, ...(view ? { range: view.x, autorange: false } : { autorange: true }) },
+      yaxis: { title: { text: "Measured force, fm (N)", standoff: 16 }, gridcolor: "#30322d", zerolinecolor: "#777a70", linecolor: "#4a4c46", mirror: true, ...(view ? { range: view.y, autorange: false } : { autorange: true }) }
     }, {
       responsive: true,
       scrollZoom: true,
       displaylogo: false,
       doubleClick: "reset+autosize",
       modeBarButtonsToRemove: ["select2d", "lasso2d"]
+    }).then(() => {
+      if (relayoutListenerReady) return;
+      relayoutListenerReady = true;
+      plot.on("plotly_relayout", event => {
+        if (event["xaxis.autorange"] || event["yaxis.autorange"]) {
+          state.customView = null;
+          render();
+          return;
+        }
+        const changedRange = ["xaxis.range[0]", "xaxis.range[1]", "yaxis.range[0]", "yaxis.range[1]"].some(key => key in event);
+        if (!changedRange) return;
+        state.customView = {
+          x: [...plot._fullLayout.xaxis.range],
+          y: [...plot._fullLayout.yaxis.range]
+        };
+      });
     });
   }
 

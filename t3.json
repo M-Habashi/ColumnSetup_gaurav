@@ -1,4 +1,5 @@
 {
   "$schema": "https://t3.codes/schema/t3.json",
-  "iconPath": "logo.svg"
+  "iconPath": "logo.svg",
+  "note": "- the eq scale as property instead of number of samples\n- download csv\n"
 }
