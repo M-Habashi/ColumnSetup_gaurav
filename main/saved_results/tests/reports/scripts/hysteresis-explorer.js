@@ -21,6 +21,13 @@ function visiblePath(value) {
   return String(value).replace(/\.mat$/i, "");
 }
 
+function formatFactor(value) {
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? `${number.toLocaleString(undefined, { maximumFractionDigits: 3 })}×`
+    : "—";
+}
+
 function rgba(hex, alpha) {
   const value = Number.parseInt(hex.slice(1), 16);
   return `rgba(${value >> 16},${value >> 8 & 255},${value & 255},${alpha})`;
@@ -32,6 +39,17 @@ function upperBound(values, limit) {
   while (low < high) {
     const middle = (low + high) >> 1;
     if (values[middle] <= limit) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function lowerBound(values, limit) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (values[middle] < limit) low = middle + 1;
     else high = middle;
   }
   return low;
@@ -89,21 +107,30 @@ function treeMarkup(branch, metadata, depth = 0) {
       const title = fileMetadata.display_name === visibleName(file.name)
         ? visiblePath(file.path)
         : `${fileMetadata.display_name}\nOriginal: ${visiblePath(file.path)}`;
+      const download = file.xlsx_available
+        ? `<a class="file-download" href="${escapeHtml(file.xlsx)}" download="${escapeHtml(fileMetadata.display_name)}.xlsx" title="Download ${escapeHtml(fileMetadata.display_name)} as XLSX">XLSX</a>`
+        : `<span class="file-download is-disabled" title="XLSX unavailable">XLSX</span>`;
       return `
-      <label class="tree-file" role="treeitem" tabindex="0" data-path="${escapeHtml(file.path)}" data-search="${escapeHtml(searchable)}" title="${escapeHtml(title)}">
-        <input type="checkbox" value="${escapeHtml(file.path)}" ${fileMetadata.selected ? "checked" : ""} ${file.available ? "" : "disabled"}>
-        <span class="file-mark" aria-hidden="true">MAT</span>
-        <span class="file-name">${escapeHtml(fileMetadata.display_name)}</span>
-        ${file.available ? "" : `<span class="file-error" title="${escapeHtml(file.error || "Unavailable")}">!</span>`}
-      </label>`;
+      <div class="tree-file" role="treeitem" tabindex="0" data-path="${escapeHtml(file.path)}" data-search="${escapeHtml(searchable)}">
+        <label class="tree-file-select" title="${escapeHtml(title)}">
+          <input type="checkbox" value="${escapeHtml(file.path)}" ${fileMetadata.selected ? "checked" : ""} ${file.available ? "" : "disabled"}>
+          <span class="file-mark" aria-hidden="true">MAT</span>
+          <span class="file-name">${escapeHtml(fileMetadata.display_name)}</span>
+          ${file.available ? "" : `<span class="file-error" title="${escapeHtml(file.error || "Unavailable")}">!</span>`}
+        </label>
+        ${download}
+      </div>`;
     })
   ].join("");
 }
 
 function normalizeMetadata(source, manifest) {
   const alpha = Number(source?.settings?.density_alpha);
-  const storedCutoff = source?.settings?.earthquake_time_cutoff;
-  const cutoff = storedCutoff === null || storedCutoff === undefined ? NaN : Number(storedCutoff);
+  const storedStart = source?.settings?.earthquake_time_start;
+  const start = storedStart === null || storedStart === undefined ? NaN : Number(storedStart);
+  const storedEnd = source?.settings?.earthquake_time_end ?? source?.settings?.earthquake_time_cutoff;
+  const end = storedEnd === null || storedEnd === undefined ? NaN : Number(storedEnd);
+  const timeStart = Number.isFinite(start) ? Math.max(0, start) : 0;
   const storedForceUnit = source?.settings?.force_unit;
   const forceUnit = storedForceUnit === "kip" ? "kip" : "kN";
   const storedView = validView(source?.settings?.custom_view) ? source.settings.custom_view : null;
@@ -115,7 +142,8 @@ function normalizeMetadata(source, manifest) {
     report: source.report,
     settings: {
       density_alpha: Number.isFinite(alpha) ? Math.min(1, Math.max(0.1, alpha)) : 0.1,
-      earthquake_time_cutoff: Number.isFinite(cutoff) ? cutoff : null,
+      earthquake_time_start: timeStart,
+      earthquake_time_end: Number.isFinite(end) ? Math.max(timeStart, end) : null,
       custom_view: customView,
       force_unit: forceUnit,
       archived_tree_collapsed: Boolean(source?.settings?.archived_tree_collapsed)
@@ -155,7 +183,9 @@ export async function initHysteresisExplorer(container, initialMetadata) {
   const count = container.querySelector("#selectionCount");
   const alphaSlider = container.querySelector("#alphaSlider");
   const alphaValue = container.querySelector("#alphaValue");
-  const timeSlider = container.querySelector("#earthquakeTimeSlider");
+  const timeStartSlider = container.querySelector("#earthquakeTimeStartSlider");
+  const timeEndSlider = container.querySelector("#earthquakeTimeEndSlider");
+  const timeWindow = container.querySelector("#earthquakeTimeWindow");
   const timeValue = container.querySelector("#earthquakeTimeValue");
   const timeMax = container.querySelector("#earthquakeTimeMax");
   const contextMenu = document.getElementById("fileContextMenu");
@@ -174,7 +204,8 @@ export async function initHysteresisExplorer(container, initialMetadata) {
     manifest: manifest.files,
     selected: new Map(),
     alpha: metadata.settings.density_alpha,
-    timeCutoff: metadata.settings.earthquake_time_cutoff ?? Infinity,
+    timeStart: metadata.settings.earthquake_time_start,
+    timeEnd: metadata.settings.earthquake_time_end ?? Infinity,
     customView: metadata.settings.custom_view,
     forceUnit: metadata.settings.force_unit,
     archivedTreeCollapsed: metadata.settings.archived_tree_collapsed,
@@ -200,7 +231,8 @@ export async function initHysteresisExplorer(container, initialMetadata) {
 
   function syncSettings() {
     metadata.settings.density_alpha = state.alpha;
-    metadata.settings.earthquake_time_cutoff = Number.isFinite(state.timeCutoff) ? state.timeCutoff : null;
+    metadata.settings.earthquake_time_start = state.timeStart;
+    metadata.settings.earthquake_time_end = Number.isFinite(state.timeEnd) ? state.timeEnd : null;
     metadata.settings.custom_view = state.customView;
     metadata.settings.force_unit = state.forceUnit;
   }
@@ -235,7 +267,8 @@ export async function initHysteresisExplorer(container, initialMetadata) {
   }
 
   function resetViewState() {
-    state.timeCutoff = Infinity;
+    state.timeStart = 0;
+    state.timeEnd = Infinity;
     state.customView = null;
     syncSettings();
   }
@@ -440,9 +473,16 @@ export async function initHysteresisExplorer(container, initialMetadata) {
     render();
     scheduleMetadataSave(0);
   });
-  timeSlider.addEventListener("input", () => {
-    state.timeCutoff = Number(timeSlider.value);
-    timeValue.value = `${state.timeCutoff.toFixed(1)} s`;
+  function updateTimeWindow(changedEnd) {
+    let start = Number(timeStartSlider.value);
+    let end = Number(timeEndSlider.value);
+    if (changedEnd === "start") start = Math.min(start, end);
+    else end = Math.max(start, end);
+    state.timeStart = start;
+    state.timeEnd = end;
+    timeStartSlider.value = start;
+    timeEndSlider.value = end;
+    timeValue.value = `${start.toFixed(1)}–${end.toFixed(1)} s`;
     syncSettings();
     scheduleMetadataSave();
     if (state.frame) cancelAnimationFrame(state.frame);
@@ -450,8 +490,11 @@ export async function initHysteresisExplorer(container, initialMetadata) {
       state.frame = null;
       render();
     });
-  });
-  timeSlider.addEventListener("change", () => scheduleMetadataSave(0));
+  }
+  timeStartSlider.addEventListener("input", () => updateTimeWindow("start"));
+  timeEndSlider.addEventListener("input", () => updateTimeWindow("end"));
+  timeStartSlider.addEventListener("change", () => scheduleMetadataSave(0));
+  timeEndSlider.addEventListener("change", () => scheduleMetadataSave(0));
   alphaSlider.addEventListener("input", () => {
     state.alpha = Number(alphaSlider.value);
     alphaValue.value = state.alpha.toFixed(2);
@@ -511,17 +554,28 @@ export async function initHysteresisExplorer(container, initialMetadata) {
     const fullView = selected.length ? { x: fullRange(selected, "x"), y: fullRange(selected, "y", forceUnit.divisor) } : null;
     const view = state.customView || fullView;
     const maximumTime = selected.length ? Math.max(...selected.map(file => file.t.at(-1))) : 0;
-    const cutoff = Math.min(state.timeCutoff, maximumTime);
-    timeSlider.disabled = !selected.length;
-    timeSlider.max = maximumTime || 1;
-    timeSlider.value = selected.length ? cutoff : 0;
-    timeValue.value = selected.length ? `${cutoff.toFixed(1)} s` : "—";
+    const startTime = selected.length ? Math.min(Math.max(0, state.timeStart), maximumTime) : 0;
+    const endTime = selected.length ? Math.max(startTime, Math.min(state.timeEnd, maximumTime)) : 0;
+    [timeStartSlider, timeEndSlider].forEach(slider => {
+      slider.disabled = !selected.length;
+      slider.max = maximumTime || 1;
+    });
+    timeStartSlider.value = startTime;
+    timeEndSlider.value = selected.length ? endTime : 0;
+    timeValue.value = selected.length ? `${startTime.toFixed(1)}–${endTime.toFixed(1)} s` : "—";
     timeMax.textContent = selected.length ? `${maximumTime.toFixed(1)} s` : "—";
+    const startPercent = maximumTime ? startTime / maximumTime * 100 : 0;
+    const endPercent = maximumTime ? endTime / maximumTime * 100 : 0;
+    timeWindow.style.left = `${startPercent}%`;
+    timeWindow.style.right = `${100 - endPercent}%`;
     count.textContent = `${selected.length} selected`;
     empty.hidden = selected.length > 0;
     summary.textContent = selected.length ? `${selected.length} test${selected.length === 1 ? "" : "s"} on shared axes` : "Select a test file to begin.";
     details.innerHTML = selected.length ? selected.map(file => {
       const fileMetadata = metadata.files[file.path];
+      const download = file.xlsx_available
+        ? `<a class="selected-file-download" href="${escapeHtml(file.xlsx)}" download="${escapeHtml(fileMetadata.display_name)}.xlsx">Download XLSX</a>`
+        : '<span class="selected-file-download is-disabled">XLSX unavailable</span>';
       return `
       <div class="selected-file">
         <label class="series-color-picker" style="--series:${fileMetadata.color}" title="Change trace color">
@@ -529,20 +583,22 @@ export async function initHysteresisExplorer(container, initialMetadata) {
           <input type="color" value="${fileMetadata.color}" data-path="${escapeHtml(file.path)}" aria-label="Choose color for ${escapeHtml(fileMetadata.display_name)}">
         </label>
         <strong>${escapeHtml(fileMetadata.display_name)}</strong><span>Original: ${escapeHtml(visiblePath(fileMetadata.original_path))}</span>
-        <dl><div><dt>Samples</dt><dd>${Number(file.sample_count).toLocaleString()}</dd></div><div><dt>Rendered</dt><dd>${file.x.length.toLocaleString()}</dd></div><div><dt>Rate</dt><dd>${Number(file.fs).toLocaleString()} Hz</dd></div></dl>
+        <dl><div><dt>EQ intensity</dt><dd>${formatFactor(file.intensity_factor)}</dd></div><div><dt>Time scale</dt><dd>${formatFactor(file.time_scale_factor)}</dd></div><div><dt>Date</dt><dd>${escapeHtml(file.test_date || "—")}</dd></div></dl>
+        ${download}
       </div>`;
     }).join("") : '<p class="muted-copy">No files selected.</p>';
 
     const traces = selected.map(file => {
       const fileMetadata = metadata.files[file.path];
-      const end = upperBound(file.t, cutoff);
+      const start = lowerBound(file.t, startTime);
+      const end = upperBound(file.t, endTime);
       return {
         type: "scattergl",
         mode: "lines",
         uid: file.id,
         name: fileMetadata.display_name,
-        x: file.x.slice(0, end),
-        y: file.y.slice(0, end).map(value => value / forceUnit.divisor),
+        x: file.x.slice(start, end),
+        y: file.y.slice(start, end).map(value => value / forceUnit.divisor),
         visible: fileMetadata.visible ? true : "legendonly",
         opacity: 0.7,
         line: { color: rgba(fileMetadata.color, state.alpha), width: 1.5, dash: "solid" },

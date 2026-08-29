@@ -1,7 +1,7 @@
 "use strict";
 
-import { initAppShell } from "./app-shell.js";
-import { initHysteresisExplorer } from "./hysteresis-explorer.js";
+import { initAppShell } from "./app-shell.js?v=20260828-1";
+import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260828-2";
 
 async function fetchJson(path) {
   const response = await fetch(path, { cache: "no-store" });

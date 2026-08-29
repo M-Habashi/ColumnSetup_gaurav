@@ -1,9 +1,4 @@
 .context-line { display: block; margin-bottom: 12px; color: var(--accent-strong); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-line { display: grid; grid-template-columns: 104px 1fr; margin: 24px 0 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.status-line strong,
-.status-line span { padding: 12px 14px; }
-.status-line strong { color: var(--accent-strong); font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
-.status-line span { border-left: 1px solid var(--border); color: var(--muted-strong); font-size: 14px; }
 
 .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
 .note { padding: 20px 22px; border-left: 3px solid var(--border); background: var(--surface); }

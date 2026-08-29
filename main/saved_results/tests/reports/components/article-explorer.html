@@ -5,12 +5,7 @@
         <span class="context-line">Measured RTHS response</span>
         <h1>Compare force–displacement hysteresis</h1>
         <p>Select one or more saved tests from the folder tree. Every selected <code>fm</code> versus filtered <code>dm</code> trace is drawn on the same axes for direct comparison.</p>
-        <div class="status-line"><strong>DATA SOURCE</strong><span><code>saved_results/tests/**/*.mat</code> · 30 Hz zero-phase displacement filter · Plotly WebGL</span></div>
       </div>
-      <aside class="intro-aside verdict">
-        <strong>Plot convention</strong>
-        <p>Horizontal axis: measured displacement <code>dm</code> in mm. Vertical axis: measured force <code>fm</code> in N.</p>
-      </aside>
     </header>
   </div>
 
@@ -66,26 +61,21 @@
         </div>
 
         <div class="time-control">
-          <label for="earthquakeTimeSlider"><span>Earthquake Time (s)</span><output id="earthquakeTimeValue" for="earthquakeTimeSlider">—</output></label>
-          <input id="earthquakeTimeSlider" type="range" min="0" max="1" step="0.1" value="1" disabled>
+          <div class="time-control-label"><span>Earthquake Time (s)</span><output id="earthquakeTimeValue" for="earthquakeTimeStartSlider earthquakeTimeEndSlider">—</output></div>
+          <div class="time-slider">
+            <span class="time-slider-track" aria-hidden="true"><span id="earthquakeTimeWindow"></span></span>
+            <input id="earthquakeTimeStartSlider" type="range" min="0" max="1" step="0.1" value="0" aria-label="Earthquake start time" disabled>
+            <input id="earthquakeTimeEndSlider" type="range" min="0" max="1" step="0.1" value="1" aria-label="Earthquake end time" disabled>
+          </div>
           <div class="time-range"><span>0 s</span><span id="earthquakeTimeMax">—</span></div>
         </div>
 
-        <p class="plot-note">The cutoff follows MATLAB’s active HS interval and shows earthquake time only: effective HS time ÷ each test’s scale factor, capped at the earthquake record duration. Repeated passes darken where they overlap. Adjust Density alpha to control contrast while trace opacity remains 0.7. Click a legend item to hide or show a trace; double-click to isolate it.</p>
-      </section>
-
-      <section id="hysteresis-method" class="reveal">
-        <div class="section-heading">
-          <h2>Data treatment</h2>
-          <p>The exporter unwraps the top-level <code>result</code> struct, filters <code>dm</code> with the repository’s established fourth-order 30 Hz zero-phase low-pass treatment, pairs it with <code>fm</code>, and uniformly limits each rendered record to 20,000 points.</p>
-        </div>
-        <div class="note"><h3>Interpretation limit</h3><p>Overlaying loops supports visual comparison. It does not normalize amplitude, test duration, specimen condition, or excitation intensity.</p></div>
+        <p class="plot-note">The window follows MATLAB’s active HS interval and shows earthquake time only: effective HS time ÷ each test’s scale factor, capped at the earthquake record duration. Repeated passes darken where they overlap. Adjust Density alpha to control contrast while trace opacity remains 0.7. Click a legend item to hide or show a trace; double-click to isolate it.</p>
       </section>
     </main>
 
     <aside class="context-rail" aria-label="Selected test details">
       <h2 class="rail-title">Selected tests</h2>
-      <p class="color-hint">Click a color bar to change its trace.</p>
       <label class="alpha-control rail-alpha-control" for="alphaSlider">
         <span>Density alpha</span>
         <output id="alphaValue" for="alphaSlider">0.10</output>

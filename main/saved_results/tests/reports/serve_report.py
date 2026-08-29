@@ -20,6 +20,10 @@ class ReportHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(REPORT_FOLDER), **kwargs)
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self):
         if self.path.split("?", 1)[0] == METADATA_ENDPOINT:
             self._send_metadata()
@@ -51,7 +55,6 @@ class ReportHandler(SimpleHTTPRequestHandler):
         body = b'{"saved":true}'
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -60,7 +63,6 @@ class ReportHandler(SimpleHTTPRequestHandler):
         body = METADATA_FILE.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

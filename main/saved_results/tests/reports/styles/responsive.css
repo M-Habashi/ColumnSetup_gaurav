@@ -43,8 +43,6 @@
   .alpha-control { width: 100%; margin-top: 14px; }
   .plot-toolbar { margin-top: 12px; }
   .hysteresis-shell, .plotly-host { min-height: 400px; }
-  .status-line { grid-template-columns: 1fr; }
-  .status-line span { border-top: 1px solid var(--border); border-left: 0; }
 }
 
 @media print {

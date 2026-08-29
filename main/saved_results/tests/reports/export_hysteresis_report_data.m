@@ -22,9 +22,14 @@ for k = 1:numel(files)
         strlength(string(testFolder)) + 1), '\', '/');
     id = sprintf('test-%03d', k);
     outputName = id + ".json";
+    xlsxRelativePath = "downloads/" + regexprep(relativePath, ...
+        '\.mat$', '.xlsx', 'ignorecase');
+    xlsxPath = fullfile(reportFolder, strrep(xlsxRelativePath, '/', filesep));
     entry = struct('id', id, 'name', files(k).name, ...
         'path', char(relativePath), 'data', char("data/tests/" + outputName), ...
-        'available', false, 'error', '');
+        'available', false, 'error', '', ...
+        'xlsx', char(xlsxRelativePath), ...
+        'xlsx_available', isfile(xlsxPath), 'xlsx_error', '');
 
     try
         loaded = load(filePath, 'result');
@@ -40,6 +45,11 @@ for k = 1:numel(files)
             isfield(result.hs, 'time_scale_factor'), ...
             'No earthquake-time metadata is stored in this result.')
         timeScaleFactor = double(result.hs.time_scale_factor);
+        intensityFactor = NaN;
+        if isfield(result.hs, 'intensity_factor')
+            intensityFactor = double(result.hs.intensity_factor);
+        end
+        testDate = getTestDate(result, files(k).name);
         earthquakeDuration = double(result.hs.time(end));
         dmFiltered = filtfiltDm(dm, fs, 30, 4);
         pauseEnable = getPauseEnable(result);
@@ -61,7 +71,9 @@ for k = 1:numel(files)
             'path', char(relativePath), 'x', dmFiltered(plotIndex).', ...
             'y', fm(plotIndex).', 't', earthquakeTime(plotIndex).', ...
             'sample_count', sampleCount, 'fs', fs, ...
+            'intensity_factor', intensityFactor, ...
             'time_scale_factor', timeScaleFactor, ...
+            'test_date', testDate, ...
             'earthquake_duration', earthquakeDuration, ...
             'filter_cutoff_hz', 30, 'filter_order', 4);
         writeJson(fullfile(dataFolder, outputName), plotData)
@@ -80,6 +92,23 @@ manifest = struct('root', 'saved_results/tests', ...
     'yyyy-MM-dd''T''HH:mm:ssXXX')), 'files', {manifestFiles});
 writeJson(fullfile(reportFolder, 'data', 'test-manifest.json'), manifest)
 fprintf('Wrote %d test entries to the hysteresis explorer.\n', numel(files))
+end
+
+function testDate = getTestDate(result, fileName)
+testDate = '';
+if isfield(result, 'runStartTime') && isdatetime(result.runStartTime) && ...
+        ~isempty(result.runStartTime)
+    runDate = result.runStartTime(1);
+    runDate.Format = 'yyyy-MM-dd';
+    testDate = char(runDate);
+    return
+end
+
+dateToken = regexp(fileName, '^(\d{4})(\d{2})(\d{2})', ...
+    'tokens', 'once');
+if ~isempty(dateToken)
+    testDate = strjoin(dateToken, '-');
+end
 end
 
 function pauseEnable = getPauseEnable(result)

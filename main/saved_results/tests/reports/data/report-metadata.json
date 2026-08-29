@@ -14,18 +14,10 @@
     ]
   },
   "settings": {
-    "density_alpha": 1,
-    "earthquake_time_cutoff": null,
-    "custom_view": {
-      "x": [
-        1.5628260355058634,
-        5.808540653494296
-      ],
-      "y": [
-        0.7762337040380336,
-        3.8088870026012
-      ]
-    },
+    "density_alpha": 0.5,
+    "earthquake_time_start": 0,
+    "earthquake_time_end": null,
+    "custom_view": null,
     "force_unit": "kip",
     "archived_tree_collapsed": true
   },
@@ -201,15 +193,6 @@
       "color": "#228833",
       "visible": true
     },
-    "sp1_tests/sp1_test1.mat": {
-      "original_name": "sp1_test1.mat",
-      "original_path": "sp1_tests/sp1_test1.mat",
-      "display_name": "sp1_test1",
-      "archived": false,
-      "selected": false,
-      "color": "#CCBB44",
-      "visible": true
-    },
     "important/20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat": {
       "original_name": "20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat",
       "original_path": "important/20260626_1838_sp1_dmg_P30_I30_Po_015_IO_20_DO_00015.mat",
@@ -243,7 +226,7 @@
       "display_name": "sp1_test3",
       "archived": false,
       "selected": false,
-      "color": "#CCBB44",
+      "color": "#CB43B9",
       "visible": true
     },
     "sp1_tests/beautiful3.mat": {
@@ -271,6 +254,15 @@
       "archived": false,
       "selected": false,
       "color": "#228833",
+      "visible": true
+    },
+    "sp1_tests/sp1_test1.mat": {
+      "original_name": "sp1_test1.mat",
+      "original_path": "sp1_tests/sp1_test1.mat",
+      "display_name": "sp1_test1",
+      "archived": false,
+      "selected": false,
+      "color": "#CCBB44",
       "visible": true
     },
     "sp1_tests/successful_osi.mat": {
@@ -436,5 +428,5 @@
       "visible": true
     }
   },
-  "updated_at": "Sat, 29 Aug 2026 00:55:24 GMT"
+  "updated_at": "Sat, 29 Aug 2026 04:10:21 GMT"
 }

@@ -99,9 +99,7 @@ export function initAppShell(config) {
     });
   });
 
-  document.getElementById("printReport").addEventListener("click", () => window.print());
   const initialHash = location.hash || `#${config.articles[0].id}`;
   activateArticle(articleForHash(initialHash), initialHash);
   updateProgress();
 }
-

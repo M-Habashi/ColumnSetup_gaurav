@@ -76,17 +76,6 @@ code, pre, .mono { font-family: var(--font-mono); }
 .brand { display: flex; align-items: baseline; gap: 10px; }
 .brand strong { font-size: 14px; font-weight: 600; }
 .brand span { color: var(--muted); font-size: 13px; }
-.topbar-action {
-  margin-left: auto;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--foreground);
-  cursor: pointer;
-}
-.topbar-action:hover { border-color: var(--accent); }
-
 .reading-progress { position: absolute; left: 0; bottom: -1px; width: 0; height: 2px; background: var(--accent); }
 .article-panel {
   position: fixed;
