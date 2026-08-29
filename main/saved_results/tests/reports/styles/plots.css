@@ -105,19 +105,14 @@
 .tree-file:hover { color: var(--foreground); }
 .tree-file:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tree-file[hidden] { display: none; }
-.tree-file-select { display: grid; grid-template-columns: 16px 27px minmax(0, 1fr) 10px; gap: 6px; align-items: center; min-width: 0; cursor: pointer; }
+.tree-file-select { display: grid; grid-template-columns: 16px minmax(0, 1fr) 10px; gap: 6px; align-items: center; min-width: 0; cursor: pointer; }
 .tree-file-select input { accent-color: var(--accent); }
-.file-mark { color: #77736b; font-family: var(--font-mono); font-size: 9px; }
 .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-error { color: var(--danger); font-weight: 600; }
 .tree-file.is-loading .file-name { opacity: 0.5; }
-.file-download,
-.selected-file-download { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted-strong); font-family: var(--font-mono); font-size: 9px; line-height: 1; text-decoration: none; }
-.file-download { min-height: 22px; padding: 0 5px; }
-.file-download:hover,
-.selected-file-download:hover { border-color: var(--accent); color: var(--foreground); }
-.file-download.is-disabled,
-.selected-file-download.is-disabled { opacity: 0.42; pointer-events: none; }
+.file-download { display: inline-flex; align-items: center; justify-content: center; min-height: 22px; padding: 0 5px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted-strong); font-family: var(--font-mono); font-size: 9px; line-height: 1; text-decoration: none; }
+.file-download:hover { border-color: var(--accent); color: var(--foreground); }
+.file-download.is-disabled { opacity: 0.42; pointer-events: none; }
 .skeleton-line { height: 12px; margin: 10px 0; background: var(--border-soft); }
 .skeleton-line.short { width: 68%; }
 .hysteresis-shell { min-height: 560px; }
@@ -146,8 +141,6 @@
 .selected-file dl div { min-width: 0; }
 .selected-file dt { color: var(--muted); font-size: 10px; }
 .selected-file dd { margin: 0; overflow: hidden; color: var(--muted-strong); font-family: var(--font-mono); font-size: 10px; text-overflow: ellipsis; }
-.selected-file-download { width: fit-content; min-height: 26px; margin-top: 9px; padding: 0 8px; font-size: 10px; }
-
 .context-menu {
   position: fixed;
   z-index: 100;

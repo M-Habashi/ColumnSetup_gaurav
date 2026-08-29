@@ -18,7 +18,7 @@
     "earthquake_time_start": 0,
     "earthquake_time_end": null,
     "custom_view": null,
-    "force_unit": "kip",
+    "force_unit": "kN",
     "archived_tree_collapsed": true
   },
   "files": {
@@ -216,7 +216,7 @@
       "original_path": "sp1_tests/beautiful.mat",
       "display_name": "sp1_test2",
       "archived": false,
-      "selected": false,
+      "selected": true,
       "color": "#228833",
       "visible": true
     },
@@ -261,7 +261,7 @@
       "original_path": "sp1_tests/sp1_test1.mat",
       "display_name": "sp1_test1",
       "archived": false,
-      "selected": false,
+      "selected": true,
       "color": "#CCBB44",
       "visible": true
     },
@@ -307,7 +307,7 @@
       "display_name": "sp2_test1",
       "archived": false,
       "selected": false,
-      "color": "#CCBB44",
+      "color": "#4370CB",
       "visible": true
     },
     "sp2_retrofitted/20260826_1505_testing_OSI.mat": {
@@ -428,5 +428,5 @@
       "visible": true
     }
   },
-  "updated_at": "Sat, 29 Aug 2026 04:10:21 GMT"
+  "updated_at": "Sat, 29 Aug 2026 15:52:13 GMT"
 }

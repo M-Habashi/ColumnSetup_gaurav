@@ -114,7 +114,6 @@ function treeMarkup(branch, metadata, depth = 0) {
       <div class="tree-file" role="treeitem" tabindex="0" data-path="${escapeHtml(file.path)}" data-search="${escapeHtml(searchable)}">
         <label class="tree-file-select" title="${escapeHtml(title)}">
           <input type="checkbox" value="${escapeHtml(file.path)}" ${fileMetadata.selected ? "checked" : ""} ${file.available ? "" : "disabled"}>
-          <span class="file-mark" aria-hidden="true">MAT</span>
           <span class="file-name">${escapeHtml(fileMetadata.display_name)}</span>
           ${file.available ? "" : `<span class="file-error" title="${escapeHtml(file.error || "Unavailable")}">!</span>`}
         </label>
@@ -573,9 +572,6 @@ export async function initHysteresisExplorer(container, initialMetadata) {
     summary.textContent = selected.length ? `${selected.length} test${selected.length === 1 ? "" : "s"} on shared axes` : "Select a test file to begin.";
     details.innerHTML = selected.length ? selected.map(file => {
       const fileMetadata = metadata.files[file.path];
-      const download = file.xlsx_available
-        ? `<a class="selected-file-download" href="${escapeHtml(file.xlsx)}" download="${escapeHtml(fileMetadata.display_name)}.xlsx">Download XLSX</a>`
-        : '<span class="selected-file-download is-disabled">XLSX unavailable</span>';
       return `
       <div class="selected-file">
         <label class="series-color-picker" style="--series:${fileMetadata.color}" title="Change trace color">
@@ -584,7 +580,6 @@ export async function initHysteresisExplorer(container, initialMetadata) {
         </label>
         <strong>${escapeHtml(fileMetadata.display_name)}</strong><span>Original: ${escapeHtml(visiblePath(fileMetadata.original_path))}</span>
         <dl><div><dt>EQ intensity</dt><dd>${formatFactor(file.intensity_factor)}</dd></div><div><dt>Time scale</dt><dd>${formatFactor(file.time_scale_factor)}</dd></div><div><dt>Date</dt><dd>${escapeHtml(file.test_date || "—")}</dd></div></dl>
-        ${download}
       </div>`;
     }).join("") : '<p class="muted-copy">No files selected.</p>';
 
