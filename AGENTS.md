@@ -42,6 +42,26 @@
 - `d_r`: full/reference FEM response at the interface/control point.
 - `d_n` or `dd`: numerical-substructure interface/control-point displacement command.
 
+## Paper 2 writing context
+
+- The Paper 2 context file is `writing/journal_paper.md`.
+- When a prompt concerns Paper 2, its research question, literature,
+  manuscript, equations, figures, tables, results interpretation, citations,
+  reviews, or submission, read `writing/journal_paper.md` before acting.
+- Do not read it for unrelated MATLAB, Simulink, coding, or general project
+  prompts unless the user connects the task to Paper 2.
+- Treat `journal_paper.md` as paper-specific context. Keep computational truth
+  in the relevant files under `main/` and verify paper claims against those
+  sources.
+- For generic requests about the OSI HTML, SOL-OSI HTML, "the HTML," or the
+  main OSI page, use the primary/main simplified page at
+  `C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\Gaurav Setup\ColumnSetup_gaurav\main\docs\Sol_osi\index.html`
+  and provide its full path.
+- Use the production/live implementation page at
+  `C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\Gaurav Setup\ColumnSetup_gaurav\main\docs\fable\Sol_osi\index.html`
+  only when the user explicitly asks for the production, live, or
+  implementation version.
+
 ## Deferred Detailed Instructions
 
 - Load `docs/MATLAB_MCP_TOOLING.md` only immediately before doing work that involves MATLAB, Simulink, Speedgoat/SLRT, SAP/FEM workflows, MCP tool execution, browser/uncodixify recovery, GitHub CLI work, or recovery from a recurring command/tool failure.

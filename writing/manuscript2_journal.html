@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online NCF stability indicator framework for adaptive control — Paper 2 draft</title>
+<style>
+:root { color-scheme: light; --ink: #1c1c1c; --muted: #5a5a5a; --rule: #1c1c1c; --hair: #c9c9c9; --link: #0b5c7a; --paper: #fff; }
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.62 "STIX Two Text", Cambria, "Times New Roman", serif; }
+.page { max-width: 780px; margin: 0 auto; padding: 36px 36px 96px; }
+.runhead { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 7px; border-bottom: 1px solid var(--rule); font: 12.5px/1.4 "Segoe UI", Arial, sans-serif; letter-spacing: .02em; color: var(--muted); }
+.runhead button { font: inherit; color: var(--ink); background: none; border: 1px solid var(--hair); padding: 2px 9px; cursor: pointer; }
+h1 { font-size: 27px; line-height: 1.25; font-weight: 700; margin: 30px 0 10px; }
+.meta { margin: 0 0 22px; font: 13px/1.5 "Segoe UI", Arial, sans-serif; color: var(--muted); }
+.lead { padding: 14px 0; margin: 0 0 8px; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); font-size: 16px; }
+h2 { font-size: 18px; line-height: 1.35; font-weight: 700; margin: 34px 0 10px; }
+.secno { display: inline-block; min-width: 2.6em; }
+p { margin: 0 0 12px; text-align: justify; hyphens: auto; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+math { font-family: "STIX Two Math", "Cambria Math", math; }
+.equation { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; margin: 14px 0 16px; }
+.expression { overflow-x: auto; padding: 4px 0; text-align: center; }
+.eqno { min-width: 34px; text-align: right; }
+.copy-equation { visibility: hidden; width: 24px; height: 24px; padding: 4px; border: 1px solid var(--hair); background: none; color: var(--muted); cursor: pointer; }
+.equation:hover .copy-equation, .copy-equation:focus-visible { visibility: visible; }
+figure { margin: 26px 0; }
+svg { display: block; width: 100%; height: auto; color: var(--ink); }
+svg text { font: 22px "STIX Two Text", Cambria, "Times New Roman", serif; fill: currentColor; }
+svg .it { font-style: italic; }
+svg .nt { font-size: 18px; }
+#fig1 svg text { font-size: 24px; }
+#fig1 svg .nt { font-size: 20px; }
+figcaption { font-size: 14.5px; line-height: 1.5; margin-top: 8px; }
+.table figcaption { margin: 0 0 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.4; border-top: 1.5px solid var(--rule); border-bottom: 1.5px solid var(--rule); }
+th { text-align: left; font-weight: 700; padding: 6px 10px 5px 0; border-bottom: 1px solid var(--rule); }
+td { padding: 5px 10px 5px 0; vertical-align: top; }
+tbody tr + tr td { border-top: 1px solid #ececec; }
+.assumptions { counter-reset: a; list-style: none; padding: 0; margin: 0 0 12px; }
+.assumptions li { counter-increment: a; position: relative; padding-left: 3em; margin-bottom: 8px; text-align: justify; }
+.assumptions li::before { content: "(A" counter(a) ")"; position: absolute; left: 0; }
+.references { margin-top: 38px; border-top: 1px solid var(--rule); }
+.references h2 { font-size: 15px; margin: 12px 0 8px; }
+.references ol { margin: 0; padding-left: 26px; font-size: 14.5px; line-height: 1.5; }
+.references li { margin-bottom: 7px; }
+.selection-status { position: fixed; left: 0; right: 0; bottom: 0; padding: 6px 20px; border-top: 1px solid var(--hair); background: var(--paper); color: var(--muted); font: 12.5px/1.4 "Segoe UI", Arial, sans-serif; text-align: center; pointer-events: none; }
+/* optional dark screen-reading mode; print always uses paper */
+body.bg-zinc-950 { --ink: #e4e4e7; --muted: #a1a1aa; --rule: #d4d4d8; --hair: rgba(255,255,255,.1); --link: #7cc4de; --paper: #09090b; }
+body.bg-zinc-950 .border-white\/10 tbody tr + tr td { border-top-color: rgba(255,255,255,.1); }
+.runhead .tools { display: flex; gap: 8px; align-items: center; }
+mark.cmt { background: #fbe7a1; color: inherit; cursor: pointer; }
+mark.cmt.open { background: #f5cf5c; }
+.cmt-block { outline: 2px solid #f5cf5c; outline-offset: 3px; }
+.cmt-pin { display: inline-block; margin: 0 2px; padding: 0 5px; border: 1px solid #AC6420; background: var(--paper); color: #AC6420; font: 700 11px/1.5 "Segoe UI", Arial, sans-serif; vertical-align: super; cursor: pointer; }
+#cmt-add, #cmt-pop { position: absolute; z-index: 20; font: 13px/1.4 "Segoe UI", Arial, sans-serif; }
+#cmt-add { width: 30px; height: 30px; padding: 5px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
+#cmt-add:hover, #cmt-add:focus-visible { color: #AC6420; border-color: #AC6420; }
+.ibtn { position: relative; width: 30px; height: 30px; padding: 5px; border: 1px solid var(--hair); background: none; color: var(--ink); cursor: pointer; }
+.ibtn:hover, .ibtn:focus-visible, .ibtn.on { color: #AC6420; border-color: #AC6420; }
+.ibtn svg, #cmt-add svg, .copy-equation svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.badge { position: absolute; top: -7px; right: -7px; min-width: 16px; padding: 0 3px; background: #AC6420; color: #fff; font: 700 10px/16px "Segoe UI", Arial, sans-serif; text-align: center; }
+#track-bar { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 12px; padding: 8px 0; border-bottom: 1px solid var(--hair); font: 13px/1.4 "Segoe UI", Arial, sans-serif; color: var(--muted); }
+#track-bar[hidden], #track-view[hidden], article[hidden] { display: none; }
+#track-bar select { max-width: 250px; padding: 2px 4px; border: 1px solid var(--hair); background: var(--paper); color: var(--ink); font: inherit; }
+ins { color: #007CA8; text-decoration: underline; text-decoration-thickness: 1px; }
+del { color: #901500; text-decoration: line-through; }
+ins math { background: rgba(0,124,168,.12); } del math { background: rgba(144,21,0,.12); }
+.tr-mod, .tr-ins-block, .tr-del-block { position: relative; }
+.tr-mod::before, .tr-ins-block::before, .tr-del-block::before { content: ""; position: absolute; left: -16px; top: 0; bottom: 0; border-left: 2px solid var(--muted); }
+.tr-ins-block, .tr-ins-block svg { color: #007CA8; } .tr-ins-block { text-decoration: underline; text-decoration-thickness: 1px; }
+.tr-del-block, .tr-del-block svg { color: #901500; } .tr-del-block { text-decoration: line-through; }
+#cmt-pop { width: 340px; padding: 10px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); }
+#cmt-pop .q { margin-bottom: 6px; color: var(--muted); max-height: 3.6em; overflow: hidden; }
+#cmt-pop textarea { width: 100%; min-height: 84px; resize: vertical; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--hair); padding: 5px; }
+#cmt-pop .row { display: flex; justify-content: space-between; margin-top: 6px; }
+
+body.bg-zinc-950 mark.cmt { background: #5c4a12; }
+@media (max-width: 640px) { body { font-size: 16px; } .page { padding: 22px 18px 80px; } p, .assumptions li { text-align: left; } }
+@media print {
+  .selection-status, .copy-equation, .runhead .tools, .cmt-pin, #cmt-add, #cmt-pop, #track-bar { display: none; }
+  mark.cmt { background: none; }
+  body { font-size: 10.5pt; --ink: #000; --paper: #fff; --muted: #333; --rule: #000; --link: #000; }
+  .page { max-width: none; padding: 0; }
+  h2 { break-after: avoid; } figure, .equation, table { break-inside: avoid; }
+  @page { size: A4; margin: 22mm 20mm; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="runhead"><span>Paper 2 · Methodology · Draft for internal review</span><span class="tools">
+<button type="button" class="ibtn" id="cmt-save" title="Save comments file" aria-label="Save comments file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="badge" id="cmt-count" hidden></span></button>
+<button type="button" class="ibtn" id="track" title="Compare versions (track changes)" aria-label="Compare versions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M4 11h7M4 16h4"/><path d="M13 20l.8-3.2 5.6-5.6 2.4 2.4-5.6 5.6z"/></svg></button>
+<button type="button" class="ibtn" id="theme" title="Dark view" aria-label="Toggle dark view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button></span></header>
+<div id="track-bar" hidden><label>From <select id="tr-a"></select></label><label>To <select id="tr-b"></select></label><span><ins>added</ins> · <del>deleted</del></span><span id="tr-stat"></span></div>
+<div id="track-view" hidden></div>
+<article>
+<h1>2. Online NCF stability indicator framework for adaptive control</h1>
+<p class="meta">Section draft rewritten from manuscript2 for journal submission. Readers are assumed to be familiar with Ref. [<a href="#citation2">2</a>].</p>
+<p class="lead">The normalized coprime factor online stability indicator (NCF OSI) introduced in the authors’ previous study [<a href="#citation2">2</a>] quantifies the robustness of the actuator control loop in hybrid simulation to degradation of the specimen. This section describes how the indicator is estimated during the test from the desired displacement calculated by the numerical substructure and the measured actuator displacement. Three sources of evidence are combined at each frequency. The first is direct identification, <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi></mrow></mrow></msub></mrow></math>, of the closed loop from the measured signals. The second is output-power inference, <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow></mrow></msub></mrow></math>, which detects a change in the loop from the change in measured output power. The third is the prior identification of the initial state, <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mrow><mn>0</mn></mrow></msub></mrow></math>, obtained before the test. Moreover, to keep the loop stable with an adequate margin as the specimen degrades while retaining as much tracking performance as possible, the controller output is scaled by the adaptive factor <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BB;</mi></mrow></math>, which is updated during the test from the estimated indicator. The derivation of the SISO margin and its relation to specimen damage are given in [<a href="#citation2">2</a>] and are restated here only as required by the estimator.</p>
+<h2 id="s1"><span class="secno">2.1</span>Control loop and stability margin</h2>
+<p>Figure 1 shows the hybrid simulation loop with the adaptive controller. The numerical substructure calculates the desired displacement <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math>, which is then passed through the phase-lead compensator to obtain <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math>. The controller <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>C</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math> forms a command that is scaled by the adaptive factor <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BB;</mi><mo>&#x02208;</mo><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">]</mo></mrow></math> and applied as <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>v</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math> to the plant <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>H</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo></mrow></math>. The plant comprises the transfer system (servo-valve and actuator) and the specimen of stiffness <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>k</mi></mrow></math>, and therefore includes control–structure interaction. The measured actuator displacement is <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math>, and the measured force <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>f</mi><mi>m</mi></msub><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math> is returned to the numerical substructure.</p>
+<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 1100 280">
+<title id="f1t">Hybrid simulation loop with adaptive controller setup</title>
+<desc id="f1d">The numerical substructure calculates the desired displacement d, which passes through the phase-lead compensator to give u. u enters a summing junction, the controller C, and the adaptive factor lambda, which produce the command v applied to the transfer system and specimen H(s,k). The measured displacement y is fed back to the junction, and the measured force f_m returns to the numerical substructure.</desc>
+<defs><marker id="a1" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
+<g fill="none" stroke="currentColor" stroke-width="1.8">
+<rect x="10" y="55" width="140" height="90"/><rect x="210" y="55" width="130" height="90"/><rect x="490" y="55" width="110" height="90"/>
+<rect x="640" y="55" width="110" height="90"/><rect x="810" y="55" width="200" height="90"/><circle cx="430" cy="100" r="18"/>
+<path d="M150 100 H207" marker-end="url(#a1)"/><path d="M340 100 H409" marker-end="url(#a1)"/>
+<path d="M448 100 H487" marker-end="url(#a1)"/><path d="M600 100 H637" marker-end="url(#a1)"/>
+</g>
+<g fill="none" stroke-width="1.8">
+<path d="M750 100 H807" stroke="#AC6420" marker-end="url(#a1)"/>
+<path d="M1010 100 H1092" stroke="#007CA8" marker-end="url(#a1)"/><path d="M1045 100 V200 H430 V121" stroke="#007CA8" marker-end="url(#a1)"/>
+<path d="M910 145 V250 H80 V148" stroke="#74058A" stroke-dasharray="7 5" marker-end="url(#a1)"/>
+</g><circle cx="1045" cy="100" r="4" fill="#007CA8"/>
+<g text-anchor="middle">
+<text x="80" y="96" class="nt">Numerical</text><text x="80" y="120" class="nt">substructure</text>
+<text x="178" y="86" class="it">d(t)</text>
+<text x="275" y="96" class="nt">Phase-lead</text><text x="275" y="120" class="nt">compensator</text>
+<text x="372" y="86" class="it">u(t)</text><text x="403" y="84" class="nt">+</text><text x="450" y="138" class="nt">−</text>
+<text x="545" y="92" class="it">C(s)</text><text x="545" y="120" class="nt">Controller</text>
+<text x="695" y="86" class="it">λ</text><text x="695" y="112" class="nt">Adaptive</text><text x="695" y="134" class="nt">factor</text>
+<text x="779" y="86" class="it" fill="#AC6420">v(t)</text>
+<text x="910" y="86" class="it">H(s, k)</text><text x="910" y="112" class="nt">Transfer system</text><text x="910" y="134" class="nt">and specimen</text>
+<text x="1068" y="86" class="it" fill="#007CA8">y(t)</text>
+<text x="700" y="191" class="nt" fill="#007CA8">Measured actuator displacement</text>
+<text x="500" y="241" class="nt" fill="#74058A"><tspan class="it">f</tspan><tspan class="it" font-size="14" dy="5">m</tspan><tspan dy="-5">(t), measured force</tspan></text>
+</g></svg>
+<figcaption><b>Figure 1.</b> Hybrid simulation loop with adaptive controller setup.</figcaption></figure>
+<p>With <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>H</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>Y</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002F;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math>, the loop and closed-loop transfer functions are</p>
+<div class="equation" id="eq1"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>&#x003BB;</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>&#x003BB;</mi><mspace width="0.167em" /><mi>C</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><mi>H</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(1)</span></div>
+<div class="equation" id="eq2"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>T</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>&#x003BB;</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><mi>Y</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mi>U</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0003D;</mo><mfrac><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>&#x003BB;</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mn>1</mn><mo>&#x0002B;</mo><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>&#x003BB;</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(2)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>U</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math> and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Y</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math> are the Laplace transforms of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math> and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math>. As in [<a href="#citation2">2</a>], the NCF margin [<a href="#citation1">1</a>] is evaluated with the plant <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>P</mi><mo>&#x0003D;</mo><mi>L</mi></mrow></math> and unit feedback <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>K</mi><mo>&#x0003D;</mo><mn>1</mn></mrow></math>, for which the general definition reduces to</p>
+<div class="equation" id="eq3"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">N</mi><mi mathvariant="normal">C</mi><mi mathvariant="normal">F</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003BB;</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><munder><mrow><mo>inf</mo></mrow><mrow><mi>&#x003C9;</mi></mrow></munder><mspace width="0.278em" /><mi>&#x003B4;</mi><mo minsize="1.2em" maxsize="1.2em">(</mo><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo>&#x0002C;</mo><mi>&#x003BB;</mi><mo>&#x0002C;</mo><mi>k</mi><mo stretchy="false">&#x00029;</mo><mo minsize="1.2em" maxsize="1.2em">)</mo><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(3)</span></div>
+<div class="equation" id="eq4"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>&#x003B4;</mi><mo stretchy="false">&#x00028;</mo><mi>L</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><mo stretchy="false">&#x0007C;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>L</mi><mo stretchy="false">&#x0007C;</mo></mrow><mrow><msqrt><mrow><mn>2</mn><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mn>1</mn><mo>&#x0002B;</mo><mo stretchy="false">&#x0007C;</mo><mi>L</mi><msup><mo stretchy="false">&#x0007C;</mo><mrow><mn>2</mn></mrow></msup><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></msqrt></mrow></mfrac><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(4)</span></div>
+<p>The function <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B4;</mi></mrow></math> is the chordal distance between <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></math> and the critical point <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x02212;</mo><mn>1</mn></mrow></math>. All branches of the estimator evaluate the capped distance</p>
+<div class="equation" id="eq5"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><mi>L</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo>min</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mi>&#x003B4;</mi><mo stretchy="false">&#x00028;</mo><mi>L</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="0.167em" /><mfrac><mrow><mn>1</mn></mrow><mrow><msqrt><mrow><mn>2</mn></mrow></msqrt></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">&#x0007D;</mo></mrow><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(5)</span></div>
+<p>Because <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x0007C;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>L</mi><msup><mo stretchy="false">&#x0007C;</mo><mrow><mn>2</mn></mrow></msup><mo>&#x02212;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x0002B;</mo><mo stretchy="false">&#x0007C;</mo><mi>L</mi><msup><mo stretchy="false">&#x0007C;</mo><mrow><mn>2</mn></mrow></msup><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mn>2</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">e</mi></mrow><mspace width="0.167em" /><mi>L</mi></mrow></math>, the distance exceeds <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B4;</mi><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002F;</mo><msqrt><mrow><mn>2</mn></mrow></msqrt></mrow></math> only where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">e</mi></mrow><mspace width="0.167em" /><mi>L</mi><mo>&#x0003E;</mo><mn>0</mn></mrow></math>, that is, where the loop response lies far from the critical point. The cap removes credit from these frequencies and bounds the reported indicator by <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1</mn><mo>&#x0002F;</mo><msqrt><mrow><mn>2</mn></mrow></msqrt></mrow></math>.</p>
+<h2 id="s2"><span class="secno">2.2</span>Short-time spectral estimation</h2>
+<p>The estimator is updated every <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi><mi>t</mi><mo>&#x0003D;</mo><mn>0.125</mn><mspace width="0.167em" /><mi>&#x00073;</mi></mrow></math> from the most recent <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>T</mi><mi>w</mi></msub><mo>&#x0003D;</mo><mn>0.5</mn><mspace width="0.167em" /><mi>&#x00073;</mi></mrow></math> of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi></mrow></math> and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi></mrow></math>, so consecutive windows overlap by 75%. At <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>f</mi><mi>s</mi></msub><mo>&#x0003D;</mo><mn>2048</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">H</mi><mi mathvariant="normal">z</mi></mrow></mrow></math>, each window holds <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi><mo>&#x0003D;</mo><msub><mi>f</mi><mi>s</mi></msub><msub><mi>T</mi><mi>w</mi></msub><mo>&#x0003D;</mo><mn>1024</mn></mrow></math> samples and the bin spacing is 2 Hz. With <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math> indexing the update and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0003D;</mo><mn>0</mn><mo>&#x0002C;</mo><mo>&#x02026;</mo><mo>&#x0002C;</mo><mi>N</mi><mo>&#x02212;</mo><mn>1</mn></mrow></math> the samples in the window, the Hann-windowed discrete Fourier transforms are</p>
+<div class="equation" id="eq6"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>X</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C9;</mi><mi>m</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><munderover><mo>&#x02211;</mo><mrow><mi>r</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mi>N</mi><mo>&#x02212;</mo><mn>1</mn></mrow></munderover><mi>w</mi><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">]</mo><mspace width="0.167em" /><msub><mi>x</mi><mi>n</mi></msub><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">]</mo><mspace width="0.167em" /><msup><mi>e</mi><mrow><mo>&#x02212;</mo><mi>j</mi><mn>2</mn><mi>&#x003C0;</mi><mi>m</mi><mi>r</mi><mo>&#x0002F;</mo><mi>N</mi></mrow></msup><mo>&#x0002C;</mo><mspace width="2em" /><mi>x</mi><mo>&#x02208;</mo><mo stretchy="false">&#x0007B;</mo><mi>u</mi><mo>&#x0002C;</mo><mi>y</mi><mo stretchy="false">&#x0007D;</mo><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(6)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>w</mi><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">]</mo><mo>&#x0003D;</mo><mstyle displaystyle="false" scriptlevel="0"><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mstyle><mo stretchy="false">&#x0007B;</mo><mn>1</mn><mo>&#x02212;</mo><mi>cos</mi><mo stretchy="false">[</mo><mn>2</mn><mi>&#x003C0;</mi><mi>r</mi><mo>&#x0002F;</mo><mo stretchy="false">&#x00028;</mo><mi>N</mi><mo>&#x02212;</mo><mn>1</mn><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo><mo stretchy="false">&#x0007D;</mo></mrow></math> and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C9;</mi><mi>m</mi></msub><mo>&#x0003D;</mo><mn>2</mn><mi>&#x003C0;</mi><mi>m</mi><msub><mi>f</mi><mi>s</mi></msub><mo>&#x0002F;</mo><mi>N</mi></mrow></math>. The instantaneous auto- and cross-spectra</p>
+<div class="equation" id="eq7"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>p</mi><mrow><mi>u</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>U</mi><mi>n</mi></msub><msup><mo stretchy="false">&#x0007C;</mo><mrow><mn>2</mn></mrow></msup><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>p</mi><mrow><mi>y</mi><mi>y</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>Y</mi><mi>n</mi></msub><msup><mo stretchy="false">&#x0007C;</mo><mrow><mn>2</mn></mrow></msup><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>p</mi><mrow><mi>y</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>Y</mi><mi>n</mi></msub><mspace width="0.167em" /><msubsup><mi>U</mi><mi>n</mi><mrow><mo>&#x0002A;</mo></mrow></msubsup></mrow></math></div><span class="eqno">(7)</span></div>
+<p>are unnormalized, because the normalization cancels in every ratio used below. The argument <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C9;</mi><mi>m</mi></msub></mrow></math> is omitted for brevity. Following the averaging of modified periodograms [<a href="#citation3">3</a>] with exponential weighting [<a href="#citation4">4</a>], each spectrum is smoothed recursively and initialized by the first complete window:</p>
+<div class="equation" id="eq8"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>a</mi><mi>b</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>&#x003B7;</mi><mi>s</mi></msub><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>a</mi><mi>b</mi><mo>&#x0002C;</mo><mi>n</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>&#x003B7;</mi><mi>s</mi></msub><mspace width="0.167em" /><msub><mi>p</mi><mrow><mi>a</mi><mi>b</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><mi>a</mi><mi>b</mi><mo>&#x02208;</mo><mo stretchy="false">&#x0007B;</mo><mi>u</mi><mi>u</mi><mo>&#x0002C;</mo><mi>y</mi><mi>y</mi><mo>&#x0002C;</mo><mi>y</mi><mi>u</mi><mo stretchy="false">&#x0007D;</mo><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(8)</span></div>
+<p>The analysis set retains the 2–100 Hz band and rejects line noise:</p>
+<div class="equation" id="eq9"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>&#x003A9;</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><msub><mi>&#x003C9;</mi><mi>m</mi></msub><mi>:</mi><mspace width="0.278em" /><mn>2</mn><mo>&#x02264;</mo><msub><mi>f</mi><mi>m</mi></msub><mo>&#x02264;</mo><mn>100</mn><mtext>&#x000A0;</mtext><mrow><mi mathvariant="normal">H</mi><mi mathvariant="normal">z</mi></mrow><mo>&#x0002C;</mo><mspace width="0.278em" /><msub><mi>f</mi><mi>m</mi></msub><mo>&#x02209;</mo><mo stretchy="false">[</mo><mn>58</mn><mo>&#x0002C;</mo><mn>62</mn><mo stretchy="false">]</mo><mtext>&#x000A0;</mtext><mrow><mi mathvariant="normal">H</mi><mi mathvariant="normal">z</mi></mrow><mo stretchy="true" fence="true" form="postfix">&#x0007D;</mo></mrow><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>f</mi><mi>m</mi></msub><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>&#x003C9;</mi><mi>m</mi></msub></mrow><mrow><mn>2</mn><mi>&#x003C0;</mi></mrow></mfrac><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(9)</span></div>
+<p>which leaves 47 bins. Hereafter <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C9;</mi><mo>&#x02208;</mo><mi>&#x003A9;</mi></mrow></math>, and the subscript <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math> denotes the operating condition <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003BB;</mi><mi>n</mi></msub><mo>&#x0002C;</mo><msub><mi>k</mi><mi>n</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math> at update <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math>. The current stiffness <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>k</mi><mi>n</mi></msub></mrow></math> is unknown and is not estimated.</p>
+<h2 id="s3"><span class="secno">2.3</span>Direct identification branch</h2>
+<p>The averaged spectra give the closed-loop estimate and the magnitude-squared coherence</p>
+<div class="equation" id="eq10"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>y</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>u</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><msubsup><mi>&#x003B3;</mi><mi>n</mi><mrow><mn>2</mn></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><mo stretchy="false">&#x0007C;</mo><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>y</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x0007C;</mo><mrow><mn>2</mn></mrow></msup></mrow><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>u</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>y</mi><mi>y</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(10)</span></div>
+<p>The ratio is an unbiased estimate of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>T</mi><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo>&#x0002C;</mo><msub><mi>&#x003BB;</mi><mi>n</mi></msub><mo>&#x0002C;</mo><msub><mi>k</mi><mi>n</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math> only if the output disturbance is uncorrelated with <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi></mrow></math>. This is not guaranteed in hybrid simulation, because <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi></mrow></math> is computed from the measured force through the numerical substructure. High coherence is therefore treated as supporting evidence rather than proof of an unbiased estimate [<a href="#citation5">5</a>].</p>
+<p>The weight given to <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub></mrow></math> combines three factors. Command activity is detected from the window RMS <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>u</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">s</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mo minsize="1.2em" maxsize="1.2em">(</mo><msup><mi>N</mi><mrow><mo>&#x02212;</mo><mn>1</mn></mrow></msup><msub><mo>&#x02211;</mo><mi>r</mi></msub><msub><mi>u</mi><mi>n</mi></msub><mo stretchy="false">[</mo><mi>r</mi><msup><mo stretchy="false">]</mo><mrow><mn>2</mn></mrow></msup><msup><mo minsize="1.2em" maxsize="1.2em">)</mo><mrow><mn>1</mn><mo>&#x0002F;</mo><mn>2</mn></mrow></msup></mrow></math>:</p>
+<div class="equation" id="eq11"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>A</mi><mi>n</mi></msub><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mn>1</mn><mo>&#x0002C;</mo></mtd><mtd columnalign="left"><msub><mi>u</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">s</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003E;</mo><msub><mi>&#x003B7;</mi><mi>A</mi></msub><mo>&#x0002C;</mo></mtd></mtr><mtr><mtd columnalign="left"><mn>0</mn><mo>&#x0002C;</mo></mtd><mtd columnalign="left"><mtext>otherwise</mtext><mo>&#x0002E;</mo></mtd></mtr></mtable></mrow></mrow></math></div><span class="eqno">(11)</span></div>
+<p>The threshold <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>A</mi></msub></mrow></math> is approximately <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>4.54</mn><mspace width="0.167em" /><msub><mi>&#x003C3;</mi><mrow><mi>u</mi><mo>&#x0002C;</mo><mn>0</mn></mrow></msub></mrow></math>, where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C3;</mi><mrow><mi>u</mi><mo>&#x0002C;</mo><mn>0</mn></mrow></msub></mrow></math> is the command-noise standard deviation measured in a quiet record. Within an active window, bins that carry little command energy are discounted through the input leverage</p>
+<div class="equation" id="eq12"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>&#x02113;</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>p</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>p</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>p</mi><mrow><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi></mrow></mrow></msub></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>p</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>u</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mo>max</mo><mrow><mi>&#x003BD;</mi><mo>&#x02208;</mo><mi>&#x0212C;</mi></mrow></msub><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>u</mi><mi>u</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003BD;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(12)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0212C;</mi></mrow></math> is the full 2–100 Hz grid. The confidence</p>
+<div class="equation" id="eq13"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>c</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>A</mi><mi>n</mi></msub><mspace width="0.167em" /><msubsup><mi>&#x003B3;</mi><mi>n</mi><mrow><mn>2</mn></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>&#x02113;</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><mn>0</mn><mo>&#x02264;</mo><msub><mi>c</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02264;</mo><mn>1</mn><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(13)</span></div>
+<p>is a weighting factor, not a probability. Where it is small, the measurement is replaced by the initial-state prior at the current adaptive factor. With <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>C</mi><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mi>H</mi><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo>&#x0002C;</mo><msub><mi>k</mi><mn>0</mn></msub><mo stretchy="false">&#x00029;</mo></mrow></math> the full-gain loop identified at the initial stiffness <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>k</mi><mn>0</mn></msub></mrow></math>, the prior is</p>
+<div class="equation" id="eq14"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>L</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x003BB;</mi><mi>n</mi></msub><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>T</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>L</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mn>1</mn><mo>&#x0002B;</mo><msub><mi>L</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(14)</span></div>
+<p>Measurement and prior are blended in the closed-loop domain, where the spectral estimate is formed, and the loop is recovered by inverting <a href="#eq2">(2)</a>:</p>
+<div class="equation" id="eq15"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0007E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>c</mi><mi>n</mi></msub><mspace width="0.167em" /><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>c</mi><mi>n</mi></msub><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>T</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><msub><mover><mrow><mi>L</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0007E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mn>1</mn><mo>&#x02212;</mo><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0007E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(15)</span></div>
+<p>A well-supported measurement therefore governs <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>L</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub></mrow></math>, while a weakly supported one leaves it close to the prior. The identified and prior margin curves are</p>
+<div class="equation" id="eq16"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>med</mo><mn>3</mn></msub><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mi>&#x003D5;</mi><mo minsize="1.2em" maxsize="1.2em">(</mo><msub><mover><mrow><mi>L</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo minsize="1.2em" maxsize="1.2em">)</mo><mo stretchy="true" fence="true" form="postfix">&#x0007D;</mo></mrow><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>b</mi><mrow><mn>0</mn><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>&#x003D5;</mi><mo minsize="1.2em" maxsize="1.2em">(</mo><msub><mi>L</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo minsize="1.2em" maxsize="1.2em">)</mo><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(16)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>med</mo><mn>3</mn></msub></mrow></math> is a three-bin moving median over frequency that suppresses isolated spectral outliers.</p>
+<h2 id="s4"><span class="secno">2.4</span>Output-power inference branch</h2>
+<p>When the command is weak, <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub></mrow></math> is unreliable, but the measured output power still reflects the loop. The first three non-overlapping windows are assumed to represent the initial loop at full gain and define the initial reference power and the observed ratio</p>
+<div class="equation" id="eq17"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>p</mi><mrow><mi>y</mi><mi>y</mi><mo>&#x0002C;</mo><mn>0</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><munder><mrow><mo>median</mo></mrow><mrow><mi>h</mi><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002C;</mo><mn>2</mn><mo>&#x0002C;</mo><mn>3</mn></mrow></munder><msup><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007C;</mo><msubsup><mi>Y</mi><mi>h</mi><mrow><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo stretchy="false">&#x00029;</mo></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x0007C;</mo></mrow><mrow><mn>2</mn></mrow></msup><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>q</mi><mrow><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">s</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>y</mi><mi>y</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>p</mi><mrow><mi>y</mi><mi>y</mi><mo>&#x0002C;</mo><mn>0</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(17)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msubsup><mi>Y</mi><mi>h</mi><mrow><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo stretchy="false">&#x00029;</mo></mrow></msubsup></mrow></math> is the transform of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi></mrow></math> in reference window <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>h</mi></mrow></math>. If <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi></mrow></math> is dominated by an equivalent output disturbance whose spectrum is unchanged from the reference period, the output is shaped by the sensitivity <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1</mn><mo>&#x0002F;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>L</mi><mo stretchy="false">&#x00029;</mo></mrow></math>, and a candidate loop <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BB;</mi><mi>n</mi></msub><mi>g</mi><msub><mi>L</mi><mn>0</mn></msub></mrow></math> predicts the ratio</p>
+<div class="equation" id="eq18"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>q</mi><mrow><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo>&#x0002C;</mo><mi>g</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msup><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007C;</mo><mfrac><mrow><mn>1</mn><mo>&#x0002B;</mo><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mn>1</mn><mo>&#x0002B;</mo><msub><mi>&#x003BB;</mi><mi>n</mi></msub><mi>g</mi><mspace width="0.167em" /><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">&#x0007C;</mo></mrow><mrow><mn>2</mn></mrow></msup><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(18)</span></div>
+<p>The positive scalar <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>g</mi></mrow></math> is an effective change in loop magnitude, not an estimate of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>k</mi></mrow></math>. It is fitted in each bin by matching the ratios on a logarithmic scale:</p>
+<div class="equation" id="eq19"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><munder><mrow><mo>arg&#x2009;min</mo></mrow><mrow><mi>g</mi><mo>&#x02208;</mo><mi>&#x1D4A2;</mi></mrow></munder><mspace width="0.278em" /><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007C;</mo><mi>log</mi><mspace width="0.167em" /><msub><mi>q</mi><mrow><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">s</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>log</mi><mspace width="0.167em" /><msub><mi>q</mi><mrow><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo>&#x0002C;</mo><mi>g</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x0007C;</mo></mrow><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(19)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x1D4A2;</mi></mrow></math> holds 25 logarithmically spaced values from 0.5 to 6. Because each bin is fitted independently, the curve <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>g</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo></mrow></math> is an inference model rather than an identified transfer function. The fitted change is retained in a logarithmic memory initialized at <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mn>0</mn></msub><mo>&#x0003D;</mo><mn>1</mn></mrow></math>:</p>
+<div class="equation" id="eq20"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>log</mi><mspace width="0.167em" /><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>&#x003B7;</mi><mi>g</mi></msub><mo stretchy="false">&#x00029;</mo><mi>log</mi><mspace width="0.167em" /><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>n</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>&#x003B7;</mi><mi>g</mi></msub><mi>log</mi><mspace width="0.167em" /><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(20)</span></div>
+<p>While the command is active (<math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>A</mi><mi>n</mi></msub><mo>&#x0003D;</mo><mn>1</mn></mrow></math>), the target is <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub></mrow></math>. Recovery is judged from the band-median ratio</p>
+<div class="equation" id="eq21"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>r</mi><mrow><mi>&#x003A9;</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><munder><mrow><mo>median</mo></mrow><mrow><mi>&#x003C9;</mi><mo>&#x02208;</mo><mi>&#x003A9;</mi></mrow></munder><msub><mi>q</mi><mrow><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">s</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(21)</span></div>
+<p>When <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>&#x003A9;</mi><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003C;</mo><mn>1</mn></mrow></math>, the output power has fallen below the initial reference, and the memory decays toward <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mo>&#x0003D;</mo><mn>1</mn></mrow></math> with <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mn>1</mn></mrow></math> and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>g</mi></msub></mrow></math> replaced by <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>r</mi></msub></mrow></math>. Otherwise <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>n</mi></msub></mrow></math> is held, so a detected change remains represented while the excitation is weak. The output-power margin curve uses the same capped distance as <a href="#eq16">(16)</a>:</p>
+<div class="equation" id="eq22"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>med</mo><mn>3</mn></msub><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mi>&#x003D5;</mi><mo minsize="1.2em" maxsize="1.2em">(</mo><msub><mi>&#x003BB;</mi><mi>n</mi></msub><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><msub><mi>L</mi><mn>0</mn></msub><mo stretchy="false">&#x00028;</mo><mi>j</mi><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo minsize="1.2em" maxsize="1.2em">)</mo><mo stretchy="true" fence="true" form="postfix">&#x0007D;</mo></mrow><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(22)</span></div>
+<h2 id="s5"><span class="secno">2.5</span>Per-frequency fusion and reported indicator</h2>
+<p>The output-power branch is trusted in proportion to the size of the inferred change,</p>
+<div class="equation" id="eq23"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>d</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>clip</mo><mrow><mo stretchy="false">[</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">]</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mfrac><mrow><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mn>1</mn></mrow><mrow><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x02212;</mo><mn>1</mn></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(23)</span></div>
+<p>which rises linearly from zero at <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>n</mi></msub><mo>&#x0003D;</mo><mn>1</mn></mrow></math> to one at <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>g</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>n</mi></msub><mo>&#x0003D;</mo><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub></mrow></math>. The three branches are weighted at each frequency by</p>
+<div class="equation" id="eq24"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>w</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>c</mi><mi>n</mi></msub><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>w</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>c</mi><mi>n</mi></msub><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>d</mi><mi>n</mi></msub><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>w</mi><mrow><mn>0</mn><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>c</mi><mi>n</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>d</mi><mi>n</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(24)</span></div>
+<p>which are nonnegative and sum to one. Direct identification receives the share supported by the measurement, the output-power branch receives the remainder in proportion to its detection weight, and the prior receives what neither measurement supports (Table 2). The fused margin curve is</p>
+<div class="equation" id="eq25"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>&#x003B2;</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>w</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mspace width="0.167em" /><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>w</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mspace width="0.167em" /><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>w</mi><mrow><mn>0</mn><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mspace width="0.167em" /><msub><mi>b</mi><mrow><mn>0</mn><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C9;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math></div><span class="eqno">(25)</span></div>
+<p>Fusion is performed bin by bin, before any reduction over frequency, so margins evaluated at different frequencies are never combined. The idle case needs no special treatment: when the command is inactive, <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>c</mi><mi>n</mi></msub><mo>&#x0003D;</mo><mn>0</mn></mrow></math> in every bin, an unchanged loop reads its gain-scaled prior, and a bin with a remembered change continues to report it.</p>
+<p>The instantaneous indicator is the second-smallest value of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B2;</mi><mi>n</mi></msub></mrow></math> over <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003A9;</mi></mrow></math>,</p>
+<div class="equation" id="eq26"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x003B2;</mi><mrow><mi>n</mi><mo>&#x0002C;</mo><mo stretchy="false">&#x00028;</mo><mn>2</mn><mo stretchy="false">&#x00029;</mo></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x003B2;</mi><mi>n</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C9;</mi><mrow><mo>&#x0002A;</mo><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(26)</span></div>
+<p>where <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C9;</mi><mrow><mo>&#x0002A;</mo><mo>&#x0002C;</mo><mi>n</mi></mrow></msub></mrow></math> is the governing frequency. Discarding the lowest bin prevents a single outlier from governing the estimate, at the cost of attenuating a genuine minimum that is only one bin wide. The reported indicator is smoothed in time,</p>
+<div class="equation" id="eq27"><div class="expression"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">O</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">I</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><msub><mi>&#x003B7;</mi><mi>b</mi></msub><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">O</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">I</mi></mrow><mo>&#x0002C;</mo><mi>n</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><msub><mi>&#x003B7;</mi><mi>b</mi></msub><mspace width="0.167em" /><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow><mo>&#x0002C;</mo><mi>n</mi></mrow></msub><mo>&#x0002C;</mo></mrow></math></div><span class="eqno">(27)</span></div>
+<p>and is used by the adaptive law to update <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BB;</mi><mrow><mi>n</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math>. Figure 2 summarizes one update, and Table 1 lists the estimator parameters.</p>
+<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 480">
+<title id="f2t">Structure of one estimator update</title>
+<desc id="f2d">Windowed displacements u and y feed the spectral estimator. Its spectra feed the identification and output-power branches. A third branch is the initial-state prior scaled by lambda. The three margin curves are fused per frequency bin, reduced by the second-smallest value over the analysis band, and smoothed to give b_OSI, which drives the adaptive law that returns lambda.</desc>
+<defs><marker id="a2" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
+<g fill="none" stroke="currentColor" stroke-width="1.6">
+<rect x="56" y="150" width="208" height="100"/>
+<rect x="320" y="30" width="280" height="90"/><rect x="320" y="155" width="280" height="90"/><rect x="320" y="280" width="280" height="90"/>
+<rect x="680" y="150" width="180" height="100"/><rect x="680" y="300" width="180" height="70"/>
+<rect x="320" y="400" width="280" height="56"/>
+<path d="M10 180 H54" marker-end="url(#a2)"/>
+<path d="M264 200 H318" marker-end="url(#a2)"/><path d="M285 200 V75 H318" marker-end="url(#a2)"/>
+<path d="M600 75 H640 V180 H678" marker-end="url(#a2)"/><path d="M600 200 H678" marker-end="url(#a2)"/><path d="M600 325 H640 V220 H678" marker-end="url(#a2)"/>
+<path d="M770 250 V298" marker-end="url(#a2)"/><path d="M860 335 H988" marker-end="url(#a2)"/>
+<path d="M930 335 V428 H602" marker-end="url(#a2)"/><path d="M460 400 V372" marker-end="url(#a2)"/>
+</g><path d="M10 220 H54" fill="none" stroke="#007CA8" stroke-width="1.6" marker-end="url(#a2)"/><circle cx="285" cy="200" r="3.5" fill="currentColor"/><circle cx="930" cy="335" r="3.5" fill="currentColor"/>
+<g text-anchor="middle">
+<text x="28" y="172" class="it">u</text><text x="28" y="212" class="it" fill="#007CA8">y</text>
+<text x="160" y="190">Windowed DFT,</text><text x="160" y="214">averaged spectra</text><text x="160" y="238" class="nt">Eqs. (6)–(8)</text>
+<text x="460" y="64">Direct identification</text><text x="460" y="90" class="nt">T̂, γ², c → b<tspan font-size="13" dy="4">id</tspan><tspan dy="-4">(ω)</tspan></text><text x="460" y="112" class="nt">Eqs. (10)–(16)</text>
+<text x="460" y="189">Output-power inference</text><text x="460" y="215" class="nt">q<tspan font-size="13" dy="4">obs</tspan><tspan dy="-4">, ḡ → b</tspan><tspan font-size="13" dy="4">pow</tspan><tspan dy="-4">(ω)</tspan></text><text x="460" y="237" class="nt">Eqs. (17)–(22)</text>
+<text x="460" y="314">Initial-state prior</text><text x="460" y="340" class="nt">λL<tspan font-size="13" dy="4">0</tspan><tspan dy="-4"> → b</tspan><tspan font-size="13" dy="4">0</tspan><tspan dy="-4">(ω)</tspan></text><text x="460" y="362" class="nt">Eqs. (14), (16)</text>
+<text x="770" y="190">Per-bin fusion</text><text x="770" y="215" class="nt">β(ω)</text><text x="770" y="238" class="nt">Eqs. (23)–(25)</text>
+<text x="770" y="330">Trim and smooth</text><text x="770" y="356" class="nt">Eqs. (26)–(27)</text>
+<text x="460" y="434">Adaptive law</text>
+<text x="620" y="66" class="it">w<tspan font-size="14" dy="4">id</tspan></text><text x="624" y="190" class="it">w<tspan font-size="14" dy="4">pow</tspan></text><text x="620" y="316" class="it">w<tspan font-size="14" dy="4">0</tspan></text>
+<text x="958" y="322" class="nt">b<tspan font-size="13" dy="4">OSI</tspan></text>
+<text x="484" y="392" class="it">λ</text>
+</g></svg>
+<figcaption><b>Figure 2.</b> One estimator update. Branch weights from Eq. (24) are marked on the arrows entering the fusion block, and the adaptive factor also enters the initial-state prior and the output-power model.</figcaption></figure>
+<figure class="table" id="tab1"><figcaption><b>Table 1.</b> Estimator parameters. Smoothing coefficients follow <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B7;</mi><mo>&#x0003D;</mo><mn>1</mn><mo>&#x02212;</mo><mi>exp</mi><mo stretchy="false">&#x00028;</mo><mo>&#x02212;</mo><mi>&#x00394;</mi><mi>t</mi><mo>&#x0002F;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo></mrow></math> from the listed time constant.</figcaption><table class="border-white/10"><thead><tr><th>Symbol</th><th>Value</th><th><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi></mrow></math></th><th>Role</th></tr></thead><tbody><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi><mi>t</mi></mrow></math></td><td>0.125 s</td><td>—</td><td>Update interval</td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>T</mi><mi>w</mi></msub></mrow></math>, <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></td><td>0.5 s, 1024</td><td>—</td><td>Window length at <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>f</mi><mi>s</mi></msub><mo>&#x0003D;</mo><mn>2048</mn></mrow></math> Hz</td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003A9;</mi></mrow></math></td><td>2–100 Hz, 47 bins</td><td>—</td><td>Analysis set, 58–62 Hz rejected</td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>s</mi></msub></mrow></math></td><td>0.39</td><td>0.25 s</td><td>Spectral averaging, <a href="#eq8">(8)</a></td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>A</mi></msub></mrow></math></td><td>0.0575</td><td>—</td><td>Activity threshold, recorded displacement units, <a href="#eq11">(11)</a></td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>p</mi><mrow><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi></mrow></mrow></msub></mrow></math></td><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup></mrow></math></td><td>—</td><td>Input-leverage reference, <a href="#eq12">(12)</a></td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x1D4A2;</mi></mrow></math></td><td>0.5–6, 25 values</td><td>—</td><td>Candidate loop-magnitude changes, <a href="#eq19">(19)</a></td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>g</mi></msub></mrow></math></td><td>0.12</td><td>1.0 s</td><td>Output-power memory, accumulation, <a href="#eq20">(20)</a></td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>r</mi></msub></mrow></math></td><td>0.27</td><td>0.4 s</td><td>Output-power memory, recovery</td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>g</mi><mrow><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub></mrow></math></td><td>1.75</td><td>—</td><td>Detection scale, <a href="#eq23">(23)</a></td></tr><tr><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>b</mi></msub></mrow></math></td><td>0.39</td><td>0.25 s</td><td>Indicator smoothing, <a href="#eq27">(27)</a></td></tr></tbody></table></figure>
+<figure class="table" id="tab2"><figcaption><b>Table 2.</b> Evidence sources fused in <a href="#eq25">(25)</a>.</figcaption><table class="border-white/10"><thead><tr><th>Branch</th><th>Evidence</th><th>Weight</th><th>Governs in</th><th>Principal assumption</th></tr></thead><tbody><tr><td>Direct identification</td><td>Cross-spectrum of <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi></mrow></math> and <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi></mrow></math></td><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>c</mi></mrow></math></td><td>Active, coherent, well-excited bins</td><td>Disturbance uncorrelated with <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi></mrow></math></td></tr><tr><td>Output-power inference</td><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>p</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mrow><mi>y</mi><mi>y</mi></mrow></msub></mrow></math> relative to initial reference</td><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>c</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><mi>d</mi></mrow></math></td><td>Weak excitation after a detected change</td><td>Stationary disturbance and a magnitude-only change</td></tr><tr><td>Initial-state prior</td><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BB;</mi><mi>n</mi></msub><msub><mi>L</mi><mn>0</mn></msub></mrow></math></td><td><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>c</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>d</mi><mo stretchy="false">&#x00029;</mo></mrow></math></td><td>No measured evidence</td><td>Loop unchanged from the initial state</td></tr></tbody></table></figure>
+<h2 id="s6"><span class="secno">2.6</span>Assumptions and limitations</h2>
+<ol class="assumptions"><li>The identification branch assumes that the output disturbance is uncorrelated with <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>u</mi></mrow></math>. Feedback through the numerical substructure can violate this assumption and bias <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>T</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>n</mi></msub></mrow></math> even at high coherence [<a href="#citation5">5</a>].</li><li>The output-power branch assumes that the disturbance spectrum is unchanged from the reference period and that the first 1.5 s represent the initial loop at full gain. A change in disturbance intensity or in the command-driven response can alter <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>q</mi><mrow><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">s</mi></mrow></mrow></msub></mrow></math> without any change in stability.</li><li>The factor <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>g</mi></mrow></math> is real, so the output-power branch represents changes in loop magnitude but not in loop phase.</li><li>Band limitation, trimming, and temporal smoothing mean that <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">O</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub></mrow></math> is not a guaranteed lower bound on the full-frequency margin <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mrow><mrow><mi mathvariant="normal">N</mi><mi mathvariant="normal">C</mi><mi mathvariant="normal">F</mi></mrow></mrow></msub></mrow></math>, and it follows abrupt changes with a delay set by <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B7;</mi><mi>b</mi></msub></mrow></math>.</li></ol>
+<section class="references" aria-labelledby="refs"><h2 id="refs">References</h2><ol>
+<li id="citation1">K. Glover and D. McFarlane, “Robust stabilization of normalized coprime factor plant descriptions with H<sub>∞</sub>-bounded uncertainty,” <i>IEEE Transactions on Automatic Control</i>, vol. 34, no. 8, pp. 821–830, 1989. <a href="https://doi.org/10.1109/9.29424">doi:10.1109/9.29424</a></li>
+<li id="citation2">M. Gomaa, E. D. Patino, J. N. Villamizar, J. W. Condori Uribe, and S. J. Dyke, “An online stability indicator for real-time hybrid simulation emphasizing physical substructure degradation,” author manuscript.</li>
+<li id="citation3">P. D. Welch, “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms,” <i>IEEE Transactions on Audio and Electroacoustics</i>, vol. 15, no. 2, pp. 70–73, 1967. <a href="https://doi.org/10.1109/TAU.1967.1161901">doi:10.1109/TAU.1967.1161901</a></li>
+<li id="citation4">S. W. Roberts, “Control chart tests based on geometric moving averages,” <i>Technometrics</i>, vol. 1, no. 3, pp. 239–250, 1959. <a href="https://doi.org/10.1080/00401706.1959.10489860">doi:10.1080/00401706.1959.10489860</a></li>
+<li id="citation5">U. Forssell and L. Ljung, “Closed-loop identification revisited,” <i>Automatica</i>, vol. 35, no. 7, pp. 1215–1241, 1999. <a href="https://doi.org/10.1016/S0005-1098(99)00022-9">doi:10.1016/S0005-1098(99)00022-9</a></li>
+</ol></section>
+</article>
+</div>
+<footer class="selection-status" role="status" aria-live="polite">Selected words: <span id="selected-word-count">0</span></footer>
+<script src="manuscript2_journal_versions.js"></script>
+<script>
+const ICON = {"save": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 4v11M7 10l5 5 5-5M5 20h14\"/></svg>", "track": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 6h10M4 11h7M4 16h4\"/><path d=\"M13 20l.8-3.2 5.6-5.6 2.4 2.4-5.6 5.6z\"/></svg>", "moon": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z\"/></svg>", "sun": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>", "copy": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"8\" y=\"8\" width=\"12\" height=\"12\"/><path d=\"M16 8V4H4v12h4\"/></svg>", "check": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12l5 5 9-10\"/></svg>", "trash": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\"/></svg>", "comment": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 4h16v12H9l-5 4z\"/><path d=\"M12 7v6M9 10h6\"/></svg>"};
+const wordEquations = {
+  "eq1": "L(s,λ,k)=λ C(s) H(s,k)",
+  "eq2": "T(s,λ,k)=(Y(s))/(U(s))=(L(s,λ,k))/(1+L(s,λ,k))",
+  "eq3": "b_(\"NCF\") (λ,k)=\"inf\"┬ω  δ(L(jω,λ,k))",
+  "eq4": "δ(L)=(|1+L|)/(√(2(1+|L|^2)))",
+  "eq5": "ϕ(L)=\"min\"{δ(L),1/√2}",
+  "eq6": "X_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] x_n [r] e^(−j2πmr/N)〗,  x∈{u,y}",
+  "eq7": "p_(uu,n)=|U_n |^2,  p_(yy,n)=|Y_n |^2,  p_(yu,n)=Y_n U_n^*",
+  "eq8": "p̄_(ab,n) (ω)=(1−η_s) p̄_(ab,n−1) (ω)+η_s p_(ab,n) (ω), ab∈{uu,yy,yu}",
+  "eq9": "Ω={ω_m:2≤f_m≤100 \"Hz\", f_m∉[58,62]\" Hz\"},  f_m=(ω_m)/(2π)",
+  "eq10": "T̂_n (jω)=(p̄_(yu,n) (ω))/(p̄_(uu,n) (ω)),  γ_n^2 (ω)=(|p̄_(yu,n) (ω)|^2)/(p̄_(uu,n) (ω) p̄_(yy,n) (ω))",
+  "eq11": "A_n={■(1,&u_(\"rms\",n)>η_A@0,&\"otherwise\")┤",
+  "eq12": "ℓ_n (ω)=(p_(\"rel\",n) (ω))/(p_(\"rel\",n) (ω)+p_(\"floor\") ),  p_(\"rel\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈ℬ)  p̄_(uu,n) (ν))",
+  "eq13": "c_n (ω)=A_n γ_n^2 (ω) ℓ_n (ω), 0≤c_n (ω)≤1",
+  "eq14": "L_(\"pr\",n) (jω)=λ_n L_0 (jω),  T_(\"pr\",n) (jω)=(L_(\"pr\",n) (jω))/(1+L_(\"pr\",n) (jω))",
+  "eq15": "T̃_n (jω)=c_n T̂_n (jω)+(1−c_n ) T_(\"pr\",n) (jω),  L̂_n (jω)=(T̃_n (jω))/(1−T̃_n (jω))",
+  "eq16": "b_(\"id\",n) (ω)=\"med\"_3 {ϕ(L̂_n (jω))},  b_(0,n) (ω)=ϕ(L_(\"pr\",n) (jω))",
+  "eq17": "p_(yy,0) (ω)=\"median\"┬(h=1,2,3)  |Y_h^((0)) (ω)|^2,  q_(\"obs\",n) (ω)=(p̄_(yy,n) (ω))/(p_(yy,0) (ω))",
+  "eq18": "q_(\"mod\",n) (ω,g)=〖|(1+L_0 (jω))/(1+λ_n g L_0 (jω))|〗^2",
+  "eq19": "g_(\"fit\",n) (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"mod\",n) (ω,g)|",
+  "eq20": "log ḡ_n (ω)=(1−η_g) log ḡ_(n−1) (ω)+η_g log g_(\"tar\",n) (ω)",
+  "eq21": "r_(Ω,n)=\"median\"┬(ω∈Ω)  q_(\"obs\",n) (ω)",
+  "eq22": "b_(\"pow\",n) (ω)=\"med\"_3 {ϕ(λ_n ḡ_n (ω) L_0 (jω))}",
+  "eq23": "d_n (ω)=\"clip\"_([0,1]) ((ḡ_n (ω)−1)/(g_(\"det\")−1))",
+  "eq24": "w_(\"id\",n)=c_n,  w_(\"pow\",n)=(1−c_n ) d_n,  w_(0,n)=(1−c_n )(1−d_n )",
+  "eq25": "β_n (ω)=w_(\"id\",n) b_(\"id\",n) (ω)+w_(\"pow\",n) b_(\"pow\",n) (ω)+w_(0,n) b_(0,n) (ω)",
+  "eq26": "b_(\"inst\",n)=β_(n,(2))=β_n (ω_(*,n))",
+  "eq27": "b_(\"OSI\",n)=(1−η_b) b_(\"OSI\",n−1)+η_b b_(\"inst\",n)"
+};
+const copyText = async text => {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const t = document.createElement('textarea');
+    t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    const ok = document.execCommand('copy'); t.remove();
+    if (!ok) throw new Error('Clipboard copy was not available.');
+  }
+};
+document.querySelectorAll('.equation').forEach(eq => {
+  const number = eq.querySelector('.eqno').textContent;
+  const text = wordEquations[eq.id];
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'copy-equation'; b.innerHTML = ICON.copy;
+  b.title = 'Word: Alt+= → UnicodeMath → paste → Convert to Professional';
+  b.setAttribute('aria-label', `Copy equation ${number} as UnicodeMath for Microsoft Word`);
+  b.addEventListener('click', async () => {
+    try { await copyText(text); b.innerHTML = ICON.check; } catch { b.title = 'Copy failed'; }
+    setTimeout(() => { b.innerHTML = ICON.copy; }, 1400);
+  });
+  eq.insertBefore(b, eq.querySelector('.eqno'));
+});
+const theme = document.getElementById('theme');
+theme.addEventListener('click', () => {
+  const dark = document.body.classList.toggle('bg-zinc-950');
+  theme.innerHTML = dark ? ICON.sun : ICON.moon;
+  theme.title = dark ? 'Paper view' : 'Dark view';
+});
+const seg = new Intl.Segmenter('en', { granularity: 'word' });
+const counter = document.getElementById('selected-word-count');
+document.addEventListener('selectionchange', () => {
+  let n = 0;
+  for (const s of seg.segment(window.getSelection().toString())) if (s.isWordLike) n++;
+  counter.textContent = n.toLocaleString('en');
+});
+
+// ---- review comments: stored in localStorage, exported as JSON for Claude
+const article = document.querySelector('article');
+const KEY = 'comments:' + location.pathname;
+let comments = JSON.parse(localStorage.getItem(KEY) || '[]');
+let openId = null, pending = null;
+const addBtn = Object.assign(document.createElement('button'), { id: 'cmt-add', type: 'button', title: 'Add comment', hidden: true });
+addBtn.setAttribute('aria-label', 'Add comment');
+addBtn.innerHTML = ICON.comment;
+const pop = Object.assign(document.createElement('div'), { id: 'cmt-pop', hidden: true });
+pop.innerHTML = '<div class="q"></div><textarea placeholder="Type a comment. Click elsewhere or Ctrl+Enter to save."></textarea><div class="row"><button type="button" class="ibtn" data-a="del" title="Delete comment" aria-label="Delete comment">' + ICON.trash + '</button><button type="button" class="ibtn" data-a="save" title="Save comment" aria-label="Save comment">' + ICON.check + '</button></div>';
+document.body.append(addBtn, pop);
+const area = pop.querySelector('textarea');
+
+const textNodes = () => {
+  const w = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, { acceptNode: n =>
+    n.parentElement.closest('.cmt-pin, .copy-equation, title, desc') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  const list = []; let pos = 0, n;
+  while ((n = w.nextNode())) { list.push({ n, s: pos }); pos += n.data.length; }
+  return { list, text: list.map(x => x.n.data).join('') };
+};
+const offsetOf = (list, container, offset) => {
+  if (container.nodeType === 3) { const x = list.find(x => x.n === container); if (x) return x.s + offset; }
+  const probe = document.createRange(); probe.setStart(container, offset);
+  const x = list.find(x => probe.comparePoint(x.n, 0) >= 0);
+  return x ? x.s : list.reduce((a, x) => a + x.n.data.length, 0);
+};
+const sectionOf = node => {
+  let h = 'Opening';
+  article.querySelectorAll('h2').forEach(e => { if (e.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) h = e.textContent; });
+  return h;
+};
+const store = () => {
+  localStorage.setItem(KEY, JSON.stringify(comments));
+  const badge = document.getElementById('cmt-count');
+  badge.textContent = comments.length; badge.hidden = !comments.length;
+  document.getElementById('cmt-save').title = `Save comments file (${comments.length})`;
+};
+
+function paint(c) {
+  const { list } = textNodes();
+  const marks = [];
+  for (const { n, s } of list) {
+    const a = Math.max(c.start - s, 0), b = Math.min(c.end - s, n.data.length);
+    if (a >= b) continue;
+    const box = n.parentElement.closest('svg') ? n.parentElement.closest('figure') : n.parentElement.closest('math');
+    if (box) { if (marks[marks.length - 1] !== box) marks.push(box); continue; }
+    let t = n; if (a > 0) t = t.splitText(a); if (b - a < t.data.length) t.splitText(b - a);
+    const m = document.createElement('mark'); m.className = 'cmt'; m.dataset.id = c.id; t.replaceWith(m); m.append(t); marks.push(m);
+  }
+  if (!marks.length) return false;
+  marks.filter(m => m.tagName !== 'MARK').forEach(e => { e.classList.add('cmt-block'); e.dataset.cmt = c.id; });
+  const pin = Object.assign(document.createElement('span'), { className: 'cmt-pin', title: c.text });
+  pin.dataset.id = c.id; pin.setAttribute('role', 'button');
+  pin.textContent = comments.indexOf(c) + 1;
+  const last = marks[marks.length - 1];
+  last.tagName === 'FIGURE' ? last.querySelector('figcaption').append(pin) : last.after(pin);
+  return true;
+}
+function unpaint(id) {
+  document.querySelectorAll(`mark.cmt[data-id="${id}"]`).forEach(m => { const p = m.parentNode; m.replaceWith(...m.childNodes); p.normalize(); });
+  document.querySelectorAll(`[data-cmt="${id}"]`).forEach(e => { e.classList.remove('cmt-block'); delete e.dataset.cmt; });
+  document.querySelectorAll(`.cmt-pin[data-id="${id}"]`).forEach(p => p.remove());
+}
+const renumber = () => document.querySelectorAll('.cmt-pin').forEach(p => { const c = comments.find(c => c.id === p.dataset.id); p.textContent = comments.indexOf(c) + 1; p.title = c.text; });
+
+function anchorAll() {
+  const { text } = textNodes();
+  for (const c of comments) {
+    let i = text.indexOf(c.prefix + c.quote + c.suffix);
+    i = i >= 0 ? i + c.prefix.length : text.indexOf(c.quote);
+    c.orphan = i < 0;
+    if (!c.orphan) { c.start = i; c.end = i + c.quote.length; paint(c); }
+  }
+  store();
+}
+
+function place(el, rect) {
+  el.hidden = false;
+  el.style.left = Math.min(rect.left + scrollX, scrollX + innerWidth - el.offsetWidth - 12) + 'px';
+  el.style.top = (rect.bottom + scrollY + 6) + 'px';
+}
+function openPop(c, rect) {
+  closePop();
+  openId = c.id;
+  document.querySelectorAll(`mark.cmt[data-id="${c.id}"]`).forEach(m => m.classList.add('open'));
+  pop.querySelector('.q').textContent = '“' + c.quote + '”';
+  area.value = c.text;
+  place(pop, rect); area.focus();
+}
+function closePop() {
+  if (!openId) { pop.hidden = true; return; }
+  const c = comments.find(c => c.id === openId);
+  openId = null; pop.hidden = true;
+  if (!c) return;
+  const text = area.value.trim();
+  if (!text) { remove(c); return; }
+  c.text = text; c.updated = new Date().toISOString(); store(); renumber();
+  document.querySelectorAll('mark.cmt.open').forEach(m => m.classList.remove('open'));
+}
+function remove(c) { unpaint(c.id); comments = comments.filter(x => x !== c); store(); renumber(); }
+
+document.addEventListener('mouseup', e => {
+  if (pop.contains(e.target) || e.target === addBtn) return;
+  setTimeout(() => {
+    const sel = getSelection();
+    if (sel.isCollapsed || !article.contains(sel.anchorNode)) { addBtn.hidden = true; return; }
+    const r = sel.getRangeAt(0), { list, text } = textNodes();
+    const start = offsetOf(list, r.startContainer, r.startOffset), end = offsetOf(list, r.endContainer, r.endOffset);
+    if (end <= start) { addBtn.hidden = true; return; }
+    pending = { start, end, text, section: sectionOf(r.startContainer) };
+    const line = [...r.getClientRects()].pop() || r.getBoundingClientRect();
+    addBtn.hidden = false;
+    addBtn.style.left = Math.min(article.getBoundingClientRect().right + 12, innerWidth - 42) + scrollX + 'px';
+    addBtn.style.top = line.top + line.height / 2 - 15 + scrollY + 'px';
+  });
+});
+document.addEventListener('mousedown', e => {
+  if (pop.contains(e.target) || e.target === addBtn) return;
+  const pin = e.target.closest('.cmt-pin, mark.cmt');
+  if (pin) { e.preventDefault(); const c = comments.find(c => c.id === pin.dataset.id); if (openId !== c.id) openPop(c, pin.getBoundingClientRect()); return; }
+  closePop(); addBtn.hidden = true;
+});
+addBtn.addEventListener('click', () => {
+  const { start, end, text, section } = pending;
+  const c = { id: 'c' + Date.now(), section, quote: text.slice(start, end), prefix: text.slice(Math.max(0, start - 40), start),
+    suffix: text.slice(end, end + 40), start, end, text: '', created: new Date().toISOString() };
+  comments.push(c); comments.sort((a, b) => a.start - b.start);
+  getSelection().removeAllRanges(); addBtn.hidden = true;
+  paint(c); renumber();
+  openPop(c, document.querySelector(`.cmt-pin[data-id="${c.id}"]`).getBoundingClientRect());
+});
+pop.addEventListener('click', e => {
+  const a = e.target.closest('[data-a]')?.dataset.a;
+  if (a === 'save') closePop();
+  if (a === 'del') { const c = comments.find(c => c.id === openId); openId = null; pop.hidden = true; remove(c); }
+});
+area.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) closePop(); if (e.key === 'Escape') closePop(); });
+
+const exportData = () => ({ page: location.pathname.split('/').pop(), exported: new Date().toISOString(),
+  comments: comments.map((c, i) => ({ n: i + 1, section: c.section, quote: c.quote, prefix: c.prefix, suffix: c.suffix, comment: c.text, orphan: !!c.orphan })) });
+document.getElementById('cmt-save').addEventListener('click', async () => {
+  const json = JSON.stringify(exportData(), null, 2), name = 'manuscript2_journal_comments.json';
+  if (window.showSaveFilePicker) {
+    try {
+      const h = await showSaveFilePicker({ suggestedName: name, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+      const w = await h.createWritable(); await w.write(json); await w.close(); return;
+    } catch (err) { if (err.name === 'AbortError') return; }
+  }
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([json], { type: 'application/json' })), download: name });
+  a.click(); URL.revokeObjectURL(a.href);
+});
+anchorAll();
+
+// ---- version tracking: word-level comparison of any two saved versions
+const V = window.MANUSCRIPT_VERSIONS || [];
+const bar = document.getElementById('track-bar'), view = document.getElementById('track-view');
+const selA = document.getElementById('tr-a'), selB = document.getElementById('tr-b'), trackBtn = document.getElementById('track');
+V.forEach((v, i) => { const t = `v${v.v} · ${v.date}${v.note ? ' · ' + v.note : ''}`; selA.add(new Option(t, i)); selB.add(new Option(t, i)); });
+selA.value = Math.max(V.length - 2, 0); selB.value = V.length - 1;
+const TEXT = new Set(['P', 'H1', 'H2', 'H3', 'LI']);
+const blocks = html => {
+  const t = document.createElement('template'); t.innerHTML = html; const out = [];
+  const walk = el => { for (const c of el.children) ['OL', 'UL', 'SECTION'].includes(c.tagName) ? walk(c) : out.push(c); };
+  walk(t.content); return out;
+};
+const esc = x => x.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const tokens = el => {
+  const out = [];
+  const rec = node => { for (const n of node.childNodes) {
+    if (n.nodeType === 3) for (const m of n.data.matchAll(/\s*\S+\s*|\s+/g)) out.push({ k: m[0].trim() || ' ', h: esc(m[0]) });
+    else if (n.nodeType === 1) ['MATH', 'A', 'SVG'].includes(n.tagName.toUpperCase()) || n.classList.contains('secno') ? out.push({ k: n.outerHTML, h: n.outerHTML }) : rec(n);
+  } };
+  rec(el); return out;
+};
+function lcs(ka, kb) {
+  const n = ka.length, m = kb.length, L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = ka[i] === kb[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const ops = []; let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (ka[i] === kb[j]) ops.push({ t: '=', i: i++, j: j++ });
+    else if (L[i + 1][j] >= L[i][j + 1]) ops.push({ t: '-', i: i++ });
+    else ops.push({ t: '+', j: j++ });
+  }
+  while (i < n) ops.push({ t: '-', i: i++ });
+  while (j < m) ops.push({ t: '+', j: j++ });
+  return ops;
+}
+const words = el => new Set(el.textContent.toLowerCase().match(/\w+/g) || []);
+const similar = (x, y) => { const a = words(x), b = words(y); let k = 0; a.forEach(w => b.has(w) && k++); return k / Math.max(a.size, b.size, 1); };
+function modified(x, y) {
+  const a = tokens(x), b = tokens(y), e = y.cloneNode(false);
+  e.innerHTML = lcs(a.map(t => t.k), b.map(t => t.k)).map(o => o.t === '=' ? b[o.j].h : o.t === '-' ? `<del>${a[o.i].h}</del>` : `<ins>${b[o.j].h}</ins>`).join('');
+  if (e.querySelector('ins, del')) e.classList.add('tr-mod');
+  return [e];
+}
+const whole = (x, cls) => { const e = x.cloneNode(true); e.classList.add(cls); return e; };
+function render() {
+  const A = blocks(V[selA.value].html), B = blocks(V[selB.value].html), key = e => e.outerHTML.replace(/\s+/g, ' ');
+  const out = []; let dels = [], adds = [];
+  const flush = () => {
+    const used = new Set(), pair = new Map();
+    adds.forEach(y => {
+      let best = -1, score = TEXT.has(y.tagName) ? 0.3 : 0.5;
+      dels.forEach((x, k) => { if (!used.has(k) && x.tagName === y.tagName) { const q = similar(x, y); if (q > score) { score = q; best = k; } } });
+      if (best >= 0) { used.add(best); pair.set(y, dels[best]); }
+    });
+    dels.forEach((x, k) => used.has(k) || out.push(whole(x, 'tr-del-block')));
+    adds.forEach(y => { const x = pair.get(y);
+      if (!x) out.push(whole(y, 'tr-ins-block'));
+      else if (TEXT.has(y.tagName)) out.push(...modified(x, y));
+      else out.push(whole(x, 'tr-del-block'), whole(y, 'tr-ins-block'));
+    });
+    dels = []; adds = [];
+  };
+  for (const o of lcs(A.map(key), B.map(key))) {
+    if (o.t === '=') { flush(); out.push(B[o.j].cloneNode(true)); }
+    else o.t === '-' ? dels.push(A[o.i]) : adds.push(B[o.j]);
+  }
+  flush();
+  view.replaceChildren(...out);
+  const n = sel => [...view.querySelectorAll(sel)].reduce((s, e) => s + (e.textContent.match(/\S+/g) || []).length, 0);
+  document.getElementById('tr-stat').textContent = `${n('ins, .tr-ins-block')} words added, ${n('del, .tr-del-block')} words deleted`;
+}
+trackBtn.addEventListener('click', () => {
+  const on = bar.hidden;
+  bar.hidden = view.hidden = !on; article.hidden = on; trackBtn.classList.toggle('on', on);
+  closePop(); addBtn.hidden = true;
+  if (on) render();
+});
+selA.addEventListener('change', render); selB.addEventListener('change', render);
+</script>
+</body>
+</html>
