@@ -1,0 +1,12 @@
+{
+  "purpose": "Explain the short-window approximation and its accuracy limits before the vRTHS stability study.",
+  "first_draft": [
+    "A short-window linear approximation keeps the analysis of nonlinear and time-varying structural degradation tractable for online evaluation. Although the approximation may be inaccurate during brief intervals of rapid property change, it is typically accurate before and after those intervals and when degradation evolves slowly."
+  ],
+  "review": [
+    "The preceding paragraph defines stiffness loss through the degradation factor and uses a simplified model to formulate the stability boundary. This paragraph must explain why the short-window approximation supports online analysis and retain its accuracy qualifications. The next paragraph reduces the degradation factor in vRTHS to evaluate stability indicators. The first draft preserved those ideas but buried the nonlinear and time-varying cause. The final leads with that cause and names stability analysis to connect the neighboring paragraphs. It retains possible inaccuracy during brief rapid-change intervals and typical accuracy before and after those intervals and during slow degradation. Final sentence comma counts: 1, 1."
+  ],
+  "final": [
+    "Because structural degradation is nonlinear and time-varying, a short-window linear approximation keeps the stability analysis tractable for online evaluation. It may be inaccurate during brief intervals of rapid property change, but it is typically accurate before and after these intervals and when degradation evolves slowly."
+  ]
+}

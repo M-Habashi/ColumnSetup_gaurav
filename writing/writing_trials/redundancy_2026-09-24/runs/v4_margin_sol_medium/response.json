@@ -1,0 +1,21 @@
+{
+  "purpose": "The preceding paragraphs define the outer controller loop and feedback paths. These blocks connect specimen degradation to the loop margin, explain how that margin is evaluated and capped, and prepare Section 2.2 to estimate the changing loop response from measured signals.",
+  "first_draft": [
+    "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2]. The NCF OSI monitors this loop's stability margin from $u(t)$ to $y(t)$. For the plant $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+    "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies robustness to perturbations. Gomaa et al. [2] treated the outer controller and plant separately in evaluating the margin. We instead assign the complete loop transfer function to the plant $P=L$ with unit feedback $K=1$. This allows evaluation directly from the loop response. The NCF margin is",
+    "The function $\\delta$ is the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. The minimum across frequencies determines the margin in {eq:bncf}. A small distance indicates proximity to instability. To limit the contribution of larger distances, all estimator branches use the capped distance",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap reduces those distances while retaining the smaller distances. The reported indicator cannot exceed $1/\\sqrt{2}$."
+  ],
+  "review": [
+    "Kept the physical cause and loop endpoints. Changed 'monitors' to 'estimates' because the OSI is obtained during the experiment; retained the possibility that stiffness loss drives the loop toward instability. Final prose comma counts: 0, 0, 1.",
+    "Kept both Laplace-transform definitions and the distinction between the earlier separate $C$/$H$ formulation and $P=L$, $K=1$ here. Specified the outer controller loop as the object whose robustness is measured and linked the formulation to the loop response. Final prose comma counts: 0, 0, 0, 0, 0, 0.",
+    "Kept the frequencywise chordal distance, its infimum, and the reason for the cap. Replaced the vague 'minimum' with 'smallest distance over all frequencies' and made the capped quantity specific to estimator branches. Final prose comma counts: 1, 1, 1.",
+    "Checked the threshold against the supplied identity: it is exceeded only when $\\mathrm{Re}\\,L>0$. Replaced vague 'reduces' with the exact effect of the cap, while keeping the smaller distances and upper bound. Final prose comma counts: 1, 1, 0."
+  ],
+  "final": [
+    "As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2]. The NCF OSI therefore estimates the stability margin of this loop from $u(t)$ to $y(t)$. For the plant $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+    "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the outer controller loop's robustness to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ under unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response. The NCF margin for this formulation is",
+    "At each frequency, $\\delta$ is the chordal distance between $L(j\\omega)$ and the critical point $-1$. The smallest distance over all frequencies determines the margin in {eq:bncf}, so small values indicate proximity to instability. To limit contributions from larger distances in the reported indicator, each estimator branch uses the capped distance",
+    "Because $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$, $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. At those frequencies, $\\phi$ replaces the larger distance with $1/\\sqrt{2}$ and leaves smaller distances unchanged. The reported indicator is therefore bounded above by $1/\\sqrt{2}$."
+  ]
+}

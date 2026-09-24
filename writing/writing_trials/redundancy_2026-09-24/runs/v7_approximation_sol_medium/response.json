@@ -1,0 +1,12 @@
+{
+  "purpose": "Bridge the stiffness-degradation model to online stability analysis by stating when the short-window linear approximation is useful and where its accuracy is limited.",
+  "first_draft": [
+    "To represent nonlinear and time-varying structural degradation in a tractable analysis, we use a short-window linear approximation suitable for online evaluation. Although the approximation may be inaccurate while properties change rapidly, it is typically accurate before and after these brief events and when degradation evolves slowly."
+  ],
+  "review": [
+    "The preceding paragraph defines the degradation factor and states why the simplified stiffness model is needed for the stability boundary. This paragraph must introduce the short-window linear approximation and its accuracy limits; the following paragraph then applies the model in a vRTHS with progressively reduced $\\alpha$. The first draft made the brief duration of rapid changes less explicit and crowded the accuracy qualifications into one sentence. The final separates the limitation from the conditions where the approximation is typically accurate. Sentence 1 adds the approximation and its purpose; deleting it would leave the method undefined. Sentence 2 adds the rapid-change limitation; deleting it would lose a required qualification. Sentence 3 adds the before-and-after and slow-degradation accuracy conditions; deleting it would lose the scope of the claim. No sentence repeats the preceding stiffness-model rationale. Final prose comma counts: 1, 0, 0."
+  ],
+  "final": [
+    "Structural degradation is nonlinear and time varying, so a short-window linear approximation keeps the stability analysis tractable for online evaluation. The approximation may be inaccurate during brief intervals of rapid property change. It is typically accurate before and after such intervals and while degradation evolves slowly."
+  ]
+}

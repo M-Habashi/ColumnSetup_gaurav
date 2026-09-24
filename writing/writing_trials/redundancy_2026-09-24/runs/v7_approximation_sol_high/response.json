@@ -1,0 +1,12 @@
+{
+  "purpose": "The preceding paragraph defines the stiffness-degradation model and its damping assumption; this paragraph introduces the short-window linear approximation and its accuracy limits before the vRTHS stability study.",
+  "first_draft": [
+    "To analyze nonlinear and time-varying structural degradation online, the stability analysis uses a short-window linear approximation. This approximation keeps the analysis tractable, but it can be inaccurate during brief intervals of rapid property change. It is typically accurate before and after these events and when degradation evolves slowly."
+  ],
+  "review": [
+    "The preceding paragraph already explains the stiffness model and damping assumption, so neither needs repeating. The next paragraph starts the vRTHS stability analysis. The first draft separates the approximation from its tractability purpose and repeats 'analysis'; I combined those ideas. The final first sentence introduces the approximation, its reason, and online suitability. The second retains both the rapid-change limitation and the qualified typical accuracy before and after such events and during slow degradation. Deletion pass: removing either sentence would lose new information absent from the surrounding text. Final prose comma counts: 1 and 0. No unsupported mechanism or Paper 2 scaling was added."
+  ],
+  "final": [
+    "Because structural degradation is nonlinear and time-varying, the analysis uses a short-window linear approximation to remain tractable and suitable for online evaluation. The approximation may be inaccurate during brief intervals of rapid property change but is typically accurate before and after such events and while degradation evolves slowly."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "purpose": "The preceding paragraph defines stiffness degradation and qualifies the damping assumption. This paragraph must explain why a short-window linear approximation is used and when it is typically accurate. The next paragraph applies the framework to stability indicators as degradation increases. Sequence: analytical purpose, rapid-change limitation, then typical accuracy outside those intervals.",
+  "first_draft": [
+    "Structural degradation is nonlinear and time-varying. A short-window linear approximation keeps the analysis tractable and suitable for online evaluation. The approximation may be inaccurate during brief intervals of rapid property change. It is typically accurate before and after these events and while degradation evolves slowly."
+  ],
+  "review": [
+    "Combined the first two draft sentences to connect the approximation directly to the nonlinear and time-varying degradation being analyzed. Final sentence 1 retains tractability and suitability for online evaluation. Sentence 2 preserves the qualified limitation: the approximation may be inaccurate during brief intervals of rapid property change. Sentence 3 retains typical accuracy both before and after those events and during slowly evolving degradation. Replaced 'while degradation evolves slowly' with the original 'during periods where degradation evolves slowly' to retain the explicit distinction between intervals. The opening does not repeat the preceding stiffness and damping explanation. The ending supplies the accuracy qualification before the next paragraph introduces the stability study. 'The approximation' and 'It' have clear referents. No new causal claim or Paper 2 terminology was introduced. Final prose comma counts are 0, 0, and 0. No unresolved defect was identified."
+  ],
+  "final": [
+    "A short-window linear approximation is used to keep the analysis of nonlinear and time-varying structural degradation tractable and suitable for online evaluation. The approximation may be inaccurate during brief intervals of rapid property change. It is typically accurate before and after these events and during periods where degradation evolves slowly."
+  ]
+}

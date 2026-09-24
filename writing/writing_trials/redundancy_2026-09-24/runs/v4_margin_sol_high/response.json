@@ -1,0 +1,21 @@
+{
+  "purpose": "The preceding text defines the Figure 1 signals and feedback paths. This passage connects stiffness change to the outer-loop margin, defines that margin from the complete loop, and explains the distance cap before Section 2.2 turns to estimation from measured signals.",
+  "first_draft": [
+    "As specimen stiffness decreases during degradation, the dynamics of the outer controller loop change [2]. The NCF OSI therefore evaluates the loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, its open-loop and closed-loop transfer functions are",
+    "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] describes robustness to perturbations. Gomaa et al. [2] treated the outer controller and plant separately, whereas this formulation sets $P=L$ and $K=1$ to evaluate the margin from the loop response. The margin is",
+    "The distance $\\delta$ measures how close $L(j\\omega)$ is to $-1$ at each frequency, and its minimum gives the NCF margin. A smaller value indicates proximity to instability. All estimator branches use the capped distance to restrict contributions from large distances:",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ can exceed $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. Capping these values retains smaller distances while bounding the reported indicator at $1/\\sqrt{2}$."
+  ],
+  "review": [
+    "Named $H(s,k)$ as the changed response, tied it to Figure 1, and retained the qualified claim that margin can decrease. Kept the $u(t)$-to-$y(t)$ loop and $H=Y/V$ definition. Final prose comma counts: 1, 0, 0, 1.",
+    "Kept the Laplace definitions, robustness to perturbations, Gomaa et al.'s separate-block formulation, $P=L$, $K=1$, and the direct loop-response rationale. Split the crowded comparison into explicit sentences. Final prose comma counts: 0, 0, 0, 1, 0.",
+    "Restored the precise term chordal distance and the infimum in {eq:bncf}. Kept the link between a small distance and instability and stated why every branch uses the cap. Final prose comma counts: 1, 0, 0, 1.",
+    "Retained the identity, the condition $\\mathrm{Re}\\,L>0$, preservation of smaller distances, and the $1/\\sqrt{2}$ bound. Separated the cap's effect from its bound. Final prose comma counts: 0, 0, 0."
+  ],
+  "final": [
+    "As the specimen degrades, its stiffness $k$ decreases and changes $H(s,k)$ in Figure 1. This change can reduce the stability margin of the outer controller loop [2]. The NCF OSI monitors the margin of this loop between $u(t)$ and $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+    "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the loop's robustness to perturbations. Gomaa et al. [2] evaluated it with the outer controller and plant as separate blocks. To evaluate the margin directly from the loop response, we assign the complete open-loop transfer function to the plant ($P=L$) and use unit feedback ($K=1$). The resulting NCF margin is",
+    "At each frequency, $\\delta$ is the chordal distance between $L(j\\omega,\\lambda,k)$ and the critical point $-1$. The infimum across frequencies gives the margin in {eq:bncf}. A small distance indicates that the loop is close to instability. To limit contributions from larger distances, every estimator branch uses the capped distance",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap limits contributions from those frequencies while preserving smaller distances that indicate proximity to $-1$. The reported indicator is therefore bounded by $1/\\sqrt{2}$."
+  ]
+}

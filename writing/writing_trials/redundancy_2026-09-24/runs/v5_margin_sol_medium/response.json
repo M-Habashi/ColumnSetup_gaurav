@@ -1,0 +1,22 @@
+{
+  "purpose": "The preceding paragraphs define the loop, its signals, and the degradation mechanism. This span must define the loop transfer functions, explain the NCF margin formulation and its capped distance, and prepare the reader for the measured-signal estimator in Section 2.2. Sentence sequence: transfer-function definitions; NCF assignment; distance interpretation; cap rationale.",
+  "first_draft": [
+    "Specimen degradation changes the dynamics of the outer controller loop. With $H(s,k)=Y(s)/V(s)$, its open-loop and closed-loop transfer functions are",
+    "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies robustness to perturbations. Gomaa et al. [2] treated the outer controller and plant separately. Here the complete loop is assigned to $P=L$ with unit feedback $K=1$, allowing the margin to be evaluated directly from the loop response. The NCF margin is",
+    "The function $\\delta$ measures the chordal distance from $L(j\\omega)$ to $-1$. The minimum distance over frequency gives the margin, and small values indicate proximity to instability. Each estimator branch uses the following cap to limit larger distances:",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap limits these larger distances but preserves smaller distances near the critical point. The reported indicator is thus bounded by $1/\\sqrt{2}$."
+  ],
+  "review": [
+    "The first draft repeated the degradation effect already stated before Section 2.1 and did not explicitly identify the plant transfer function. Replaced it with the definition needed to read the two locked equations. Final prose comma counts by sentence: 1, 0.",
+    "Kept the transform definitions, robustness meaning, distinction from Gomaa et al. [2], and the $P=L$, $K=1$ assignment. Recast the assignment as a formulation of the complete loop and linked it to direct evaluation. Final prose comma counts: 0, 0, 0, 0, 0.",
+    "Named the critical point and the infimum in {eq:bncf} more precisely than the first draft. Connected the cap to the estimator branches without repeating the section motivation. Final prose comma counts: 1, 1, 0.",
+    "Retained the identity, the condition $\\mathrm{Re}\\,L>0$, preservation of smaller distances, and the bound. Replaced the vague reference to 'larger distances' with an explicit link to the frequencies identified by the identity. Final prose comma counts: 0, 0, 0."
+  ],
+  "final": [
+    "For the outer controller loop in Figure 1, the plant transfer function is $H(s,k)=Y(s)/V(s)$. Its open-loop and closed-loop transfer functions are",
+    "$U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the loop's robustness to perturbations. Gomaa et al. [2] evaluated it with the outer controller and plant as separate factors. Here the complete loop transfer function serves as the plant $P=L$ under unit feedback $K=1$. The resulting NCF margin is evaluated directly from the loop response as",
+    "At each frequency, $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$. The infimum in {eq:bncf} selects the smallest distance, so a smaller margin signals a closer approach to instability. Each estimator branch uses the capped distance to limit contributions from frequencies farther from the critical point:",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap limits contributions from those frequencies and preserves smaller distances that indicate proximity to the critical point. The reported indicator is therefore bounded by $1/\\sqrt{2}$."
+  ]
+}
+

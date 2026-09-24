@@ -1,0 +1,939 @@
+[
+  {
+    "run": {
+      "id": "v4_spectra_astra_medium",
+      "guide": "v4",
+      "case": "spectra",
+      "model": "astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "packet": "runs/v4_spectra_astra_medium/packet.json",
+      "response": "runs/v4_spectra_astra_medium/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "The margin in {eq:bncf} requires the loop response at each frequency. This response changes as the specimen degrades and must therefore be estimated during the experiment. The estimator analyses short windows of the reference $u$ and measured actuator displacement $y$ and updates every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, giving 75% overlap between consecutive windows. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and gives a frequency-bin spacing of 2 Hz. Here $n$ indexes the update and $r=0,\\dots,N-1$ indexes the samples within the window. The Hann-windowed discrete Fourier transforms are",
+        "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ defines the Hann window and $\\omega_m=2\\pi mf_s/N$. From these transforms, the instantaneous auto- and cross-spectra are",
+        "The spectra are left unnormalized because normalization cancels in every ratio used below. The argument $\\omega_m$ is omitted for brevity. The spectra from a single window are too noisy to use directly. Each spectrum is therefore smoothed recursively using modified-periodogram averaging [3] with exponential weighting [4]. The first complete window initializes the recursion:",
+        "The indicator monitors the 2–100 Hz band. Excluding bins affected by line noise gives the frequency set",
+        "This set contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "The margin in {eq:bncf} requires the loop response at each frequency. This response changes as the specimen degrades and must therefore be estimated during the experiment. The estimator analyses short windows of the reference $u$ and measured actuator displacement $y$ and updates every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, giving 75% overlap between consecutive windows. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and gives a frequency-bin spacing of 2 Hz. Here $n$ indexes the update and $r=0,\\dots,N-1$ indexes the samples within the window. The Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ defines the Hann window and $\\omega_m=2\\pi mf_s/N$. From these transforms, the instantaneous auto- and cross-spectra are"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The spectra are left unnormalized because normalization cancels in every ratio used below. The argument $\\omega_m$ is omitted for brevity. The spectra from a single window are too noisy to use directly. Each spectrum is therefore smoothed recursively using modified-periodogram averaging [3] with exponential weighting [4]. The first complete window initializes the recursion:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The indicator monitors the 2–100 Hz band. Excluding bins affected by line noise gives the frequency set"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "This set contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 93,
+        "comma_counts": [
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 17,
+        "comma_counts": [
+          0,
+          1
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 53,
+        "comma_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 17,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 29,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "2d6b49685e96b363bbdc313381fc52a39c987c468fcdaa69211b3b9ce569d3d0"
+  },
+  {
+    "run": {
+      "id": "v4_spectra_astra_high",
+      "guide": "v4",
+      "case": "spectra",
+      "model": "astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "high",
+      "packet": "runs/v4_spectra_astra_high/packet.json",
+      "response": "runs/v4_spectra_astra_high/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "Specimen degradation changes the loop response required to evaluate the margin in {eq:bncf}. The estimator follows these changes by analysing short windows of the reference $u$ and measured displacement $y$ during the experiment. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a frequency-bin spacing of 2 Hz. For update $n$, the samples are indexed by $r=0,\\dots,N-1$, and the Hann-windowed discrete Fourier transforms are",
+        "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. The transforms give the instantaneous auto- and cross-spectra",
+        "The frequency argument $\\omega_m$ is omitted for brevity. These spectra remain unnormalized because normalization cancels in every ratio used below. A single-window estimate is too noisy for direct use. Each spectrum is therefore smoothed recursively by averaging modified periodograms [3] with exponential weighting [4]. The first complete window initializes the recursion:",
+        "The indicator monitors the 2–100 Hz band. Excluding bins affected by line noise gives the analysis set:",
+        "This set contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "Specimen degradation changes the loop response required to evaluate the margin in {eq:bncf}. The estimator follows these changes by analysing short windows of the reference $u$ and measured displacement $y$ during the experiment. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a frequency-bin spacing of 2 Hz. For update $n$, the samples are indexed by $r=0,\\dots,N-1$, and the Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. The transforms give the instantaneous auto- and cross-spectra"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The frequency argument $\\omega_m$ is omitted for brevity. These spectra remain unnormalized because normalization cancels in every ratio used below. A single-window estimate is too noisy for direct use. Each spectrum is therefore smoothed recursively by averaging modified periodograms [3] with exponential weighting [4]. The first complete window initializes the recursion:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The indicator monitors the 2–100 Hz band. Excluding bins affected by line noise gives the analysis set:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "This set contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 81,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          1,
+          2
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 23,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 51,
+        "comma_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 17,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 29,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "8e1d85e11531cc85494233204f7d828f8062f7fbb1b156a3412b9377fa650269"
+  },
+  {
+    "run": {
+      "id": "v4_spectra_sol_medium",
+      "guide": "v4",
+      "case": "spectra",
+      "model": "sol",
+      "requested_model": "gpt-6-sol",
+      "effort": "medium",
+      "packet": "runs/v4_spectra_sol_medium/packet.json",
+      "response": "runs/v4_spectra_sol_medium/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "The margin in {eq:bncf} depends on the loop response at each frequency, which changes as the specimen degrades. The estimator therefore uses measured $u$ and $y$ during the experiment. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a bin spacing of 2 Hz. Let $n$ index updates and $r=0,\\dots,N-1$ index the samples in each window. The Hann-windowed discrete Fourier transforms are",
+        "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. These transforms give the instantaneous auto- and cross-spectra",
+        "The spectra are unnormalized because the normalization cancels in every ratio used below. The argument $\\omega_m$ is omitted for brevity. To reduce variation between windows, each spectrum is smoothed recursively by exponentially weighted averaging of modified periodograms [3,4]. Each spectrum is initialized by its value from the first complete window:",
+        "The indicator uses frequencies from 2 to 100 Hz. Bins affected by line noise are excluded from this analysis:",
+        "This selection leaves 47 bins. Hereafter $\\omega\\in\\Omega$ denotes an included frequency. At update $n$, the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "The margin in {eq:bncf} depends on the loop response at each frequency, which changes as the specimen degrades. The estimator therefore uses measured $u$ and $y$ during the experiment. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a bin spacing of 2 Hz. Let $n$ index updates and $r=0,\\dots,N-1$ index the samples in each window. The Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. These transforms give the instantaneous auto- and cross-spectra"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The spectra are unnormalized because the normalization cancels in every ratio used below. The argument $\\omega_m$ is omitted for brevity. To reduce variation between windows, each spectrum is smoothed recursively by exponentially weighted averaging of modified periodograms [3,4]. Each spectrum is initialized by its value from the first complete window:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The indicator uses frequencies from 2 to 100 Hz. Bins affected by line noise are excluded from this analysis:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "This selection leaves 47 bins. Hereafter $\\omega\\in\\Omega$ denotes an included frequency. At update $n$, the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 79,
+        "comma_counts": [
+          1,
+          0,
+          1,
+          1,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 23,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 50,
+        "comma_counts": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 19,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 32,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "ed5e63de5ad03c779662b7218daeaefd3582f9ef8fa821a14855a9df2bba3af2"
+  },
+  {
+    "run": {
+      "id": "v4_spectra_sol_high",
+      "guide": "v4",
+      "case": "spectra",
+      "model": "sol",
+      "requested_model": "gpt-6-sol",
+      "effort": "high",
+      "packet": "runs/v4_spectra_sol_high/packet.json",
+      "response": "runs/v4_spectra_sol_high/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "The margin in {eq:bncf} depends on the loop response at each frequency. As the specimen degrades, that response is estimated from $u$ and $y$ during the experiment. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples with a 2 Hz bin spacing. For update $n$, let $r=0,\\dots,N-1$ index the samples in its window. The Hann-windowed discrete Fourier transforms are",
+        "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window, and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. The instantaneous auto- and cross-spectra are",
+        "The spectra are unnormalized because the scale factor cancels in every ratio below. The argument $\\omega_m$ is omitted for brevity. A single-window spectrum is too noisy for direct use, so each spectrum is smoothed recursively. This smoothing applies exponential weighting [4] to the averaging of modified periodograms [3] and starts with the first complete window:",
+        "The analysis is limited to the 2–100 Hz band monitored by the indicator and excludes bins affected by line noise:",
+        "The set $\\Omega$ contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "The margin in {eq:bncf} depends on the loop response at each frequency. As the specimen degrades, that response is estimated from $u$ and $y$ during the experiment. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples with a 2 Hz bin spacing. For update $n$, let $r=0,\\dots,N-1$ index the samples in its window. The Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window, and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. The instantaneous auto- and cross-spectra are"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The spectra are unnormalized because the scale factor cancels in every ratio below. The argument $\\omega_m$ is omitted for brevity. A single-window spectrum is too noisy for direct use, so each spectrum is smoothed recursively. This smoothing applies exponential weighting [4] to the averaging of modified periodograms [3] and starts with the first complete window:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The analysis is limited to the 2–100 Hz band monitored by the indicator and excludes bins affected by line noise:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "The set $\\Omega$ contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 75,
+        "comma_counts": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 21,
+        "comma_counts": [
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 55,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 20,
+        "comma_counts": [
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 30,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "feb926e90e22568f626f92f86aac4851679cf2ddc5a8f67f409c4356cf00ed33"
+  },
+  {
+    "run": {
+      "id": "v7_spectra_astra_medium",
+      "guide": "v7",
+      "case": "spectra",
+      "model": "astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "medium",
+      "packet": "runs/v7_spectra_astra_medium/packet.json",
+      "response": "runs/v7_spectra_astra_medium/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "The estimator analyses short windows of $u$ and $y$ and updates its estimate every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window holds $N=f_sT_w=1024$ samples and gives a bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ the samples in the window, the Hann-windowed discrete Fourier transforms are",
+        "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ and $\\omega_m=2\\pi mf_s/N$. The instantaneous auto- and cross-spectra are",
+        "The spectra are left unnormalized because normalization cancels in every ratio used below. The frequency argument $\\omega_m$ is omitted for brevity. A single window is too noisy to use directly. Each spectrum is therefore smoothed recursively using the averaging of modified periodograms [3] with exponential weighting [4]. The first complete window initializes the smoothed spectra:",
+        "The indicator monitors the 2–100 Hz band with bins affected by line noise excluded:",
+        "The retained set contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "The estimator analyses short windows of $u$ and $y$ and updates its estimate every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window holds $N=f_sT_w=1024$ samples and gives a bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ the samples in the window, the Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ and $\\omega_m=2\\pi mf_s/N$. The instantaneous auto- and cross-spectra are"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The spectra are left unnormalized because normalization cancels in every ratio used below. The frequency argument $\\omega_m$ is omitted for brevity. A single window is too noisy to use directly. Each spectrum is therefore smoothed recursively using the averaging of modified periodograms [3] with exponential weighting [4]. The first complete window initializes the smoothed spectra:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The indicator monitors the 2–100 Hz band with bins affected by line noise excluded:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "The retained set contains 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 63,
+        "comma_counts": [
+          0,
+          1,
+          1,
+          1
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 10,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 55,
+        "comma_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 14,
+        "comma_counts": [
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 30,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "09e80431d5055215779e89196872196a352099b3241445227f3ac1ef958f5d3f"
+  },
+  {
+    "run": {
+      "id": "v7_spectra_astra_high",
+      "guide": "v7",
+      "case": "spectra",
+      "model": "astra",
+      "requested_model": "gpt-6-astra",
+      "effort": "high",
+      "packet": "runs/v7_spectra_astra_high/packet.json",
+      "response": "runs/v7_spectra_astra_high/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of $u$ and $y$. Consecutive windows therefore overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and the frequency-bin spacing is 2 Hz. With $n$ indexing updates and $r=0,\\dots,N-1$ indexing samples within each window, the Hann-windowed discrete Fourier transforms are",
+        "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ and $\\omega_m=2\\pi mf_s/N$. The instantaneous auto- and cross-spectra are",
+        "The frequency argument $\\omega_m$ is omitted for brevity. The spectra remain unnormalized because the normalization cancels in every ratio used below. To reduce single-window noise, each spectrum is smoothed recursively using exponential weighting [4] of modified periodograms [3]. The first complete window initializes the recursion:",
+        "The indicator monitors the 2–100 Hz band, excluding bins affected by line noise:",
+        "The resulting set $\\Omega$ contains 47 bins. Hereafter, $\\omega\\in\\Omega$ and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of $u$ and $y$. Consecutive windows therefore overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and the frequency-bin spacing is 2 Hz. With $n$ indexing updates and $r=0,\\dots,N-1$ indexing samples within each window, the Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ and $\\omega_m=2\\pi mf_s/N$. The instantaneous auto- and cross-spectra are"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The frequency argument $\\omega_m$ is omitted for brevity. The spectra remain unnormalized because the normalization cancels in every ratio used below. To reduce single-window noise, each spectrum is smoothed recursively using exponential weighting [4] of modified periodograms [3]. The first complete window initializes the recursion:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The indicator monitors the 2–100 Hz band, excluding bins affected by line noise:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "The resulting set $\\Omega$ contains 47 bins. Hereafter, $\\omega\\in\\Omega$ and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 51,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 10,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 45,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 13,
+        "comma_counts": [
+          1
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 31,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "d9751f2a68af7ef0ef5b1bf7c4bd2948a62174ff333c01672155c6c555d20c51"
+  },
+  {
+    "run": {
+      "id": "v7_spectra_sol_medium",
+      "guide": "v7",
+      "case": "spectra",
+      "model": "sol",
+      "requested_model": "gpt-6-sol",
+      "effort": "medium",
+      "packet": "runs/v7_spectra_sol_medium/packet.json",
+      "response": "runs/v7_spectra_sol_medium/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "Specimen degradation changes the loop response needed to evaluate the margin in {eq:bncf}. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of $u$ and $y$. Consecutive windows therefore overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a 2 Hz bin spacing. With $n$ denoting the update and $r=0,\\dots,N-1$ indexing samples within its window, the Hann-windowed discrete Fourier transforms are",
+        "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window. The angular frequency of bin $m$ is $\\omega_m=2\\pi mf_s/N$. The transforms give the instantaneous auto- and cross-spectra",
+        "The spectra are unnormalized because their common normalization cancels in the ratios below. The frequency argument $\\omega_m$ is omitted where clear. Individual-window spectra are noisy, so each is smoothed recursively using exponential weighting [4] of modified periodograms [3]. The averages are initialized with the first complete window:",
+        "The indicator uses frequencies from 2 to 100 Hz and excludes bins affected by line noise:",
+        "This selection leaves 47 bins. Hereafter $\\omega\\in\\Omega$, and subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "Specimen degradation changes the loop response needed to evaluate the margin in {eq:bncf}. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of $u$ and $y$. Consecutive windows therefore overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a 2 Hz bin spacing. With $n$ denoting the update and $r=0,\\dots,N-1$ indexing samples within its window, the Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window. The angular frequency of bin $m$ is $\\omega_m=2\\pi mf_s/N$. The transforms give the instantaneous auto- and cross-spectra"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The spectra are unnormalized because their common normalization cancels in the ratios below. The frequency argument $\\omega_m$ is omitted where clear. Individual-window spectra are noisy, so each is smoothed recursively using exponential weighting [4] of modified periodograms [3]. The averages are initialized with the first complete window:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The indicator uses frequencies from 2 to 100 Hz and excludes bins affected by line noise:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "This selection leaves 47 bins. Hereafter $\\omega\\in\\Omega$, and subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 65,
+        "comma_counts": [
+          0,
+          0,
+          0,
+          1,
+          1
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 22,
+        "comma_counts": [
+          0,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 47,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 16,
+        "comma_counts": [
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 28,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "364e3e49bfe489b9dfa0604ad3064492c78788ffe3e87e439bf5505a86a955bc"
+  },
+  {
+    "run": {
+      "id": "v7_spectra_sol_high",
+      "guide": "v7",
+      "case": "spectra",
+      "model": "sol",
+      "requested_model": "gpt-6-sol",
+      "effort": "high",
+      "packet": "runs/v7_spectra_sol_high/packet.json",
+      "response": "runs/v7_spectra_sol_high/response.json"
+    },
+    "candidate": {
+      "prose": [
+        "As specimen degradation changes the loop response, the estimator analyzes short windows of the reference $u$ and measured actuator displacement $y$. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the latest $T_w=0.5\\,\\mathrm{s}$ of data, so successive windows overlap by 75%. Sampling at $f_s=2048\\,\\mathrm{Hz}$ gives $N=f_sT_w=1024$ samples per window and a frequency-bin spacing of 2 Hz. For update $n$ and sample index $r=0,\\dots,N-1$, the Hann-windowed discrete Fourier transforms are",
+        "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. The instantaneous auto- and cross-spectra are",
+        "The spectra are unnormalized because their common scale cancels in the ratios below. Their frequency argument $\\omega_m$ is omitted for brevity. Each spectrum is smoothed recursively to reduce single-window variability, following the averaging of modified periodograms [3] with exponential weighting [4]. The first complete window initializes each average:",
+        "The analysis retains the indicator's 2–100 Hz band and excludes bins affected by line noise:",
+        "The resulting set contains 47 bins. Hereafter, $\\omega\\in\\Omega$ and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "As specimen degradation changes the loop response, the estimator analyzes short windows of the reference $u$ and measured actuator displacement $y$. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the latest $T_w=0.5\\,\\mathrm{s}$ of data, so successive windows overlap by 75%. Sampling at $f_s=2048\\,\\mathrm{Hz}$ gives $N=f_sT_w=1024$ samples per window and a frequency-bin spacing of 2 Hz. For update $n$ and sample index $r=0,\\dots,N-1$, the Hann-windowed discrete Fourier transforms are"
+        },
+        {
+          "type": "equation",
+          "id": "dft",
+          "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+        },
+        {
+          "type": "P",
+          "text": "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of bin $m$. The instantaneous auto- and cross-spectra are"
+        },
+        {
+          "type": "equation",
+          "id": "spec",
+          "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+        },
+        {
+          "type": "P",
+          "text": "The spectra are unnormalized because their common scale cancels in the ratios below. Their frequency argument $\\omega_m$ is omitted for brevity. Each spectrum is smoothed recursively to reduce single-window variability, following the averaging of modified periodograms [3] with exponential weighting [4]. The first complete window initializes each average:"
+        },
+        {
+          "type": "equation",
+          "id": "ewma",
+          "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+        },
+        {
+          "type": "P",
+          "text": "The analysis retains the indicator's 2–100 Hz band and excludes bins affected by line noise:"
+        },
+        {
+          "type": "equation",
+          "id": "omega",
+          "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+        },
+        {
+          "type": "P",
+          "text": "The resulting set contains 47 bins. Hereafter, $\\omega\\in\\Omega$ and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+        }
+      ]
+    },
+    "metrics": [
+      {
+        "words": 65,
+        "comma_counts": [
+          1,
+          1,
+          0,
+          1
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 21,
+        "comma_counts": [
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 48,
+        "comma_counts": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 15,
+        "comma_counts": [
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      },
+      {
+        "words": 30,
+        "comma_counts": [
+          0,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": false
+      }
+    ],
+    "response_hash": "0b74a443814c4855ce458d1f4a045217059a353ba46899a7c744f4ba0638518b"
+  }
+]

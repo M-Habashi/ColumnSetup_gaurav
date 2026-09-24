@@ -1,0 +1,154 @@
+{
+  "scope": "Paper 2 uses hybrid simulation, experiment, initial, and adaptive factor. C is the outer controller; H includes transfer system and specimen. Do not import Paper 1 controller switching. Engineering facts in the manuscript are the authority for this editing task.",
+  "task": "Improve the prose in Section 2.2. Keep all equations unchanged.",
+  "before": [
+    {
+      "type": "P",
+      "text": "The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism. In this study, we extend the analytical study to experimental implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by the confidence in its evidence. The first is direct identification, $b_{\\mathrm{id}}$, which estimates the closed-loop frequency response of the outer controller loop, from the desired displacement $u(t)$ to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator [6]. The second is output-power inference, $b_{\\mathrm{pow}}$, which can detect amplification of the loop at frequencies that cannot be reliably identified. This branch compares the output power measured during the experiment against the reference recorded before the excitation. The third is the prior identification of the initial state, $b_{0}$, which serves as a fallback when no sufficient information is available. The adaptive controller then utilizes the estimated indicator to scale the controller output by the adaptive factor $\\lambda$ to keep the loop stable with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The evaluation of the framework is discussed in detail in this section."
+    },
+    {
+      "type": "heading",
+      "number": "2.1",
+      "text": "Control loop and stability margin"
+    },
+    {
+      "type": "P",
+      "text": "In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ from the ground acceleration and measured force $f_m(t)$. To compensate for the transfer-system lag and improve tracking, a phase-lead compensator receives $d(t)$ to produce the reference $u(t)$. The outer controller $C(s)$ takes the tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. Its output is scaled by the adaptive factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ sent to the plant $H(s,k)$."
+    },
+    {
+      "type": "P",
+      "text": "The plant comprises the transfer system and the specimen of stiffness $k$. The transfer system includes the inner-loop controller, servo-valve and actuator. The control–structure interaction between the actuator and specimen is also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure and closes the numerical substructure loop, while the measured displacement $y(t)$ provides feedback to the outer controller and closes the outer controller loop."
+    },
+    {
+      "type": "figure",
+      "text": "Figure 1. Hybrid simulation loop with the NCF OSI framework setup.",
+      "description": "Numerical substructure -> d -> phase-lead compensator -> u -> summing junction u-y -> C -> lambda -> v -> H(s,k) -> y. y returns to summing junction; f_m returns from specimen to numerical substructure."
+    },
+    {
+      "type": "P",
+      "text": "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2]. The indicator therefore monitors the stability margin of this loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+    },
+    {
+      "type": "equation",
+      "id": "L",
+      "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+    },
+    {
+      "type": "equation",
+      "id": "T",
+      "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+    },
+    {
+      "type": "P",
+      "text": "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the robustness of the loop to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and the plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response. The NCF margin for this formulation is"
+    },
+    {
+      "type": "equation",
+      "id": "bncf",
+      "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+    },
+    {
+      "type": "equation",
+      "id": "delta",
+      "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+    },
+    {
+      "type": "P",
+      "text": "The function $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. The smallest distance over all frequencies determines the margin in {eq:bncf}. A small $\\delta$ therefore indicates proximity to instability. To limit how much larger distances contribute to the reported indicator, all branches of the estimator use the capped distance"
+    },
+    {
+      "type": "equation",
+      "id": "phi",
+      "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+    },
+    {
+      "type": "P",
+      "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that the distance exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap limits the contribution from these frequencies while preserving smaller distances that indicate proximity to the critical point. It therefore bounds the reported indicator by $1/\\sqrt{2}$."
+    },
+    {
+      "type": "heading",
+      "number": "2.2",
+      "text": "Short-time spectral estimation"
+    }
+  ],
+  "target": [
+    {
+      "type": "P",
+      "text": "The margin in {eq:bncf} requires the loop response at each frequency. Because this response changes as the specimen degrades, it must be obtained from the measured signals while the experiment runs. The estimator analyses short windows of $u$ and $y$ and updates its estimate every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window holds $N=f_sT_w=1024$ samples, which gives a bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ the samples in the window, the Hann-windowed discrete Fourier transforms are"
+    },
+    {
+      "type": "equation",
+      "id": "dft",
+      "latex": "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},"
+    },
+    {
+      "type": "P",
+      "text": "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ and $\\omega_m=2\\pi mf_s/N$. From these transforms, the instantaneous auto- and cross-spectra are"
+    },
+    {
+      "type": "equation",
+      "id": "spec",
+      "latex": "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}"
+    },
+    {
+      "type": "P",
+      "text": "These spectra are left unnormalized because the normalization cancels in every ratio used below, and the argument $\\omega_m$ is omitted for brevity. A single window is too noisy to use directly. Each spectrum is therefore smoothed recursively, following the averaging of modified periodograms [3] with exponential weighting [4], and initialized by the first complete window:"
+    },
+    {
+      "type": "equation",
+      "id": "ewma",
+      "latex": "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}."
+    },
+    {
+      "type": "P",
+      "text": "The analysis is limited to the 2–100 Hz band monitored by the indicator, and the bins affected by line noise are excluded:"
+    },
+    {
+      "type": "equation",
+      "id": "omega",
+      "latex": "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},"
+    },
+    {
+      "type": "P",
+      "text": "which leaves 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+    }
+  ],
+  "after": [
+    {
+      "type": "heading",
+      "number": "2.3",
+      "text": "Direct identification branch"
+    },
+    {
+      "type": "P",
+      "text": "The loop response can be identified directly from the reference $u$ and the measured response $y$. The averaged spectra give the $H_1$ estimate of the closed-loop frequency response [6] and the magnitude-squared coherence"
+    },
+    {
+      "type": "equation",
+      "id": "that",
+      "latex": "\\hat{T}_n(j\\omega)=\\frac{\\bar{p}_{yu,n}(\\omega)}{\\bar{p}_{uu,n}(\\omega)},\\qquad \\gamma_n^{2}(\\omega)=\\frac{|\\bar{p}_{yu,n}(\\omega)|^{2}}{\\bar{p}_{uu,n}(\\omega)\\,\\bar{p}_{yy,n}(\\omega)}."
+    },
+    {
+      "type": "P",
+      "text": "This estimate is unbiased only if the output disturbance is uncorrelated with $u$. In hybrid simulation, this condition is not guaranteed, because $u$ is computed from the measured force through the numerical substructure. High coherence is therefore treated as supporting evidence rather than proof of an unbiased estimate [5]."
+    }
+  ],
+  "required": [
+    "Short windows of u and y with update interval 0.125 s, window 0.5 s, 75% overlap, fs=2048 Hz, N=1024, bin spacing 2 Hz. Define n and r.",
+    "Hann window and omega_m definition. Instantaneous auto/cross spectra; unnormalized because normalization cancels in ratios; omega argument omitted for brevity.",
+    "Noise motivates recursive smoothing, modified-periodogram citation [3], exponential weighting [4], initialization by first full window.",
+    "2-100 Hz band and 58-62 Hz exclusion gives 47 bins. omega in Omega and n denotes (lambda_n,k_n). k_n is unknown and not estimated."
+  ],
+  "established": [
+    "Online estimation as the specimen changes, measured u/y inputs, estimator branches and adaptive purpose have been introduced.",
+    "Prior section has just defined the frequency-dependent loop and margin. The next section derives H1 and coherence."
+  ],
+  "source": "Current builder / manuscript v18, Section 2.2",
+  "prose_slots": [
+    "The margin in {eq:bncf} requires the loop response at each frequency. Because this response changes as the specimen degrades, it must be obtained from the measured signals while the experiment runs. The estimator analyses short windows of $u$ and $y$ and updates its estimate every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window holds $N=f_sT_w=1024$ samples, which gives a bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ the samples in the window, the Hann-windowed discrete Fourier transforms are",
+    "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ and $\\omega_m=2\\pi mf_s/N$. From these transforms, the instantaneous auto- and cross-spectra are",
+    "These spectra are left unnormalized because the normalization cancels in every ratio used below, and the argument $\\omega_m$ is omitted for brevity. A single window is too noisy to use directly. Each spectrum is therefore smoothed recursively, following the averaging of modified periodograms [3] with exponential weighting [4], and initialized by the first complete window:",
+    "The analysis is limited to the 2–100 Hz band monitored by the indicator, and the bins affected by line noise are excluded:",
+    "which leaves 47 bins. Hereafter $\\omega\\in\\Omega$, and the subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+  ]
+}

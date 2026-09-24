@@ -1,0 +1,272 @@
+[
+  {
+    "id": "v4_margin_astra_medium",
+    "task_name": "/root/red_v4_margin_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_margin_astra_medium/response.json"
+  },
+  {
+    "id": "v4_margin_astra_high",
+    "task_name": "/root/red_v4_margin_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_margin_astra_high/response.json"
+  },
+  {
+    "id": "v4_margin_sol_medium",
+    "task_name": "/root/red_v4_margin_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_margin_sol_medium/response.json"
+  },
+  {
+    "id": "v4_margin_sol_high",
+    "task_name": "/root/red_v4_margin_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_margin_sol_high/response.json"
+  },
+  {
+    "id": "v4_spectra_astra_medium",
+    "task_name": "/root/red_v4_spectra_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_spectra_astra_medium/response.json"
+  },
+  {
+    "id": "v4_spectra_astra_high",
+    "task_name": "/root/red_v4_spectra_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_spectra_astra_high/response.json"
+  },
+  {
+    "id": "v4_spectra_sol_medium",
+    "task_name": "/root/red_v4_spectra_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_spectra_sol_medium/response.json"
+  },
+  {
+    "id": "v4_spectra_sol_high",
+    "task_name": "/root/red_v4_spectra_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_spectra_sol_high/response.json"
+  },
+  {
+    "id": "v4_approximation_astra_medium",
+    "task_name": "/root/red_v4_approximation_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_approximation_astra_medium/response.json"
+  },
+  {
+    "id": "v4_approximation_astra_high",
+    "task_name": "/root/red_v4_approximation_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_approximation_astra_high/response.json"
+  },
+  {
+    "id": "v4_approximation_sol_medium",
+    "task_name": "/root/red_v4_approximation_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_approximation_sol_medium/response.json"
+  },
+  {
+    "id": "v4_approximation_sol_high",
+    "task_name": "/root/red_v4_approximation_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v4_approximation_sol_high/response.json"
+  },
+  {
+    "id": "v5_margin_astra_medium",
+    "task_name": "/root/red_v5_margin_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v5_margin_astra_medium/response.json"
+  },
+  {
+    "id": "v5_margin_astra_high",
+    "task_name": "/root/red_v5_margin_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v5_margin_astra_high/response.json"
+  },
+  {
+    "id": "v5_margin_sol_medium",
+    "task_name": "/root/red_v5_margin_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v5_margin_sol_medium/response.json"
+  },
+  {
+    "id": "v5_margin_sol_high",
+    "task_name": "/root/red_v5_margin_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v5_margin_sol_high/response.json"
+  },
+  {
+    "id": "v6_margin_astra_medium",
+    "task_name": "/root/red_v6_margin_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v6_margin_astra_medium/response.json"
+  },
+  {
+    "id": "v6_margin_astra_high",
+    "task_name": "/root/red_v6_margin_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v6_margin_astra_high/response.json"
+  },
+  {
+    "id": "v7_margin_astra_medium",
+    "task_name": "/root/red_v7_margin_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_margin_astra_medium/response.json"
+  },
+  {
+    "id": "v7_margin_astra_high",
+    "task_name": "/root/red_v7_margin_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_margin_astra_high/response.json"
+  },
+  {
+    "id": "v7_margin_sol_medium",
+    "task_name": "/root/red_v7_margin_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_margin_sol_medium/response.json"
+  },
+  {
+    "id": "v7_margin_sol_high",
+    "task_name": "/root/red_v7_margin_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_margin_sol_high/response.json"
+  },
+  {
+    "id": "v7_spectra_astra_medium",
+    "task_name": "/root/red_v7_spectra_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_spectra_astra_medium/response.json"
+  },
+  {
+    "id": "v7_spectra_astra_high",
+    "task_name": "/root/red_v7_spectra_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_spectra_astra_high/response.json"
+  },
+  {
+    "id": "v7_spectra_sol_medium",
+    "task_name": "/root/red_v7_spectra_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_spectra_sol_medium/response.json"
+  },
+  {
+    "id": "v7_spectra_sol_high",
+    "task_name": "/root/red_v7_spectra_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_spectra_sol_high/response.json"
+  },
+  {
+    "id": "v7_approximation_astra_medium",
+    "task_name": "/root/red_v7_approximation_am",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_approximation_astra_medium/response.json"
+  },
+  {
+    "id": "v7_approximation_astra_high",
+    "task_name": "/root/red_v7_approximation_ah",
+    "fork_turns": "none",
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_approximation_astra_high/response.json"
+  },
+  {
+    "id": "v7_approximation_sol_medium",
+    "task_name": "/root/red_v7_approximation_sm",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "medium",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_approximation_sol_medium/response.json"
+  },
+  {
+    "id": "v7_approximation_sol_high",
+    "task_name": "/root/red_v7_approximation_sh",
+    "fork_turns": "none",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "high",
+    "configuration_evidence": "Explicit spawn_agent overrides accepted; no independent serving metadata returned.",
+    "response": "runs/v7_approximation_sol_high/response.json"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "purpose": "The preceding text establishes the loop components, feedback paths and degradation mechanism. This passage must define the transfer functions, distinguish the adopted NCF formulation and explain its distance cap. Section 2.2 then needs the frequency-dependent margin as the basis for estimation. Sequence: transfer functions; formulation and margin; distance interpretation and capped definition; cap properties.",
+  "first_draft": [
+    "With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions of the outer controller loop are",
+    "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. Gomaa et al. [2] evaluated the NCF margin by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the NCF margin [1] to be evaluated directly from the loop response as",
+    "The function $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. The minimum distance determines the margin in {eq:bncf}, so a small margin indicates proximity to instability. All branches of the estimator use the capped distance",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap limits the contribution from these frequencies while preserving smaller distances that indicate proximity to the critical point. It also bounds the reported indicator by $1/\\sqrt{2}$."
+  ],
+  "review": [
+    "Removed the degradation mechanism and monitoring recap because the section-opening paragraph already connects stiffness degradation to outer-loop instability and introduces the indicator estimated from u and y. The unchanged pre-figure paragraphs identify both feedback paths. The remaining sentence defines H and introduces L and T without another motivation statement. Retained the first draft. Final prose comma count: 1.",
+    "Retained the Laplace-transform definitions, the contrast with Gomaa et al. [2], the P=L and K=1 assignment and direct evaluation from the loop response. Removed the general robustness explanation because the section opening already states that the NCF OSI quantifies closed-loop robustness. Citation [1] remains attached to the NCF margin. Retained the first draft. Final sentence comma counts: 0, 0, 0, 0.",
+    "The draft repeated the infimum in {eq:bncf} and shifted the original pointwise interpretation from small delta to small margin. Revised it to state that a small delta indicates proximity to instability, retaining the physical interpretation without translating the infimum again. The last sentence introduces phi and preserves its use by all estimator branches. Final sentence comma counts: 0, 0, 0.",
+    "Retained the identity, threshold and positive-real-part condition. Removed the repeated explanation that smaller distances indicate proximity to the critical point because the preceding block now supplies that interpretation. Combined preservation of smaller distances with the indicator bound. The cap rationale appears here once rather than both before and after phi. No unsupported causal claim was added. Final sentence comma counts: 0, 0."
+  ],
+  "final": [
+    "With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions of the outer controller loop are",
+    "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. Gomaa et al. [2] evaluated the NCF margin by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the NCF margin [1] to be evaluated directly from the loop response as",
+    "The function $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. A small $\\delta$ therefore indicates proximity to instability. All branches of the estimator use the capped distance",
+    "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap bounds the reported indicator by $1/\\sqrt{2}$ while preserving smaller distances."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "version": 20,
+  "displayed_equations_unchanged": 27,
+  "word_equations_unchanged": true,
+  "outside_passage_unchanged": true,
+  "sol_prose_applied_exactly": true,
+  "guide_word_count": 319,
+  "prose_comma_counts_by_sentence": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0
+    ]
+  ],
+  "citations_in_prose": [
+    "[2]",
+    "[1]"
+  ]
+}

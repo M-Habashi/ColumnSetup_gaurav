@@ -1,0 +1,286 @@
+{
+  "candidates": [
+    {
+      "id": "C1",
+      "repeated_claims": [
+        {
+          "quote": "As the specimen degrades, its stiffness $k$ decreases and changes $H(s,k)$ in Figure 1. This change can reduce the stability margin of the outer controller loop [2]. The NCF OSI monitors the margin of this loop between $u(t)$ and $y(t)$.",
+          "earlier_location": "Section opening, sentences 1–2 establish changing-plant robustness and degradation driving the outer controller loop toward instability; its estimator description identifies u and y. The paragraphs before Figure 1 establish the outer-loop signal path.",
+          "why_unnecessary": "Reintroduces the degradation motivation and monitored loop already explained in the surrounding section, rather than advancing to the transfer-function definitions. The two-part recap is unnecessary in this full context.",
+          "severity": "material"
+        },
+        {
+          "quote": "The NCF margin [1] quantifies the loop's robustness to perturbations.",
+          "earlier_location": "Section opening, sentence 1: the NCF OSI was introduced to quantify closed-loop robustness as the plant changes.",
+          "why_unnecessary": "Repeats the already established robustness purpose immediately before the new formulation. This is a minor removable recap, not a missing technical definition.",
+          "severity": "minor"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": false,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 0,
+        "contribution": 1,
+        "flow": 1,
+        "clarity": 2
+      }
+    },
+    {
+      "id": "C2",
+      "repeated_claims": [
+        {
+          "quote": "The NCF margin [1] measures the loop's robustness to perturbations.",
+          "earlier_location": "Section opening, sentence 1: the NCF OSI was introduced to quantify closed-loop robustness as the plant changes.",
+          "why_unnecessary": "Repeats the already established robustness purpose immediately before the new formulation. This is a minor removable recap, not a missing technical definition.",
+          "severity": "minor"
+        }
+      ],
+      "missing_or_changed_meaning": [
+        {
+          "quote": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)>1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$.",
+          "issue": "The numerical threshold is retained, but its identification as delta(0) is omitted. The required checklist explicitly retains this zero-loop baseline; the fixed delta equation permits a reader to derive it but does not state the connection made in the required explanation.",
+          "severity": "material"
+        }
+      ],
+      "language_defects": [],
+      "ready": false,
+      "score": {
+        "fidelity": 1,
+        "necessary_content": 2,
+        "contribution": 2,
+        "flow": 2,
+        "clarity": 2
+      }
+    },
+    {
+      "id": "C3",
+      "repeated_claims": [
+        {
+          "quote": "As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2]. The NCF OSI therefore estimates the stability margin of this loop from $u(t)$ to $y(t)$.",
+          "earlier_location": "Section opening, sentences 1–2 establish changing-plant robustness and degradation driving the outer controller loop toward instability; its estimator description identifies u and y. The paragraphs before Figure 1 establish the outer-loop signal path.",
+          "why_unnecessary": "Reintroduces the degradation motivation and monitored loop already explained in the surrounding section, rather than advancing to the transfer-function definitions. The two-part recap is unnecessary in this full context.",
+          "severity": "material"
+        },
+        {
+          "quote": "The NCF margin [1] quantifies the outer controller loop's robustness to perturbations.",
+          "earlier_location": "Section opening, sentence 1: the NCF OSI was introduced to quantify closed-loop robustness as the plant changes.",
+          "why_unnecessary": "Repeats the already established robustness purpose immediately before the new formulation. This is a minor removable recap, not a missing technical definition.",
+          "severity": "minor"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [
+        {
+          "quote": "At those frequencies, $\\phi$ replaces the larger distance with $1/\\sqrt{2}$ and leaves smaller distances unchanged.",
+          "issue": "The introductory restriction grammatically also covers 'leaves smaller distances unchanged', although those frequencies were just defined by distances exceeding the threshold. The intended global preservation remains recoverable from the locked cap equation, so this is a minor scope awkwardness.",
+          "severity": "minor"
+        }
+      ],
+      "ready": false,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 0,
+        "contribution": 1,
+        "flow": 1,
+        "clarity": 1
+      }
+    },
+    {
+      "id": "C4",
+      "repeated_claims": [
+        {
+          "quote": "Specimen stiffness degradation changes the dynamics of the outer controller loop [2]. The NCF OSI monitors the stability margin of this loop from $u(t)$ to $y(t)$.",
+          "earlier_location": "Section opening, sentences 1–2 establish changing-plant robustness and degradation driving the outer controller loop toward instability; its estimator description identifies u and y. The paragraphs before Figure 1 establish the outer-loop signal path.",
+          "why_unnecessary": "Reintroduces the degradation motivation and monitored loop already explained in the surrounding section, rather than advancing to the transfer-function definitions. The two-part recap is unnecessary in this full context.",
+          "severity": "material"
+        },
+        {
+          "quote": "The NCF margin [1] quantifies the robustness of the loop to perturbations.",
+          "earlier_location": "Section opening, sentence 1: the NCF OSI was introduced to quantify closed-loop robustness as the plant changes.",
+          "why_unnecessary": "Repeats the already established robustness purpose immediately before the new formulation. This is a minor removable recap, not a missing technical definition.",
+          "severity": "minor"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": false,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 1,
+        "contribution": 1,
+        "flow": 1,
+        "clarity": 2
+      }
+    },
+    {
+      "id": "C5",
+      "repeated_claims": [
+        {
+          "quote": "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2]. The indicator monitors the stability margin of this loop from $u(t)$ to $y(t)$.",
+          "earlier_location": "Section opening, sentences 1–2 establish changing-plant robustness and degradation driving the outer controller loop toward instability; its estimator description identifies u and y. The paragraphs before Figure 1 establish the outer-loop signal path.",
+          "why_unnecessary": "Reintroduces the degradation motivation and monitored loop already explained in the surrounding section, rather than advancing to the transfer-function definitions. The two-part recap is unnecessary in this full context.",
+          "severity": "material"
+        },
+        {
+          "quote": "The NCF margin [1] quantifies the robustness of the loop to perturbations.",
+          "earlier_location": "Section opening, sentence 1: the NCF OSI was introduced to quantify closed-loop robustness as the plant changes.",
+          "why_unnecessary": "Repeats the already established robustness purpose immediately before the new formulation. This is a minor removable recap, not a missing technical definition.",
+          "severity": "minor"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [
+        {
+          "quote": "At each frequency, $\\\\delta$ measures the chordal distance between $L(j\\\\omega)$ and the critical point $-1$.",
+          "issue": "The decoded candidate contains doubled backslashes in inline mathematical commands, unlike the single-backslash commands in the fixed equations. This is a notation/typesetting defect that also occurs in the final paragraph, including '$\\\\delta(0)=1/\\\\sqrt{2}$' and '$\\\\mathrm{Re}\\\\,L>0$'. These commands need normalization for conventional mathematical rendering.",
+          "severity": "material"
+        }
+      ],
+      "ready": false,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 1,
+        "contribution": 1,
+        "flow": 1,
+        "clarity": 1
+      }
+    },
+    {
+      "id": "C6",
+      "repeated_claims": [],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": true,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 2,
+        "contribution": 2,
+        "flow": 2,
+        "clarity": 2
+      }
+    },
+    {
+      "id": "C7",
+      "repeated_claims": [
+        {
+          "quote": "The NCF margin [1] quantifies the loop's robustness to perturbations.",
+          "earlier_location": "Section opening, sentence 1: the NCF OSI was introduced to quantify closed-loop robustness as the plant changes.",
+          "why_unnecessary": "Repeats the already established robustness purpose immediately before the new formulation. This is a minor removable recap, not a missing technical definition.",
+          "severity": "minor"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [
+        {
+          "quote": "Its open-loop and closed-loop transfer functions are",
+          "issue": "'Its' can refer to the immediately preceding plant transfer function rather than to the outer controller loop. The opening clause and displayed equations resolve the intended referent; naming the loop would be a minor clarity improvement.",
+          "severity": "minor"
+        },
+        {
+          "quote": "Gomaa et al. [2] evaluated it with the outer controller and plant as separate factors.",
+          "issue": "'Separate factors' is less precise than 'separately' or 'separate blocks' in a passage about normalized coprime factors, since no factorization of the controller and plant is being introduced here. The next sentence makes the intended contrast understandable.",
+          "severity": "minor"
+        }
+      ],
+      "ready": true,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 1,
+        "contribution": 2,
+        "flow": 2,
+        "clarity": 1
+      }
+    },
+    {
+      "id": "C8",
+      "repeated_claims": [],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": true,
+      "score": {
+        "fidelity": 2,
+        "necessary_content": 2,
+        "contribution": 2,
+        "flow": 2,
+        "clarity": 2
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "pair_id": "P2",
+      "preference": "C6",
+      "advantage": "material",
+      "reason": "C4 repeats 'Specimen stiffness degradation changes the dynamics of the outer controller loop [2]' and 'The NCF OSI monitors the stability margin of this loop'. C6 starts with 'With $H(s,k)=Y(s)/V(s)$' and retains the new formulation and cap explanation, avoiding that substantive contextual repetition."
+    },
+    {
+      "pair_id": "P4",
+      "preference": "C2",
+      "advantage": "small",
+      "reason": "C1 spends three sentences on 'As the specimen degrades' through 'The NCF OSI monitors the margin', all already established. C2 begins directly with 'With $H(s,k)=Y(s)/V(s)$'. C2 needs the local delta(0) connection restored in '$\\delta(L)>1/\\sqrt{2}$', so it is not ready, but requires less substantive repair overall."
+    },
+    {
+      "pair_id": "P10",
+      "preference": "C6",
+      "advantage": "small",
+      "reason": "C6 explicitly retains '$\\delta(0)=1/\\sqrt{2}$'; C2 states only '$\\delta(L)>1/\\sqrt{2}$', losing the required baseline identification. C6 also avoids C2's recap 'measures the loop\\'s robustness to perturbations'. Its fixed infimum equation and chordal-distance explanation preserve adequate interpretation."
+    },
+    {
+      "pair_id": "P12",
+      "preference": "C7",
+      "advantage": "small",
+      "reason": "C7 retains '$\\delta(0)=1/\\sqrt{2}$', which C2 omits when stating '$\\delta(L)>1/\\sqrt{2}$'. C7's 'Its open-loop and closed-loop transfer functions' has a minor referent awkwardness, but its meaning is resolved by the equations; C2 has a required-content repair."
+    },
+    {
+      "pair_id": "P8",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "Both need the same substantive removal of the opening recap: C3's 'As the specimen loses stiffness' and C1's 'As the specimen degrades' repeat established motivation and are followed by a repeated monitoring description. Both preserve '$\\delta(0)=1/\\sqrt{2}$' and the new formulation. C3's minor 'At those frequencies' scope issue does not create a meaningful overall repair advantage."
+    },
+    {
+      "pair_id": "P3",
+      "preference": "C7",
+      "advantage": "material",
+      "reason": "C3 repeats 'As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2]' and then repeats what the OSI estimates. C7 proceeds with 'the plant transfer function is $H(s,k)=Y(s)/V(s)$' and preserves the required new explanation. Its minor pronoun and terminology issues are smaller than C3's substantive repetition."
+    },
+    {
+      "pair_id": "P1",
+      "preference": "C8",
+      "advantage": "material",
+      "reason": "C8 begins directly with 'With $H(s,k)=Y(s)/V(s)$' and preserves the complete required formulation and cap explanation. C5 repeats 'Specimen degradation reduces stiffness' and the monitored-loop description, and its '$\\\\delta$' and '$L(j\\\\omega)$' contain doubled mathematical command escapes."
+    },
+    {
+      "pair_id": "P5",
+      "preference": "C3",
+      "advantage": "small",
+      "reason": "Both repeat the degradation and monitoring motivation, but C5 additionally has the literal doubled command escapes in '$\\\\delta$' and '$\\\\delta(0)=1/\\\\sqrt{2}$'. C3 uses '$\\delta$' and '$\\delta(0)=1/\\sqrt{2}$' consistently. C3's 'At those frequencies' scope awkwardness is minor relative to that systematic notation repair."
+    },
+    {
+      "pair_id": "P7",
+      "preference": "C4",
+      "advantage": "small",
+      "reason": "Both repeat the contextual opening, but C4 supplies correctly escaped '$\\delta(0)=1/\\sqrt{2}$' and a coherent final sentence, 'The cap therefore bounds the reported indicator ... while preserving smaller distances'. C5 adds a systematic typesetting repair through '$\\\\delta$' and '$\\\\mathrm{Re}\\\\,L>0$'."
+    },
+    {
+      "pair_id": "P11",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "Both preserve the same engineering content without a substantive contextual recap. C6 says 'All estimator branches use the capped distance' and C8 says 'All branches of the estimator use the capped distance'; both retain '$\\delta(0)=1/\\sqrt{2}$' and the bound while preserving smaller distances. The explicit 'of the outer controller loop' in C8 is a permissible short connection, not a meaningful advantage."
+    },
+    {
+      "pair_id": "P6",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "C1's three-sentence opening from 'As the specimen degrades' and C4's two-sentence opening from 'Specimen stiffness degradation' both require removal of the same repeated motivation and monitoring claims. C4 combines the ending as 'The cap therefore bounds ... while preserving smaller distances'; C1 states the same necessary consequences separately. That concision does not remove a distinct required repair."
+    },
+    {
+      "pair_id": "P9",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "C7 adds 'The infimum in {eq:bncf} selects the smallest distance', while C8 relies on the fixed infimum equation plus 'A small $\\delta$ therefore indicates proximity to instability'. Both provide adequate interpretation and retain the required cap threshold and region. C7's minor recap and wording issues do not amount to a material repair requirement."
+    }
+  ],
+  "limits": "Judged only the supplied anonymous packet in full section context, with the displayed equations counted as available engineering content. An additional prose restatement of the infimum is optional, whereas the specifically required delta(0) identification is retained as an explicit preservation criterion. The cap introduction followed by a region-specific explanation is treated as one coherent explanation, not automatically counted twice. C5's doubled backslashes were assessed as present in the decoded packet; no external rendering or candidate identity was investigated. No independent mathematical or literature verification was performed."
+}

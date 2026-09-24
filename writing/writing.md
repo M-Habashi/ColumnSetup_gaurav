@@ -59,49 +59,8 @@ This is a **gain amplification** mechanism, not a time delay. Flexible specimens
 - A reason must be the engineering cause, not bookkeeping. Write "the loop response changes as the specimen degrades, so it is identified from measured signals", not "equation (3) needs it".
 - Check every technical statement against Paper 1 and the code in main/ before writing it. If unsure, ask rather than guess.
 
-## Flow
-- Give the reason first. Say why the reader needs a figure, equation or step before saying what it shows.
-- Build understanding block by block: context → problem → idea → equation → meaning → consequence.
-- Link sentences from known to new. Start with what the reader already has, and end with the new point.
-- Give each paragraph one message. Open with a topic sentence and close with its consequence or a bridge to the next paragraph.
-- Open a section by linking it to the previous one and stating its goal, as Paper 1 does ("The preceding section… This section…").
-- Introduce each equation by its purpose ("To derive…", "Substituting… yields"). After it, define the new symbols ("where…") and state what the equation means physically.
-- When presenting a system, give each block a one-line role, in signal order.
-- Write for the reader, not for the writer. Every sentence gives a fact, a reason or a consequence. No planning notes such as "Before X can be formulated, Y must be defined".
-- Present designed components by their purpose ("a phase-lead compensator, designed to improve tracking").
-- Keep references concrete: "this ratio", not a bare "this".
-
-## Revise every paragraph
-After drafting, check each sentence:
-1. What message does it carry?
-2. Does the reader need this message? If not, cut it.
-3. Is it technically true, and are its terms and causes correct?
-4. Is the order step by step for the reader? Reorder, or add the missing step.
-
-Do not over-correct: keep wording the user has approved unless it is wrong.
-
-## Size
-- Sentences: 15–25 words on average, rarely above 30. Vary the length. One idea per sentence.
-- Paragraphs: one message, 3–6 sentences, about 80–200 words.
-
-## Wording
-- Avoid using many commas in the same sentence. Split stacked clauses or parenthetical explanations into separate sentences rather than removing necessary punctuation.
-- Make every sentence clear on the first reading. Use direct wording and make the subject and its action explicit.
-- Say "hybrid simulation" (never RTHS), "experiment" (not "test"), and "initial" (not "healthy"). λ is the "adaptive factor".
-- Never use "whose". Split the sentence instead.
-- Avoid "describe", "It should be noted", and "Moreover" before a major idea.
-- Spell out "Figure N". Introduce each evidence source with its name and symbol: direct identification b_id, output-power inference b_pow, prior identification of the initial state b_0.
-- The adaptive controller is half of the framework. Link the estimator and the controller explicitly.
-- Active voice where natural. "We" is acceptable.
-
-## Transitions
-- Use smooth transitions between sentences and paragraphs. Carry the preceding idea forward and make its connection to the next idea clear. Choose transition words that express that connection naturally.
-- Purpose: To…, For this purpose…, This allows…
-- Consequence: As a result…, Therefore…, Consequently…
-- Contrast: However…, In contrast…, Yet…
-- Sequence: First…, The second…, Finally…
-- Back-reference: This ratio…, With these spectra…, Where the confidence is small…
-
-## Sources
-- Gopen & Swan, "The Science of Scientific Writing": topic and stress positions, known → new.
-- Scientific-writing guides: sentences average about 12–25 words, and paragraphs run 100–200 words with one message each.
+## Paper 2 wording
+- Use "hybrid simulation", "experiment", and "initial". Call λ the "adaptive factor".
+- Spell out "Figure N". Name each evidence source and its symbol when introduced: direct identification b_id, output-power inference b_pow, and prior identification of the initial state b_0.
+- Link the estimator to the adaptive controller when explaining the framework. Present each designed component through its purpose.
+- Avoid "describe", "It should be noted", and "Moreover" before a major idea. Keep references concrete and preserve wording the author has approved unless it needs correction.

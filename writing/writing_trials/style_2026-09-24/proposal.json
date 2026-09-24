@@ -1,0 +1,32 @@
+{
+  "write_md": "# Engineering manuscript writing workflow\n\nVersion 8. Use Sol high for manuscript writing unless the author changes this preference. The user only needs to identify a passage and say to follow write.md. Gather the needed context yourself.\n\n1. **Read the context.** Read the section opening, the passage, its neighbors, and any figure or equation needed to understand it. Read scientific_expressions.md for established terms. For Paper 2, also read journal_paper.md and writing.md. Check the relevant source when a technical claim is uncertain. Identify what the context already explains and what the passage still needs to add.\n2. **Write a connected explanation.** Preserve the engineering facts, qualifications, notation, equations, and relevant attribution. Let the physical reason lead naturally to the formulation and its interpretation. Carry a known idea into the next sentence and explain the link rather than adding transition words alone. Use the impersonal engineering-paper voice of Paper 1: describe formulations declaratively and use natural passive voice for methodological choices. Avoid first-person phrasing and instructional imperatives. A physical component may remain the active subject when it actually performs the action. Paper 1 paragraphs 27, 29, and 52 illustrate a declarative introduction, a grammatical “where” continuation, and an explanation that preserves its qualification. Use their manner of explanation without importing their claims. Keep prose clear, with few commas, no semicolons, and no “whose.” Length and paragraph count follow the reasoning, not a target.\n3. **Reread in place.** Read the preceding context, revision, and following paragraph together. Remove repeated motivation and definitions while retaining each necessary connection. Check the technical roles, causal claims, symbol definitions, citations, and qualifications. Revise any sentence that sounds like an instruction, a disconnected definition, or a first-person account of a method.\n\nReturn the revised passage in routine use, with a short note only if a consequential issue remains. Edit the manuscript when asked to edit it. Before editing manuscript HTML, check the review-workflow flag and follow the version instructions in writing.md and REVIEW_WORKFLOW.md. If the flag is absent, follow writing.md's instruction to ask before editing. For a controlled trial, use its supplied context and output format.",
+  "writing_md_replacements": [
+    {
+      "old": "Build understanding block by block: context → problem → idea → equation → meaning → consequence.",
+      "new": "Develop the physical reason, formulation, and interpretation as one connected explanation. Use the order that makes their relationship clear."
+    },
+    {
+      "old": "Open a section by linking it to the previous one and stating its goal, as Paper 1 does (\"The preceding section… This section…\").",
+      "new": "Open a section with the context needed for its new point. Do not repeat an explanation already given in the section introduction."
+    },
+    {
+      "old": "Introduce each equation by its purpose (\"To derive…\", \"Substituting… yields\"). After it, define the new symbols (\"where…\") and state what the equation means physically.",
+      "new": "Introduce an equation through its role in the explanation. When its symbols require definition, continue grammatically with “where…” and connect the equation to its physical meaning."
+    },
+    {
+      "old": "## Size\n- Sentences: 15–25 words on average, rarely above 30. Vary the length. One idea per sentence.\n- Paragraphs: one message, 3–6 sentences, about 80–200 words.",
+      "new": "## Size\nUse as many sentences and paragraphs as the explanation needs. Split crowded sentences and keep each paragraph focused, without padding or cutting engineering meaning to meet a target."
+    },
+    {
+      "old": "Active voice where natural. \"We\" is acceptable.",
+      "new": "Use the impersonal engineering-paper voice of Paper 1. State methodological choices declaratively, usually with natural passive voice. Avoid first-person phrasing and instructional imperatives. Keep physical components active when they actually perform the action."
+    }
+  ],
+  "paragraphs": [
+    "The plant from $v(t)$ to $y(t)$ in Figure 1 is represented by $H(s,k)=Y(s)/V(s)$. The open-loop transfer function and closed-loop response from $u(t)$ to $y(t)$ are",
+    "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$, respectively. The earlier formulation [2] treated the outer controller and plant separately, whereas the complete outer controller loop is represented here as the plant $P=L$ with unit feedback $K=1$. This representation allows the NCF margin [1] to be evaluated from the loop response:",
+    "At each frequency, $\\delta$ gives the chordal distance from $L(j\\omega,\\lambda,k)$ to the critical point $-1$. The infimum in {eq:bncf} is the smallest distance across frequencies, so a smaller margin indicates greater proximity to the point associated with instability. To retain this focus on proximity to $-1$, every estimator branch uses the capped distance",
+    "The cap level follows from $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$, which shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap therefore limits those larger distances while preserving smaller distances to $-1$."
+  ],
+  "review": "The guide now has one read, write, reread workflow and retains automatic context loading, Sol high, and HTML version handling. The five context replacements remove directly conflicting voice, length, and fixed-order advice. The prose uses a grammatical “where” after the equations, states the [2] formulation difference and [1] attribution once, and connects the distance, infimum, instability interpretation, and cap through their reasoning. The equations remain in their original slots and no production file was edited."
+}

@@ -1,0 +1,195 @@
+{
+  "candidates": [
+    {
+      "id": "C1",
+      "repeated_claims": [
+        {
+          "quote": "As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2].",
+          "earlier_location": "Section opening before 2.1: \"stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism.\"",
+          "why_unnecessary": "It restates the established degradation and instability motivation without adding a new condition or mechanism.",
+          "severity": "material"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": false,
+      "score": {"fidelity": 2, "necessary_content": 2, "contribution": 1, "flow": 1, "clarity": 2}
+    },
+    {
+      "id": "C2",
+      "repeated_claims": [
+        {
+          "quote": "As the specimen degrades, its stiffness $k$ decreases and changes $H(s,k)$ in Figure 1. This change can reduce the stability margin of the outer controller loop [2].",
+          "earlier_location": "Section opening before 2.1: \"stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism\"; Figure 1 and the preceding plant paragraph already identify $H(s,k)$ and specimen stiffness.",
+          "why_unnecessary": "These two sentences restate the established cause and risk; the subsequent transfer functions provide the new material.",
+          "severity": "material"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [
+        {
+          "quote": "The NCF OSI monitors the margin of this loop between $u(t)$ and $y(t)$.",
+          "why": "The margin belongs to the loop; \"between\" can momentarily make it sound like a distance between the two signals.",
+          "severity": "minor"
+        }
+      ],
+      "ready": false,
+      "score": {"fidelity": 2, "necessary_content": 2, "contribution": 1, "flow": 1, "clarity": 2}
+    },
+    {
+      "id": "C3",
+      "repeated_claims": [],
+      "missing_or_changed_meaning": [
+        {
+          "issue": "The last paragraph says the cap preserves smaller distances but never states that the reported indicator is bounded by $1/\\sqrt{2}$.",
+          "evidence": "Thus the cap limits contributions from these frequencies while preserving all smaller distances.",
+          "severity": "material"
+        }
+      ],
+      "language_defects": [],
+      "ready": false,
+      "score": {"fidelity": 1, "necessary_content": 1, "contribution": 2, "flow": 2, "clarity": 2}
+    },
+    {
+      "id": "C4",
+      "repeated_claims": [],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": true,
+      "score": {"fidelity": 2, "necessary_content": 2, "contribution": 2, "flow": 2, "clarity": 2}
+    },
+    {
+      "id": "C5",
+      "repeated_claims": [
+        {
+          "quote": "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2].",
+          "earlier_location": "Section opening before 2.1 already explains stiffness degradation and its effect on the outer controller loop.",
+          "why_unnecessary": "It repeats the established motivation without adding a new qualification.",
+          "severity": "material"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [
+        {
+          "quote": "At each frequency, $\\\\delta$ measures the chordal distance between $L(j\\\\omega)$ and the critical point $-1$.",
+          "why": "Inline math commands use doubled backslashes throughout the last two prose paragraphs, including the identity and cap threshold. These are malformed LaTeX commands in the manuscript prose.",
+          "severity": "material"
+        }
+      ],
+      "ready": false,
+      "score": {"fidelity": 2, "necessary_content": 2, "contribution": 1, "flow": 1, "clarity": 0}
+    },
+    {
+      "id": "C6",
+      "repeated_claims": [],
+      "missing_or_changed_meaning": [
+        {
+          "issue": "The final explanation omits the explicit conclusion that capping bounds the reported indicator by $1/\\sqrt{2}$.",
+          "evidence": "The cap limits the contribution of these larger distances to the reported indicator while preserving smaller distances.",
+          "severity": "material"
+        }
+      ],
+      "language_defects": [],
+      "ready": false,
+      "score": {"fidelity": 1, "necessary_content": 1, "contribution": 2, "flow": 2, "clarity": 2}
+    },
+    {
+      "id": "C7",
+      "repeated_claims": [],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": true,
+      "score": {"fidelity": 2, "necessary_content": 2, "contribution": 2, "flow": 2, "clarity": 2}
+    },
+    {
+      "id": "C8",
+      "repeated_claims": [
+        {
+          "quote": "Specimen stiffness degradation changes the dynamics of the outer controller loop [2].",
+          "earlier_location": "Section opening before 2.1: \"stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism.\"",
+          "why_unnecessary": "The section already establishes the effect of degradation on the loop; this sentence supplies no new condition or explanation.",
+          "severity": "material"
+        }
+      ],
+      "missing_or_changed_meaning": [],
+      "language_defects": [],
+      "ready": false,
+      "score": {"fidelity": 2, "necessary_content": 2, "contribution": 1, "flow": 1, "clarity": 2}
+    }
+  ],
+  "comparisons": [
+    {
+      "pair_id": "P8",
+      "preference": "C1",
+      "advantage": "small",
+      "reason": "Both repeat the degradation premise. C1 uses one sentence, \"As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2],\" while C2 spends two sentences on the same premise and adds \"in Figure 1.\" C1 also states more concretely that $\\phi$ replaces the larger distance at the threshold."
+    },
+    {
+      "pair_id": "P3",
+      "preference": "C4",
+      "advantage": "material",
+      "reason": "C4 starts with the needed definition, \"With $H(s,k)=Y(s)/V(s)$,\" and retains the explicit upper bound, \"bounding the reported indicator by $1/\\sqrt{2}$.\" C1 first repeats that stiffness loss can drive the loop toward instability, a claim already made before Section 2.1."
+    },
+    {
+      "pair_id": "P10",
+      "preference": "C7",
+      "advantage": "material",
+      "reason": "C7 retains the cap conclusion, \"The reported indicator is therefore bounded by $1/\\sqrt{2}$,\" and explains the infimum. C3 ends after \"preserving all smaller distances,\" leaving the required reported-indicator bound unstated."
+    },
+    {
+      "pair_id": "P7",
+      "preference": "C8",
+      "advantage": "material",
+      "reason": "The two have similar redundant opening context, but C8 writes usable inline math such as \"$\\delta$\" and \"$L(j\\omega)$\". C5 has malformed doubled commands such as \"$\\\\delta$\" and \"$L(j\\\\omega)$\" throughout its explanation."
+    },
+    {
+      "pair_id": "P4",
+      "preference": "C7",
+      "advantage": "material",
+      "reason": "C7 moves directly to transforms and the loop formulation, then says \"The reported indicator is therefore bounded by $1/\\sqrt{2}$.\" C2 reintroduces the already established stiffness-loss rationale in two sentences before reaching the new transfer functions."
+    },
+    {
+      "pair_id": "P11",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "C6 says the cap is \"preserving smaller distances\" and C3 says it is \"preserving all smaller distances\"; both preserve the algebra and omit the explicit reported-indicator bound. Their differences in transform definitions and sentence order require no meaningful repair to distinguish them."
+    },
+    {
+      "pair_id": "P1",
+      "preference": "C6",
+      "advantage": "material",
+      "reason": "C6 avoids C5's repeated opening about specimen degradation and uses valid inline notation such as \"$\\delta$\". C5 has \"$\\\\delta$\" and other doubled commands in the last two paragraphs. C6 still needs an explicit sentence or clause on the $1/\\sqrt{2}$ bound."
+    },
+    {
+      "pair_id": "P9",
+      "preference": "C4",
+      "advantage": "material",
+      "reason": "C4 concludes that the cap leaves smaller distances unchanged, \"bounding the reported indicator by $1/\\sqrt{2}$.\" C6 stops at \"preserving smaller distances\" and omits that required conclusion."
+    },
+    {
+      "pair_id": "P12",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "C4 states that the cap \"leaves smaller distances unchanged, bounding the reported indicator\" and C7 says it \"leaves smaller distances unchanged\" and \"is therefore bounded.\" Both provide the required loop formulation, chordal interpretation, and cap explanation without an unnecessary recap; their ordering choices are optional."
+    },
+    {
+      "pair_id": "P5",
+      "preference": "C1",
+      "advantage": "material",
+      "reason": "Both repeat the degradation premise, but C1 uses correct inline math, including \"$\\delta(L)$\" and \"$1/\\sqrt{2}$\". C5 repeatedly has doubled backslashes, including \"$\\\\delta(0)=1/\\\\sqrt{2}$\", which needs correction across two paragraphs."
+    },
+    {
+      "pair_id": "P2",
+      "preference": "tie",
+      "advantage": "none",
+      "reason": "C3 needs the explicit conclusion that the cap bounds the reported indicator after \"preserving all smaller distances.\" C8 includes that conclusion but should remove its repeated opening, \"Specimen stiffness degradation changes the dynamics of the outer controller loop [2].\" Each needs one focused repair."
+    },
+    {
+      "pair_id": "P6",
+      "preference": "C8",
+      "advantage": "small",
+      "reason": "Both repeat prior degradation context, but C8 compresses it to \"Specimen stiffness degradation changes the dynamics of the outer controller loop [2].\" C2 takes two sentences, adding that stiffness decreases, $H(s,k)$ changes, and the margin can decrease before giving the equations."
+    }
+  ],
+  "limits": "Judged only the packet's section context, required-meaning checklist, candidate prose, and locked equations. The C5 math defect concerns escaped commands in its prose, not the locked displayed equations."
+}

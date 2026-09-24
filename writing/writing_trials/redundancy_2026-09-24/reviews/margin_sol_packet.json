@@ -1,0 +1,572 @@
+{
+  "task": "You are an independent engineering manuscript editor evaluating anonymous revised prose in its full section context.\nDo not guess the writer, effort level, guide, or chronology. Read only this packet. Do not browse, read other files, consult agents, or rewrite candidates.\nThe author's priority is useful new engineering explanation without unnecessary repetition of earlier context or of another sentence in the target. Judge meaning, not lexical overlap. Technical terms, necessary definitions, new qualifications and short connections may legitimately recur. Do not reward shorter prose when meaning is lost, or require a standalone recap.\nThe original is not a style gold standard. Some of its prose is intentionally the problematic target. Use required_meaning as the engineering preservation checklist; established_context identifies information already available. Equations are locked and identical across candidates.\nFor every candidate, assess:\n- repeated_claims: each unnecessary repetition as an object with quote, earlier_location, why_unnecessary, severity (\"minor\" or \"material\"). Quote exact candidate wording and identify the earlier sentence in context or candidate. Split one claim only once.\n- missing_or_changed_meaning: specific omitted new fact, lost qualification, unsupported addition, or ambiguous relation. Do not require reintroducing known motivation.\n- language_defects: awkward terminology, unnatural sentence or comma crowding, with exact evidence.\n- ready: true only if no material redundancy or meaning defect or material language defect remains; minor optional wording preferences do not fail.\n- score: 0..2 for each of fidelity, necessary_content, contribution, flow, clarity. 2 meets requirement, 1 local defect, 0 substantial defect. A score cannot override a material defect.\nCompare every requested pair by fewer meaningful repairs: preference must be the first candidate id, second candidate id, or \"tie\". Reason must quote concrete evidence. advantage must be \"none\", \"small\", or \"material\". A tie is welcome when differences are optional.\nKeep judgments independent of score totals. Do not invent errors merely to distinguish candidates. Evaluate all candidates and all requested pairs. Return one valid JSON object with candidates (array of objects with id, repeated_claims, missing_or_changed_meaning, language_defects, ready, score), comparisons (array of objects with pair_id, preference, advantage, reason), and limits (string).",
+  "source": "Current builder / manuscript v18, Section 2.1 after Figure 1",
+  "before": [
+    {
+      "type": "P",
+      "text": "The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism. In this study, we extend the analytical study to experimental implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by the confidence in its evidence. The first is direct identification, $b_{\\mathrm{id}}$, which estimates the closed-loop frequency response of the outer controller loop, from the desired displacement $u(t)$ to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator [6]. The second is output-power inference, $b_{\\mathrm{pow}}$, which can detect amplification of the loop at frequencies that cannot be reliably identified. This branch compares the output power measured during the experiment against the reference recorded before the excitation. The third is the prior identification of the initial state, $b_{0}$, which serves as a fallback when no sufficient information is available. The adaptive controller then utilizes the estimated indicator to scale the controller output by the adaptive factor $\\lambda$ to keep the loop stable with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The evaluation of the framework is discussed in detail in this section."
+    },
+    {
+      "type": "heading",
+      "number": "2.1",
+      "text": "Control loop and stability margin"
+    },
+    {
+      "type": "P",
+      "text": "In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ from the ground acceleration and measured force $f_m(t)$. To compensate for the transfer-system lag and improve tracking, a phase-lead compensator receives $d(t)$ to produce the reference $u(t)$. The outer controller $C(s)$ takes the tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. Its output is scaled by the adaptive factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ sent to the plant $H(s,k)$."
+    },
+    {
+      "type": "P",
+      "text": "The plant comprises the transfer system and the specimen of stiffness $k$. The transfer system includes the inner-loop controller, servo-valve and actuator. The control–structure interaction between the actuator and specimen is also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure and closes the numerical substructure loop, while the measured displacement $y(t)$ provides feedback to the outer controller and closes the outer controller loop."
+    },
+    {
+      "type": "figure",
+      "text": "Figure 1. Hybrid simulation loop with the NCF OSI framework setup.",
+      "description": "Numerical substructure -> d -> phase-lead compensator -> u -> summing junction u-y -> C -> lambda -> v -> H(s,k) -> y. y returns to summing junction; f_m returns from specimen to numerical substructure."
+    }
+  ],
+  "original_target": [
+    {
+      "type": "P",
+      "text": "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2]. The indicator therefore monitors the stability margin of this loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+    },
+    {
+      "type": "equation",
+      "id": "L",
+      "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+    },
+    {
+      "type": "equation",
+      "id": "T",
+      "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+    },
+    {
+      "type": "P",
+      "text": "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the robustness of the loop to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and the plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response. The NCF margin for this formulation is"
+    },
+    {
+      "type": "equation",
+      "id": "bncf",
+      "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+    },
+    {
+      "type": "equation",
+      "id": "delta",
+      "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+    },
+    {
+      "type": "P",
+      "text": "The function $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. The smallest distance over all frequencies determines the margin in {eq:bncf}. A small $\\delta$ therefore indicates proximity to instability. To limit how much larger distances contribute to the reported indicator, all branches of the estimator use the capped distance"
+    },
+    {
+      "type": "equation",
+      "id": "phi",
+      "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+    },
+    {
+      "type": "P",
+      "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that the distance exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap limits the contribution from these frequencies while preserving smaller distances that indicate proximity to the critical point. It therefore bounds the reported indicator by $1/\\sqrt{2}$."
+    }
+  ],
+  "after": [
+    {
+      "type": "heading",
+      "number": "2.2",
+      "text": "Short-time spectral estimation"
+    },
+    {
+      "type": "P",
+      "text": "The margin in {eq:bncf} requires the loop response at each frequency. Because this response changes as the specimen degrades, it must be obtained from the measured signals while the experiment runs. The estimator analyses short windows of $u$ and $y$ and updates its estimate every $\\Delta t=0.125\\,\\mathrm{s}$. Each update uses the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window holds $N=f_sT_w=1024$ samples, which gives a bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ the samples in the window, the Hann-windowed discrete Fourier transforms are"
+    }
+  ],
+  "required_meaning": [
+    "H(s,k)=Y(s)/V(s), U and Y as Laplace transforms of u and y.",
+    "Paper 1 separates controller and plant. Here P=L and K=1; this formulation uses the loop response.",
+    "NCF margin definition and chordal distance to -1. Retain enough interpretation for the reader without repeating the section motivation.",
+    "All estimator branches use capped distance. Preserve the algebraic identity, the threshold delta(0)=1/sqrt(2), the Re L>0 region, and meaning of cap: retain smaller distances and bound reported indicator. One coherent explanation is enough."
+  ],
+  "established_context": [
+    "Section opening already establishes robustness purpose, degradation/gain mechanism, online estimation and adaptive factor.",
+    "Before Figure 1 the signal path, physical components and two feedback loops are already introduced."
+  ],
+  "candidates": [
+    {
+      "id": "C1",
+      "prose": [
+        "As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2]. The NCF OSI therefore estimates the stability margin of this loop from $u(t)$ to $y(t)$. For the plant $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+        "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the outer controller loop's robustness to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ under unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response. The NCF margin for this formulation is",
+        "At each frequency, $\\delta$ is the chordal distance between $L(j\\omega)$ and the critical point $-1$. The smallest distance over all frequencies determines the margin in {eq:bncf}, so small values indicate proximity to instability. To limit contributions from larger distances in the reported indicator, each estimator branch uses the capped distance",
+        "Because $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$, $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. At those frequencies, $\\phi$ replaces the larger distance with $1/\\sqrt{2}$ and leaves smaller distances unchanged. The reported indicator is therefore bounded above by $1/\\sqrt{2}$."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "As the specimen loses stiffness, the plant dynamics change and can drive the outer controller loop toward instability [2]. The NCF OSI therefore estimates the stability margin of this loop from $u(t)$ to $y(t)$. For the plant $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the outer controller loop's robustness to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ under unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response. The NCF margin for this formulation is"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "At each frequency, $\\delta$ is the chordal distance between $L(j\\omega)$ and the critical point $-1$. The smallest distance over all frequencies determines the margin in {eq:bncf}, so small values indicate proximity to instability. To limit contributions from larger distances in the reported indicator, each estimator branch uses the capped distance"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "Because $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$, $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. At those frequencies, $\\phi$ replaces the larger distance with $1/\\sqrt{2}$ and leaves smaller distances unchanged. The reported indicator is therefore bounded above by $1/\\sqrt{2}$."
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "prose": [
+        "As the specimen degrades, its stiffness $k$ decreases and changes $H(s,k)$ in Figure 1. This change can reduce the stability margin of the outer controller loop [2]. The NCF OSI monitors the margin of this loop between $u(t)$ and $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+        "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the loop's robustness to perturbations. Gomaa et al. [2] evaluated it with the outer controller and plant as separate blocks. To evaluate the margin directly from the loop response, we assign the complete open-loop transfer function to the plant ($P=L$) and use unit feedback ($K=1$). The resulting NCF margin is",
+        "At each frequency, $\\delta$ is the chordal distance between $L(j\\omega,\\lambda,k)$ and the critical point $-1$. The infimum across frequencies gives the margin in {eq:bncf}. A small distance indicates that the loop is close to instability. To limit contributions from larger distances, every estimator branch uses the capped distance",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap limits contributions from those frequencies while preserving smaller distances that indicate proximity to $-1$. The reported indicator is therefore bounded by $1/\\sqrt{2}$."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "As the specimen degrades, its stiffness $k$ decreases and changes $H(s,k)$ in Figure 1. This change can reduce the stability margin of the outer controller loop [2]. The NCF OSI monitors the margin of this loop between $u(t)$ and $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the loop's robustness to perturbations. Gomaa et al. [2] evaluated it with the outer controller and plant as separate blocks. To evaluate the margin directly from the loop response, we assign the complete open-loop transfer function to the plant ($P=L$) and use unit feedback ($K=1$). The resulting NCF margin is"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "At each frequency, $\\delta$ is the chordal distance between $L(j\\omega,\\lambda,k)$ and the critical point $-1$. The infimum across frequencies gives the margin in {eq:bncf}. A small distance indicates that the loop is close to instability. To limit contributions from larger distances, every estimator branch uses the capped distance"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap limits contributions from those frequencies while preserving smaller distances that indicate proximity to $-1$. The reported indicator is therefore bounded by $1/\\sqrt{2}$."
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "prose": [
+        "With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions of the outer controller loop are",
+        "The quantities $U(s)$, $V(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$, $v(t)$ and $y(t)$. Gomaa et al. [2] evaluated the NCF margin [1] with the outer controller and plant treated separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response as",
+        "The function $\\delta$ is the chordal distance from $L(j\\omega)$ to the critical point $-1$, so small values indicate proximity to instability. All estimator branches use the capped distance",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)>\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. Thus the cap limits contributions from these frequencies while preserving all smaller distances."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions of the outer controller loop are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "The quantities $U(s)$, $V(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$, $v(t)$ and $y(t)$. Gomaa et al. [2] evaluated the NCF margin [1] with the outer controller and plant treated separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response as"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "The function $\\delta$ is the chordal distance from $L(j\\omega)$ to the critical point $-1$, so small values indicate proximity to instability. All estimator branches use the capped distance"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)>\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. Thus the cap limits contributions from these frequencies while preserving all smaller distances."
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "prose": [
+        "With $H(s,k)=Y(s)/V(s)$, the outer controller loop has the following open-loop and closed-loop transfer functions:",
+        "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies loop robustness to perturbations. Gomaa et al. [2] treated the outer controller and plant separately in its evaluation. Here we assign the complete loop transfer function to the plant $P=L$ with unit feedback $K=1$. This permits direct evaluation of the margin from the loop response:",
+        "At each frequency, $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$. The minimum over frequency in {eq:bncf} determines the margin. Smaller distances indicate closer proximity to instability. Each estimator branch uses the following capped distance:",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)>\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap affects only these values and leaves smaller distances unchanged, bounding the reported indicator by $1/\\sqrt{2}$."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "With $H(s,k)=Y(s)/V(s)$, the outer controller loop has the following open-loop and closed-loop transfer functions:"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies loop robustness to perturbations. Gomaa et al. [2] treated the outer controller and plant separately in its evaluation. Here we assign the complete loop transfer function to the plant $P=L$ with unit feedback $K=1$. This permits direct evaluation of the margin from the loop response:"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "At each frequency, $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$. The minimum over frequency in {eq:bncf} determines the margin. Smaller distances indicate closer proximity to instability. Each estimator branch uses the following capped distance:"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)>\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap affects only these values and leaves smaller distances unchanged, bounding the reported indicator by $1/\\sqrt{2}$."
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "prose": [
+        "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2]. The indicator monitors the stability margin of this loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+        "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the robustness of the loop to perturbations. Gomaa et al. [2] treated the outer controller and plant separately when evaluating this margin. Here the complete open-loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. The resulting NCF margin can be evaluated directly from the loop response as",
+        "At each frequency, $\\\\delta$ measures the chordal distance between $L(j\\\\omega)$ and the critical point $-1$. The smallest distance over all frequencies determines the margin in {eq:bncf}. A small distance therefore indicates proximity to instability. All estimator branches use the following capped distance to limit the contribution from larger distances:",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\\\,\\\\mathrm{Re}\\\\,L$ shows that the distance exceeds $\\\\delta(0)=1/\\\\sqrt{2}$ only where $\\\\mathrm{Re}\\\\,L>0$. The cap limits the contribution from these frequencies while preserving smaller distances that indicate proximity to the critical point. It also bounds the reported indicator by $1/\\\\sqrt{2}$."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "Specimen degradation reduces stiffness and changes the dynamics of the outer controller loop [2]. The indicator monitors the stability margin of this loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the robustness of the loop to perturbations. Gomaa et al. [2] treated the outer controller and plant separately when evaluating this margin. Here the complete open-loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. The resulting NCF margin can be evaluated directly from the loop response as"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "At each frequency, $\\\\delta$ measures the chordal distance between $L(j\\\\omega)$ and the critical point $-1$. The smallest distance over all frequencies determines the margin in {eq:bncf}. A small distance therefore indicates proximity to instability. All estimator branches use the following capped distance to limit the contribution from larger distances:"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\\\,\\\\mathrm{Re}\\\\,L$ shows that the distance exceeds $\\\\delta(0)=1/\\\\sqrt{2}$ only where $\\\\mathrm{Re}\\\\,L>0$. The cap limits the contribution from these frequencies while preserving smaller distances that indicate proximity to the critical point. It also bounds the reported indicator by $1/\\\\sqrt{2}$."
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "prose": [
+        "With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions of the outer controller loop are",
+        "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. $V(s)$ is the Laplace transform of the command $v(t)$. Gomaa et al. [2] evaluated the NCF margin [1] by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response as",
+        "The function $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. A small distance indicates proximity to instability. All branches of the estimator use the capped distance",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that the distance exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap limits the contribution of these larger distances to the reported indicator while preserving smaller distances."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions of the outer controller loop are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. $V(s)$ is the Laplace transform of the command $v(t)$. Gomaa et al. [2] evaluated the NCF margin [1] by treating the outer controller and plant separately. Here the complete loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation allows the margin to be evaluated directly from the loop response as"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "The function $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$ at each frequency. A small distance indicates proximity to instability. All branches of the estimator use the capped distance"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that the distance exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap limits the contribution of these larger distances to the reported indicator while preserving smaller distances."
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "prose": [
+        "$U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. $V(s)$ is the Laplace transform of the command $v(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+        "To evaluate the NCF margin [1] directly from the loop response, we treat the complete loop transfer function as the plant $P=L$ with unit feedback $K=1$. Gomaa et al. [2] treated the outer controller and plant separately. The resulting margin quantifies robustness to perturbations:",
+        "At each frequency, $\\delta(L)$ is the chordal distance from $L(j\\omega,\\lambda,k)$ to the critical point $-1$. The infimum in {eq:bncf} takes the smallest of these distances, so a smaller margin means greater proximity to instability. Each estimator branch uses the capped distance",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap removes this excess and leaves smaller distances unchanged. The reported indicator is therefore bounded by $1/\\sqrt{2}$."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "$U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. $V(s)$ is the Laplace transform of the command $v(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "To evaluate the NCF margin [1] directly from the loop response, we treat the complete loop transfer function as the plant $P=L$ with unit feedback $K=1$. Gomaa et al. [2] treated the outer controller and plant separately. The resulting margin quantifies robustness to perturbations:"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "At each frequency, $\\delta(L)$ is the chordal distance from $L(j\\omega,\\lambda,k)$ to the critical point $-1$. The infimum in {eq:bncf} takes the smallest of these distances, so a smaller margin means greater proximity to instability. Each estimator branch uses the capped distance"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that $\\delta(L)$ exceeds $\\delta(0)=1/\\sqrt{2}$ only when $\\mathrm{Re}\\,L>0$. The cap removes this excess and leaves smaller distances unchanged. The reported indicator is therefore bounded by $1/\\sqrt{2}$."
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "prose": [
+        "Specimen stiffness degradation changes the dynamics of the outer controller loop [2]. The NCF OSI monitors the stability margin of this loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are",
+        "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the robustness of the loop to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and the plant separately. Here the complete open-loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation gives the following NCF margin directly in terms of the loop response:",
+        "At each frequency, $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$. Small values of $\\delta$ indicate proximity to instability, and the smallest value over all frequencies determines the margin in {eq:bncf}. All estimator branches use the following capped distance to limit the contribution of larger distances:",
+        "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that the distance exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap therefore bounds the reported indicator by $1/\\sqrt{2}$ while preserving smaller distances that indicate proximity to the critical point."
+      ],
+      "content": [
+        {
+          "type": "P",
+          "text": "Specimen stiffness degradation changes the dynamics of the outer controller loop [2]. The NCF OSI monitors the stability margin of this loop from $u(t)$ to $y(t)$. With $H(s,k)=Y(s)/V(s)$, the open-loop and closed-loop transfer functions are"
+        },
+        {
+          "type": "equation",
+          "id": "L",
+          "latex": "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),"
+        },
+        {
+          "type": "equation",
+          "id": "T",
+          "latex": "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},"
+        },
+        {
+          "type": "P",
+          "text": "where $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF margin [1] quantifies the robustness of the loop to perturbations. Gomaa et al. [2] evaluated this margin by treating the outer controller and the plant separately. Here the complete open-loop transfer function is assigned to the plant $P=L$ with unit feedback $K=1$. This formulation gives the following NCF margin directly in terms of the loop response:"
+        },
+        {
+          "type": "equation",
+          "id": "bncf",
+          "latex": "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(L(j\\omega,\\lambda,k)\\big),"
+        },
+        {
+          "type": "equation",
+          "id": "delta",
+          "latex": "\\delta(L)=\\frac{|1+L|}{\\sqrt{2\\left(1+|L|^{2}\\right)}}."
+        },
+        {
+          "type": "P",
+          "text": "At each frequency, $\\delta$ measures the chordal distance between $L(j\\omega)$ and the critical point $-1$. Small values of $\\delta$ indicate proximity to instability, and the smallest value over all frequencies determines the margin in {eq:bncf}. All estimator branches use the following capped distance to limit the contribution of larger distances:"
+        },
+        {
+          "type": "equation",
+          "id": "phi",
+          "latex": "\\phi(L)=\\min\\left\\{\\delta(L),\\,\\frac{1}{\\sqrt{2}}\\right\\}."
+        },
+        {
+          "type": "P",
+          "text": "The identity $|1+L|^{2}-(1+|L|^{2})=2\\,\\mathrm{Re}\\,L$ shows that the distance exceeds $\\delta(0)=1/\\sqrt{2}$ only where $\\mathrm{Re}\\,L>0$. The cap therefore bounds the reported indicator by $1/\\sqrt{2}$ while preserving smaller distances that indicate proximity to the critical point."
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "pair_id": "P8",
+      "first": "C1",
+      "second": "C2"
+    },
+    {
+      "pair_id": "P3",
+      "first": "C1",
+      "second": "C4"
+    },
+    {
+      "pair_id": "P10",
+      "first": "C3",
+      "second": "C7"
+    },
+    {
+      "pair_id": "P7",
+      "first": "C5",
+      "second": "C8"
+    },
+    {
+      "pair_id": "P4",
+      "first": "C7",
+      "second": "C2"
+    },
+    {
+      "pair_id": "P11",
+      "first": "C6",
+      "second": "C3"
+    },
+    {
+      "pair_id": "P1",
+      "first": "C5",
+      "second": "C6"
+    },
+    {
+      "pair_id": "P9",
+      "first": "C4",
+      "second": "C6"
+    },
+    {
+      "pair_id": "P12",
+      "first": "C4",
+      "second": "C7"
+    },
+    {
+      "pair_id": "P5",
+      "first": "C1",
+      "second": "C5"
+    },
+    {
+      "pair_id": "P2",
+      "first": "C3",
+      "second": "C8"
+    },
+    {
+      "pair_id": "P6",
+      "first": "C8",
+      "second": "C2"
+    }
+  ]
+}

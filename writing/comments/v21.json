@@ -1,0 +1,25 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 21,
+  "saved": "2026-09-24T17:07:10.445Z",
+  "comments": [
+    {
+      "id": "c1790269565059",
+      "section": "2.1Control loop and stability margin",
+      "quote": "L(s,λ,k)=[λC(s)]H(s,k)",
+      "prefix": "sed-loop response from u(t) to y(t) are\n",
+      "suffix": ",(1)\nT(s,λ,k)=Y(s)U(s)=L(s,λ,k)1+L(s,λ,k",
+      "text": "remove square paranthesis",
+      "created": "2026-09-24T17:06:05.059Z"
+    },
+    {
+      "id": "c1790269603665",
+      "section": "2.1Control loop and stability margin",
+      "quote": "r, the NCF margin [1] is",
+      "prefix": "e factor included in the outer controlle",
+      "suffix": "\nbNCF(λ,k)=infωδ(H(jω,k),λC(jω)),(3)\nδ(H",
+      "text": "when you define an equation try not simply is, use things similr to wht we used in the first paper",
+      "created": "2026-09-24T17:06:43.665Z"
+    }
+  ]
+}

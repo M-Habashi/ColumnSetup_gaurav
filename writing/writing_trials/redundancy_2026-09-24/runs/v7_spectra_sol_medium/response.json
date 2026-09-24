@@ -1,0 +1,24 @@
+{
+  "purpose": "Section 2.1 defines the loop margin; Section 2.2 must specify how spectra from changing experimental signals are formed and averaged; Section 2.3 then uses those spectra for direct identification.",
+  "first_draft": [
+    "Because specimen degradation changes the loop response needed for {eq:bncf}, the estimator uses short windows of $u$ and $y$ during the experiment. It updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of data, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a 2 Hz bin spacing. With $n$ indexing the update and $r=0,\\dots,N-1$ indexing samples in its window, the Hann-windowed discrete Fourier transforms are",
+    "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window, and $\\omega_m=2\\pi mf_s/N$ is the angular frequency. The transforms give the instantaneous auto- and cross-spectra",
+    "The spectra are unnormalized because the normalization cancels in the ratios below, and the argument $\\omega_m$ is omitted for brevity. Since a single window is noisy, the spectra are smoothed recursively by exponentially weighted averaging [4] of modified periodograms [3]. The averages are initialized with the first complete window:",
+    "The indicator uses only the 2–100 Hz band, excluding bins affected by line noise:",
+    "This leaves 47 bins. Hereafter $\\omega\\in\\Omega$, and subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+  ],
+  "review": [
+    "The opening keeps the changing loop response as the reason for online updates without restating the prior explanation of the NCF margin. It retains update interval, window length, overlap, sample count, bin spacing, and both indices. The final five sentences have prose comma counts 0, 0, 0, 1, 1; deleting any loses either the causal link, acquisition settings, overlap, spectral resolution, or transform indices.",
+    "The first draft combined the Hann weights and frequency variable in one sentence. The final separates these definitions and introduces the spectra. Prose comma counts are 0, 0, 0; deleting any sentence leaves a symbol or the next equation's role unclear.",
+    "The first draft combined normalization and omitted-argument conventions in one sentence. The final separates them and states why averaging is needed. It retains both citations and initialization from the first complete window. Prose comma counts are 0, 0, 1, 0; each sentence adds a distinct convention, reason, method, or initial condition.",
+    "The frequency range and line-noise exclusion remain explicit before their defining equation. 'Only' was removed because the equation supplies the exact selection. Prose comma count is 0; deletion would leave the frequency set without a purpose.",
+    "The count of 47 bins, the scope of $\\omega$, and the operating-condition meaning of $n$ are retained. Unknown stiffness remains explicitly unestimated, a qualification needed to avoid implying identification of $k_n$. Prose comma counts are 0, 1, 0; each sentence adds information absent from the neighboring section."
+  ],
+  "final": [
+    "Specimen degradation changes the loop response needed to evaluate the margin in {eq:bncf}. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of $u$ and $y$. Consecutive windows therefore overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a 2 Hz bin spacing. With $n$ denoting the update and $r=0,\\dots,N-1$ indexing samples within its window, the Hann-windowed discrete Fourier transforms are",
+    "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window. The angular frequency of bin $m$ is $\\omega_m=2\\pi mf_s/N$. The transforms give the instantaneous auto- and cross-spectra",
+    "The spectra are unnormalized because their common normalization cancels in the ratios below. The frequency argument $\\omega_m$ is omitted where clear. Individual-window spectra are noisy, so each is smoothed recursively using exponential weighting [4] of modified periodograms [3]. The averages are initialized with the first complete window:",
+    "The indicator uses frequencies from 2 to 100 Hz and excludes bins affected by line noise:",
+    "This selection leaves 47 bins. Hereafter $\\omega\\in\\Omega$, and subscript $n$ denotes the operating condition $(\\lambda_n,k_n)$ at update $n$. The current stiffness $k_n$ is unknown and is not estimated."
+  ]
+}
