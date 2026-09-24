@@ -5,6 +5,11 @@ Use [write.md](write.md) for the drafting and review workflow and [scientific_ex
 Follow this for every sentence written for the paper. Never use semicolons, in the paper or in this file.
 Paper 1 is Gomaa et al., cited as [2]. Its manuscript is `aab paper1/writing/submit/Paper Submit 02/SCHM_Main_Manuscript_Rev1.docx`.
 
+## Versions workflow check
+Before editing a manuscript HTML file, search it for `<meta name="review-workflow" content="enabled">`.
+- If the flag is present, follow [REVIEW_WORKFLOW.md](REVIEW_WORKFLOW.md) for versions, comments and the user's saved and unsaved edits.
+- If it is missing or not "enabled", tell the user that this HTML file may not have a versions workflow, and ask before editing.
+
 ## The system (learn this before writing)
 **Hybrid simulation** splits a reference structure into two substructures:
 - the **numerical substructure**, computed in real time and driven by the ground acceleration and the measured force

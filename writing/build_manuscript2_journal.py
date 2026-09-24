@@ -50,24 +50,24 @@ RAW('<p class="lead">' + inline(
     "$b_{\\mathrm{pow}}$, which can detect amplification of the loop at frequencies that cannot be reliably identified. "
     "This branch compares the output power measured during the experiment against the reference recorded before the "
     "excitation. The third is the prior identification of the initial state, $b_{0}$, which serves as a fallback when "
-    "no sufficient information is available. The adaptive controller then acts on the estimated indicator by scaling "
-    "the controller output by the adaptive factor $\\lambda$, updated during the experiment, to keep the loop stable "
+    "no sufficient information is available. The adaptive controller then utilizes the estimated indicator to scale "
+    "the controller output by the adaptive factor $\\lambda$ to keep the loop stable "
     "with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The "
     "evaluation of the framework is discussed in detail in this section.") + '</p>')
 
 H2("2.1", "Control loop and stability margin", "s1")
-P("In the hybrid simulation shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ "
-  "from the ground acceleration and measured force $f_m(t)$. To offset the transfer-system lag and improve tracking, a "
-  "phase-lead compensator advances $d(t)$ to produce the reference $u(t)$. The outer controller $C(s)$ acts on the "
+P("In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ "
+  "from the ground acceleration and measured force $f_m(t)$. To compensate for the transfer-system lag and improve tracking, a "
+  "phase-lead compensator receives $d(t)$ to produce the reference $u(t)$. The outer controller $C(s)$ takes the "
   "tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. Its output is scaled by the adaptive "
-  "factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ applied to the plant $H(s,k)$.")
+  "factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ sent to the plant $H(s,k)$.")
 P("The plant comprises the transfer system and the specimen of stiffness $k$. The transfer system includes the "
-  "inner-loop controller, servo-valve and actuator. Control–structure interaction between the actuator and specimen is "
-  "also included in the transfer-system dynamics. The measured force $f_m(t)$ returns to the numerical substructure and "
-  "closes the numerical substructure loop. The measured displacement $y(t)$ provides feedback to the outer controller "
+  "inner-loop controller, servo-valve and actuator. The control–structure interaction between the actuator and specimen is "
+  "also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure and "
+  "closes the numerical substructure loop, while the measured displacement $y(t)$ provides feedback to the outer controller "
   "and closes the outer controller loop.")
 RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 1100 280">
-<title id="f1t">Hybrid simulation loop with adaptive controller setup</title>
+<title id="f1t">Hybrid simulation loop with the NCF OSI framework setup</title>
 <desc id="f1d">The numerical substructure calculates the desired displacement d, which passes through the phase-lead compensator to give u. u enters a summing junction, the controller C, and the adaptive factor lambda, which produce the command v applied to the transfer system and specimen H(s,k). The measured displacement y is fed back to the junction, and the measured force f_m returns to the numerical substructure.</desc>
 <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
 <g fill="none" stroke="currentColor" stroke-width="1.8">
@@ -94,7 +94,7 @@ RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 
 <text x="700" y="191" class="nt" fill="#007CA8">Measured actuator displacement</text>
 <text x="500" y="241" class="nt" fill="#74058A"><tspan class="it">f</tspan><tspan class="it" font-size="14" dy="5">m</tspan><tspan dy="-5">(t), measured force</tspan></text>
 </g></svg>
-<figcaption><b>Figure 1.</b> Hybrid simulation loop with adaptive controller setup.</figcaption></figure>''')
+<figcaption><b>Figure 1.</b> Hybrid simulation loop with the NCF OSI framework setup.</figcaption></figure>''')
 P("When the specimen degrades, its stiffness decreases and the dynamics of the outer controller loop, from $u(t)$ to "
   "$y(t)$, change [2]. The indicator therefore evaluates this loop. With $H(s,k)=Y(s)/V(s)$, its open-loop and closed-loop transfer "
   "functions are")

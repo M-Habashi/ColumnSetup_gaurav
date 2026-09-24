@@ -585,7 +585,7 @@ export function App() {
         <main className="min-w-0 flex-1 overflow-y-auto" onMouseUp={onDocMouseUp}>
           <div
             ref={paperRef}
-            className="relative mx-auto my-8 w-full max-w-[860px] border bg-card px-16 py-14 print:my-0 print:border-0 print:px-0"
+            className="relative mx-auto my-8 w-full max-w-[860px] rounded-2xl border bg-card px-16 py-14 print:my-0 print:rounded-none print:border-0 print:px-0"
           >
             <article ref={docRef} className="paper" onClick={onDocClick} onDoubleClick={onDocDoubleClick} />
             {addTop !== null && (
@@ -609,12 +609,11 @@ export function App() {
         {/* Comments and history retain their usual column during in-place editing. */}
         <aside
           className={cn(
-            "flex w-[360px] shrink-0 flex-col print:hidden",
-            panel && "border-l bg-background"
+            "flex w-[360px] shrink-0 flex-col py-3 pr-3 print:hidden"
           )}
         >
           {panel && (
-            <>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
               <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
                 <span className="text-sm font-medium">
                   {panel === "history" ? "Version history" : `Comments on ${vName(selected)}`}
@@ -723,18 +722,17 @@ export function App() {
                   </div>
                 )}
               </ScrollArea>
-            </>
+            </div>
           )}
         </aside>
       </div>
 
       {editTarget && createPortal(
-        <div className="flex flex-col gap-2 rounded-sm border bg-background p-2 font-sans text-sm leading-normal">
+        <div className="flex flex-col gap-2 rounded-xl border bg-background p-2 font-sans text-sm leading-normal">
           <iframe
             ref={frameRef}
             title="Paragraph editor"
             srcDoc={editTarget.source}
-            sandbox="allow-same-origin"
             className="block w-full border-0"
             style={{ height: editTarget.height }}
             onLoad={prepareParagraph}
@@ -812,7 +810,7 @@ function VersionRow(props: {
       }
     >
       <ItemContent className="flex-row items-center gap-3 text-sm whitespace-nowrap">
-        <span className="w-7 font-medium tabular-nums">{name}</span>
+        <span className="w-9 font-medium tabular-nums">{name}</span>
         <span className="text-muted-foreground tabular-nums">{date.slice(5)}</span>
         <span className="ml-auto text-muted-foreground tabular-nums">
           {words.toLocaleString()} words
@@ -901,7 +899,7 @@ function CommentCard(props: {
     <div
       ref={props.cardRef}
       className={cn(
-        "flex flex-col gap-2 rounded-md border p-3 text-sm transition-colors",
+        "flex flex-col gap-2 rounded-xl border p-3 text-sm transition-colors",
         active ? "border-ring bg-muted/50" : "hover:bg-muted/30"
       )}
       onClick={props.onFocus}

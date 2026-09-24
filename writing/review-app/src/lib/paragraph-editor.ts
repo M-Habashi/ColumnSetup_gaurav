@@ -1,5 +1,6 @@
 // A separate, fixed-size document keeps typing out of the manuscript's layout tree.
-// This document contains no scripts, framework, document-wide styles, or live preview.
+// It contains no scripts or framework. Spellcheck and extensions such as Grammarly are allowed here, because
+// the editor holds a single paragraph, so checking stays cheap.
 import { acceptedHtml } from "./track"
 import { lcs, markUserInsertions } from "./diff"
 
@@ -18,8 +19,7 @@ export function paragraphDocument(html: string) {
     /* only the user's own words are green: earlier updates and what is typed now */
     [data-user-edit], ::highlight(user-ins) { color: var(--user-ins, #1f8a45); }
   </style></head><body><div id="editor" contenteditable="true" role="textbox"
-    aria-label="Selected manuscript text" aria-multiline="true" spellcheck="false"
-    autocorrect="off" writingsuggestions="false" data-gramm="false">${html}</div></body></html>`
+    aria-label="Selected manuscript text" aria-multiline="true" spellcheck="true">${html}</div></body></html>`
 }
 
 function textNodes(root: Element) {
