@@ -1,0 +1,66 @@
+[
+  {
+    "id": "primary_01",
+    "case": "primary",
+    "replicate": 1,
+    "packet": "packets/primary_01.json",
+    "astra_baseline": "../runs/v3_primary_01/response.md",
+    "claude_response": "claude/primary_01/response.md"
+  },
+  {
+    "id": "primary_02",
+    "case": "primary",
+    "replicate": 2,
+    "packet": "packets/primary_02.json",
+    "astra_baseline": "../runs/v3_primary_02/response.md",
+    "claude_response": "claude/primary_02/response.md"
+  },
+  {
+    "id": "primary_03",
+    "case": "primary",
+    "replicate": 3,
+    "packet": "packets/primary_03.json",
+    "astra_baseline": "../runs/v3_primary_03/response.md",
+    "claude_response": "claude/primary_03/response.md"
+  },
+  {
+    "id": "system_01",
+    "case": "system",
+    "replicate": 1,
+    "packet": "packets/system_01.json",
+    "astra_baseline": "../runs/v3_system_01/response.md",
+    "claude_response": "claude/system_01/response.md"
+  },
+  {
+    "id": "system_02",
+    "case": "system",
+    "replicate": 2,
+    "packet": "packets/system_02.json",
+    "astra_baseline": "../runs/v3_system_02/response.md",
+    "claude_response": "claude/system_02/response.md"
+  },
+  {
+    "id": "paper2_01",
+    "case": "paper2",
+    "replicate": 1,
+    "packet": "packets/paper2_01.json",
+    "astra_baseline": "astra/paper2_01/response.md",
+    "claude_response": "claude/paper2_01/response.md"
+  },
+  {
+    "id": "paper2_02",
+    "case": "paper2",
+    "replicate": 2,
+    "packet": "packets/paper2_02.json",
+    "astra_baseline": "astra/paper2_02/response.md",
+    "claude_response": "claude/paper2_02/response.md"
+  },
+  {
+    "id": "paper2_03",
+    "case": "paper2",
+    "replicate": 3,
+    "packet": "packets/paper2_03.json",
+    "astra_baseline": "astra/paper2_03/response.md",
+    "claude_response": "claude/paper2_03/response.md"
+  }
+]

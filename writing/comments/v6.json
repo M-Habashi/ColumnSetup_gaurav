@@ -1,0 +1,34 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 6,
+  "saved": "2026-09-23T23:31:21.569Z",
+  "comments": [
+    {
+      "id": "c1790205170530",
+      "section": "Opening",
+      "quote": "In this we extend th analytical study to be implementd experimentally and discuss the experimental challenges and propose how to address them.",
+      "prefix": " once the specimen loses stiffness [2]. ",
+      "suffix": " section describes how the indicator is ",
+      "text": "significant improvement is needed here\ndiscuss these changes with me before changing the file and propose 2 alternative",
+      "created": "2026-09-23T23:12:50.530Z"
+    },
+    {
+      "id": "c1790205264710",
+      "section": "Opening",
+      "quote": " describe",
+      "prefix": "ropose how to address them. This section",
+      "suffix": "s how the indicator is estimated during ",
+      "text": "I dont like the word describe generally, propose some alternaatives",
+      "created": "2026-09-23T23:14:24.710Z"
+    },
+    {
+      "id": "c1790206253753",
+      "section": "Opening",
+      "quote": "Moreover",
+      "prefix": "no sufficeient information re vailable. ",
+      "suffix": ", to keep the loop stable with an adequa",
+      "text": "let's find a stronger connection\nan adptive controller is not just moreover it is  much larger addition",
+      "created": "2026-09-23T23:30:53.754Z"
+    }
+  ]
+}

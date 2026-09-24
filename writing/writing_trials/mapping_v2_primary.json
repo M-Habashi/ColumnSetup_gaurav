@@ -1,0 +1,62 @@
+[
+  {
+    "label": "A",
+    "run": "v2_primary_03",
+    "metrics": {
+      "words": 119,
+      "sentences": 8,
+      "commas_per_sentence": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      "semicolons": 0,
+      "whose": 0
+    }
+  },
+  {
+    "label": "B",
+    "run": "v2_primary_02",
+    "metrics": {
+      "words": 119,
+      "sentences": 8,
+      "commas_per_sentence": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "semicolons": 0,
+      "whose": 0
+    }
+  },
+  {
+    "label": "C",
+    "run": "v2_primary_01",
+    "metrics": {
+      "words": 113,
+      "sentences": 8,
+      "commas_per_sentence": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      "semicolons": 0,
+      "whose": 0
+    }
+  }
+]

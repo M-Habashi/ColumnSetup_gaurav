@@ -1,0 +1,70 @@
+[
+  {
+    "pair": "primary_01",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": [
+      "output",
+      "isolation",
+      "output_path"
+    ]
+  },
+  {
+    "pair": "primary_02",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": [
+      "output",
+      "isolation",
+      "output_path"
+    ]
+  },
+  {
+    "pair": "primary_03",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": [
+      "output",
+      "isolation",
+      "output_path"
+    ]
+  },
+  {
+    "pair": "system_01",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": [
+      "output",
+      "isolation",
+      "output_path"
+    ]
+  },
+  {
+    "pair": "system_02",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": [
+      "output",
+      "isolation",
+      "output_path"
+    ]
+  },
+  {
+    "pair": "paper2_01",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": []
+  },
+  {
+    "pair": "paper2_02",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": []
+  },
+  {
+    "pair": "paper2_03",
+    "frozen_guide_and_dictionary": true,
+    "substantive_input_match": true,
+    "delivery_differences": []
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 1,
+  "saved": "2026-09-23T19:11:41.748Z",
+  "comments": [
+    {
+      "id": "c1",
+      "section": "Opening",
+      "quote": " authors’ previous study",
+      "prefix": "ty indicator (NCF OSI) introduced in the",
+      "suffix": " [2] quantifies the robustness of the ac",
+      "text": "I don't like the word \"introduced.\" Maybe we can use something like \"demonstrated\", yeah, \"demonstrated\" is a better word. \n\nAlso, let's not say \"the author's previous study.\"",
+      "created": "2026-09-23T19:11:41.748Z"
+    },
+    {
+      "id": "c2",
+      "section": "Opening",
+      "quote": "describes ",
+      "prefix": "gradation of the specimen. This section ",
+      "suffix": "how the indicator is estimated during th",
+      "text": "I am not sure \"presents\" is the better word here for this section, maybe \"describes\".",
+      "created": "2026-09-23T19:11:41.748Z"
+    },
+    {
+      "id": "c3",
+      "section": "Opening",
+      "quote": "test ",
+      "prefix": "w the indicator is estimated during the ",
+      "suffix": "from the desired displacement calculated",
+      "text": "During the experiment (not just the test: let's be more explicit here and say \"the experiment\"), I'm thinking: what can we add when we say \"three sources of evidence are combined\"? \n\nI think we need a purpose before we say that, something like \"to ensure\" or \"to provide\" or to do something. Why, in the first place, do we need these three sources of evidence? \n\nEspecially for this part, I want you to add a few alternatives that I can choose from.",
+      "created": "2026-09-23T19:11:41.748Z"
+    },
+    {
+      "id": "c4",
+      "section": "Opening",
+      "quote": "The derivation of the SISO margin and its relation to specimen damage are given in [2] and are restated here only as required by the estimator.",
+      "prefix": " the test from the estimated indicator. ",
+      "suffix": "\n2.1Control loop and stability margin\nFi",
+      "text": "\"Of the closed loop from the measured signals\" is very weak and general. We need to make it more explicit and clear:\n\n1. What method is this identification based on? Is it the frequency response function, cross-correlation, or something else? You need to specify the exact method name.\n2. Between which signals, to identify what system? Clarify whether this is the outer controller closed loop, and explicitly mention the signals so it is clear to the reader.\n\nFor the second point, \"output power inference, which detects a change in the loop from the change in measured output power\" is awkward. It detects that change (not \"a change\") when it happens. A better way to describe this: if a change occurs at a specific frequency, it detects that change by comparing the measured or estimated power during the experiment against the reference before excitation.\n\nThe third point, the a priori identification of the initial state being known, is good.\n\nRegarding the last sentence in this paragraph, where you state that the derivation of the SISO margin and its relation to specimen degradation is given: this is not the right place for it. It might fit better in the first sentence or opening section where we introduce the normalized coprime factor severity indicator (or, as discussed earlier, whichever term we decide to use). We could also add a sentence or two noting that the study showed the outer controller loop can become unstable as the specimen degrades. Review the paper to see how it was phrased there and adopt that phrasing.\n\nInstead of keeping that sentence here, we can state that the evaluation of the framework is discussed in detail in the upcoming sections.",
+      "created": "2026-09-23T19:11:41.748Z"
+    }
+  ]
+}

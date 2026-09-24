@@ -21,6 +21,10 @@ TBD. State the paper's main contribution in one or two precise sentences.
 - **In scope:** TBD
 - **Out of scope:** TBD
 
+## Writing style
+
+Follow `writing/writing.md` for every sentence written for Paper 2.
+
 ## Relationship to Paper 1
 
 **Paper 1 directory:** `C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\aab paper1`

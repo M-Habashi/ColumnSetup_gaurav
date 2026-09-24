@@ -1,0 +1,56 @@
+{
+  "run_id": "primary_01",
+  "requested_model": "claude-opus-5-5",
+  "effort": "high",
+  "command": [
+    "C:\\Users\\Victus\\.local\\bin\\claude.EXE",
+    "-p",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--safe-mode",
+    "--tools",
+    "",
+    "--strict-mcp-config",
+    "--no-session-persistence",
+    "--output-format",
+    "json"
+  ],
+  "session_id": "0ddb4cd8-a895-47bd-a094-a2a84018a1fd",
+  "seconds": 27.49071919999551,
+  "total_cost_usd": 0.1059888,
+  "model_usage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 3927,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.004017,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-haiku-4-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    },
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 2896,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 5469,
+      "webSearchRequests": 0,
+      "costUSD": 0.1019718,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1169,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "turns": 1,
+  "prompt_path": "C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\writing\\writing_trials\\model_comparison_2026-09-24\\packets\\primary_01.txt"
+}

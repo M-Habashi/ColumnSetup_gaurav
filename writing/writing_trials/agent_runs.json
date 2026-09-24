@@ -1,0 +1,77 @@
+{
+  "date": "2026-09-24",
+  "isolation": "Every listed task was spawned fresh with fork_turns=none. No followup_task was used. Models and reasoning settings were inherited without overrides. Each writer was instructed to read only its own packet. Each evaluator was instructed to read only its own evaluation packet.",
+  "writers": [
+    {
+      "agent": "/root/trial_v1_01",
+      "run": "v1_primary_01"
+    },
+    {
+      "agent": "/root/trial_v1_02",
+      "run": "v1_primary_02"
+    },
+    {
+      "agent": "/root/trial_v1_03",
+      "run": "v1_primary_03"
+    },
+    {
+      "agent": "/root/trial_v2_01",
+      "run": "v2_primary_01"
+    },
+    {
+      "agent": "/root/trial_v2_02",
+      "run": "v2_primary_02"
+    },
+    {
+      "agent": "/root/trial_v2_03",
+      "run": "v2_primary_03"
+    },
+    {
+      "agent": "/root/trial_v2_transfer01",
+      "run": "v2_transfer_01"
+    },
+    {
+      "agent": "/root/trial_v2_transfer02",
+      "run": "v2_transfer_02"
+    },
+    {
+      "agent": "/root/trial_v2_system01",
+      "run": "v2_system_01"
+    },
+    {
+      "agent": "/root/trial_v2_system02",
+      "run": "v2_system_02"
+    },
+    {
+      "agent": "/root/trial_v3_01",
+      "run": "v3_primary_01"
+    },
+    {
+      "agent": "/root/trial_v3_02",
+      "run": "v3_primary_02"
+    },
+    {
+      "agent": "/root/trial_v3_03",
+      "run": "v3_primary_03"
+    },
+    {
+      "agent": "/root/trial_v3_system01",
+      "run": "v3_system_01"
+    },
+    {
+      "agent": "/root/trial_v3_system02",
+      "run": "v3_system_02"
+    }
+  ],
+  "evaluators": [
+    "/root/review_v1",
+    "/root/review_v2",
+    "/root/review_v2_transfer",
+    "/root/review_v2_system",
+    "/root/review_controls",
+    "/root/review_controls_strict",
+    "/root/review_v3_primary",
+    "/root/review_v3_system"
+  ],
+  "status": "All 15 writing trials and all 8 fresh evaluator tasks completed."
+}

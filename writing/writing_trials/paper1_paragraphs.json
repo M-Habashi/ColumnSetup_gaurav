@@ -1,0 +1,1617 @@
+[
+  {
+    "id": 1,
+    "text": "An Online Stability Indicator for Real-Time Hybrid Simulation Emphasizing Physical Substructure Degradation",
+    "math": false
+  },
+  {
+    "id": 2,
+    "text": "Mohamed Gomaa,2,  Edwin D. Patino, Juan Nicolas Villamizar2, Johnny W. Condori Uribe, Shirley J. Dyke",
+    "math": false
+  },
+  {
+    "id": 3,
+    "text": "Abstract",
+    "math": false
+  },
+  {
+    "id": 4,
+    "text": "Real-time hybrid simulation (RTHS) has become increasingly important as an experimental tool for evaluating system-level structural response under realistic loading while averting the cost and impracticality of full-scale testing. Recent advances in real-time processing, high-quality sensing, and servo-hydraulic control techniques have accelerated RTHS adoption and enabled more complex experiments. However, a key barrier to reliable RTHS execution remains the potential loss of stability as the physical substructure evolves during testing, particularly under stiffness degradation. This paper addresses this challenge by first formulating a typical RTHS framework and transfer-system dynamics, then analyzing stability under a parameterized degradation of the physical substructure and presenting a computational procedure for determining the critical damage level. Building on this analysis, an online stability indicator based on the normalized coprime factor (NCF) margin is presented and simplified for efficient evaluation in single-input-single-output (SISO) settings. A controller-switching strategy is also demonstrated to support practical intervention during an experiment by transitioning from a high-performance controller to a high-robustness controller as stability margins diminish. The switching boundary is formulated using Lyapunov stability criteria to ensure closed-loop stability during the transition. The approach is demonstrated on a modified version of a well-established benchmark problem. Using virtual real-time hybrid simulation (vRTHS), the proposed indicator is shown to provide a timely warning of diminishing robustness, enabling a smooth controller transition that successfully maintains stable operation and response accuracy under progressive degradation.",
+    "math": false
+  },
+  {
+    "id": 6,
+    "text": "Keywords: real-time hybrid simulation; stability indicator; normalized coprime factor; structural degradation; controller switching",
+    "math": false
+  },
+  {
+    "id": 8,
+    "text": "1-Introduction",
+    "math": false
+  },
+  {
+    "id": 9,
+    "text": "Despite the remarkable advances in computational modeling and simulation tools, experimental testing remains indispensable to provide sufficient understanding of complex structural systems. Computational models often rely on idealized assumptions and simplifications, and their applicability may be limited when dealing with new, untested innovations. Experimental calibration and validation may be required before they are likely to be adopted for predicting the response to new inputs [1].",
+    "math": false
+  },
+  {
+    "id": 10,
+    "text": "The ideal experiment to provide the most realistic test conditions and accurate results would be a full-scale, real-time experiment. However, such a test is often infeasible due to the cost, time, scale, and physical constraints, especially for structural applications. These constraints inspired civil engineering researchers to embark on a multi-decade effort to establish cost-effective testing methods that provide meaningful data for understanding behavior, validating models, and capturing the full spectrum of responses up to failure. One testing method that has been a fundamental part of civil engineering research since the early 20th century is the quasi-static technique [2]. With this approach, a predefined loading input is applied to a structural component (e.g., a building column or bridge pier) at a slow rate to allow close observation of the evolution of damage and to determine the hysteretic behavior without the need for high-performance actuators. As a result of its nature, the quasi-static technique has some major limitations: 1) it focuses on obtaining component-level rather than structure-level information, and thus it neglects the interaction between the component being tested and the rest of the structure; 2) it requires a predefined loading protocol, which helps in understanding some of the mechanical component properties, but it may not reflect the actual, or the full range, of structural behavior during the real situation; and, 3) its inherently slow loading rate prevents it from capturing rate-dependent phenomena [3].",
+    "math": false
+  },
+  {
+    "id": 11,
+    "text": "These shortcomings motivated a new, cost-effective and efficient experimental technique to evaluate the dynamic performance of large civil structures. Hybrid simulation (HS) has emerged to fill this role, finding its way into structural engineering in the late 1960s [4]. In HS, the structure under investigation is partitioned into two parts: a physical substructure and a numerical substructure. Typically, the physical substructure includes the more complex components of the system, while the numerical substructure models the portions that are well-understood. The interaction between the two substructures is maintained by a transfer system, comprising servo-hydraulic actuators, sensors, and controllers, that enforce compatibility conditions at their interface [5].",
+    "math": false
+  },
+  {
+    "id": 12,
+    "text": "As a natural evolution of HS, real-time hybrid simulation (RTHS) was developed to capture rate-dependent properties of systems. Despite being a powerful and versatile testing methodology, RTHS posed new challenges to the research community, as the accuracy of the results is strongly influenced by the performance of the transfer system. Good performance requires both appropriate selection of the hardware and careful design of the controllers, which typically need to be customized to meet the test objectives and account for the unique dynamics of each experiment [6], [7]. Inadequate controller design may not only compromise the accuracy of the results, but also induce instability in the system, potentially creating safety hazards or damaging costly equipment.",
+    "math": false
+  },
+  {
+    "id": 13,
+    "text": "To address these challenges, significant research has been carried out to establish the knowledge to improve a transfer system’s performance and stability. For instance, Dyke et al. [8] presented a substantial insight into understanding the physical substructure dynamics as they explained control-structure interaction and showed that actuators have an implicit feedback interaction path. Further, Carrion [6] and Maghareh et al. [9] studied transfer system modelling and developed a parametric model that describes the physical substructure dynamics, thereby laying the foundation for subsequent analytical investigations. Recognizing the need for collaborative progress and to provide a shared testbed that helps researchers standardize the evaluation process of diverse algorithms, benchmark problems were proposed for single-degree-of-freedom [10] and multi-degree-of-freedom [11] controlled substructures. These benchmarks have engaged a wide research community and led to notable advances in the field, with several studies demonstrating successful and effective implementations [12], [13], [14], [15], [16]. Additionally, more studies extended the framework to incorporate nonlinear experimental components, confirming the versatility of RTHS in capturing complex behaviors [17].",
+    "math": false
+  },
+  {
+    "id": 14,
+    "text": "The promising use of RTHS has motivated extensive stability studies to empower researchers to execute more complex experiments. Foundational work to study the RTHS stability analytically was established by Gawthrop et al. [18] and Mercan & Ricles [19], who used delay differential equations to determine system delay margins. These initial works, however, were limited by the simplifying assumption that the experimental substructure had stiffness and damping only. This limitation was addressed by Chi et al. [20], Wallace et al. [21], and Kyrychko et al. [22], who extended the study to include single degree of freedom (SDOF) physical substructures with both stiffness and mass properties. Additionally, they studied the instability mechanism that arises based on the physical substructure properties. To broaden the scope of the investigation, Gao & You [23] and Zhu et al. [24] extended the delay-based indicators to multi-degree-of-freedom (MDOF) systems in their stability studies. Maghareh et al. [5] leveraged the critical delay and derived an efficient eigenvalue-based solution providing a means for selecting among multiple partitioning schemes. To address the need for real-time monitoring, Gálmez & Fermandois [25] and Ahmadizadeh & Mosqueda [26] studied an efficient, energy-based stability indicator for online monitoring. By relying on observed signals during the experiment, it avoids dependence on an explicit model of the transfer system and can be implemented with minimal overhead. However, since it is not predictive and relies on observed data, it cannot provide a tunable lead-time margin for safety interventions. It is therefore well-suited as a secondary safety layer alongside primary predictive indicator aware of the system dynamics.",
+    "math": false
+  },
+  {
+    "id": 15,
+    "text": "One common assumption in the aforementioned RTHS stability studies is the reduction of the entire transfer system, including actuator dynamics and potential disruptions, to a lumped pure time delay effect. While being convenient for analysis and design, this model is an approximation and may fail to capture fundamentally different instability mechanisms, such as gain amplification driven by unmodeled dynamics or stiffness degradation.",
+    "math": false
+  },
+  {
+    "id": 16,
+    "text": "Recognizing these limitations, Tang et al. [27] developed a gain-margin-based stability boundary predictor that explicitly accounts for high-order servo-hydraulic transfer-system dynamics with simultaneously varying magnitude and phase, showing that the common pure-delay assumption has a low-frequency validity limit and validating the new method experimentally on a shaking-table test. Moreover, H. Zhou et al. [28] proposed a relative stability indicator for RTHS that relies on two quantitative robustness measures, critical delay for phase tolerance and critical gain, and validated it by numerical and physical SDOF tests. In these studies, the physical substructure parameters are not constant over the course of the experiment, however, the stability indicators are evaluated using a pre-identified loop model and are not updated online as the dynamics evolve. Moreover, extending these methods to multi-input-multi-output (MIMO) systems is non-trivial, particularly for coupled MDOF systems where complex actuator interactions complicate the analysis. Table 1 provides a comparative summary of the RTHS stability indicators in literature, highlighting their capabilities across the selected evaluation criteria.",
+    "math": false
+  },
+  {
+    "id": 17,
+    "text": "As shown in Table 1, most prior work adopts a lumped pure time-delay representation of the transfer system, which is referred to in this study as a low-fidelity representation. While this simplification enables stability assessment of the numerical substructure loop (shown in purple in Figure 1, it does not capture the dynamics of the outer controller loop (shown in blue in Figure 2, and therefore cannot evaluate its stability. Depending on the system dynamics and the disruption type, the outer controller loop can be the governing stability constraint. In this study, we present an example where physical-substructure degradation destabilizes the system while monitoring the global loop of the numerical substructure indicates enhanced robustness, motivating the importance of investigating the stability of the outer controller loop by employing high-fidelity models for the transfer system.",
+    "math": false
+  },
+  {
+    "id": 18,
+    "text": "Although gain and delay margins are informative for offline experiment design and partitioning selection, computing them online for high-fidelity transfer system models is inherently challenging due to the computational burden of tracking multiple crossover frequencies and maintaining numerical stability in real time. Furthermore, extending these indicators to MIMO configurations introduces additional complications, as the standard loop-at-a-time extension, which perturbs one input/output channel while holding the others nominal, can be overly optimistic, as it ignores coupled, simultaneous variations across channels [32]. On the other hand, energy-based indicators are largely observation-driven, as they are computed from measured response histories and error accumulation rather than explicit model-based predictions. Consequently, they provide limited ability to define a tunable lead time for proactive intervention.",
+    "math": false
+  },
+  {
+    "id": 19,
+    "text": " To address these gaps, we propose an online stability indicator with a focus on the internal stability of the transfer system and its robustness against unmodeled disruptions. In establishing the indicator, special attention is given to physical system degradation, considering it as the most prevalent disruption to the plant during an RTHS experiment. An analytical solution quantifying the system's robustness to such degradation is presented, and the indicator's performance is illustrated through an example that is adapted from the RTHS benchmark problem. The proposed framework further integrates this online indicator with a controller-switching strategy to enable proactive intervention as robustness decreases. The switching boundary is established using Lyapunov stability criteria to preserve closed-loop stability during the transition.",
+    "math": false
+  },
+  {
+    "id": 20,
+    "text": "The paper is structured to sequentially develop and demonstrate the proposed framework. Section 2 establishes the RTHS problem formulation and the high-fidelity transfer-system model used throughout the study. Section 3 investigates the effect of physical-substructure degradation on outer-loop stability and derives the corresponding degradation-dependent stability boundary. Section 4 provides the technical background on classical and modern robustness measures and uses this progression to introduce and formulate the NCF-based online stability indicator. Section 5 develops the controller-switching framework and examines the stability of the transition using Lyapunov criteria. Section 6 demonstrates the complete framework through an illustrative vRTHS example involving nonlinear specimen degradation and controller switching. Finally, Section 7 summarizes the main findings and conclusions.",
+    "math": false
+  },
+  {
+    "id": 21,
+    "text": "2-Problem Formulation",
+    "math": false
+  },
+  {
+    "id": 22,
+    "text": " The fundamental concept of RTHS is to partition a reference structural model into two substructures. Therefore, an RTHS consists of several major components, including: (i) a numerical substructure that can be evaluated in real-time on a computer; (ii) a physical substructure excited by actuators and instrumented with sensors; and, (iii) a transfer system, comprising the controller, servo-valve and actuator hydraulics, that enforces compatibility and equilibrium interface by synchronizing the physical substructure's response with the numerical evaluated response. Figure 1 illustrates a typical RTHS scheme where the numerical substructure is subjected to a ground acceleration, agt, where dd is the calculated desired displacement from the numerical model, and fe is the measured force from the physical substructure, while Figure 2 provides a closer look inside the transfer system block. Although seismic excitation is used for illustration in this study, the proposed framework is not restricted to earthquake loading and can be applied to other external excitations, such as wind loading, by modifying the corresponding input to the numerical substructure.",
+    "math": true
+  },
+  {
+    "id": 24,
+    "text": "Figure 1: A block diagram illustrating the main components of a typical RTHS test",
+    "math": false
+  },
+  {
+    "id": 26,
+    "text": "Figure 2: A block diagram decomposing the dynamics of the transfer system",
+    "math": false
+  },
+  {
+    "id": 27,
+    "text": " To define the numerical substructure block, the following equation of motion of the reference model is used:",
+    "math": false
+  },
+  {
+    "id": 28,
+    "text": "Mrxt+Crxt+Krxt=-MrΓagt# SEQ Equation \\* ARABIC \\* MERGEFORMAT 1",
+    "math": true
+  },
+  {
+    "id": 29,
+    "text": "where Mr, Cr, and Kr are the mass, damping, and stiffness matrices, xt, xt and xt are the displacement, velocity, and acceleration vectors, agt is the ground acceleration, Γ is the influence vector mapping base motion to the active DOFs.",
+    "math": true
+  },
+  {
+    "id": 30,
+    "text": "Then the partitioning is performed: ",
+    "math": false
+  },
+  {
+    "id": 31,
+    "text": "Mr=Mn+Me, Cr=Cn+Ce, Kr=Kn+Ke# SEQ Equation \\* ARABIC \\* MERGEFORMAT 2",
+    "math": true
+  },
+  {
+    "id": 32,
+    "text": "where the subscripts n and e denote the numerical and experimental substructures contributions, respectively. By substituting these into Equation (1) and rearranging:",
+    "math": true
+  },
+  {
+    "id": 33,
+    "text": "Mnx+Cnx+Knx=-MrΓag-Mex+Cex+Kex# SEQ Equation \\* ARABIC \\* MERGEFORMAT 3",
+    "math": true
+  },
+  {
+    "id": 34,
+    "text": "Mnxn+Cnxn+Knxn=-MrΓag+fe# SEQ Equation \\* ARABIC \\* MERGEFORMAT 4",
+    "math": true
+  },
+  {
+    "id": 35,
+    "text": "Equation (4) represents the cornerstone to model the numerical substructure block which actively computes the required responses to be imposed on the physical substructure. Realizing this response is where the transfer system is engaged to ensure precise tracking and maintain stability in this process. ",
+    "math": true
+  },
+  {
+    "id": 36,
+    "text": "The transfer-system formulation adopted here follows Maghareh et al. [29], where actuator-force feedback, oil column stiffness, and control-structure interaction are included in the transfer-system formulation through the lumped parameters a1,a2,and a3.",
+    "math": true
+  },
+  {
+    "id": 37,
+    "text": "As shown in Figure 2, the transfer system can be represented by five blocks that represent its dynamic behavior, as follows:",
+    "math": false
+  },
+  {
+    "id": 38,
+    "text": "i) Servo-valve: connects the electrical and mechanical parts of the system as it regulates the flow of high-pressure hydraulic oil into the actuator chambers. Despite the fact that its behavior often involves nonlinearities and higher-order dynamics, it can often be simplified to first-order or second-order dynamics [6], [29], [30]. Thus, the servo-valve block Ga1 can be modeled in the frequency domain as:",
+    "math": true
+  },
+  {
+    "id": 39,
+    "text": "Ga1s=a1β0s2+β1s+β2.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 5",
+    "math": true
+  },
+  {
+    "id": 40,
+    "text": "ii) Hydraulic actuator: converts the hydraulic energy into mechanical energy as a force or displacement that is imposed to the physical specimen. Assuming a double-ended linear actuator is used, its behavior can be represented using a first-order transfer function [6]. Thus, the actuator block Ga3 can be modeled as follows: ",
+    "math": true
+  },
+  {
+    "id": 41,
+    "text": "Ga3s=1s+a3# SEQ Equation \\* ARABIC \\* MERGEFORMAT 6",
+    "math": true
+  },
+  {
+    "id": 42,
+    "text": "iii) Control-structure interaction (CSI): represents the inherent physical coupling between the actuator and the experimental structure. As shown in [8], it can be represented by the following expression: ",
+    "math": false
+  },
+  {
+    "id": 43,
+    "text": "Ga2s=a2s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 7",
+    "math": true
+  },
+  {
+    "id": 44,
+    "text": "iv) Inner loop controller: typically, a hardware-based proportional-integral-derivative (PID) controller provided with the servo-hydraulic system. ",
+    "math": false
+  },
+  {
+    "id": 45,
+    "text": "v) Outer loop controller: a user-defined controller where sophisticated control and compensation algorithms may be implemented. It should be executed on a real-time computer, taking in the target displacement from the numerical substructure and generating the command signal to send to the inner loop controller.",
+    "math": false
+  },
+  {
+    "id": 46,
+    "text": "Finally, the physical substructure block represents the structural components that are being tested. For a single-degree-of-freedom (SDOF) linear structural system, the following expression can be used: ",
+    "math": false
+  },
+  {
+    "id": 47,
+    "text": "Gss=1ms2+cs+k# SEQ Equation \\* ARABIC \\* MERGEFORMAT 8",
+    "math": true
+  },
+  {
+    "id": 48,
+    "text": "where m, c, and k  are the mass, damping coefficient, and stiffness of the specimen, respectively. ",
+    "math": true
+  },
+  {
+    "id": 49,
+    "text": "Moreover, the transfer function of a degraded physical substructure can be defined as: ",
+    "math": false
+  },
+  {
+    "id": 50,
+    "text": "Gss,α=1ms2+2ζmαks+αk# SEQ Equation \\* ARABIC \\* MERGEFORMAT 9",
+    "math": true
+  },
+  {
+    "id": 51,
+    "text": "where  α is a degradation factor ranging from 1 for a healthy structure to 0 for a completely damaged structure, and ζ is the damping ratio. Note that the degradation factor relates specifically to the loss in stiffness. This simplified stiffness-degradation model is needed to obtain a theoretical formulation of the stability boundary. In practice, degradation may also change other properties, particularly damping. However, increased damping has been shown to improve RTHS stability [31]. Therefore, neglecting any additional damping introduced by degradation represents a conservative assumption with respect to this effect.",
+    "math": true
+  },
+  {
+    "id": 52,
+    "text": "To address the nonlinear and time-varying nature of structural degradation, a short-window linear approximation is used to keep the analysis tractable and suitable for online evaluation. Although this method may not be accurate during brief intervals where properties change rapidly, it is typically accurate before and after such events, and during periods where degradation evolves slowly.",
+    "math": false
+  },
+  {
+    "id": 53,
+    "text": "With the real-time hybrid simulation (RTHS) framework blocks defined, a vRTHS is performed to evaluate various stability indicators. This analysis considers a three-story reference building where a portion of the first story acts as the physical substructure represented by an SDOF frame. More details on this study are provided in section 6. The stability analysis begins by simulating a healthy structure (α=1) and then progressively reducing the degradation factor, α​, to simulate the accumulation of damage. The level of specimen degradation is increased in this way to allow the system to approach an instability and illustrate the target behavior.",
+    "math": true
+  },
+  {
+    "id": 54,
+    "text": "To motivate the need for an alternative stability metric and to establish a baseline for comparison, three potential stability indicators (SIs) are evaluated, including: (i) numerical critical time delay (τcr,N), defined as the maximum time delay that can be added to the numerical substructure's feedback loop before the system becomes unstable. Its evaluation typically relies on a simplified model where the entire transfer system is represented as a lumped pure time delay, as depicted in Figure 3 [5]. (ii) physical critical time delay (τcr,P), defined as the maximum time delay that can be added to the outer loop controller's feedback loop (indicated in blue in Figure 2) before instability occurs, and (iii) the physical controller gain margin (GMP), which represents the maximum constant gain that can be applied to the outer loop controller's feedback loop. The outcome of these indicators during progressive structural damage is illustrated in Figure 4. The horizontal axis represents the degradation factor, α , while the vertical axis shows each SI's value, normalized by its initial value for the healthy structure. Normalization is used to focus the analysis on the qualitative behavior and sensitivity of each indicator to degradation, rather than their absolute magnitudes.",
+    "math": true
+  },
+  {
+    "id": 55,
+    "text": "Interpreting Figure 4 reveals that both critical time delay indicators ( τcr,N and τcr,P) fail to accurately reflect the growing risk of instability arising from structural damage. Specifically, τcr,N exhibits misleading behavior as its normalized value increases with damage, falsely suggesting enhanced stability, while τcr,P remained nearly constant until exhibiting an abrupt drop, offering no advance warning. In contrast, the  GMP exhibits a more gradual decrease before the onset of instability, suggesting that the instability triggered by the degradation is closer to being caused by a gain amplification in the outer controller loop than a time delay, a mechanism that delay margins struggle to detect. To further illustrate this behavior, Figure 5 shows the corresponding open-loop gain and phase responses of Hymy1, highlighting how the outer-loop dynamics evolve with physical substructure degradation and can lead to instabilities.",
+    "math": true
+  },
+  {
+    "id": 56,
+    "text": "Based on our observations in the laboratory, this instability is caused by the controller being initially tuned to both overcome the specimen's relatively high stiffness and also achieve the required tracking performance. As the specimen degrades and loses stiffness, it becomes easier to move, so the same corrective control action is likely to overshoot more and produce a larger displacement response than under the original stiffness condition. The extent of this response amplification is influenced by the specimen mass, and the resulting interaction between the degraded specimen and the transfer system, which includes this controller, can eventually drive the system toward instability. It's important to note that, despite being observed experimentally, these behaviors are not universal, as the dominant instability mechanism and the performance of each indicator can change substantially depending on the specific dynamics of the transfer system and the physical substructure. ",
+    "math": false
+  },
+  {
+    "id": 57,
+    "text": "This study aims to present an online stability indicator for quantifying the system's robustness against different instability mechanisms driven by unmodeled dynamics or unforeseen disruptions, while also aiming to provide a sufficient time frame for effective intervention before instability occurs. To address a notable gap in the literature, this study focuses on the transfer system's internal stability, giving special consideration to physical system degradation, as it can manifest during an experiment in various forms, including, but not limited to, excessive specimen damage, the activation of unintended structural failure mechanisms, or the mechanical failure of test set-up components such as fasteners. Additionally, a controller switching strategy is proposed to leverage the stability indicator for real-time corrective action when degradation threatens system stability.",
+    "math": false
+  },
+  {
+    "id": 60,
+    "text": "Figure 3 A block diagram illustrating the critical time delay stability indicator simplification",
+    "math": false
+  },
+  {
+    "id": 63,
+    "text": "Figure 4: Evolution of the normalized stability indicators as a function of the physical substructure degradation factor",
+    "math": false
+  },
+  {
+    "id": 66,
+    "text": "Figure 5: Evolution of the outer-loop magnitude and phase responses for Controller A at α = 1.0 and 0.3, with the corresponding gain and phase margins",
+    "math": false
+  },
+  {
+    "id": 67,
+    "text": "3-Stability Analysis of RTHS Under Structural Degradation",
+    "math": false
+  },
+  {
+    "id": 68,
+    "text": "Physical substructure degradation constitutes a prevalent and often unavoidable phenomenon in realistic RTHS experiments. Such degradation can arise in various forms including gradual processes (e.g., steel bar yielding or fastener loosening) or more abrupt processes (e.g., concrete fracture or fastener rupture). As previously demonstrated in Figure 4, this degradation in physical substructure can drive the system toward instability through mechanisms that are not adequately captured by traditional time delay metrics. In this section, a closed-form solution for the instability boundary is provided as a function of the structural degradation ratio. Subsequently, this framework is leveraged to investigate the relationship between the physical substructure's initial dynamics and its capacity to tolerate damage before the onset of instability. The following derivation assumes the specimen dynamics can be approximated as linear within short windows of time using an equivalent stiffness, noting that real damage can alter more than a reduction in stiffness and those additional effects are not modeled explicitly but are treated as unmodeled dynamics. Alongside this assumption, the specimen mass is assumed to be constant over the test duration.",
+    "math": false
+  },
+  {
+    "id": 69,
+    "text": "To derive the stability boundary, the system is simplified by reducing the block diagram of the transfer system demonstrated in Figure 2. By focusing on an SDOF physical substructure subjected to damage, the definition of Gss,α given in Equation 9 can be utilized. Starting from the innermost loop and moving outwards, for completeness, intermediate transfer functions are defined.",
+    "math": true
+  },
+  {
+    "id": 70,
+    "text": "First, define",
+    "math": false
+  },
+  {
+    "id": 71,
+    "text": "Hym,y6s,α=Gss,αGa3s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 10",
+    "math": true
+  },
+  {
+    "id": 72,
+    "text": "then the CSI loop can be reduced to:",
+    "math": false
+  },
+  {
+    "id": 73,
+    "text": "Hym y5s,α=Hym y6s,α1+Hym y6s,αGa2s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 11",
+    "math": true
+  },
+  {
+    "id": 74,
+    "text": "which expands to:",
+    "math": false
+  },
+  {
+    "id": 75,
+    "text": "Hym y5s,α=Gss,αGa3s1+Gss,αGa3sGa2s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 12",
+    "math": true
+  },
+  {
+    "id": 76,
+    "text": "Including the inner loop controller path,",
+    "math": false
+  },
+  {
+    "id": 77,
+    "text": "Hymy3s,α=Hymy5s,αGa1sCins# SEQ Equation \\* ARABIC \\* MERGEFORMAT 13",
+    "math": true
+  },
+  {
+    "id": 78,
+    "text": "and explicitly,",
+    "math": false
+  },
+  {
+    "id": 79,
+    "text": "Hymy3s,α=CinsGa1sGss,αGa3s1+Gss,αGa3sGa2s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 14",
+    "math": true
+  },
+  {
+    "id": 80,
+    "text": "Then Ts,α is defined by adding the unity gain feedback to the inner loop controller,",
+    "math": true
+  },
+  {
+    "id": 81,
+    "text": "Ts,α≔Hymy2s,α=Hymy3s,α1+Hymy3s,α# SEQ Equation \\* ARABIC \\* MERGEFORMAT 15",
+    "math": true
+  },
+  {
+    "id": 82,
+    "text": "which yields",
+    "math": false
+  },
+  {
+    "id": 83,
+    "text": "Ts,α=Cins Ga1s Gss,α Ga3s1 + Gss,α Ga3s Ga2s + Cins Ga1s Gss,α Ga3s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 16",
+    "math": true
+  },
+  {
+    "id": 84,
+    "text": "The transfer system operates under a unity gain feedback scheme with an open-loop transfer function of Ls,α=CoutsTs,α. System stability is therefore determined by the roots of the characteristic equation:",
+    "math": true
+  },
+  {
+    "id": 85,
+    "text": "1+Ls,α=0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 17",
+    "math": true
+  },
+  {
+    "id": 86,
+    "text": "This equation defines the poles of the closed-loop system. According to classical control theory, the system is stable if and only if all roots of this equation lie strictly in the left half of the complex plane. Instability arises if any root has a positive real part, indicating the presence of an unstable mode in the structural response.",
+    "math": false
+  },
+  {
+    "id": 88,
+    "text": "Expanding the expression for 1+Ls,α provides the system's full characteristic equation, ",
+    "math": true
+  },
+  {
+    "id": 89,
+    "text": "1+Ls,α=",
+    "math": true
+  },
+  {
+    "id": 90,
+    "text": "1+Gss,αGa3sGa2s+CinsGa1sGss,αGa3s+CoutsCinsGa1sGss,αGa3s1+Gss,αGa3sGa2s+CinsGa1sGss,αGa3s# SEQ Equation \\* ARABIC \\* MERGEFORMAT 18",
+    "math": true
+  },
+  {
+    "id": 91,
+    "text": "To find the system's poles, the numerator is set to zero and the equation is solved. This approach implicitly ignores poles that are canceled by zeros. These specific poles correspond to the stability of the inner loops (the inner loop controller and CSI loops). Therefore, assuming these loops are already stable, the numerator is set to zero and we factor the expression, which gives: ",
+    "math": false
+  },
+  {
+    "id": 92,
+    "text": "1+Gss,αGa3sGa2s+CinsGa1sGa3s+CoutsCinsGa1sGa3s=0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 19",
+    "math": true
+  },
+  {
+    "id": 93,
+    "text": "For clarity, the bracketed term is defined as Ys:",
+    "math": true
+  },
+  {
+    "id": 94,
+    "text": "Ys≔Ga3sGa2s+CinsGa1sCouts+1# SEQ Equation \\* ARABIC \\* MERGEFORMAT 20",
+    "math": true
+  },
+  {
+    "id": 95,
+    "text": "This step allows the stability boundary condition to be expressed in the following simplified form:",
+    "math": false
+  },
+  {
+    "id": 96,
+    "text": "1+Gss,αYs=0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 21",
+    "math": true
+  },
+  {
+    "id": 97,
+    "text": "A key strength of this formulation lies in its decoupling of the degradation-dependent physical specimen, which is a function of α, from the rest of the transfer system components, encapsulated in the composite function Ys. This analytical separation allows solving for the stability boundary in terms of the degradation factor, α, directly.",
+    "math": true
+  },
+  {
+    "id": 98,
+    "text": "By substituting Gss,α into this equation, the stability condition can be expressed in terms of the structural parameters, as",
+    "math": true
+  },
+  {
+    "id": 99,
+    "text": "1+Ysms2+2ζmαk s+αk=0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 22",
+    "math": true
+  },
+  {
+    "id": 100,
+    "text": "This step leads us to the final form of the characteristic equation, which is denoted as CEs,α:",
+    "math": true
+  },
+  {
+    "id": 101,
+    "text": "CEs,α=ms2+2ζmαks+αk+Ys=0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 23",
+    "math": true
+  },
+  {
+    "id": 102,
+    "text": "Since controllers are typically designed based on a healthy system, the poles initially lie in the left-half complex plane. The experiment begins with α=1 (the undamaged state), and as damage accumulates (α decreases), the poles shift gradually towards the imaginary axis. Instability occurs when a pole reaches this axis (Res=0), providing a condition to solve for the degradation factor, α, and the corresponding oscillation frequency, ω. The critical degradation ratio, αcr ​, is thus defined as the maximum value of α  for which the equation CEjω,α has a real solution for  ω, that is ",
+    "math": true
+  },
+  {
+    "id": 103,
+    "text": "αcr=max{α∈0,1∣∃ ω∈R: CEjω,α=0}.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 24",
+    "math": true
+  },
+  {
+    "id": 104,
+    "text": "3.1-Computational Approach to Determine Critical Damage Ratio αcr ",
+    "math": true
+  },
+  {
+    "id": 105,
+    "text": "To determine the value of αcr that satisfies the previously defined condition, the characteristic equation at s=jωcr is evaluated. A complex expression equals zero if and only if both its real and imaginary parts are simultaneously zero. Substituting s=jωcr into the characteristic equation yields: ",
+    "math": true
+  },
+  {
+    "id": 106,
+    "text": "CEjωcr,α=-mωcr2+j2ζωcrmαk+αk+Yjωcr=0.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 25",
+    "math": true
+  },
+  {
+    "id": 107,
+    "text": "Let Yjω=Re{Yjω}+j Im{Yjω}. By separating Equation (25) into its real and imaginary components, a system of two real equations with two unknowns, ω and α is obtained. The real component equation is: ",
+    "math": true
+  },
+  {
+    "id": 108,
+    "text": "-mωcr2+αk+Re{Yjωcr}=0.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 26",
+    "math": true
+  },
+  {
+    "id": 109,
+    "text": "Solving this for α: ",
+    "math": true
+  },
+  {
+    "id": 110,
+    "text": "α=mωcr2-Re{Yjωcr}k# SEQ Equation \\* ARABIC \\* MERGEFORMAT 27",
+    "math": true
+  },
+  {
+    "id": 111,
+    "text": "Note that a system is susceptible to degradation-induced instability only if αcr∈0,1. If all solutions for α fall below zero, the system can tolerate any physical level of specimen degradation without losing stability.",
+    "math": true
+  },
+  {
+    "id": 112,
+    "text": "The imaginary component equation is: ",
+    "math": false
+  },
+  {
+    "id": 113,
+    "text": "2ζωcr mαk+Im{Yjωcr}=0.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 28",
+    "math": true
+  },
+  {
+    "id": 114,
+    "text": "Squaring both sides and solving for α: ",
+    "math": true
+  },
+  {
+    "id": 115,
+    "text": "α=Im{Yjωcr}24ζ2ωcr2mk# SEQ Equation \\* ARABIC \\* MERGEFORMAT 29",
+    "math": true
+  },
+  {
+    "id": 116,
+    "text": "Note that a system is susceptible to degradation-induced instability only if αcr∈0,1. If all solutions for α fall below zero, the system can tolerate any physically realizable level of specimen degradation without losing stability. By equating the two expressions for α",
+    "math": true
+  },
+  {
+    "id": 117,
+    "text": "mωcr2- Re{Yjωcr}k=Im{Yjωcr}24ζ2mkωcr2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 30",
+    "math": true
+  },
+  {
+    "id": 118,
+    "text": "Rearranging terms leads to the key equation: ",
+    "math": false
+  },
+  {
+    "id": 119,
+    "text": "4ζ2mωcr2mωcr2-ReYjωcr=ImYjωcr2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 31",
+    "math": true
+  },
+  {
+    "id": 120,
+    "text": " Although this equation contains complex-valued terms, it has only one real unknown, ωcr This greatly simplifies the numerical solution process, as standard root-finding algorithms can be applied directly to identify all candidate critical frequencies. Moreover, the formulation is computationally more stable and less prone to convergence issues.",
+    "math": true
+  },
+  {
+    "id": 121,
+    "text": "3.2-Linking Structural Properties to RTHS Robustness ",
+    "math": false
+  },
+  {
+    "id": 122,
+    "text": "To investigate the relationship between the initial properties of a physical substructure and its damage tolerance, a parametric study is conducted on a family of structural specimens. These specimens are defined by varying the mass (m) and stiffness (k) parameters, with each system’s robustness evaluated by solving for αcr leveraging Equations (31) and (29). To maintain consistent performance and stability margins, outer and inner controllers are redesigned offline to achieve a target crossover frequency and phase margin for each specimen configuration. ",
+    "math": true
+  },
+  {
+    "id": 123,
+    "text": "The relationship between the specimen parameters (mass m and initial stiffness ko) and the critical degradation ratio, shown in Figure 6, shows that increasing the specimen mass and reducing the initial stiffness-to-mass ratio, which corresponds to a more flexible structure in its original undamaged state, leads to higher critical degradation ratios. Since higher αcr values indicate greater susceptibility to instability, the findings suggest that more flexible structures are more prone to loss of control stability and thus require more careful stability analysis. To be consistent with the benchmark, a damping ratio of 1% was used to generate the figure. Two specific configurations are highlighted: one marker corresponds to the benchmark statement provided in [10], and the other to a modified configuration used in the illustrative example presented later in this study. In the modified configuration, the specimen mass is increased by 30% relative to the benchmark, making the initially healthy structure more flexible and therefore more susceptible to instability.",
+    "math": true
+  },
+  {
+    "id": 126,
+    "text": "Figure 6: Heatmap of the critical degradation ratio, αcr, defined as the residual stiffness fraction at which the outer controller loses stability. A lower αcr reflects a system that is more robust to physical degradation. The parameter configurations for both the original and modified benchmark problems are indicated by markers.",
+    "math": true
+  },
+  {
+    "id": 128,
+    "text": "Since the objective is to support safe experiment execution, the damping ratio is conservatively assumed to remain constant during degradation avoiding the high uncertainties and practical difficulties of reliably estimating the specimen’s evolving damping during a test. However, to provide insight regarding how damping would affect these values, increasing the ζ from 1% to 2% and 5% would improve stability by reducing αcr from approximately 0.275 to 0.247 and 0.187, respectively.",
+    "math": true
+  },
+  {
+    "id": 129,
+    "text": "4-Integration into an RTHS Framework ",
+    "math": false
+  },
+  {
+    "id": 130,
+    "text": "The preceding section presented a numerical method for quantifying system robustness specifically against structural degradation. This section expands upon that foundation to develop a stability indicator that can be used during an experiment. The goal is to develop a metric that not only offers a continuous, real-time assessment of the system’s actual robustness but also accounts for a wider range of uncertainties that may arise during an experiment. ",
+    "math": false
+  },
+  {
+    "id": 131,
+    "text": "The foundational principles for quantifying stability in linear time-invariant feedback systems were established in the 1930s and 1940s through the pioneering work of Harry Nyquist and Hendrik Bode [32], [33]. Their approach was revolutionary as it introduced a graphical approach based on the frequency domain, allowing for stability assessment without calculating the system’s poles. Using their now-famous Nyquist and Bode plots, they developed two enduring and fundamental metrics for measuring system robustness: the Gain Margin (GM) and the Phase Margin (PM). These margins were determined by geometrically inspecting the plots, providing a practical way to assess system robustness.",
+    "math": false
+  },
+  {
+    "id": 132,
+    "text": "The first of these metrics, GM, is defined as the factor by which the open-loop gain can be increased before the system reaches the point of instability. This value can be interpreted from either of the graphical methods: on a Bode plot, as demonstrated in Figure 7(a), the GM is found by measuring the vertical distance between the 0 dB line and the magnitude curve at the frequency where the phase shift is equal to -180°. On a Nyquist plot, it is the reciprocal of the magnitude where the curve intersects the negative real axis as shown in Figure 7(b). While there is no universal standard, a minimum GM of 6 decibels is often considered to be sufficient for adequate robustness  [34].",
+    "math": true
+  },
+  {
+    "id": 133,
+    "text": "The other fundamental metric is the PM, defined as the amount of additional open-loop phase lag needed to destabilize the closed-loop system at its unity-gain frequency. As illustrated in Figure 7(a), the PM on a Bode plot is the vertical distance between the phase curve and the  -180° line at this gain crossover frequency. Equivalently, on a Nyquist plot, it is the angle between the negative real axis and the point where the contour intersects the unit circle, as depicted in Figure 7(b).",
+    "math": true
+  },
+  {
+    "id": 136,
+    "text": "Figure 7: (a) Bode plot of the illustrative example system, demonstrating the graphical determination of GM and PM at their respective crossover frequencies, (b) corresponding Nyquist plot, demonstrating the graphical determination of GM and PM relative to the critical point (−1, 0j).",
+    "math": false
+  },
+  {
+    "id": 137,
+    "text": "Imposing a constant phase shift across the entire frequency spectrum yields a physically unrealizable system. In contrast, a time delay offers a more realistic model by introducing a phase lag that increases with frequency. This approach leads to another important metric, the Delay Margin (DM), which can be approximated from the PM using the expression DM≈PM/ωgc [35]. Since many RTHS components are more likely to introduce delays rather than amplify gains to the inner loop system, prior studies have often considered the DM as the most descriptive indicator of system robustness. To ensure robust performance and adequate system damping, a PM of 45 to 60 degrees is often considered a desirable design target [36].",
+    "math": true
+  },
+  {
+    "id": 138,
+    "text": "One significant limitation of the GM and PM indicators is that they can create a false sense of security [37]. This limitation is primarily present because they are fundamentally uncoupled indicators, evaluating robustness to either pure gain or pure phase variations, but not both simultaneously. Consequently, a system can display large, apparently safe gain and phase margins yet be vulnerable to instability from a small, combined gain-and-phase perturbation. A concrete example of such a scenario is detailed in [37]. This issue was less apparent when controllers were designed with graphical techniques, however, it has become a more pronounced concern with modern automated control design methods. Similarly, since a time delay added to a system can be modeled as a phase lag variable with the frequency, the DM fails to indicate potential low robustness against gain amplifications.",
+    "math": false
+  },
+  {
+    "id": 139,
+    "text": "To overcome the limitations of classical GM and PM indicators, the disk margin is introduced to assess simultaneous gain and phase variations in a unified manner. This approach models uncertainty as a complex multiplicative perturbation and calculates the largest perturbation disk that preserves closed-loop stability. While a skew parameter can be used to adjust the relative weighting between gain and phase uncertainty, a symmetric disk (skew = 0) is frequently employed.",
+    "math": false
+  },
+  {
+    "id": 140,
+    "text": "The application of disk margin analysis to MIMO systems, while theoretically feasible, presents practical efficiency challenges, particularly in real-time applications. Seiler et al. [37] discussed two methodologies: loop-at-a-time analysis, which evaluates isolated channels, and multi-loop analysis, which models simultaneous perturbations. The former can be an overly optimistic assessment of system robustness because it evaluates channels in isolation, so it may exhibit excellent single-loop margins yet be destabilized by small simultaneous perturbations in multiple channels. On the other hand, multi-loop disk margins effectively address simultaneous perturbations, however, their computation requires determining the smallest combination of independent gain and phase variations across all channels that can destabilize the closed loop. This involves solving an optimization problem at each frequency point in a dense sweep, a process that is iterative and computationally intensive, making it impractical for real-time applications.",
+    "math": false
+  },
+  {
+    "id": 141,
+    "text": "A more unified assessment of a system’s tolerance to simultaneous gain and phase variations has been developed within the framework of H∞​ control theory. The normalized coprime factor (NCF) margin, also known in the literature as the generalized stability margin, quantifies the size of the smallest perturbation to both the plant and controller that will cause instability [38]. This metric offers a unified assessment of the system’s tolerance to simultaneous gain and phase variations into a single measure.",
+    "math": true
+  },
+  {
+    "id": 142,
+    "text": "Let the plant of the transfer system be denoted as Ts,α  and the outer controller as Couts. The NCF stability margin, denoted as bgCout,T, is formally defined as [38]:",
+    "math": true
+  },
+  {
+    "id": 143,
+    "text": "bgCout,T=CoutII+TCout-1IT∞-1#( SEQ Equation \\* ARABIC \\* MERGEFORMAT 32)",
+    "math": true
+  },
+  {
+    "id": 144,
+    "text": "For SISO systems, this expression can be greatly simplified. Dropping the functional dependencies for simplicity, the matrix inside the norm, denoted as H, becomes:",
+    "math": false
+  },
+  {
+    "id": 145,
+    "text": "H=11+T CoutCout T Cout1T#( SEQ Equation \\* ARABIC \\* MERGEFORMAT 33)",
+    "math": true
+  },
+  {
+    "id": 146,
+    "text": "The H∞-norm is found by taking the supremum, over all frequencies ω, of the maximum singular value (σmax​) of H(jω). The singular values are calculated from the eigenvalues of the matrix product HjωHjω*, where * denotes the complex conjugate transpose. This product is:",
+    "math": true
+  },
+  {
+    "id": 147,
+    "text": "H H*=11+T Cout2Cout T Cout 1  TCout* 1  T Cout* T*=1+T21+T Cout2Cout2 Cout Cout* 1#( SEQ Equation \\* ARABIC \\* MERGEFORMAT 34)",
+    "math": true
+  },
+  {
+    "id": 148,
+    "text": "To obtain the singular values, the eigenvalues of the final matrix term are calculated. Solving its characteristic equation, ",
+    "math": false
+  },
+  {
+    "id": 149,
+    "text": "Cout2- λ1 – λ- Cout2= 0#( SEQ Equation \\* ARABIC \\* MERGEFORMAT 35)",
+    "math": true
+  },
+  {
+    "id": 150,
+    "text": "yields the eigenvalues λ1=0 and λmax=1+Cout2. The maximum singular value squared of H is therefore:",
+    "math": true
+  },
+  {
+    "id": 151,
+    "text": "σmax2(H)=1+T21+Cout21+TCout2#( SEQ Equation \\* ARABIC \\* MERGEFORMAT 36)",
+    "math": true
+  },
+  {
+    "id": 152,
+    "text": "The stability margin bgCout,T is the inverse of the ​H∞-norm of H, which is equivalent to the infimum of the reciprocal of σmax(H). This leads to the final, simplified formula for the SISO NCF stability margin:",
+    "math": true
+  },
+  {
+    "id": 153,
+    "text": "bgCout, T=infω1 + TjωCoutjω1+Tjω2 1+Coutjω2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 37",
+    "math": true
+  },
+  {
+    "id": 155,
+    "text": "This expression is advantageous for online applications due to its computational efficiency. Since the singular value decomposition, the primary computational bottleneck, is resolved theoretically, the remaining online task is to simply evaluate the functions Cout and T at the frequencies of interest and find the minimum value. During operation, the controller and actuator dynamics are assumed to be known and constant, shifting the problem to one of online identification of the physical substructure. Figure 8, which extends the comparison presented in Figure 4 to include the proposed NCF-based indicator, the proposed margin captures the progression toward instability more consistently than the classical indicators.",
+    "math": true
+  },
+  {
+    "id": 157,
+    "text": " Figure 8: Evolution of the proposed RTHS stability indicator compared to other indicators as a function of the physical substructure degradation factor",
+    "math": false
+  },
+  {
+    "id": 158,
+    "text": "Unlike classical stability margins and due to the way the NCF margin is defined, the proposed stability indicator is not only dependent on the overall open-loop dynamics L, but it is also affected by the way it is split to a controller, Cout, and a plant, T. Naturally, this dependency motivates the development of a normalized formula, the Scaled NCF margin, also known as Vinnicombe SISO expression. The scaled margin is defined as the maximum achievable generalized (NCF) margin over all constant input/output rescalings that preserve L and is given by [39]:",
+    "math": true
+  },
+  {
+    "id": 159,
+    "text": "bs(L)= infω1+Ljω1+Ljω # SEQ Equation \\* ARABIC \\* MERGEFORMAT 38",
+    "math": true
+  },
+  {
+    "id": 161,
+    "text": "While a closed-form solution for the optimally scaled NCF margin (bs​) does not exist for MIMO systems, an iterative method was developed by Park & Bitmead [40]. Nevertheless, the generalized NCF margin (bg​) can serve as a practical and conservative stability indicator, as it constitutes a lower bound on the scaled margin (bg≤bs​), a proof for SISO and MIMO systems can be found in [41]. Furthermore, ensuring a minimum value for bg​ also guarantees that the system meets target Gain and Phase Margins (GM and PM, respectively) as will be demonstrated. Therefore, monitoring the generalized NCF margin is a reliable method for ensuring sufficient system robustness against potential disruptions.",
+    "math": true
+  },
+  {
+    "id": 162,
+    "text": "The scaled NCF margin effectively bridges modern robustness analysis with classical stability metrics by providing guaranteed lower bounds on the GM and PM by specifying one unified value. As rigorously proven in [42], these relationships are defined by the inequalities:",
+    "math": true
+  },
+  {
+    "id": 163,
+    "text": "GM ≥1+bs1-bs# SEQ Equation \\* ARABIC \\* MERGEFORMAT 39",
+    "math": true
+  },
+  {
+    "id": 164,
+    "text": "PM≥2sin-1bs# SEQ Equation \\* ARABIC \\* MERGEFORMAT 40",
+    "math": true
+  },
+  {
+    "id": 165,
+    "text": "Figure 9 provides a direct mapping for selecting a target bs​ that meets classical robustness requirements. For instance, a value of  bg=0.4 is shown to guarantee the recommended values for both GM and PM, making it a suitable design target.",
+    "math": true
+  },
+  {
+    "id": 167,
+    "text": "Figure 9: A visual representation of the guaranteed lower bounds on Gain Margin and Phase Margin as a function of the scaled NCF margin, bs",
+    "math": true
+  },
+  {
+    "id": 168,
+    "text": "5-Controller Switching ",
+    "math": false
+  },
+  {
+    "id": 169,
+    "text": "Beyond monitoring stability, a key purpose for developing an online stability indicator is to improve the safety of RTHS experiments by enabling real-time protective actions, such as switching controllers when the current configuration approaches instability. By preventing catastrophic failures, this safety mechanism not only protects the specimen and testing equipment but also encourages the research community to explore more aggressive test configurations and novel control strategies, ultimately accelerating advances in the field. Therefore, this section analyzes the stability of the system in preparation for and during such a controller transition, leveraging Lyapunov stability criteria to assess switching feasibility. Consider a general linear time-invariant (LTI) system with input, ",
+    "math": false
+  },
+  {
+    "id": 170,
+    "text": "xt= Axt+ But # SEQ Equation \\* ARABIC \\* MERGEFORMAT 41",
+    "math": true
+  },
+  {
+    "id": 171,
+    "text": "Note that, although here we are looking at a general state space system, equation 41 is representative of [point back to thee system] Since stability is an internal system characteristic and independent of the input, only the unforced response is considered by setting the input to zero, ut=0:",
+    "math": true
+  },
+  {
+    "id": 172,
+    "text": "xt= Axt# SEQ Equation \\* ARABIC \\* MERGEFORMAT 42",
+    "math": true
+  },
+  {
+    "id": 173,
+    "text": "Choose a quadratic Lyapunov candidate with a symmetric positive definite matrix P [43]:",
+    "math": true
+  },
+  {
+    "id": 174,
+    "text": "Vx= xᵀ Px,  P = Pᵀ ≻ 0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 43",
+    "math": true
+  },
+  {
+    "id": 175,
+    "text": "Using the product rule, the derivative is:",
+    "math": false
+  },
+  {
+    "id": 176,
+    "text": "Vx= xTP x + xTP x # SEQ Equation \\* ARABIC \\* MERGEFORMAT 44",
+    "math": true
+  },
+  {
+    "id": 177,
+    "text": "Substituting  x=Ax yields:",
+    "math": true
+  },
+  {
+    "id": 178,
+    "text": "Vx=xᵀAᵀP+PAx # SEQ Equation \\* ARABIC \\* MERGEFORMAT 45",
+    "math": true
+  },
+  {
+    "id": 179,
+    "text": "Thus, the Lyapunov condition is:",
+    "math": false
+  },
+  {
+    "id": 180,
+    "text": "Aᵀ P + PA ≺ 0 # SEQ Equation \\* ARABIC \\* MERGEFORMAT 46",
+    "math": true
+  },
+  {
+    "id": 181,
+    "text": "with A being the closed-loop system matrix, the system is asymptotically stable if a symmetric positive definite matrix P exists that satisfies this Lyapunov equation.",
+    "math": true
+  },
+  {
+    "id": 182,
+    "text": "Because the controller transition occurs over a short time interval, the plant dynamics are assumed to be approximately constant during the switch. The closed-loop system is then constructed from the state-space realizations of the plant and controller, denoted by subscripts T and C, respectively. With no direct feedthrough in the physical plant, the plant state-space model is:",
+    "math": true
+  },
+  {
+    "id": 183,
+    "text": "xT = AT xT+ BT yC # SEQ Equation \\* ARABIC \\* MERGEFORMAT 47",
+    "math": true
+  },
+  {
+    "id": 184,
+    "text": "yT = CT xT  # SEQ Equation \\* ARABIC \\* MERGEFORMAT 48",
+    "math": true
+  },
+  {
+    "id": 185,
+    "text": "where AT, BT, and CT are the state space realization for the plant T, xT ​ is the plant state vector, yC is the control signal, and yT is the plant output. Similarly, for the controller:",
+    "math": true
+  },
+  {
+    "id": 186,
+    "text": "xC = AC xC+ BC e # SEQ Equation \\* ARABIC \\* MERGEFORMAT 49",
+    "math": true
+  },
+  {
+    "id": 187,
+    "text": "yC = CC xC+ DC e # SEQ Equation \\* ARABIC \\* MERGEFORMAT 50",
+    "math": true
+  },
+  {
+    "id": 188,
+    "text": "where AC, BC, CC, and DC are the state space realization for the controller, xC is the controller state vector, and e=r-yT is the error signal, with r denoting the reference input. For stability analysis, the equation can be simplified by setting the reference signal to zero (r=0), which gives e=r-yT=-yT. Substituting the plant output from Equation (48):",
+    "math": true
+  },
+  {
+    "id": 189,
+    "text": "  e = - CT xT # SEQ Equation \\* ARABIC \\* MERGEFORMAT 51",
+    "math": true
+  },
+  {
+    "id": 190,
+    "text": "Substituting yc and e into Equations 47 and 49 yields:",
+    "math": true
+  },
+  {
+    "id": 191,
+    "text": "xT= ATxT+ BTCCxC+ DCe= AT- BTDCCTxT+ BTCCxC# SEQ Equation \\* ARABIC \\* MERGEFORMAT 52",
+    "math": true
+  },
+  {
+    "id": 192,
+    "text": "xC= ACxC+ BCe = -BCCTxT+ ACxC# SEQ Equation \\* ARABIC \\* MERGEFORMAT 53",
+    "math": true
+  },
+  {
+    "id": 193,
+    "text": "Stacking the plant and controller states into a single state vector yields",
+    "math": false
+  },
+  {
+    "id": 194,
+    "text": "xTxC= AclxTxC # SEQ Equation \\* ARABIC \\* MERGEFORMAT 54",
+    "math": true
+  },
+  {
+    "id": 195,
+    "text": "The closed-loop state-space realization is given by:",
+    "math": false
+  },
+  {
+    "id": 196,
+    "text": "Acl= AT-BTDCCTBTCC- BCCTAC# SEQ Equation \\* ARABIC \\* MERGEFORMAT 55",
+    "math": true
+  },
+  {
+    "id": 197,
+    "text": "Now consider a combined controller Ccomb  consisting of a convex combination of two controllers C1  and C2:",
+    "math": true
+  },
+  {
+    "id": 198,
+    "text": "Acomb= γ AC1+ 1-γAC2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 56",
+    "math": true
+  },
+  {
+    "id": 199,
+    "text": "Bcomb= γ BC1+ 1-γBC2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 57",
+    "math": true
+  },
+  {
+    "id": 200,
+    "text": "Ccomb= γ CC1+ 1-γCC2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 58",
+    "math": true
+  },
+  {
+    "id": 201,
+    "text": "Dcomb= γ DC1+ 1-γDC2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 59",
+    "math": true
+  },
+  {
+    "id": 202,
+    "text": "By substituting Equations (56-59) into Equation (56), the following is obtained:",
+    "math": true
+  },
+  {
+    "id": 203,
+    "text": "Acl,comb= AT-BTDCombCTBTCComb- BCombCTAComb# SEQ Equation \\* ARABIC \\* MERGEFORMAT 60",
+    "math": true
+  },
+  {
+    "id": 204,
+    "text": "Acl,comb=γAT-BTDC1CTBTCC1- BC1CTAC1+(1-γ)AT-BTDC2CTBTCC2- BC2CTAC2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 61",
+    "math": true
+  },
+  {
+    "id": 205,
+    "text": "Acl,comb= γ Acl1+ 1-γAcl2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 62",
+    "math": true
+  },
+  {
+    "id": 206,
+    "text": "Rewriting the Lyapunov condition in Equation (46) in terms of Acl,comb:",
+    "math": true
+  },
+  {
+    "id": 207,
+    "text": "Acl,combTP + P Acl,comb= γ Acl1TP + P Acl1+ 1-γAcl2TP + P Acl2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 63",
+    "math": true
+  },
+  {
+    "id": 208,
+    "text": "If there exists a common symmetric positive definite matrix P (P = Pᵀ ≻ 0) that satisfies the Lyapunov inequalities for both systems:",
+    "math": true
+  },
+  {
+    "id": 209,
+    "text": "Acl1TP + P Acl1≺ 0,  Acl2TP + P Acl2≺ 0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 64",
+    "math": true
+  },
+  {
+    "id": 210,
+    "text": "Then the Lyapunov inequality holds for the combined system too:",
+    "math": false
+  },
+  {
+    "id": 211,
+    "text": "Acl,combTP + P Acl,comb≺ 0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 65",
+    "math": true
+  },
+  {
+    "id": 212,
+    "text": "where γ ∈ 0, 1.",
+    "math": true
+  },
+  {
+    "id": 213,
+    "text": "Through this analysis, it is clear that the stability for both instant switching and combining the controllers is guaranteed [43], [44]. Importantly, this conclusion rests on the fact that the combination parameter, γ, is applied on the outer controller gains; this approach is not equivalent to combining the output of two controllers. Although asymptotic stability is theoretically guaranteed under the common Lyapunov framework, this result relies on the assumption of exact linear models. In practice, noise, model uncertainty, and the linearization approximation used to represent the physical substructure may affect the switching behavior. Therefore, the following transition function is employed to provide a gradual controller blending that is more robust to these real-world deviations,",
+    "math": true
+  },
+  {
+    "id": 214,
+    "text": "γ(t) = 0,  t<t*,t-t*Ts,  t*<t<Ts1,  t>Ts,# SEQ Equation \\* ARABIC \\* MERGEFORMAT 66",
+    "math": true
+  },
+  {
+    "id": 215,
+    "text": "can be utilized, where t* is the point in time the decision to switch the controller is made based on monitoring the online stability indicator, and Ts determines how fast the switch should be applied. Figure 10 illustrates the corresponding evolution of the controller weighting factors during this transition.",
+    "math": true
+  },
+  {
+    "id": 217,
+    "text": "Figure 10: Profile of the development of the combination parameter γ, showing a ramp transition from 0 to 1 starting at t=t*. ",
+    "math": true
+  },
+  {
+    "id": 219,
+    "text": "The selection of the transition duration, Ts, involves a trade-off between switching smoothness and speed. An excessively small Ts may introduce abrupt variations in the command signal, whereas an excessively large Ts may potentially allow the system to approach its stability boundary before the transition is completed. For the transfer system considered here, simulation-based evaluation indicated that Ts=0.25 sec provides a suitable balance.",
+    "math": true
+  },
+  {
+    "id": 220,
+    "text": "6-Illustrative Example ",
+    "math": false
+  },
+  {
+    "id": 221,
+    "text": "In this section, we consider a modified version of the RTHS benchmark problem statement presented to the community in [10] to evaluate and demonstrate our proposed procedure. This benchmark problem examines a three-story steel frame as the reference structure, partitioned such that a portion of the first story is designated as the physical substructure. The numerical substructure models the remaining dynamics, which include the rest of the first story as well as the upper two stories. The benchmark problem statement provides a sample controller design using a proportional-integral (PI) controller augmented with a phase-lead compensator. The original identified parameters for the physical substructure are the mass (me) of 29.1 kg, stiffness (ke) of 1.19x106N/m, and damping (ce) of 114.6 N/m. For this illustrative example, however, the experimental mass is increased by 30% to 37.83 kg. This modification is intentionally introduced to render the system more susceptible to instability, as suggested by the sensitivity analysis in Figure 6. Moreover, a Bouc–Wen model is employed to represent the hysteretic behavior of the degrading physical substructure, providing a challenging and dynamic scenario for assessing the proposed RTHS stability indicator.",
+    "math": true
+  },
+  {
+    "id": 223,
+    "text": "6.1-vRTHS Setup",
+    "math": false
+  },
+  {
+    "id": 224,
+    "text": "In this study, the 1940 El Centro earthquake record with an intensity of 0.4g is selected to maintain a consistent comparison baseline with the results shown in the benchmark. Moreover, two distinct PI controllers are designed: 1) a high-performance controller (Controller A) optimized for precise tracking with low error, and 2) a high-robustness controller (Controller B) designed to maintain stability under significant specimen degradation. In practice, the controller may begin to exhibit undesirable behavior prior to reaching the theoretical instability limit, which means that Controller B must be designed to maintain a sufficient stability margin over the expected range of specimen degradation during a typical RTHS. The two controllers are first evaluated independently under the undamaged linear condition, followed by the degradation and controller-switching scenarios described in Section 6.4. The system and controller parameters used in this study are summarized in Table 2. The vRTHS equations were integrated at 4096 Hz, while the NCF indicator was implemented as a multi-rate task updated every 100 integration steps (40.96 Hz), evaluating both controllers over 200 frequencies from 1 to 200 Hz at each update. A vRTHS is presented to demonstrate the practical application of the proposed stability indicator. In this demonstration, the vRTHS begins with the high-performance controller (Controller A), and the online indicator is used to monitor stability margins and trigger a transition to the high-robustness controller (Controller B) at the appropriate time. ",
+    "math": false
+  },
+  {
+    "id": 225,
+    "text": "In addition, the phase-lead block is redesigned to achieve comparable vRTHS performance to that of the original benchmark. This redesigned compensator is given by:",
+    "math": false
+  },
+  {
+    "id": 226,
+    "text": "GTs=31.64 s+49.35s+1658# SEQ Equation \\* ARABIC \\* MERGEFORMAT 67",
+    "math": true
+  },
+  {
+    "id": 227,
+    "text": "6.2 Stability Analysis",
+    "math": false
+  },
+  {
+    "id": 228,
+    "text": "The transfer system for this illustrative example follows the block diagram in Figure 2, utilizing the parameters specified in Table 2. For the purpose of illustration, an analysis is first conducted to understand the system's expected behavior with each PI controller, focusing on damage tolerance and the stability of the switching process. This step is not a requirement for implementing the proposed framework but is included here to provide insight into the simulation results that follow. First, for Controller A, the composite transfer function Y(s) is determined using Equation (20) as:",
+    "math": true
+  },
+  {
+    "id": 229,
+    "text": "Ys=4.23×106s4+1.798×109s3+4.229×1011s2+5.046×1013s+1.536×1015s4+428.3s3+1.014×105s2+3.299×105s.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 68",
+    "math": true
+  },
+  {
+    "id": 231,
+    "text": "By solving Equations (31) and (29) with this function, the critical frequency and degradation ratio are found to be ωcr=287.3 rad/s and αcr=0.27. Repeating this analytical procedure for the high-robustness controller (Controller B) yields a controller that is unconditionally stable with respect to stiffness degradation.",
+    "math": true
+  },
+  {
+    "id": 232,
+    "text": "To guarantee stability during the controller transition, a common Lyapunov function P  must be found for both closed-loop systems. This search is performed iteratively by gradually decreasing the value of the degradation factor α to determine the minimum value at which such a common function still exists. For a given α, the plant and both controllers, A and B, are first converted to their state-space representations to construct the two closed-loop system matrices, Acl, a and Acl, b. The common Lyapunov matrix is obtained by formulating the stability requirements, P≻0,   Acl, aTP+PAcl,  b≺0, and Acl, aTP+PAcl, b≺0, as an LMI feasibility problem. The numerical solution follows the projective LMI framework developed by Nemirovski and Gahinet [45]. It is implemented in this study using MATLAB’s feasp solver [46], which applies this projective-method-based feasibility procedure to determine a common matrix, P,  satisfying the prescribed LMIs.",
+    "math": true
+  },
+  {
+    "id": 233,
+    "text": "The search determined the switching stability boundary to be at α=0.40. At this boundary, the realization of state space matrices Acl,a and Acl, b is:",
+    "math": true
+  },
+  {
+    "id": 235,
+    "text": "Acl, a=-431.7-443.6-408.4-370.8-311.21154512.00.00.00.00.00.00.0256.00.00.00.00.00.00.0256.00.00.00.00.00.00.0128.00.00.00.00.00.00.0-8.20.0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 69",
+    "math": true
+  },
+  {
+    "id": 236,
+    "text": "Acl, b=-431.7-443.6-408.4-370.8-232.81339512.00.00.00.00.00.00.0256.00.00.00.00.00.00.0256.00.00.00.00.00.00.0128.00.00.00.00.00.00.0-8.20.0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 70",
+    "math": true
+  },
+  {
+    "id": 238,
+    "text": "and the common Lyapunov function P found by the algorithm is: ",
+    "math": true
+  },
+  {
+    "id": 239,
+    "text": "P=0.00690.00560.00750.00410.0033-0.00910.00560.00670.00930.00750.0061-0.02410.00750.00930.01390.01140.0107-0.04180.00410.00750.01140.01180.0111-0.05050.00330.00610.01070.01110.0150-0.0627-0.0091-0.0241-0.0418-0.0505-0.06270.9457 # SEQ Equation \\* ARABIC \\* MERGEFORMAT 71",
+    "math": true
+  },
+  {
+    "id": 240,
+    "text": "Figure 11 shows the evaluated stability margin bg for both controllers as a function of the physical substructure degradation factor. For numerical simulations, we specify a switching margin of bg=0.15. While modeling error and parameter drift are generally smaller than specimen degradation effects, they remain unavoidable and require a sufficient robustness margin. Similar to gain and phase margins, the NCF margin must reflect anticipated experimental uncertainties, which vary by laboratory and experiment. Based on our observations, we found that bg= 0.4 serves as a practical guideline for physical experiments.",
+    "math": true
+  },
+  {
+    "id": 242,
+    "text": "Figure 11: NCF stability margin versus physical substructure degradation factor α for two PI controller designs (Controllers A and B)",
+    "math": true
+  },
+  {
+    "id": 244,
+    "text": "6.3 Physical Substructure Modeling",
+    "math": false
+  },
+  {
+    "id": 245,
+    "text": "The nonlinear response of the simulated physical substructure is represented using a degrading Bouc–Wen model. The Bouc–Wen formulation originates from the hysteresis model introduced by Bouc [47]. It was subsequently extended to represent degrading hysteretic behavior by Baber and Noori [48]. The formulation adopted in this study follows the normalized degrading form described by Song [49], in which stiffness and strength deterioration are introduced through energy-dependent functions.",
+    "math": false
+  },
+  {
+    "id": 246,
+    "text": "The Bouc–Wen restoring force is defined as: ",
+    "math": false
+  },
+  {
+    "id": 247,
+    "text": "FBW​=k0​ρdm+1-ρz,# SEQ Equation \\* ARABIC \\* MERGEFORMAT  72",
+    "math": true
+  },
+  {
+    "id": 248,
+    "text": "where k0 is the initial stiffness and α determines the residual post-yield stiffness contribution, and the parameter z  governs the history-dependent portion of the restoring force. In this study, the initial stiffness is inherited directly from the established vRTHS benchmark specimen (k0=1.19 kN/mm), while ρ is set to 0.001 to be consistent with the nominal plastic plateau recommended by EN 1993-1-5, Annex C.6 [50] and implemented by IDEA StatiCa in nonlinear connection design [51].",
+    "math": true
+  },
+  {
+    "id": 249,
+    "text": "The evolution of the internal hysteretic variable z is governed by",
+    "math": true
+  },
+  {
+    "id": 250,
+    "text": "z=dm-νEβbdzzn-1-νEγbdznηE # SEQ Equation \\* ARABIC \\* MERGEFORMAT 73",
+    "math": true
+  },
+  {
+    "id": 251,
+    "text": "The parameters βb and γb determine the shape of the hysteresis loop, whereas n controls the sharpness of the transition between the initial elastic region and the hysteretic plateau. Their values are selected to produce a realistic steel hysteretic response with βb​=0.03 mm-4, γb= 0.009 mm-4 and n=8.",
+    "math": true
+  },
+  {
+    "id": 252,
+    "text": "Moreover, to represent progressive deterioration during cyclic loading, the model introduces the accumulated hysteretic-work variable E. Its evolution is defined as",
+    "math": false
+  },
+  {
+    "id": 253,
+    "text": "E=zdm, # SEQ Equation \\* ARABIC \\* MERGEFORMAT 74",
+    "math": true
+  },
+  {
+    "id": 254,
+    "text": "The strength and stiffness degradation are introduced through the functions:",
+    "math": false
+  },
+  {
+    "id": 255,
+    "text": "νE=1+δνE, # SEQ Equation \\* ARABIC \\* MERGEFORMAT 75",
+    "math": true
+  },
+  {
+    "id": 256,
+    "text": "ηE=1+δηE. # SEQ Equation \\* ARABIC \\* MERGEFORMAT 76",
+    "math": true
+  },
+  {
+    "id": 257,
+    "text": "The degradation parameters are tuned for the simulation to produce a level of cyclic deterioration comparable to the degrading steel-frame response obtained in [52], where deterioration is associated with progressive inelastic deformation, partial connection fracture and bolt loosening. Therefore, the degradation coefficients are set as δν=δη=0.03 mm-2. In this study, the Bouc–Wen model is implemented in Simulink using a MATLAB Function block to update the hysteretic states and evaluate the restoring force at each simulation step, further details of the numerical implementation are provided in [49]. To enable a realistic comparison under nonlinear scenarios, the reference model is also modeled with the Bouc–Wen model.",
+    "math": true
+  },
+  {
+    "id": 258,
+    "text": "During the simulation, the effective specimen stiffness is estimated using a moving least-squares fit of the Bouc-Wen restoring force against measured displacement. The fitted slope is then normalized by the initial stiffness providing the stiffness factor used in the stability calculation as shown in the used expression,",
+    "math": false
+  },
+  {
+    "id": 259,
+    "text": "kt=i∈Wtdmti-dmtFBWti-FBWti∈Wtdmti-dmt2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 77",
+    "math": true
+  },
+  {
+    "id": 260,
+    "text": "αt=ktk0# SEQ Equation \\* ARABIC \\* MERGEFORMAT 78",
+    "math": true
+  },
+  {
+    "id": 261,
+    "text": "where Wt denotes the moving estimation window, and dmt and FBWt are the corresponding window averages.",
+    "math": true
+  },
+  {
+    "id": 262,
+    "text": "The window length should balance noise sensitivity and responsiveness. A shorter window provides faster tracking but is more sensitive to noise, whereas a longer window provides a smoother estimate but may delay or rapid stiffness changes. In this study, a 0.5-sec window was found to provide a suitable tradeoff between these effects.",
+    "math": false
+  },
+  {
+    "id": 263,
+    "text": "Using this estimated αt, the parametric transfer-system model is updated to obtain Ts,αt, which is then evaluated at the frequencies of interest to compute the NCF stability margin.",
+    "math": true
+  },
+  {
+    "id": 264,
+    "text": "6.4 Simulations and Results",
+    "math": false
+  },
+  {
+    "id": 265,
+    "text": "To compare the controller designs for the modified benchmark, four simulation cases are considered. Cases I and II correspond to the linear undamaged specimen using Controllers A and B, respectively. Case III considers the degrading nonlinear specimen while retaining Controller A throughout the simulation, whereas Case IV demonstrates the proposed switching strategy under the same degrading nonlinear specimen. ",
+    "math": false
+  },
+  {
+    "id": 266,
+    "text": "Performance is quantified using nine benchmark criteria, J1–J9. The delay criterion J1 is obtained from the cross-correlation between the numerical target and measured actuator displacements in milliseconds and is defined as",
+    "math": true
+  },
+  {
+    "id": 267,
+    "text": "J1=argmaxkiyn1i xmi-k.# SEQ Equation \\* ARABIC \\* MERGEFORMAT 79 ",
+    "math": true
+  },
+  {
+    "id": 268,
+    "text": " Criteria J2 and J3 quantify the normalized standard-deviation and peak actuator-tracking errors respectively, and are given by",
+    "math": true
+  },
+  {
+    "id": 269,
+    "text": "J2=i=1Nxmi-yn1i2i=1Nyn1i2, J3=maxixmi-yn1imaxiyn1i # SEQ Equation \\* ARABIC \\* MERGEFORMAT 80",
+    "math": true
+  },
+  {
+    "id": 270,
+    "text": "Criteria J₄–J₆ represent the normalized RMS displacement errors for floors 1–3, respectively, while J₇–J₉ represent the corresponding normalized peak displacement errors. For floors 2 and 3, numerical responses are used because measured responses are unavailable.",
+    "math": true
+  },
+  {
+    "id": 271,
+    "text": "J4=iNxₘi-xᵣ1i2iNxᵣ1i2, J5=iNxn2-xr2i2iNxᵣ2i2,J6=iNxn3-xr3i2iNxᵣ3i2# SEQ Equation \\* ARABIC \\* MERGEFORMAT 81",
+    "math": true
+  },
+  {
+    "id": 272,
+    "text": "J7=maxixmi-xr1imaxixr1i, J8=maxixn2i-xr2imaxixr2i, J9=maxixn3i-xr3imaxixr3i. # SEQ Equation \\* ARABIC \\* MERGEFORMAT 82",
+    "math": true
+  },
+  {
+    "id": 273,
+    "text": "Figure 12 presents the simulation results for Case I. The first three subplots show the measured displacement from the vRTHS against the reference model's calculated displacement for the first, second, and third floors (in mm). The fourth subplot shows α and bg, both of which remain constant in this scenario. Finally, Table 3 summarizes the evaluation criteria for the stable Cases I, II, and IV. The low error values are consistent with the displacement time histories in Figure 12, where the vRTHS output closely follows the reference model throughout the simulation. These results establish Case I as the baseline for the degradation and switching studies that follow.",
+    "math": true
+  },
+  {
+    "id": 274,
+    "text": "Case II, presented in Figure 13, evaluates the response of the undamaged linear physical substructure when Controller B is used throughout the simulation. As expected, the system remains stable, and the measured floor displacements follow the reference response closely. Compared with Case I, however, the tracking performance is slightly less accurate, which is consistent with the design objective of Controller B as a more robust but less aggressive controller.",
+    "math": false
+  },
+  {
+    "id": 275,
+    "text": "Case III, presented in Figure 14, examines the system response when the physical substructure is represented by a nonlinear Bouc–Wen model while Controller A is retained throughout the simulation. Initially, while the specimen retains sufficient stiffness, Controller A provides good tracking performance and the closed-loop system remains stable. As the specimen undergoes degradation, the reduction in effective stiffness progressively erodes the available stability margin. Once the specimen approaches the critical degradation level, the closed-loop response begins to exhibit rapidly increasing oscillations and ultimately approaches instability. This behavior provides numerical validation of the theoretical prediction that specimen stiffness loss can drive the transfer system toward instability.",
+    "math": false
+  },
+  {
+    "id": 276,
+    "text": "Case IV, presented in Figure 15,  demonstrates the proposed online stability-monitoring and controller-switching framework under nonlinear specimen behavior. The simulation begins with the high-performance Controller A, which provides accurate tracking while the estimated stability margin remains sufficiently large. As the specimen degrades and its effective stiffness decreases, the stability margin progressively diminishes until it reaches the predefined switching threshold. At this point, the controller transitions from Controller A to the slower but more robust Controller B. As shown in Figure 15, the transition is smooth and the vRTHS remains stable. The quantitative results in Table 3 further confirm that the proposed switching strategy maintains performance close to the undamaged Case I baseline. For example, J2 increases from 9.8% to 11.1%, while J4,J5, and J6 increase from 18.9%, 13.1%, and 15.7% to 21.1%, 15.7%, and 17.1%, respectively. The remaining criteria exhibit similarly limited changes. These results indicate that the proposed switching strategy preserves overall vRTHS accuracy while providing the additional robustness required to avoid the instability observed in Case III. Following the degradation event, the specimen retains a permanent reduction in stiffness, with the identified degradation factor settling at approximately α≈0.7 for the remainder of the simulation. This shift in system dynamics is more favorable to Controller B, allowing it to maintain good performance. Figure 16 further illustrates the nonlinear hysteretic response of the specimen, showing the progression from the initial elastic regime through yielding and into the post-yield response, with the changing loop characteristics reflecting the associated stiffness degradation.",
+    "math": true
+  },
+  {
+    "id": 279,
+    "text": "Figure 12. Simulation results for Case I, where Controller A is utilized and the physical substructure is maintained undamaged.",
+    "math": false
+  },
+  {
+    "id": 282,
+    "text": "Figure 13. Simulation results for Case II, where Controller B is utilized and the physical substructure is maintained undamaged.",
+    "math": false
+  },
+  {
+    "id": 285,
+    "text": "Figure 14: Case III results, demonstrating Controller A response to degradation.",
+    "math": false
+  },
+  {
+    "id": 288,
+    "text": "Figure 15: Case IV results, demonstrating the effectiveness of the proposed control strategy, utilizing a smooth transition from Controller A to Controller B at the predefined stability threshold.",
+    "math": false
+  },
+  {
+    "id": 290,
+    "text": "Figure 16: Hysteretic force–displacement response for Case IV simulation",
+    "math": false
+  },
+  {
+    "id": 291,
+    "text": "7-Conclusion",
+    "math": false
+  },
+  {
+    "id": 292,
+    "text": "This work develops and demonstrates an online stability indicator based on the NCF stability margin that quantifies the robustness of the closed-loop system as the plant changes during testing and enables the adaptation of control techniques in response to those changes. While the indicator may be useful for detecting different types of adaptations, damage in the form of structural degradation is selected as a situation of interest to demonstrate its capabilities. For SISO settings, a closed-form stability boundary associated with specimen degradation is derived for the outer-controller loop and used to perform a sensitivity analysis, showing that more flexible structures are more susceptible to outer-loop instability caused by stiffness loss. A practical procedure is developed herein in which the indicator triggers a controller switch, and stability of the transition is ensured through the identification of a common Lyapunov function. An illustrative example based on a modified version of a benchmark problem confirms that the indicator provides an advance warning of diminishing robustness and potential instability, and that the controller transitions remain smooth, allowing the test to continue safely despite changes in the physical specimen. These results suggest that incorporating the proposed indicator into experimental systems can improve the tracking performance and expand the range of high quality real-time hybrid simulations, enable more complex tests that are prone to changes in the physical substructure, and improve both test reliability and equipment safety by reducing the likelihood of unexpected instability. Experimental validation of the proposed framework is currently in progress, and an expanded discussion of the associated practical issues and observations will be included in a future manuscript.",
+    "math": false
+  },
+  {
+    "id": 294,
+    "text": "Data Availability Statement",
+    "math": false
+  },
+  {
+    "id": 295,
+    "text": "The simulation data that support the findings of this study are available from the corresponding author upon request.",
+    "math": false
+  },
+  {
+    "id": 297,
+    "text": "Conflicts of Interest",
+    "math": false
+  },
+  {
+    "id": 298,
+    "text": "The authors declare no conflicts of interest.",
+    "math": false
+  },
+  {
+    "id": 300,
+    "text": "Funding",
+    "math": false
+  },
+  {
+    "id": 301,
+    "text": "This work was supported by the U.S. National Science Foundation (NSF), Cyber-Physical Systems (CPS) program (Award No. CNS-2229136). ",
+    "math": false
+  },
+  {
+    "id": 302,
+    "text": "References ",
+    "math": false
+  },
+  {
+    "id": 304,
+    "text": "[1]S. J. Chapman, M. S. Williams, and A. Blakeborough, ‘Laboratory testing of structures under dynamic loads: an introductory review’, Philosophical Transactions of the Royal Society of London. Series A: Mathematical, Physical and Engineering Sciences, vol. 359, no. 1786, pp. 1651–1669, Sep. 2001, doi: 10.1098/rsta.2001.0860.",
+    "math": false
+  },
+  {
+    "id": 305,
+    "text": "[2]R. T. Leon and G. G. Deierlein, ‘Considerations for the Use of Quasi-Static Testing’, Earthquake Spectra, vol. 12, no. 1, pp. 87–109, Feb. 1996, doi: 10.1193/1.1585869.",
+    "math": false
+  },
+  {
+    "id": 306,
+    "text": "[3]M. Nakashima, H. Kato, and E. Takaoka, ‘Development of real-time pseudo dynamic testing’, Earthquake Engineering & Structural Dynamics, vol. 21, no. 1, pp. 79–92, 1992, doi: 10.1002/eqe.4290210106.",
+    "math": false
+  },
+  {
+    "id": 307,
+    "text": "[4]S. A. Mahin, P.-S. B. Shing, C. R. Thewalt, and R. D. Hanson, ‘Pseudodynamic Test Method—Current Status and Future Directions’, Journal of Structural Engineering, vol. 115, no. 8, pp. 2113–2128, Aug. 1989, doi: 10.1061/(ASCE)0733-9445(1989)115:8(2113).",
+    "math": false
+  },
+  {
+    "id": 308,
+    "text": "[5]A. Maghareh, S. J. Dyke, A. Prakash, and G. B. Bunting, ‘Establishing a predictive performance indicator for real-time hybrid simulation’, Earthquake Engineering & Structural Dynamics, vol. 43, no. 15, pp. 2299–2318, 2014, doi: 10.1002/eqe.2448.",
+    "math": false
+  },
+  {
+    "id": 309,
+    "text": "[6]J. E. Carrion, ‘Model-based strategies for real-time hybrid testing’, Ph.D., University of Illinois at Urbana-Champaign, United States -- Illinois, 2007. Accessed: Aug. 23, 2025. [Online]. Available: https://www.proquest.com/docview/304858699/abstract/C7673E4A6EB14338PQ/1",
+    "math": false
+  },
+  {
+    "id": 310,
+    "text": "[7]A. Najafi, G. A. Fermandois, S. J. Dyke, and B. F. Spencer, ‘Hybrid simulation with multiple actuators: A state-of-the-art review’, Engineering Structures, vol. 276, p. 115284, Feb. 2023, doi: 10.1016/j.engstruct.2022.115284.",
+    "math": false
+  },
+  {
+    "id": 311,
+    "text": "[8]S. J. Dyke, B. F. Spencer, P. Quast, and M. K. Sain, ‘Role of Control-Structure Interaction in Protective System Design’, Journal of Engineering Mechanics, vol. 121, no. 2, pp. 322–338, Feb. 1995, doi: 10.1061/(ASCE)0733-9399(1995)121:2(322).",
+    "math": false
+  },
+  {
+    "id": 312,
+    "text": "[9]A. Maghareh, C. E. Silva, and S. J. Dyke, ‘Servo-hydraulic actuator in controllable canonical form: Identification and experimental validation’, Mechanical Systems and Signal Processing, vol. 100, pp. 398–414, Feb. 2018, doi: 10.1016/j.ymssp.2017.07.022.",
+    "math": false
+  },
+  {
+    "id": 313,
+    "text": "[10]C. E. Silva, D. Gomez, A. Maghareh, S. J. Dyke, and B. F. Spencer, ‘Benchmark control problem for real-time hybrid simulation’, Mechanical Systems and Signal Processing, vol. 135, p. 106381, Jan. 2020, doi: 10.1016/j.ymssp.2019.106381.",
+    "math": false
+  },
+  {
+    "id": 314,
+    "text": "[11]J. W. Condori Uribe et al., ‘Experimental benchmark control problem for multi-axial real-time hybrid simulation’, Front. Built Environ., vol. 9, Nov. 2023, doi: 10.3389/fbuil.2023.1270996.",
+    "math": false
+  },
+  {
+    "id": 315,
+    "text": "[12]H. Zhou, D. Xu, X. Shao, X. Ning, and T. Wang, ‘A robust linear-quadratic-gaussian controller for the real-time hybrid simulation on a benchmark problem’, Mechanical Systems and Signal Processing, vol. 133, p. 106260, Nov. 2019, doi: 10.1016/j.ymssp.2019.106260.",
+    "math": false
+  },
+  {
+    "id": 316,
+    "text": "[13]A. Palacio-Betancur and M. Gutierrez Soto, ‘Adaptive tracking control for real-time hybrid simulation of structures subjected to seismic loading’, Mechanical Systems and Signal Processing, vol. 134, p. 106345, Dec. 2019, doi: 10.1016/j.ymssp.2019.106345.",
+    "math": false
+  },
+  {
+    "id": 317,
+    "text": "[14]Z. Wang, X. Ning, G. Xu, H. Zhou, and B. Wu, ‘High performance compensation using an adaptive strategy for real-time hybrid simulation’, Mechanical Systems and Signal Processing, vol. 133, p. 106262, Nov. 2019, doi: 10.1016/j.ymssp.2019.106262.",
+    "math": false
+  },
+  {
+    "id": 318,
+    "text": "[15]Y. Shangguan, Z. Wang, Y. Guo, Y. Chen, Y. Zeng, and H. Zhou, ‘Adaptive sliding-mode delay compensation for real-time hybrid simulations with multiple actuators’, Front. Built Environ., vol. 10, Aug. 2024, doi: 10.3389/fbuil.2024.1393710.",
+    "math": false
+  },
+  {
+    "id": 319,
+    "text": "[16]A. J. Aguila, H. Li, A. Palacio-Betancur, K. A. Ahmed, I. Kovalenko, and M. Gutierrez Soto, ‘Conditional adaptive time series compensation and control design for multi-axial real-time hybrid simulation’, Front. Built Environ., vol. 10, May 2024, doi: 10.3389/fbuil.2024.1384235.",
+    "math": false
+  },
+  {
+    "id": 320,
+    "text": "[17]A. Maghareh, S. J. Dyke, and C. E. Silva, ‘A Self-tuning Robust Control System for nonlinear real-time hybrid simulation’, Earthquake Engineering & Structural Dynamics, vol. 49, no. 7, pp. 695–715, 2020, doi: 10.1002/eqe.3260.",
+    "math": false
+  },
+  {
+    "id": 321,
+    "text": "[18]P. j. Gawthrop, M. i. Wallace, S. a. Neild, and D. j. Wagg, ‘Robust real-time substructuring techniques for under-damped systems’, Structural Control and Health Monitoring, vol. 14, no. 4, pp. 591–608, 2007, doi: 10.1002/stc.174.",
+    "math": false
+  },
+  {
+    "id": 322,
+    "text": "[19]O. Mercan and J. M. Ricles, ‘Stability analysis for real-time pseudodynamic and hybrid pseudodynamic testing with multiple sources of delay’, Earthquake Engineering & Structural Dynamics, vol. 37, no. 10, pp. 1269–1293, 2008, doi: 10.1002/eqe.814.",
+    "math": false
+  },
+  {
+    "id": 323,
+    "text": "[20]F. Chi, J. Wang, and F. Jin, ‘Delay-dependent stability and added damping of SDOF real-time dynamic hybrid testing’, Earthq. Eng. Eng. Vib., vol. 9, no. 3, pp. 425–438, Sep. 2010, doi: 10.1007/s11803-010-0026-0.",
+    "math": false
+  },
+  {
+    "id": 324,
+    "text": "[21]M. I. Wallace, J. Sieber, S. A. Neild, D. J. Wagg, and B. Krauskopf, ‘Stability analysis of real-time dynamic substructuring using delay differential equation models’, Earthquake Engineering & Structural Dynamics, vol. 34, no. 15, pp. 1817–1832, 2005, doi: 10.1002/eqe.513.",
+    "math": false
+  },
+  {
+    "id": 325,
+    "text": "[22]Y. N. Kyrychko, K. B. Blyuss, A. Gonzalez-Buelga, S. J. Hogan, and D. J. Wagg, ‘Real-time dynamic substructuring in a coupled oscillator–pendulum system’, Proc. A, vol. 462, no. 2068, pp. 1271–1294, Jan. 2006, doi: 10.1098/rspa.2005.1624.",
+    "math": false
+  },
+  {
+    "id": 326,
+    "text": "[23]X. S. Gao and S. You, ‘Dynamical stability analysis of MDOF real-time hybrid system’, Mechanical Systems and Signal Processing, vol. 133, p. 106261, 2019, doi: https://doi.org/10.1016/j.ymssp.2019.106261.",
+    "math": false
+  },
+  {
+    "id": 327,
+    "text": "[24]F. Zhu, J.-T. Wang, F. Jin, F.-D. Chi, and Y. Gui, ‘Stability analysis of MDOF real-time dynamic hybrid testing systems using the discrete-time root locus technique’, Earthquake Engineering & Structural Dynamics, vol. 44, no. 2, pp. 221–241, 2015, doi: 10.1002/eqe.2467.",
+    "math": false
+  },
+  {
+    "id": 328,
+    "text": "[25]C. Gálmez and G. Fermandois, ‘Online Stability Analysis for Real-Time Hybrid Simulation Testing’, Front. Built Environ., vol. 6, Aug. 2020, doi: 10.3389/fbuil.2020.00134.",
+    "math": false
+  },
+  {
+    "id": 329,
+    "text": "[26]M. Ahmadizadeh and G. Mosqueda, ‘Online energy-based error indicator for the assessment of numerical and experimental errors in a hybrid simulation’, Engineering Structures, vol. 31, no. 9, pp. 1987–1996, Sep. 2009, doi: 10.1016/j.engstruct.2009.03.002.",
+    "math": false
+  },
+  {
+    "id": 330,
+    "text": "[27]Z. Tang, M. Dietz, and Z. Li, ‘Substructuring stability analysis in light of comprehensive transfer system dynamics’, Bull Earthquake Eng, vol. 16, no. 1, pp. 129–154, Jan. 2018, doi: 10.1007/s10518-017-0192-9.",
+    "math": false
+  },
+  {
+    "id": 331,
+    "text": "[28]H. Zhou, X. Shao, B. Zhang, P. Tan, and T. Wang, ‘Relative stability analysis for robustness design of real-time hybrid simulation’, Soil Dynamics and Earthquake Engineering, vol. 165, p. 107681, Feb. 2023, doi: 10.1016/j.soildyn.2022.107681.",
+    "math": false
+  },
+  {
+    "id": 332,
+    "text": "[29]A. Maghareh, S. Dyke, S. Rabieniaharatbar, and A. Prakash, ‘Predictive stability indicator: a novel approach to configuring a real-time hybrid simulation’, Earthquake Engineering & Structural Dynamics, vol. 46, no. 1, pp. 95–116, 2017.",
+    "math": false
+  },
+  {
+    "id": 333,
+    "text": "[30]D. M. Williams, M. S. Williams, and A. Blakeborough, ‘Numerical Modeling of a Servohydraulic Testing System for Structures’, Journal of Engineering Mechanics, vol. 127, no. 8, pp. 816–827, Aug. 2001, doi: 10.1061/(ASCE)0733-9399(2001)127:8(816).",
+    "math": false
+  },
+  {
+    "id": 334,
+    "text": "[31]C. Chen, J. Valdovinos, and W. Pong, ‘Real-Time Hybrid Simulation of Viscous Dampers for Seismic Hazard Mitigation’, in Pressure Vessels and Piping Conference, American Society of Mechanical Engineers, 2014, p. V008T08A001.",
+    "math": false
+  },
+  {
+    "id": 335,
+    "text": "[32]H. Nyquist, ‘Regeneration Theory’, Bell System Technical Journal, vol. 11, no. 1, pp. 126–147, 1932, doi: 10.1002/j.1538-7305.1932.tb02344.x.",
+    "math": false
+  },
+  {
+    "id": 336,
+    "text": "[33]H. W. Bode, Network analysis and feedback amplifier design. D. Van Nostrand Company, Inc., 1945.",
+    "math": false
+  },
+  {
+    "id": 337,
+    "text": "[34]G. F. Franklin, J. D. Powell, M. L. Workman, and others, Digital control of dynamic systems, vol. 3. Addison-wesley Menlo Park, 1998.",
+    "math": false
+  },
+  {
+    "id": 338,
+    "text": "[35]A. Ingimundarson and T. Hägglund, ‘Robust tuning procedures of dead-time compensating controllers’, Control Engineering Practice, vol. 9, no. 11, pp. 1195–1208, Nov. 2001, doi: 10.1016/S0967-0661(01)00065-X.",
+    "math": false
+  },
+  {
+    "id": 339,
+    "text": "[36]K. Ogata, Modern Control Engineering, 5th edn. Upper Saddle River, NJ: Prentice Hall, 2010.",
+    "math": false
+  },
+  {
+    "id": 340,
+    "text": "[37]P. Seiler, A. Packard, and P. Gahinet, ‘An Introduction to Disk Margins [Lecture Notes]’, IEEE Control Systems Magazine, vol. 40, no. 5, pp. 78–95, Oct. 2020, doi: 10.1109/MCS.2020.3005277.",
+    "math": false
+  },
+  {
+    "id": 341,
+    "text": "[38]K. Glover and D. McFarlane, ‘Robust stabilization of normalized coprime factor plant descriptions with H/sub infinity /-bounded uncertainty’, IEEE Transactions on Automatic Control, vol. 34, no. 8, pp. 821–830, Aug. 1989, doi: 10.1109/9.29424.",
+    "math": false
+  },
+  {
+    "id": 342,
+    "text": "[39]G. Vinnicombe, ‘Measuring robustness of feedback systems’, PhD Thesis, University of Cambridge, 1992.",
+    "math": false
+  },
+  {
+    "id": 343,
+    "text": "[40]J. Park and R. R. Bitmead, ‘Simultaneous scaling for MIMO controller certification’, in 2007 46th IEEE Conference on Decision and Control, Dec. 2007, pp. 4409–4414. doi: 10.1109/CDC.2007.4434796.",
+    "math": false
+  },
+  {
+    "id": 344,
+    "text": "[41]K. M. Halsey, ‘Robust Stability in a Classical and Modern Context’, in Proceedings of the 44th IEEE Conference on Decision and Control, Dec. 2005, pp. 2308–2313. doi: 10.1109/CDC.2005.1582506.",
+    "math": false
+  },
+  {
+    "id": 345,
+    "text": "[42]K. Zhou and J. C. Doyle, Essentials of robust control, vol. 104. Prentice hall Upper Saddle River, NJ, 1998.",
+    "math": false
+  },
+  {
+    "id": 346,
+    "text": "[43]D. Liberzon, Switching in Systems and Control. in Systems & Control: Foundations & Applications. Boston, MA: Birkhäuser, 2003. doi: 10.1007/978-1-4612-0017-8.",
+    "math": false
+  },
+  {
+    "id": 347,
+    "text": "[44]K. S. Narendra and J. Balakrishnan, ‘A common Lyapunov function for stable LTI systems with commuting A-matrices’, IEEE Transactions on Automatic Control, vol. 39, no. 12, pp. 2469–2471, Dec. 1994, doi: 10.1109/9.362846.",
+    "math": false
+  },
+  {
+    "id": 348,
+    "text": "[45]A. Nemirovskii and P. Gahinet, ‘The projective method for solving linear matrix inequalities’, in Proceedings of 1994 American Control Conference - ACC ’94, Jun. 1994, pp. 840–844 vol.1. doi: 10.1109/ACC.1994.751861.",
+    "math": false
+  },
+  {
+    "id": 349,
+    "text": "[46]‘feasp - Compute solution to given system of LMIs - MATLAB’. Accessed: Aug. 26, 2026. [Online]. Available: https://www.mathworks.com/help/robust/ref/feasp.html",
+    "math": false
+  },
+  {
+    "id": 350,
+    "text": "[47]R. Bouc, ‘Forced vibrations of mechanical systems with hysteresis’, in Proc. of the Fourth Conference on Nonlinear Oscillations, Prague, 1967, 1967.",
+    "math": false
+  },
+  {
+    "id": 351,
+    "text": "[48]T. T. Baber and M. N. Noori, ‘Modeling general hysteresis behavior and random vibration application’, ASME Journal of Vibration Acoustics, vol. 108, no. 4, pp. 411–420, 1986.",
+    "math": false
+  },
+  {
+    "id": 352,
+    "text": "[49]W. Song and S. Dyke, ‘Real-Time Dynamic Model Updating of a Hysteretic Structural System’, Journal of Structural Engineering, vol. 140, no. 3, p. 04013082, Mar. 2014, doi: 10.1061/(ASCE)ST.1943-541X.0000857.",
+    "math": false
+  },
+  {
+    "id": 353,
+    "text": "[50]C. En, ‘1-1, Eurocode 3: Design of steel structures’, General rules and rules for buildings, 1993.",
+    "math": false
+  },
+  {
+    "id": 354,
+    "text": "[51]IDEA StatiCa, ‘CBFEM – How It Works, Code Compliance, Validation and Verification’. Accessed: Aug. 18, 2026. [Online]. Available: https://www.ideastatica.com/support-center/support-center-knowledge-base/cbfem-how-it-works-code-compliance-validation-and-verification",
+    "math": false
+  },
+  {
+    "id": 355,
+    "text": "[52]K.-W. Liao, Y.-K. Wen, and D. Foutch, ‘Evaluation of 3D steel moment frames under earthquake excitations. I: Modeling’, Journal of Structural Engineering, vol. 133, no. 3, pp. 462–470, 2007.",
+    "math": false
+  },
+  {
+    "id": 356,
+    "text": "[53]A. P. Darby, M. S. Williams, and A. Blakeborough, ‘Stability and Delay Compensation for Real-Time Substructure Testing’, Journal of Engineering Mechanics, vol. 128, no. 12, pp. 1276–1284, Dec. 2002, doi: 10.1061/(ASCE)0733-9399(2002)128:12(1276).",
+    "math": false
+  },
+  {
+    "id": 357,
+    "text": "[54]L. Huang, C. Chen, Y. Pu, J. Wang, and T. Guo, ‘Stability analysis of real time hybrid simulation under coupled actuator delay and nonlinear behavior’, doi: 10.1002/eqe.3667.",
+    "math": false
+  },
+  {
+    "id": 358,
+    "text": "[55]T. Wang, H. Zhou, X. Zhang, and T. Ran, ‘Stability of an explicit time-integration algorithm for hybrid tests, considering stiffness hardening behavior’, Earthq. Eng. Eng. Vib., vol. 17, no. 3, pp. 595–606, Jul. 2018, doi: 10.1007/s11803-018-0465-6.",
+    "math": false
+  },
+  {
+    "id": 362,
+    "text": " Table 1: Comparative summary of RTHS stability indicators",
+    "math": false
+  },
+  {
+    "id": 363,
+    "text": "a This criterion denotes the indicator’s computational feasibility and reliability for online evaluation under time-varying physical-substructure dynamics. A functioning model-updating scheme is assumed to supply the required parameters online; additionally, these parameters are assumed to be approximately constant over the estimation window.",
+    "math": false
+  },
+  {
+    "id": 364,
+    "text": "b Although delay-margin-based indicators can be extended to incorporate high-fidelity representation of the transfer-system, they have primarily been studied using a lumped pure time-delay representation.",
+    "math": false
+  },
+  {
+    "id": 365,
+    "text": "c Although these stability indicators can be applied to any of the nested loops within the RTHS architecture, the table specifically denotes the loops evaluated in the cited examples. As noted earlier, this study focuses on the outer controller loop, since this approach enables detecting instability arising from structural degradation.",
+    "math": false
+  },
+  {
+    "id": 367,
+    "text": "Table 2. Virtual system and controller parameters",
+    "math": false
+  },
+  {
+    "id": 369,
+    "text": "Table 3: Virtual RTHS evaluation criteria for Cases I, II and IV",
+    "math": false
+  }
+]

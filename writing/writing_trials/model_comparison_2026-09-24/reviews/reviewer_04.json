@@ -1,0 +1,497 @@
+{
+  "task": "Compare anonymous candidate passages for an engineering journal. The user values accurate meaning, conventional scientific expressions, smooth progression, and clear sentences with few commas. Evaluate the writing actually provided. Source paragraphs are authorities for meaning, not wording or sentence-count templates. No original target is available for the Paper 2 case, so use its required ideas and neighboring draft paragraphs.\nScore each dimension 0, 1, or 2: 2 meets the requirement, 1 has a local ambiguity or awkwardness, 0 has a material failure. Fidelity means preserving causal relationships and qualifications without adding claims. Content means retaining all required ideas. Terminology means accurate conventional names and verb phrases without invented technical labels. Flow means a coherent progression within and between neighboring paragraphs. Clarity means readable connected sentences without crowded clauses or needless repetition.\nA candidate is usable only when fidelity=content=terminology=2, the total is at least 9, no sentence has 3 or more prose commas, no semicolon or whose occurs, and no material defect remains. Mechanical counts are supplied as a check, but distinguish prose commas from mathematical notation. Ordinary differences in wording are not terminology errors. Do not invent defects just to differentiate candidates. Do not penalize accurate passive voice or prefer a shorter passage merely for being shorter.\nChoose A, B, or tie for each pair based on which requires fewer meaningful edits for this user. If both pass, you may prefer the one with stronger explanation or more natural flow, but identify the concrete difference and call the preference small if it is stylistic. If no defensible difference exists, choose tie. If a candidate is not usable, list the specific required repair with a quoted phrase. Keep optional preferences separate from required repairs. Do not let high scores offset a material meaning or terminology defect.\nDo not identify or guess the model. Read only this packet, do not consult another agent or file, and do not browse. Return exactly one JSON object using the supplied structure, without code fences. Assess all eight pairs. Do not rewrite the passages.",
+  "response_structure": {
+    "pairs": [
+      {
+        "id": "provided pair id",
+        "A": {
+          "usable": true,
+          "scores": {
+            "fidelity": 2,
+            "content": 2,
+            "terminology": 2,
+            "flow": 2,
+            "clarity": 2
+          },
+          "required_repairs": [],
+          "optional_preferences": []
+        },
+        "B": {
+          "usable": true,
+          "scores": {
+            "fidelity": 2,
+            "content": 2,
+            "terminology": 2,
+            "flow": 2,
+            "clarity": 2
+          },
+          "required_repairs": [],
+          "optional_preferences": []
+        },
+        "preference": "tie",
+        "reason": "Quote specific wording and explain its effect.",
+        "certainty": "none"
+      }
+    ],
+    "overall_limits": "Short limits statement"
+  },
+  "pairs": [
+    {
+      "id": "system_01",
+      "case": "system",
+      "previous": "The paper is structured to sequentially develop and demonstrate the proposed framework. Section 2 establishes the RTHS problem formulation and the high-fidelity transfer-system model used throughout the study. Section 3 investigates the effect of physical-substructure degradation on outer-loop stability and derives the corresponding degradation-dependent stability boundary. Section 4 provides the technical background on classical and modern robustness measures and uses this progression to introduce and formulate the NCF-based online stability indicator. Section 5 develops the controller-switching framework and examines the stability of the transition using Lyapunov criteria. Section 6 demonstrates the complete framework through an illustrative vRTHS example involving nonlinear specimen degradation and controller switching. Finally, Section 7 summarizes the main findings and conclusions.\nThe missing paragraph opens Section 2: Problem Formulation. Figure 1 and Figure 2 and their captions appear after it and before the next prose paragraph.",
+      "required_ideas": [
+        "RTHS partitions a reference structural model into a numerical substructure and a physical substructure.",
+        "The numerical substructure is evaluated in real time on a computer. Actuators excite the physical substructure and sensors instrument it.",
+        "The transfer system comprises the controller, servo-valve, and actuator hydraulics. It enforces interface compatibility and equilibrium by synchronizing the physical response with the numerically computed response. Preserve these functions without adding new components from another paper.",
+        "Figure 1 shows a typical RTHS scheme. The numerical substructure receives ground acceleration a_g(t) and computes desired displacement d_d. The physical substructure provides measured force f_e.",
+        "Figure 2 gives a closer view of the transfer system.",
+        "Seismic excitation is an illustration. The proposed framework also applies to other external excitations such as wind loading when the corresponding input to the numerical substructure is changed.",
+        "Use Figure 1 and Figure 2 exactly. Keep the Paper 1 symbols a_g(t), d_d, and f_e. Do not introduce Paper 2 symbols or interventions."
+      ],
+      "next": " To define the numerical substructure block, the following equation of motion of the reference model is used:",
+      "actual_reference_paragraph": " The fundamental concept of RTHS is to partition a reference structural model into two substructures. Therefore, an RTHS consists of several major components, including: (i) a numerical substructure that can be evaluated in real-time on a computer; (ii) a physical substructure excited by actuators and instrumented with sensors; and, (iii) a transfer system, comprising the controller, servo-valve and actuator hydraulics, that enforces compatibility and equilibrium interface by synchronizing the physical substructure's response with the numerical evaluated response. Figure 1 illustrates a typical RTHS scheme where the numerical substructure is subjected to a ground acceleration, agt, where dd is the calculated desired displacement from the numerical model, and fe is the measured force from the physical substructure, while Figure 2 provides a closer look inside the transfer system block. Although seismic excitation is used for illustration in this study, the proposed framework is not restricted to earthquake loading and can be applied to other external excitations, such as wind loading, by modifying the corresponding input to the numerical substructure.",
+      "A": {
+        "text": "RTHS partitions a reference structural model into a numerical substructure and a physical substructure. The numerical substructure is evaluated in real time on a computer, while the physical substructure is excited by actuators and instrumented with sensors. The transfer system comprises the controller, servo-valve, and actuator hydraulics. It enforces interface compatibility and equilibrium by synchronizing the physical response with the numerically computed response. Figure 1 shows a typical RTHS scheme. In this scheme the numerical substructure receives the ground acceleration $a_g(t)$ and computes the desired displacement $d_d$. The physical substructure provides the measured force $f_e$. Figure 2 gives a closer view of the transfer system. Seismic excitation is used here only as an illustration. The proposed framework also applies to other external excitations such as wind loading when the corresponding input to the numerical substructure is changed.",
+        "mechanical_checks": {
+          "words": 137,
+          "sentences": 10,
+          "prose_commas": [
+            0,
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "RTHS partitions a reference structural model into a numerical substructure and a physical substructure. The numerical substructure is evaluated in real time on a computer. Actuators excite the physical substructure, which is instrumented with sensors. The transfer system comprises the controller, servo-valve, and actuator hydraulics. It enforces interface compatibility and equilibrium by synchronizing the physical response with the numerically computed response. Figure 1 shows a typical RTHS scheme in which the numerical substructure receives ground acceleration $a_g(t)$ and computes the desired displacement $d_d$. The physical substructure provides the measured force $f_e$. Figure 2 gives a closer view of the transfer system. Seismic excitation is used here as an illustration. The proposed framework also applies to other external excitations such as wind loading when the corresponding input to the numerical substructure is changed.",
+        "mechanical_checks": {
+          "words": 132,
+          "sentences": 10,
+          "prose_commas": [
+            0,
+            0,
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "primary_03",
+      "case": "primary",
+      "previous": "Interpreting Figure 4 reveals that both critical time delay indicators ( τcr,N and τcr,P) fail to accurately reflect the growing risk of instability arising from structural damage. Specifically, τcr,N exhibits misleading behavior as its normalized value increases with damage, falsely suggesting enhanced stability, while τcr,P remained nearly constant until exhibiting an abrupt drop, offering no advance warning. In contrast, the  GMP exhibits a more gradual decrease before the onset of instability, suggesting that the instability triggered by the degradation is closer to being caused by a gain amplification in the outer controller loop than a time delay, a mechanism that delay margins struggle to detect. To further illustrate this behavior, Figure 5 shows the corresponding open-loop gain and phase responses of Hymy1, highlighting how the outer-loop dynamics evolve with physical substructure degradation and can lead to instabilities.",
+      "required_ideas": [
+        "Explain a mechanism suggested by laboratory observations. Do not claim that the paper experimentally validates an indicator or intervention.",
+        "The controller is initially tuned to overcome the relatively high specimen stiffness and meet the required tracking performance.",
+        "Stiffness loss makes the specimen easier to move. Keeping the same corrective control action is likely to cause more overshoot and a larger displacement response relative to the initial stiffness condition.",
+        "Specimen mass influences the extent of response amplification. No direction or numerical dependence is specified.",
+        "The interaction between the degraded specimen and transfer system including the controller can eventually drive the system toward instability.",
+        "The behavior is not universal. The dominant instability mechanism and stability-indicator performance can vary substantially with both transfer-system and specimen dynamics."
+      ],
+      "next": "This study aims to present an online stability indicator for quantifying the system's robustness against different instability mechanisms driven by unmodeled dynamics or unforeseen disruptions, while also aiming to provide a sufficient time frame for effective intervention before instability occurs. To address a notable gap in the literature, this study focuses on the transfer system's internal stability, giving special consideration to physical system degradation, as it can manifest during an experiment in various forms, including, but not limited to, excessive specimen damage, the activation of unintended structural failure mechanisms, or the mechanical failure of test set-up components such as fasteners. Additionally, a controller switching strategy is proposed to leverage the stability indicator for real-time corrective action when degradation threatens system stability.",
+      "actual_reference_paragraph": "Based on our observations in the laboratory, this instability is caused by the controller being initially tuned to both overcome the specimen's relatively high stiffness and also achieve the required tracking performance. As the specimen degrades and loses stiffness, it becomes easier to move, so the same corrective control action is likely to overshoot more and produce a larger displacement response than under the original stiffness condition. The extent of this response amplification is influenced by the specimen mass, and the resulting interaction between the degraded specimen and the transfer system, which includes this controller, can eventually drive the system toward instability. It's important to note that, despite being observed experimentally, these behaviors are not universal, as the dominant instability mechanism and the performance of each indicator can change substantially depending on the specific dynamics of the transfer system and the physical substructure. ",
+      "A": {
+        "text": "Laboratory observations suggest a physical mechanism consistent with this gain amplification. The controller is initially tuned to overcome the relatively high specimen stiffness and achieve the required tracking performance. Stiffness loss makes the specimen easier to move. The same corrective control action is therefore likely to produce greater overshoot and a larger displacement response than under the initial stiffness condition. Specimen mass also influences the extent of this response amplification. The interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. This behavior is not universal. The dominant instability mechanism and stability-indicator performance can vary substantially with both transfer-system and specimen dynamics.",
+        "mechanical_checks": {
+          "words": 111,
+          "sentences": 8,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "Laboratory observations suggest a physical mechanism behind this behavior. The controller is initially tuned to overcome the relatively high stiffness of the specimen and to achieve the required tracking performance. As the specimen loses stiffness, it becomes easier to move. If the same corrective control action is retained, it is likely to cause more overshoot and a larger displacement response than under the initial stiffness condition. The specimen mass also influences the extent of this response amplification. The interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. However, this behavior is not universal. The dominant instability mechanism and the performance of stability indicators can vary substantially with both the transfer-system and specimen dynamics.",
+        "mechanical_checks": {
+          "words": 123,
+          "sentences": 8,
+          "prose_commas": [
+            0,
+            0,
+            1,
+            1,
+            0,
+            2,
+            1,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "paper2_03",
+      "case": "paper2",
+      "previous": "The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism. In this study, we extend the analytical study to experimental implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by the confidence in its evidence. The first is direct identification, bid, which estimates the closed-loop frequency response of the outer controller loop, from the desired displacement u(t) to the measured actuator displacement y(t), with the H1 cross-spectral estimator [6]. The second is output-power inference, bpow, which can detect amplification of the loop at frequencies that cannot be reliably identified. This branch compares the output power measured during the experiment against the reference recorded before the excitation. The third is the prior identification of the initial state, b0, which serves as a fallback when no sufficient information is available. The adaptive controller then acts on the estimated indicator by scaling the controller output by the adaptive factor λ, updated during the experiment, to keep the loop stable with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The evaluation of the framework is discussed in detail in this section.",
+      "required_ideas": [
+        "Figure 1 presents the hybrid simulation with the adaptive controller. Give the figure an engineering purpose rather than telling the reader to locate a loop. Use established names, not vague replacements such as control arrangement.",
+        "The numerical substructure computes desired displacement d(t) from ground acceleration and measured force f_m(t).",
+        "A phase-lead compensator advances d(t) to produce reference u(t). It is designed to offset transfer-system lag and improve tracking. It acts on the reference outside the outer controller loop.",
+        "The outer controller C(s) acts on tracking error u(t)-y(t). y(t) is the measured actuator displacement.",
+        "The adaptive factor lambda in (0,1] scales the controller output to produce command v(t) applied to plant H(s,k). The prior paragraph already links the estimated indicator to adjustment of lambda.",
+        "H(s,k) comprises the transfer system and the specimen of stiffness k. In Paper 2 the transfer system includes the inner-loop controller, servo-valve, actuator, and control-structure interaction between actuator and specimen. Account for all four across clear sentences. Interaction is a physical coupling, not another piece of hardware.",
+        "The measured displacement y(t) closes the outer controller loop. The measured force f_m(t) returns to the numerical substructure and closes the numerical substructure loop. Keep these loops distinct.",
+        "Do not assert perfect tracking, guaranteed stability, or new scientific results. Preserve notation d(t), u(t), y(t), v(t), C(s), H(s,k), k, lambda, and f_m(t). Use readable inline mathematical notation."
+      ],
+      "next": "The estimator monitors the outer controller loop, from u(t) to y(t), because specimen degradation acts directly on this loop [2]. With H(s,k)=Y(s)/V(s), the loop and closed-loop transfer functions are",
+      "actual_reference_paragraph": null,
+      "A": {
+        "text": "Figure 1 presents the hybrid simulation with the adaptive controller. It shows the signals exchanged between the numerical and physical substructures and the point at which the adaptive factor modifies the command. The numerical substructure computes the desired displacement d(t) from the ground acceleration and the measured force f_m(t). A phase-lead compensator advances d(t) to produce the reference u(t). The compensator is designed to offset the lag of the transfer system and improve tracking, and it acts on the reference outside the outer controller loop. The outer controller C(s) acts on the tracking error u(t) − y(t), where y(t) is the measured actuator displacement. The adaptive factor λ ∈ (0, 1] scales the controller output to produce the command v(t) applied to the plant H(s,k).\n\nThe plant H(s,k) comprises the transfer system and the specimen of stiffness k. The transfer system includes the inner-loop controller, the servo-valve, and the actuator. It also includes the control-structure interaction, which is the physical coupling between the actuator and the specimen. The measured displacement y(t) closes the outer controller loop, whereas the measured force f_m(t) returns to the numerical substructure and closes the numerical substructure loop.",
+        "mechanical_checks": {
+          "words": 189,
+          "sentences": 11,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            2,
+            1,
+            1
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "Figure 1 presents the hybrid simulation with the adaptive controller, showing how actuator tracking and force feedback couple the numerical substructure to the specimen. The numerical substructure computes the desired displacement \\(d(t)\\) from the ground acceleration and the measured force \\(f_m(t)\\). Outside the outer controller loop, a phase-lead compensator advances \\(d(t)\\) to produce the reference \\(u(t)\\). It is designed to offset transfer-system lag and improve tracking. The outer controller \\(C(s)\\) acts on the tracking error \\(u(t)-y(t)\\), where \\(y(t)\\) is the measured actuator displacement. The adaptive factor \\(\\lambda\\in(0,1]\\) scales the controller output to produce the command \\(v(t)\\) applied to the plant \\(H(s,k)\\).\n\nThe plant \\(H(s,k)\\) comprises the transfer system and the specimen of stiffness \\(k\\). The transfer system includes the inner-loop controller, servo-valve, and actuator. It also includes the control-structure interaction, which is the physical coupling between the actuator and the specimen. The measured displacement \\(y(t)\\) closes the outer controller loop. The measured force \\(f_m(t)\\) returns to the numerical substructure and closes the numerical substructure loop.",
+        "mechanical_checks": {
+          "words": 165,
+          "sentences": 11,
+          "prose_commas": [
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            0,
+            2,
+            1,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "paper2_02",
+      "case": "paper2",
+      "previous": "The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism. In this study, we extend the analytical study to experimental implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by the confidence in its evidence. The first is direct identification, bid, which estimates the closed-loop frequency response of the outer controller loop, from the desired displacement u(t) to the measured actuator displacement y(t), with the H1 cross-spectral estimator [6]. The second is output-power inference, bpow, which can detect amplification of the loop at frequencies that cannot be reliably identified. This branch compares the output power measured during the experiment against the reference recorded before the excitation. The third is the prior identification of the initial state, b0, which serves as a fallback when no sufficient information is available. The adaptive controller then acts on the estimated indicator by scaling the controller output by the adaptive factor λ, updated during the experiment, to keep the loop stable with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The evaluation of the framework is discussed in detail in this section.",
+      "required_ideas": [
+        "Figure 1 presents the hybrid simulation with the adaptive controller. Give the figure an engineering purpose rather than telling the reader to locate a loop. Use established names, not vague replacements such as control arrangement.",
+        "The numerical substructure computes desired displacement d(t) from ground acceleration and measured force f_m(t).",
+        "A phase-lead compensator advances d(t) to produce reference u(t). It is designed to offset transfer-system lag and improve tracking. It acts on the reference outside the outer controller loop.",
+        "The outer controller C(s) acts on tracking error u(t)-y(t). y(t) is the measured actuator displacement.",
+        "The adaptive factor lambda in (0,1] scales the controller output to produce command v(t) applied to plant H(s,k). The prior paragraph already links the estimated indicator to adjustment of lambda.",
+        "H(s,k) comprises the transfer system and the specimen of stiffness k. In Paper 2 the transfer system includes the inner-loop controller, servo-valve, actuator, and control-structure interaction between actuator and specimen. Account for all four across clear sentences. Interaction is a physical coupling, not another piece of hardware.",
+        "The measured displacement y(t) closes the outer controller loop. The measured force f_m(t) returns to the numerical substructure and closes the numerical substructure loop. Keep these loops distinct.",
+        "Do not assert perfect tracking, guaranteed stability, or new scientific results. Preserve notation d(t), u(t), y(t), v(t), C(s), H(s,k), k, lambda, and f_m(t). Use readable inline mathematical notation."
+      ],
+      "next": "The estimator monitors the outer controller loop, from u(t) to y(t), because specimen degradation acts directly on this loop [2]. With H(s,k)=Y(s)/V(s), the loop and closed-loop transfer functions are",
+      "actual_reference_paragraph": null,
+      "A": {
+        "text": "Figure 1 presents the hybrid simulation with the adaptive controller and shows the distinct roles of displacement and force feedback. The numerical substructure computes the desired displacement $d(t)$ from the ground acceleration and measured force $f_m(t)$. A phase-lead compensator advances $d(t)$ to produce the reference $u(t)$. It acts on the reference outside the outer controller loop and is designed to offset transfer-system lag and improve tracking. The outer controller $C(s)$ acts on the tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. The adaptive factor $\\lambda \\in (0,1]$ scales the controller output to produce the command $v(t)$ applied to the plant $H(s,k)$.\n\nThe plant $H(s,k)$ comprises the transfer system and the specimen of stiffness $k$. The transfer system includes the inner-loop controller, servo-valve, and actuator. It also includes the control-structure interaction that physically couples the actuator and specimen. The measured displacement $y(t)$ closes the outer controller loop by providing feedback to $C(s)$. The measured force $f_m(t)$ returns to the numerical substructure and closes the numerical substructure loop.",
+        "mechanical_checks": {
+          "words": 166,
+          "sentences": 11,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "Figure 1 presents the hybrid simulation with the adaptive controller and shows where the adaptive factor enters the signal path between the numerical substructure and the specimen. The numerical substructure computes the desired displacement d(t) from the ground acceleration and the measured force f_m(t). A phase-lead compensator advances d(t) to produce the reference u(t). The compensator is designed to offset the lag of the transfer system and improve tracking. It acts on the reference before the tracking error is formed and therefore lies outside the outer controller loop. The outer controller C(s) acts on the tracking error u(t) − y(t), where y(t) is the measured actuator displacement. The adaptive factor λ ∈ (0, 1] scales the controller output to produce the command v(t) applied to the plant H(s,k).\n\nThe plant H(s,k) comprises the transfer system and the specimen of stiffness k. The transfer system includes the inner-loop controller, the servo-valve, and the actuator. It also includes the control-structure interaction, which is the physical coupling between the actuator and the specimen. The measured displacement y(t) closes the outer controller loop. The measured force f_m(t) returns to the numerical substructure and closes a separate numerical substructure loop.",
+        "mechanical_checks": {
+          "words": 192,
+          "sentences": 12,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            2,
+            1,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "primary_02",
+      "case": "primary",
+      "previous": "Interpreting Figure 4 reveals that both critical time delay indicators ( τcr,N and τcr,P) fail to accurately reflect the growing risk of instability arising from structural damage. Specifically, τcr,N exhibits misleading behavior as its normalized value increases with damage, falsely suggesting enhanced stability, while τcr,P remained nearly constant until exhibiting an abrupt drop, offering no advance warning. In contrast, the  GMP exhibits a more gradual decrease before the onset of instability, suggesting that the instability triggered by the degradation is closer to being caused by a gain amplification in the outer controller loop than a time delay, a mechanism that delay margins struggle to detect. To further illustrate this behavior, Figure 5 shows the corresponding open-loop gain and phase responses of Hymy1, highlighting how the outer-loop dynamics evolve with physical substructure degradation and can lead to instabilities.",
+      "required_ideas": [
+        "Explain a mechanism suggested by laboratory observations. Do not claim that the paper experimentally validates an indicator or intervention.",
+        "The controller is initially tuned to overcome the relatively high specimen stiffness and meet the required tracking performance.",
+        "Stiffness loss makes the specimen easier to move. Keeping the same corrective control action is likely to cause more overshoot and a larger displacement response relative to the initial stiffness condition.",
+        "Specimen mass influences the extent of response amplification. No direction or numerical dependence is specified.",
+        "The interaction between the degraded specimen and transfer system including the controller can eventually drive the system toward instability.",
+        "The behavior is not universal. The dominant instability mechanism and stability-indicator performance can vary substantially with both transfer-system and specimen dynamics."
+      ],
+      "next": "This study aims to present an online stability indicator for quantifying the system's robustness against different instability mechanisms driven by unmodeled dynamics or unforeseen disruptions, while also aiming to provide a sufficient time frame for effective intervention before instability occurs. To address a notable gap in the literature, this study focuses on the transfer system's internal stability, giving special consideration to physical system degradation, as it can manifest during an experiment in various forms, including, but not limited to, excessive specimen damage, the activation of unintended structural failure mechanisms, or the mechanical failure of test set-up components such as fasteners. Additionally, a controller switching strategy is proposed to leverage the stability indicator for real-time corrective action when degradation threatens system stability.",
+      "actual_reference_paragraph": "Based on our observations in the laboratory, this instability is caused by the controller being initially tuned to both overcome the specimen's relatively high stiffness and also achieve the required tracking performance. As the specimen degrades and loses stiffness, it becomes easier to move, so the same corrective control action is likely to overshoot more and produce a larger displacement response than under the original stiffness condition. The extent of this response amplification is influenced by the specimen mass, and the resulting interaction between the degraded specimen and the transfer system, which includes this controller, can eventually drive the system toward instability. It's important to note that, despite being observed experimentally, these behaviors are not universal, as the dominant instability mechanism and the performance of each indicator can change substantially depending on the specific dynamics of the transfer system and the physical substructure. ",
+      "A": {
+        "text": "Laboratory observations suggest a physical mechanism for this degradation-driven instability. The controller is initially tuned to overcome the relatively high specimen stiffness and to achieve the required tracking performance. As the specimen loses stiffness, it becomes easier to move. If the corrective control action remains unchanged, it is likely to cause more overshoot and a larger displacement response than under the initial stiffness condition. The specimen mass also influences the extent of this response amplification. The interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. However, this behavior is not universal. The dominant instability mechanism and the performance of stability indicators can vary substantially with both transfer-system and specimen dynamics.",
+        "mechanical_checks": {
+          "words": 120,
+          "sentences": 8,
+          "prose_commas": [
+            0,
+            0,
+            1,
+            1,
+            0,
+            2,
+            1,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "Laboratory observations suggest that stiffness degradation changes how the specimen responds to corrective control action. The controller is initially tuned to overcome the relatively high specimen stiffness and achieve the required tracking performance. As the specimen loses stiffness, it becomes easier to move under the same corrective control action. This action is therefore likely to produce greater overshoot and a larger displacement response than under the initial stiffness condition. Specimen mass also influences the extent of this response amplification. Interaction between the degraded specimen and the transfer system, including its controller, can eventually drive the system toward instability. This behavior is not universal. The dominant instability mechanism and stability indicator performance can vary substantially with the dynamics of both the transfer system and the specimen.",
+        "mechanical_checks": {
+          "words": 125,
+          "sentences": 8,
+          "prose_commas": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            2,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "primary_01",
+      "case": "primary",
+      "previous": "Interpreting Figure 4 reveals that both critical time delay indicators ( τcr,N and τcr,P) fail to accurately reflect the growing risk of instability arising from structural damage. Specifically, τcr,N exhibits misleading behavior as its normalized value increases with damage, falsely suggesting enhanced stability, while τcr,P remained nearly constant until exhibiting an abrupt drop, offering no advance warning. In contrast, the  GMP exhibits a more gradual decrease before the onset of instability, suggesting that the instability triggered by the degradation is closer to being caused by a gain amplification in the outer controller loop than a time delay, a mechanism that delay margins struggle to detect. To further illustrate this behavior, Figure 5 shows the corresponding open-loop gain and phase responses of Hymy1, highlighting how the outer-loop dynamics evolve with physical substructure degradation and can lead to instabilities.",
+      "required_ideas": [
+        "Explain a mechanism suggested by laboratory observations. Do not claim that the paper experimentally validates an indicator or intervention.",
+        "The controller is initially tuned to overcome the relatively high specimen stiffness and meet the required tracking performance.",
+        "Stiffness loss makes the specimen easier to move. Keeping the same corrective control action is likely to cause more overshoot and a larger displacement response relative to the initial stiffness condition.",
+        "Specimen mass influences the extent of response amplification. No direction or numerical dependence is specified.",
+        "The interaction between the degraded specimen and transfer system including the controller can eventually drive the system toward instability.",
+        "The behavior is not universal. The dominant instability mechanism and stability-indicator performance can vary substantially with both transfer-system and specimen dynamics."
+      ],
+      "next": "This study aims to present an online stability indicator for quantifying the system's robustness against different instability mechanisms driven by unmodeled dynamics or unforeseen disruptions, while also aiming to provide a sufficient time frame for effective intervention before instability occurs. To address a notable gap in the literature, this study focuses on the transfer system's internal stability, giving special consideration to physical system degradation, as it can manifest during an experiment in various forms, including, but not limited to, excessive specimen damage, the activation of unintended structural failure mechanisms, or the mechanical failure of test set-up components such as fasteners. Additionally, a controller switching strategy is proposed to leverage the stability indicator for real-time corrective action when degradation threatens system stability.",
+      "actual_reference_paragraph": "Based on our observations in the laboratory, this instability is caused by the controller being initially tuned to both overcome the specimen's relatively high stiffness and also achieve the required tracking performance. As the specimen degrades and loses stiffness, it becomes easier to move, so the same corrective control action is likely to overshoot more and produce a larger displacement response than under the original stiffness condition. The extent of this response amplification is influenced by the specimen mass, and the resulting interaction between the degraded specimen and the transfer system, which includes this controller, can eventually drive the system toward instability. It's important to note that, despite being observed experimentally, these behaviors are not universal, as the dominant instability mechanism and the performance of each indicator can change substantially depending on the specific dynamics of the transfer system and the physical substructure. ",
+      "A": {
+        "text": "Laboratory observations suggest a physical mechanism for the gain amplification associated with stiffness degradation. The controller is initially tuned to overcome the relatively high specimen stiffness and achieve the required tracking performance. As the specimen loses stiffness, it becomes easier to move. Maintaining the same corrective control action is therefore likely to produce greater overshoot and a larger displacement response than under the initial stiffness condition. Specimen mass also influences the extent of this response amplification. The interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. This behavior is not universal. The dominant instability mechanism and the performance of stability indicators can vary substantially with both transfer-system and specimen dynamics.",
+        "mechanical_checks": {
+          "words": 120,
+          "sentences": 8,
+          "prose_commas": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            2,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "Laboratory observations suggest a physical explanation for the gain amplification observed in these results. The controller is initially tuned to overcome the relatively high stiffness of the specimen and to achieve the required tracking performance. Stiffness degradation makes the specimen easier to move. Maintaining the same corrective control action is therefore likely to produce more overshoot and a larger displacement response relative to the initial stiffness condition. The specimen mass also influences the extent of this response amplification. The interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. However, this behavior is not universal. The dominant instability mechanism and the performance of stability indicators can vary substantially with both the transfer-system and specimen dynamics.",
+        "mechanical_checks": {
+          "words": 124,
+          "sentences": 8,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            1,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "paper2_01",
+      "case": "paper2",
+      "previous": "The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness degradation of the specimen can drive the outer controller loop toward instability through a gain amplification mechanism. In this study, we extend the analytical study to experimental implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by the confidence in its evidence. The first is direct identification, bid, which estimates the closed-loop frequency response of the outer controller loop, from the desired displacement u(t) to the measured actuator displacement y(t), with the H1 cross-spectral estimator [6]. The second is output-power inference, bpow, which can detect amplification of the loop at frequencies that cannot be reliably identified. This branch compares the output power measured during the experiment against the reference recorded before the excitation. The third is the prior identification of the initial state, b0, which serves as a fallback when no sufficient information is available. The adaptive controller then acts on the estimated indicator by scaling the controller output by the adaptive factor λ, updated during the experiment, to keep the loop stable with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The evaluation of the framework is discussed in detail in this section.",
+      "required_ideas": [
+        "Figure 1 presents the hybrid simulation with the adaptive controller. Give the figure an engineering purpose rather than telling the reader to locate a loop. Use established names, not vague replacements such as control arrangement.",
+        "The numerical substructure computes desired displacement d(t) from ground acceleration and measured force f_m(t).",
+        "A phase-lead compensator advances d(t) to produce reference u(t). It is designed to offset transfer-system lag and improve tracking. It acts on the reference outside the outer controller loop.",
+        "The outer controller C(s) acts on tracking error u(t)-y(t). y(t) is the measured actuator displacement.",
+        "The adaptive factor lambda in (0,1] scales the controller output to produce command v(t) applied to plant H(s,k). The prior paragraph already links the estimated indicator to adjustment of lambda.",
+        "H(s,k) comprises the transfer system and the specimen of stiffness k. In Paper 2 the transfer system includes the inner-loop controller, servo-valve, actuator, and control-structure interaction between actuator and specimen. Account for all four across clear sentences. Interaction is a physical coupling, not another piece of hardware.",
+        "The measured displacement y(t) closes the outer controller loop. The measured force f_m(t) returns to the numerical substructure and closes the numerical substructure loop. Keep these loops distinct.",
+        "Do not assert perfect tracking, guaranteed stability, or new scientific results. Preserve notation d(t), u(t), y(t), v(t), C(s), H(s,k), k, lambda, and f_m(t). Use readable inline mathematical notation."
+      ],
+      "next": "The estimator monitors the outer controller loop, from u(t) to y(t), because specimen degradation acts directly on this loop [2]. With H(s,k)=Y(s)/V(s), the loop and closed-loop transfer functions are",
+      "actual_reference_paragraph": null,
+      "A": {
+        "text": "Figure 1 presents the hybrid simulation with the adaptive controller, showing how desired displacement and measured feedback connect the numerical substructure to the experiment. The numerical substructure computes the desired displacement \\(d(t)\\) from ground acceleration and the measured force \\(f_m(t)\\). A phase-lead compensator advances \\(d(t)\\) to produce the reference \\(u(t)\\). It acts on the reference outside the outer controller loop and is designed to offset transfer-system lag and improve tracking.\n\nThe outer controller \\(C(s)\\) acts on the tracking error \\(u(t)-y(t)\\), where \\(y(t)\\) is the measured actuator displacement. The adaptive factor \\(\\lambda\\in(0,1]\\) scales the controller output to produce the command \\(v(t)\\) applied to the plant \\(H(s,k)\\). The plant comprises the transfer system and the specimen of stiffness \\(k\\). The transfer system includes the inner-loop controller, servo-valve, and actuator. It also includes control-structure interaction, the physical coupling between the actuator and specimen. The measured displacement \\(y(t)\\) closes the outer controller loop. The measured force \\(f_m(t)\\) returns to the numerical substructure and closes the numerical substructure loop.",
+        "mechanical_checks": {
+          "words": 164,
+          "sentences": 11,
+          "prose_commas": [
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            2,
+            1,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "Figure 1 presents the hybrid simulation with the adaptive controller. It shows where the adaptive factor acts on the command and which measured signals close each feedback loop. The numerical substructure computes the desired displacement d(t) from the ground acceleration and the measured force f_m(t). A phase-lead compensator advances d(t) to produce the reference u(t). The compensator is designed to offset the lag of the transfer system and improve tracking, and it acts on the reference outside the outer controller loop. The outer controller C(s) then acts on the tracking error u(t) − y(t), where y(t) is the measured actuator displacement. The adaptive factor λ ∈ (0, 1] scales the controller output to produce the command v(t), which is applied to the plant H(s,k).\n\nThe plant H(s,k) comprises the transfer system and the specimen of stiffness k. The transfer system includes the inner-loop controller, the servo-valve, and the actuator. It also includes the control-structure interaction, which is the physical coupling between the actuator and the specimen. Two measured signals leave the plant. The measured displacement y(t) closes the outer controller loop, whereas the measured force f_m(t) returns to the numerical substructure and closes the numerical substructure loop.",
+        "mechanical_checks": {
+          "words": 194,
+          "sentences": 12,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            2,
+            1,
+            0,
+            1
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    },
+    {
+      "id": "system_02",
+      "case": "system",
+      "previous": "The paper is structured to sequentially develop and demonstrate the proposed framework. Section 2 establishes the RTHS problem formulation and the high-fidelity transfer-system model used throughout the study. Section 3 investigates the effect of physical-substructure degradation on outer-loop stability and derives the corresponding degradation-dependent stability boundary. Section 4 provides the technical background on classical and modern robustness measures and uses this progression to introduce and formulate the NCF-based online stability indicator. Section 5 develops the controller-switching framework and examines the stability of the transition using Lyapunov criteria. Section 6 demonstrates the complete framework through an illustrative vRTHS example involving nonlinear specimen degradation and controller switching. Finally, Section 7 summarizes the main findings and conclusions.\nThe missing paragraph opens Section 2: Problem Formulation. Figure 1 and Figure 2 and their captions appear after it and before the next prose paragraph.",
+      "required_ideas": [
+        "RTHS partitions a reference structural model into a numerical substructure and a physical substructure.",
+        "The numerical substructure is evaluated in real time on a computer. Actuators excite the physical substructure and sensors instrument it.",
+        "The transfer system comprises the controller, servo-valve, and actuator hydraulics. It enforces interface compatibility and equilibrium by synchronizing the physical response with the numerically computed response. Preserve these functions without adding new components from another paper.",
+        "Figure 1 shows a typical RTHS scheme. The numerical substructure receives ground acceleration a_g(t) and computes desired displacement d_d. The physical substructure provides measured force f_e.",
+        "Figure 2 gives a closer view of the transfer system.",
+        "Seismic excitation is an illustration. The proposed framework also applies to other external excitations such as wind loading when the corresponding input to the numerical substructure is changed.",
+        "Use Figure 1 and Figure 2 exactly. Keep the Paper 1 symbols a_g(t), d_d, and f_e. Do not introduce Paper 2 symbols or interventions."
+      ],
+      "next": " To define the numerical substructure block, the following equation of motion of the reference model is used:",
+      "actual_reference_paragraph": " The fundamental concept of RTHS is to partition a reference structural model into two substructures. Therefore, an RTHS consists of several major components, including: (i) a numerical substructure that can be evaluated in real-time on a computer; (ii) a physical substructure excited by actuators and instrumented with sensors; and, (iii) a transfer system, comprising the controller, servo-valve and actuator hydraulics, that enforces compatibility and equilibrium interface by synchronizing the physical substructure's response with the numerical evaluated response. Figure 1 illustrates a typical RTHS scheme where the numerical substructure is subjected to a ground acceleration, agt, where dd is the calculated desired displacement from the numerical model, and fe is the measured force from the physical substructure, while Figure 2 provides a closer look inside the transfer system block. Although seismic excitation is used for illustration in this study, the proposed framework is not restricted to earthquake loading and can be applied to other external excitations, such as wind loading, by modifying the corresponding input to the numerical substructure.",
+      "A": {
+        "text": "RTHS partitions a reference structural model into a numerical substructure and a physical substructure. The numerical substructure is evaluated in real time on a computer, while the physical substructure is excited by actuators and instrumented with sensors. The transfer system comprises the controller, servo-valve, and actuator hydraulics. It enforces compatibility and equilibrium at the interface by synchronizing the physical response with the numerically computed response. In the typical RTHS scheme shown in Figure 1, the numerical substructure receives the ground acceleration $a_g(t)$ and computes the desired displacement $d_d$ and the physical substructure provides the measured force $f_e$. Figure 2 gives a closer view of the transfer system. Although seismic excitation is used for illustration, the proposed framework also applies to other external excitations such as wind loading when the corresponding input to the numerical substructure is changed.",
+        "mechanical_checks": {
+          "words": 137,
+          "sentences": 7,
+          "prose_commas": [
+            0,
+            1,
+            2,
+            0,
+            1,
+            0,
+            1
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      },
+      "B": {
+        "text": "RTHS partitions a reference structural model into a numerical substructure and a physical substructure. The numerical substructure is evaluated in real time on a computer. The physical substructure is excited by actuators and instrumented with sensors. The transfer system comprises the controller, servo-valve, and actuator hydraulics. It enforces interface compatibility and equilibrium by synchronizing the physical response with the numerically computed response. Figure 1 shows a typical RTHS scheme. For the illustrative seismic excitation, the numerical substructure receives the ground acceleration \\(a_g(t)\\) and computes the desired displacement \\(d_d\\). The physical substructure provides the measured force \\(f_e\\). Figure 2 gives a closer view of the transfer system. The proposed framework also applies to other external excitations such as wind loading when the corresponding input to the numerical substructure is changed.",
+        "mechanical_checks": {
+          "words": 129,
+          "sentences": 10,
+          "prose_commas": [
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "semicolons": 0,
+          "whose": 0
+        }
+      }
+    }
+  ]
+}

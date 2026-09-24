@@ -1,0 +1,88 @@
+{
+  "task": "Independently evaluate candidate paragraphs against the actual Paper 1 paragraph and fixed criteria. You have no prior trial context. Read only this packet and write the requested review file. Do not read source files, guide versions, prior reviews, or candidate folders. Do not browse or spawn agents.",
+  "source_note": "Actual reference text is extracted from the author-provided Paper 1 DOCX. It is the authority for intended meaning, not a style template. Mathematical text in neighbors is flattened. Do not penalize clearer wording or different sentence order when the meaning and flow are preserved.",
+  "previous_paragraph": "Interpreting Figure 4 reveals that both critical time delay indicators ( τcr,N and τcr,P) fail to accurately reflect the growing risk of instability arising from structural damage. Specifically, τcr,N exhibits misleading behavior as its normalized value increases with damage, falsely suggesting enhanced stability, while τcr,P remained nearly constant until exhibiting an abrupt drop, offering no advance warning. In contrast, the  GMP exhibits a more gradual decrease before the onset of instability, suggesting that the instability triggered by the degradation is closer to being caused by a gain amplification in the outer controller loop than a time delay, a mechanism that delay margins struggle to detect. To further illustrate this behavior, Figure 5 shows the corresponding open-loop gain and phase responses of Hymy1, highlighting how the outer-loop dynamics evolve with physical substructure degradation and can lead to instabilities.",
+  "actual_paragraph": "Based on our observations in the laboratory, this instability is caused by the controller being initially tuned to both overcome the specimen's relatively high stiffness and also achieve the required tracking performance. As the specimen degrades and loses stiffness, it becomes easier to move, so the same corrective control action is likely to overshoot more and produce a larger displacement response than under the original stiffness condition. The extent of this response amplification is influenced by the specimen mass, and the resulting interaction between the degraded specimen and the transfer system, which includes this controller, can eventually drive the system toward instability. It's important to note that, despite being observed experimentally, these behaviors are not universal, as the dominant instability mechanism and the performance of each indicator can change substantially depending on the specific dynamics of the transfer system and the physical substructure. ",
+  "next_paragraph": "This study aims to present an online stability indicator for quantifying the system's robustness against different instability mechanisms driven by unmodeled dynamics or unforeseen disruptions, while also aiming to provide a sufficient time frame for effective intervention before instability occurs. To address a notable gap in the literature, this study focuses on the transfer system's internal stability, giving special consideration to physical system degradation, as it can manifest during an experiment in various forms, including, but not limited to, excessive specimen damage, the activation of unintended structural failure mechanisms, or the mechanical failure of test set-up components such as fasteners. Additionally, a controller switching strategy is proposed to leverage the stability indicator for real-time corrective action when degradation threatens system stability.",
+  "required_ideas": [
+    "Explain a mechanism suggested by laboratory observations. Do not claim that the paper experimentally validates an indicator or intervention.",
+    "The controller is initially tuned to overcome the relatively high specimen stiffness and meet the required tracking performance.",
+    "Stiffness loss makes the specimen easier to move. Keeping the same corrective control action is likely to cause more overshoot and a larger displacement response relative to the initial stiffness condition.",
+    "Specimen mass influences the extent of response amplification. No direction or numerical dependence is specified.",
+    "The interaction between the degraded specimen and transfer system including the controller can eventually drive the system toward instability.",
+    "The behavior is not universal. The dominant instability mechanism and stability-indicator performance can vary substantially with both transfer-system and specimen dynamics."
+  ],
+  "criteria": [
+    "Completeness 0–2: 2 retains all required ideas, 1 weakens or partly omits one, 0 loses a major point or multiple points.",
+    "Fidelity 0–2: 2 preserves causal relationships and qualifications with no added claim, 1 has one ambiguous relation or slightly stronger assertion, 0 invents a mechanism or materially changes meaning.",
+    "Context and sequence 0–2: 2 gives a clear progression between neighbors, 1 has local repetition or a weak transition, 0 has misplaced purpose or broken reasoning.",
+    "Terminology 0–2: 2 uses precise established language and clear referents, 1 has one vague label or gratuitous synonym, 0 misnames a physical or control concept.",
+    "Readability 0–2: 2 has clear connected sentences without crowded clauses, 1 has one awkward or overloaded sentence, 0 has repeated difficult sentences.",
+    "Acceptance requires total >=9 with completeness=2 and fidelity=2. No semicolon or whose. Flag every sentence with 3 or more prose commas unless a specific readability justification resolves it.",
+    "Treat ordinary English as ordinary English. Do not invent a defect simply because wording differs. Do not demand sentence-for-sentence copying. The final caveat must retain its true scope. No paper-2 adaptive factor may be introduced."
+  ],
+  "candidates": [
+    {
+      "label": "A",
+      "paragraph": "Laboratory observations suggest a physical mechanism for this gain amplification. Initially, the controller is tuned to overcome the relatively high specimen stiffness and achieve the required tracking performance. Stiffness loss makes the specimen easier to move. The same corrective control action is then likely to produce more overshoot and a larger displacement response than under the initial stiffness condition. Specimen mass also influences the extent of this response amplification. As degradation progresses, the interaction between the specimen and the transfer system, including the controller, can eventually drive the system toward instability. However, this behavior is not universal. The dominant instability mechanism and the performance of stability indicators can vary substantially with both transfer-system and specimen dynamics.",
+      "metrics": {
+        "words": 116,
+        "sentences": 8,
+        "commas_per_sentence": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          3,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": 0
+      }
+    },
+    {
+      "label": "B",
+      "paragraph": "Laboratory observations suggest how specimen stiffness degradation can amplify the displacement response and increase the risk of instability. The controller is initially tuned to overcome the relatively high specimen stiffness while maintaining the required tracking performance. As the specimen loses stiffness, it becomes easier to move. The same corrective control action is therefore likely to produce greater overshoot and a larger displacement response than under the initial stiffness condition. The specimen mass also influences the extent of this response amplification. The interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. This behavior is not universal. Both the dominant instability mechanism and the performance of stability indicators can vary substantially with the dynamics of the transfer system and the specimen.",
+      "metrics": {
+        "words": 129,
+        "sentences": 8,
+        "commas_per_sentence": [
+          0,
+          0,
+          1,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        "semicolons": 0,
+        "whose": 0
+      }
+    },
+    {
+      "label": "C",
+      "paragraph": "Laboratory observations suggest a physical explanation for this gain amplification. The controller is initially tuned to overcome the relatively high specimen stiffness and achieve the required tracking performance. As the specimen loses stiffness, it becomes easier to move. The same corrective control action is then likely to produce greater overshoot and a larger displacement response than under the initial stiffness condition. Specimen mass also influences the extent of this response amplification. The resulting interaction between the degraded specimen and the transfer system, including the controller, can eventually drive the system toward instability. However, this behavior is not universal. Both the dominant instability mechanism and the performance of stability indicators can vary substantially with the dynamics of the transfer system and specimen.",
+      "metrics": {
+        "words": 121,
+        "sentences": 8,
+        "commas_per_sentence": [
+          0,
+          0,
+          1,
+          0,
+          0,
+          2,
+          1,
+          0
+        ],
+        "semicolons": 0,
+        "whose": 0
+      }
+    }
+  ],
+  "output": "Write Markdown at output_path. For each candidate include a 5-dimension score table, total, acceptance decision, and concrete comparisons with the actual paragraph. Quote the exact candidate wording for every deduction. Distinguish material errors from optional stylistic preferences. End with recurring problems and any limits of your assessment. Also report whether all candidates were assessed. Do not rewrite the candidates.",
+  "output_path": "C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\writing\\writing_trials\\evaluation_v1_primary.md"
+}

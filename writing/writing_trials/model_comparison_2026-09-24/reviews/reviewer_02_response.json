@@ -1,0 +1,251 @@
+{
+  "pairs": [
+    {
+      "id": "system_01",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "tie",
+      "reason": "Both preserve the same components, signals, interface functions, and excitation qualification. A connects the substructures with \"while the physical substructure is excited by actuators\" and B connects Figure 1 directly to the numerical computation with \"in which the numerical substructure receives ground acceleration\". Both connections are natural, and neither creates a meaningful editing need.",
+      "certainty": "none"
+    },
+    {
+      "id": "paper2_01",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "The transition \"Two measured signals leave the plant\" can be omitted because the following sentence already identifies both signals and their destinations. This is a small preference for a more direct transition."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "B",
+      "reason": "Both accurately describe the compensator, controller scaling, plant, physical coupling, and distinct feedback loops. B moves directly from \"the physical coupling between the actuator and specimen\" to the two feedback paths. A inserts \"Two measured signals leave the plant\" before immediately naming them. B has a small stylistic advantage from this more direct progression, not from its shorter length.",
+      "certainty": "low"
+    },
+    {
+      "id": "primary_03",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "tie",
+      "reason": "A's \"The same corrective control action is therefore likely to produce greater overshoot\" and B's \"If the same corrective control action is retained, it is likely to cause more overshoot\" express the same qualified mechanism clearly. Both retain the unspecified mass influence and the warning that the behavior is not universal. \"Consistent with this gain amplification\" and \"behind this behavior\" both connect intelligibly to the preceding discussion.",
+      "certainty": "none"
+    },
+    {
+      "id": "paper2_03",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "tie",
+      "reason": "A gives Figure 1 an engineering purpose through \"how actuator tracking and force feedback couple the numerical substructure to the specimen\". B gives an equally useful purpose through \"the signals exchanged\" and the adaptive factor's location. A describes the return paths in separate sentences, while B joins them with \"whereas\". Both keep the loops distinct and explain every required component and signal without crowded prose.",
+      "certainty": "none"
+    },
+    {
+      "id": "system_02",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 1
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "The Figure 1 sentence joins \"receives the ground acceleration\", \"computes the desired displacement\", and \"the physical substructure provides the measured force\" through repeated coordination. Separating the numerical and physical roles would make this locally crowded sentence easier to follow."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "B",
+      "reason": "B gives force feedback its own clear sentence: \"The physical substructure provides the measured force\". A embeds that role after \"computes the desired displacement $d_d$ and the physical substructure provides\", which requires the reader to shift from coordinated verbs to a new subject inside the same sentence. This is a concrete local clarity advantage for B. A still preserves the meaning and meets the usability threshold.",
+      "certainty": "moderate"
+    },
+    {
+      "id": "paper2_02",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "For additional explanation, B could connect \"outside the outer controller loop\" to the compensator acting before the tracking error is formed, as A does. The existing description is already sufficient and accurate."
+        ]
+      },
+      "preference": "A",
+      "reason": "Both are complete and usable. A's \"before the tracking error is formed and therefore lies outside the outer controller loop\" explains the compensator's location in relation to the subsequent controller equation. B states the correct location without this explanation. A has a small explanatory advantage that helps prepare the reader for the next paragraph's focus on the outer controller loop.",
+      "certainty": "low"
+    },
+    {
+      "id": "primary_01",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "tie",
+      "reason": "A's \"gain amplification observed in these results\" and B's \"gain amplification associated with stiffness degradation\" both connect the laboratory interpretation to the preceding gain discussion without claiming experimental validation. Their accounts of unchanged corrective action, mass influence, and possible instability are equivalent. \"Relative to the initial stiffness condition\" and \"than under the initial stiffness condition\" are both clear conventional comparisons.",
+      "certainty": "none"
+    },
+    {
+      "id": "primary_02",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "tie",
+      "reason": "A develops the mechanism through \"easier to move under the same corrective control action\" followed by \"This action is therefore likely\". B uses the equally clear conditional \"If the corrective control action remains unchanged\". Both preserve the causal sequence, uncertainty, mass qualification, controller interaction, and dependence on both sets of dynamics. Neither requires a meaningful repair.",
+      "certainty": "none"
+    }
+  ],
+  "overall_limits": "Judgments use only the supplied passages, required ideas, reference text, and neighboring paragraphs. All candidates meet the mechanical restrictions; mathematical commas are not prose commas. Small preferences concern presentation, not independently verified scientific validity or model identity."
+}

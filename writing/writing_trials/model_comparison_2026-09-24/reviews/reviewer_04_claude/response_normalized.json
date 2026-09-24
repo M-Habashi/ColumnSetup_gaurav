@@ -1,0 +1,276 @@
+{
+  "pairs": [
+    {
+      "id": "system_01",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"Figure 1 shows a typical RTHS scheme. In this scheme the numerical substructure...\" could be one sentence with \"in which\" to reduce the run of short sentences."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"receives ground acceleration $a_g(t)$\" lacks the article used in \"the desired displacement\" and \"the measured force\"."
+        ]
+      },
+      "preference": "tie",
+      "reason": "Both retain every required idea with correct Paper 1 symbols and no added components. A joins the substructure descriptions with \"while\", and B uses \"Actuators excite the physical substructure, which is instrumented with sensors\". B merges the Figure 1 sentence with \"in which\", and A splits it with \"In this scheme\". A's \"only as an illustration\" and B's \"as an illustration\" both lead correctly into the generalization. These are stylistic differences of equal weight.",
+      "certainty": "low"
+    },
+    {
+      "id": "primary_03",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"stability-indicator performance\" is a compressed noun stack. \"the performance of stability indicators\" reads more naturally."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"a physical mechanism behind this behavior\" is vaguer than naming the gain amplification from the previous paragraph, and \"this behavior\" recurs in \"However, this behavior is not universal\"."
+        ]
+      },
+      "preference": "A",
+      "reason": "A opens with \"a physical mechanism consistent with this gain amplification\", which ties directly to the previous paragraph's conclusion. B's \"behind this behavior\" leaves the referent loose and reuses \"this behavior\" later with a different scope. B's \"If the same corrective control action is retained\" states the unchanged action more explicitly than A's \"The same corrective control action is therefore\", which partly offsets this. The preference is small and stylistic.",
+      "certainty": "low"
+    },
+    {
+      "id": "paper2_03",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"the point at which the adaptive factor modifies the command\" could say that λ scales the controller output, to match the later sentence."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "The fronted \"Outside the outer controller loop,\" places the loop before C(s) or the tracking error has been introduced. It also produces the echo \"Outside the outer\"."
+        ]
+      },
+      "preference": "A",
+      "reason": "Both are complete and accurate. A follows the signal path in order: d(t), compensator, u(t), then \"acts on the reference outside the outer controller loop\" once the loop context is set. It ends with a \"whereas\" sentence that keeps the two loops distinct. B front-loads \"Outside the outer controller loop\" before the loop is defined. B's opening purpose, \"how actuator tracking and force feedback couple the numerical substructure to the specimen\", is good. The preference is small.",
+      "certainty": "low"
+    },
+    {
+      "id": "paper2_02",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"the control-structure interaction that physically couples the actuator and specimen\" is slightly circular. \"which is the physical coupling between\" states the definition directly.",
+          "\"from the ground acceleration and measured force\" lets one article serve two different inputs."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "preference": "B",
+      "reason": "B explains why the compensator is outside the loop: \"acts on the reference before the tracking error is formed and therefore lies outside the outer controller loop\". A only asserts the placement. B also defines the interaction as \"the physical coupling\" and marks the force loop as \"a separate numerical substructure loop\", which reinforces the distinction. A's \"by providing feedback to C(s)\" is a good touch. B's stronger explanation is a small advantage.",
+      "certainty": "low"
+    },
+    {
+      "id": "primary_02",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"stability indicator performance\" is an unhyphenated noun stack.",
+          "The opening sentence could refer to the instability discussed in the previous paragraph."
+        ]
+      },
+      "preference": "A",
+      "reason": "A's opening, \"a physical mechanism for this degradation-driven instability\", links to the preceding discussion of instability. B's \"stiffness degradation changes how the specimen responds to corrective control action\" is accurate but reads as a new topic. A's \"If the corrective control action remains unchanged\" states the retained-action condition clearly. B folds it into \"easier to move under the same corrective control action\", which also works. The preference is small and stylistic.",
+      "certainty": "low"
+    },
+    {
+      "id": "primary_01",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": []
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"Laboratory observations suggest a physical explanation for the gain amplification observed in these results\" repeats the observe root. \"associated with stiffness degradation\" avoids the echo."
+        ]
+      },
+      "preference": "A",
+      "reason": "The passages are nearly identical in content and structure. A's \"the gain amplification associated with stiffness degradation\" names the cause directly. B's \"observed in these results\" echoes \"Laboratory observations\" in the same sentence. The difference is small and stylistic.",
+      "certainty": "low"
+    },
+    {
+      "id": "paper2_01",
+      "A": {
+        "usable": false,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 1,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [
+          "\"connect the numerical substructure to the experiment\" substitutes a vague term for an established name. The numerical substructure is itself part of the experiment. Name the specimen or physical substructure instead."
+        ],
+        "optional_preferences": [
+          "\"measured feedback\" is vague next to the named signals y(t) and f_m(t).",
+          "\"from ground acceleration and the measured force\" is missing the article before \"ground acceleration\"."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"which measured signals close each feedback loop\" describes figure content more than engineering purpose, though it stays informative."
+        ]
+      },
+      "preference": "B",
+      "reason": "A's figure-purpose sentence uses \"to the experiment\" where an established name is required, so A needs a repair. B keeps established names throughout. B also adds a useful transition, \"Two measured signals leave the plant.\", before the \"whereas\" sentence that separates the outer controller loop from the numerical substructure loop.",
+      "certainty": "medium"
+    },
+    {
+      "id": "system_02",
+      "A": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 2,
+          "clarity": 1
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"computes the desired displacement $d_d$ and the physical substructure provides\" creates a garden path in which the numerical substructure seems to compute the physical substructure. Separate the clause before \"the physical substructure provides\"."
+        ]
+      },
+      "B": {
+        "usable": true,
+        "scores": {
+          "fidelity": 2,
+          "content": 2,
+          "terminology": 2,
+          "flow": 1,
+          "clarity": 2
+        },
+        "required_repairs": [],
+        "optional_preferences": [
+          "\"For the illustrative seismic excitation\" is awkward. The illustration is also separated from \"The proposed framework also applies to other external excitations\" by two intervening sentences, which weakens the referent of \"other\"."
+        ]
+      },
+      "preference": "A",
+      "reason": "Each passage has one local weakness. A's \"computes the desired displacement $d_d$ and the physical substructure provides\" is a garden path that needs a single clause break. B detaches its seismic illustration from the generalization, so \"other external excitations\" follows the Figure 2 sentence abruptly and would need restructuring. A's closing, \"Although seismic excitation is used for illustration, the proposed framework also applies...\", keeps the qualification and generalization together. A's fix is smaller, so the preference is small.",
+      "certainty": "low"
+    }
+  ],
+  "overall_limits": "These judgments rest only on this packet. The Paper 2 cases have no original target, so they were judged against the required ideas and neighboring paragraphs. Mechanical comma counts were accepted after excluding mathematical notation. Most preferences between usable candidates are small and stylistic."
+}

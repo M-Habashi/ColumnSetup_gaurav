@@ -1,0 +1,91 @@
+/* Manuscript typography. Colors come from the theme tokens so dark mode follows automatically. */
+:root {
+  --ins: #007ca8;
+  --del: #901500;
+  --link: #007ca8;
+  --user-ins: #1f8a45;
+  --user-del: #74058a;
+  --highlight: oklch(0.93 0.09 95);
+  --highlight-strong: oklch(0.85 0.14 90);
+}
+.dark {
+  --ins: #5cc3e6;
+  --del: #ef7b6a;
+  --link: #5cc3e6;
+  --user-ins: #5fd37f;
+  --user-del: #d68ae8;
+  --highlight: oklch(0.42 0.08 90);
+  --highlight-strong: oklch(0.52 0.12 90);
+}
+
+.paper {
+  font-family: "STIX Two Text", Cambria, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.62;
+  color: var(--foreground);
+}
+.paper h1 { font-size: 27px; line-height: 1.25; font-weight: 700; margin: 0 0 10px; }
+.paper h2 { font-size: 18px; line-height: 1.35; font-weight: 700; margin: 34px 0 10px; }
+.paper .secno { display: inline-block; min-width: 2.6em; }
+.paper p, .paper li { margin: 0 0 12px; text-align: justify; hyphens: auto; }
+.paper .meta { font: 13px/1.5 var(--font-sans); color: var(--muted-foreground); margin-bottom: 22px; text-align: left; }
+.paper .lead { padding: 14px 0; margin-bottom: 8px; border-block: 1px solid var(--border); font-size: 16px; }
+.paper a { color: var(--link); }
+.paper math { font-family: "STIX Two Math", "Cambria Math", math; }
+
+.paper .equation { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; margin: 14px 0 16px; }
+.paper .expression { overflow-x: auto; padding: 4px 0; text-align: center; }
+.paper .eqno { min-width: 34px; text-align: right; }
+.paper .eq-copy { opacity: 0; transition: opacity 0.15s; }
+.paper .equation:hover .eq-copy, .paper .eq-copy:focus-visible { opacity: 1; }
+
+.paper figure { margin: 26px 0; }
+.paper figure svg { display: block; width: 100%; height: auto; color: var(--foreground); }
+.paper figure svg text { font: 22px "STIX Two Text", Cambria, "Times New Roman", serif; fill: currentColor; }
+.paper figure svg .it { font-style: italic; }
+.paper figure svg .nt { font-size: 18px; }
+.paper #fig1 svg text { font-size: 24px; }
+.paper #fig1 svg .nt { font-size: 20px; }
+.paper figcaption { font-size: 14.5px; line-height: 1.5; margin-top: 8px; }
+.paper figure.table figcaption { margin: 0 0 6px; }
+.paper table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.4; border-block: 1.5px solid var(--foreground); }
+.paper th { text-align: left; font-weight: 700; padding: 6px 10px 5px 0; border-bottom: 1px solid var(--foreground); }
+.paper td { padding: 5px 10px 5px 0; vertical-align: top; }
+.paper tbody tr + tr td { border-top: 1px solid var(--border); }
+
+.paper .assumptions { counter-reset: a; margin-bottom: 12px; }
+.paper .assumptions li { counter-increment: a; position: relative; padding-left: 3em; margin-bottom: 8px; }
+.paper .assumptions li::before { content: "(A" counter(a) ")"; position: absolute; left: 0; }
+.paper .references { margin-top: 38px; border-top: 1px solid var(--foreground); }
+.paper .references h2 { font-size: 15px; margin: 12px 0 8px; }
+.paper .references ol { list-style: decimal; padding-left: 26px; font-size: 14.5px; line-height: 1.5; }
+.paper .references li { margin-bottom: 7px; text-align: left; }
+
+/* track changes */
+.paper ins { color: var(--ins); text-decoration: underline; text-decoration-thickness: 1px; }
+.paper del { color: var(--del); text-decoration: line-through; }
+.paper ins math { background: color-mix(in oklch, var(--ins) 14%, transparent); }
+.paper del math { background: color-mix(in oklch, var(--del) 14%, transparent); }
+.paper [data-change] { position: relative; scroll-margin: 96px; }
+.paper [data-change]::before { content: ""; position: absolute; left: -28px; top: 0; bottom: 0; border-left: 2px solid var(--muted-foreground); }
+.paper [data-change].current::before { border-left: 3px solid var(--foreground); }
+.paper .tr-ins-block, .paper .tr-ins-block svg { color: var(--ins); }
+.paper .tr-ins-block { text-decoration: underline; text-decoration-thickness: 1px; }
+.paper .tr-del-block, .paper .tr-del-block svg { color: var(--del); }
+.paper .tr-del-block { text-decoration: line-through; }
+
+/* the user's own edits (edit mode, and comparisons against a version they authored) */
+.paper[data-author="user"] { --ins: var(--user-ins); --del: var(--user-del); }
+.paper [data-user-edit] { color: var(--user-ins); }
+.paper[data-editing] :is(p, h1, h2, h3, li, figcaption, td, th) { cursor: text; }
+.paper[data-editing] :is(p, h1, h2, h3, li, figcaption, td, th):hover { outline: 1px solid var(--border); outline-offset: 3px; }
+
+/* review comments */
+.paper mark.cmt { background: var(--highlight); color: inherit; cursor: pointer; scroll-margin: 96px; }
+.paper mark.cmt.active { background: var(--highlight-strong); }
+.paper .cmt-box { outline: 2px solid var(--highlight-strong); outline-offset: 2px; }
+
+@media print {
+  .paper .eq-copy { display: none; }
+  .paper mark.cmt { background: none; }
+}

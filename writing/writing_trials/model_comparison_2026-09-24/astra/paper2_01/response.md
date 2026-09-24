@@ -1,0 +1,28 @@
+## Purpose
+Explain how the adaptive controller and the two feedback paths connect the numerical substructure to the experiment so the outer controller loop equations have clear physical meaning.
+
+## Sequence
+- Introduce Figure 1 through the connection between the numerical substructure and experiment.
+- Trace desired displacement through the phase-lead compensator to the reference.
+- Explain the tracking error and adaptive scaling of the controller output.
+- Define the plant and distinguish transfer-system hardware from physical coupling.
+- Identify the displacement and force feedback paths that close the two loops.
+
+## First draft
+Figure 1 presents the hybrid simulation with the adaptive controller and the signal paths between the numerical substructure and the experiment. The numerical substructure computes the desired displacement \(d(t)\) from ground acceleration and the measured force \(f_m(t)\). A phase-lead compensator advances \(d(t)\) to produce the reference \(u(t)\) and is designed to offset transfer-system lag and improve tracking. It acts on the reference outside the outer controller loop.
+
+The outer controller \(C(s)\) acts on the tracking error \(u(t)-y(t)\), where \(y(t)\) is the measured actuator displacement. The adaptive factor \(\lambda\in(0,1]\) scales the controller output to produce the command \(v(t)\) applied to the plant \(H(s,k)\). The plant comprises the transfer system and the specimen of stiffness \(k\). The transfer system includes the inner-loop controller, servo-valve, actuator, and control-structure interaction between the actuator and specimen. This interaction is the physical coupling between the actuator and specimen. The measured displacement \(y(t)\) closes the outer controller loop. The measured force \(f_m(t)\) returns to the numerical substructure and closes the numerical substructure loop.
+
+## Review
+- The preceding paragraph establishes the estimator branches and the indicator-based adjustment of the adaptive factor. This passage must add the physical signal paths and plant definition. The next paragraph needs the reference, measured displacement, plant input, and outer controller loop to be unambiguous.
+- I revised the opening sentence to explain what the signal paths show: desired displacement and measured feedback connect the numerical substructure to the experiment. The passage does not repeat the degradation mechanism or estimator explanation.
+- I shortened the sentence that introduces the phase-lead compensator to focus on its input and output. The following sentence now joins its location outside the outer controller loop with its design purpose. “Is designed to” preserves the qualification that lag compensation and improved tracking are intended effects.
+- The first draft placed control-structure interaction in a four-item list with hardware and used three prose commas. I separated the hardware inventory from the physical coupling. The revised sentences account for all four transfer-system elements without presenting the interaction as another device.
+- Required-idea mapping for the final passage: sentence 1 introduces Figure 1 and its engineering purpose. Sentence 2 defines the calculation of \(d(t)\). Sentences 3–4 define \(u(t)\), the phase-lead compensator, its purpose, and its position outside the outer controller loop. Sentence 5 defines \(C(s)\), the tracking error, and \(y(t)\). Sentence 6 gives the range of \(\lambda\), the scaling operation, and the plant command \(v(t)\). Sentences 7–9 define \(H(s,k)\), specimen stiffness \(k\), and all four transfer-system elements. Sentences 10–11 distinguish the two feedback loops. No required fact or qualification is omitted.
+- Rereading both neighboring paragraphs with the revision showed that the opening supplies the physical context missing from the estimator discussion. The last two sentences distinguish the loops before the next paragraph selects the outer controller loop for analysis. The controller acts on the error, the adaptive factor scales its output, and the measured signals close their respective loops. The passage adds no stability guarantee, perfect-tracking claim, or new scientific result.
+- Final sentence prose-comma counts, excluding commas inside mathematical notation: 1, 0, 0, 0, 1, 0, 0, 2, 1, 0, 0. No final sentence contains three or more prose commas. The revised passage retains the engineering sequence after the sentence changes, and no unresolved defect was identified.
+
+## Final paragraph
+Figure 1 presents the hybrid simulation with the adaptive controller, showing how desired displacement and measured feedback connect the numerical substructure to the experiment. The numerical substructure computes the desired displacement \(d(t)\) from ground acceleration and the measured force \(f_m(t)\). A phase-lead compensator advances \(d(t)\) to produce the reference \(u(t)\). It acts on the reference outside the outer controller loop and is designed to offset transfer-system lag and improve tracking.
+
+The outer controller \(C(s)\) acts on the tracking error \(u(t)-y(t)\), where \(y(t)\) is the measured actuator displacement. The adaptive factor \(\lambda\in(0,1]\) scales the controller output to produce the command \(v(t)\) applied to the plant \(H(s,k)\). The plant comprises the transfer system and the specimen of stiffness \(k\). The transfer system includes the inner-loop controller, servo-valve, and actuator. It also includes control-structure interaction, the physical coupling between the actuator and specimen. The measured displacement \(y(t)\) closes the outer controller loop. The measured force \(f_m(t)\) returns to the numerical substructure and closes the numerical substructure loop.
