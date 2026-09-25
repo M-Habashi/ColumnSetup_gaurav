@@ -1,0 +1,477 @@
+{
+  "task": "Improve the short write.md workflow to handle section openings, paragraph openings/endings, and sentence information flow. Use online findings and actual Paper 1 examples. Only Sol high is authorized for writing. Draft the guide and a concise source/example note, not manuscript prose in this phase.",
+  "user_request": "Fix the .md itself. Search online for best practices for starting sections, paragraphs and sentences and ending them. Review Paper 1. Section 2.2 must explain what short-time spectral estimation is, why needed and what the section will do. A bare degradation statement does not orient the reader.",
+  "sources": [
+    {
+      "title": "MIT Communication Lab: Journal Article Methods",
+      "url": "https://mitcommlab.mit.edu/broad/commkit/journal-article-methods/",
+      "findings": "Methods should explain why the methodology was chosen as well as allow replication. The purpose and application of the method matter, not merely the sequence of operations. Adjust explanatory depth to the intended specialists. Retain essential detail. This page favors focusing on methods rather than authors, including passive voice where appropriate. It does not prescribe one opening template."
+    },
+    {
+      "title": "Harvard Writing Center: Anatomy of a Body Paragraph",
+      "url": "https://writingcenter.fas.harvard.edu/anatomy-body-paragraph",
+      "findings": "A topic sentence establishes the main point and its connection to the larger argument. Develop it with evidence and interpretation. End with what the reader can now understand rather than a redundant summary or unsupported new idea. This is academic-essay guidance, so its rhetorical principles can inform engineering prose but its claim-evidence-analysis template is not mandatory for method derivations."
+    },
+    {
+      "title": "Harvard Writing Center: Transitions",
+      "url": "https://writingcenter.fas.harvard.edu/transitions",
+      "findings": "Transitions show relationships between ideas and their role in the argument. Familiar information can lead into new information. Identify the actual logical relation before choosing a connective. Adding therefore does not create a causal connection."
+    },
+    {
+      "title": "Gopen and Swan: The Science of Scientific Writing (1990), primary article reprint",
+      "url": "https://mathstat.tcnj.edu/wp-content/uploads/sites/200/2011/08/The-Science-of-Scientific-Writing-.pdf",
+      "findings": "Readers use structure to interpret scientific meaning. Familiar context near a sentence beginning helps readers interpret new information. A sentence ending tends to receive emphasis, so place the intended new point there when natural. These are principles of reader expectations rather than universal rules for every sentence."
+    }
+  ],
+  "constraints": [
+    "Replace or reorganize existing advice rather than adding a large checklist. Keep a concise general guide. No manuscript length target. Section openings have different jobs from middle sentences. Preserve passive voice, few commas, no semicolons or whose.",
+    "No universal ban on direct statements. Do not require This section or To openings, a recap, a summary, or an extra lead-in in every paragraph. A method subsection may explain its method through its role and operation rather than a dictionary definition. A short orientation can briefly recall established context without recapping the whole motivation. Promise only what the section delivers.",
+    "Root cause: the engineering-cause example in writing.md uses the same degradation line copied into the section opening. Replace that exemplar with guidance distinguishing rationale from orientation. Resolve direct conflicts rather than layering instructions.",
+    "Actual v22 equations are authoritative. The NCF now uses separate H and lambda C. P=L/K=1 and the cap are no longer in section 2.1. Correct the stale context bullet in writing.md that claims P=L/K=1 while keeping other facts unchanged. Do not restore old equations or capped-margin claims.",
+    "Section 2.2 computes short-window transforms, auto/cross spectra and recursively averaged spectra on selected bins. Identification follows in 2.3. Transforms alone are neither the plant-response estimate nor the margin. The reader is an engineer unfamiliar with this implementation, not a novice to Fourier theory.",
+    "Paper 1 illustrates rhetorical structure, not a mandatory template. It contains active, imperative and wordy passages too. Its section 3.2 states a study purpose. Section 4 connects previous work to a new task. Paragraph 245 introduces a physical model before details. Do not import claims into Paper 2.",
+    "A fresh writer will test the resulting guide with context. Do not write a specimen opening in the guide for the writer to copy. No browsing, production edits or subagents. Read only the supplied packet."
+  ],
+  "delivery": "Save guide_proposal.json beside the packet with fields write_md (complete Version 9 guide), writing_md_replacements (exact old/new strings), source_note_md (concise findings with source links and Paper 1 paragraph IDs), review (changes and reasons). Keep detailed research outside the short main guide. Do not draft manuscript prose yet.",
+  "guide": "# Engineering manuscript writing workflow\n\nVersion 8. Use Sol high for manuscript writing unless the author changes this preference. The user only needs to identify a passage and say to follow write.md. Gather the context yourself.\n\n1. **Read the context.** Read the section opening, neighboring paragraphs, and any figure or equation needed for the passage. Read scientific_expressions.md for terminology. For Paper 2, also read journal_paper.md and writing.md. Check relevant sources when a technical claim is uncertain. Identify what the section already establishes and what the passage needs to add.\n2. **Write a connected explanation.** Preserve supported facts, qualifications, notation, equations, and relevant attribution. Connect the physical reason to the formulation and its interpretation without repeating earlier motivation. Use the impersonal engineering-paper voice of Paper 1. State methodological choices declaratively, usually with natural passive voice. Avoid first-person phrasing and instructional imperatives. Keep a physical component active when it performs the action. [Paper 1 paragraphs 27, 29, 51, and 52](writing_trials/paper1_paragraphs.json) illustrate this manner of explanation, a grammatical \"where\" continuation, and a preserved qualification. Do not import their engineering claims into Paper 2. Keep the prose clear, with few commas, no semicolons, and no \"whose\". Let the reasoning determine length and paragraph count.\n3. **Reread in place.** Read the preceding context, revision, and following paragraph together. Remove repetition while retaining necessary causal links. Check technical roles, symbol definitions, citations, and qualifications. Revise any sentence that sounds like an instruction, a disconnected definition, or a first-person account of the method. Preserve approved wording when it remains clear and correct.\n\nReturn the revised passage in routine use, adding a short note only for a consequential issue. Edit the manuscript when asked to edit it. Before editing manuscript HTML, check its review-workflow flag and follow the version instructions in writing.md and REVIEW_WORKFLOW.md. If the flag is absent, follow writing.md's instruction to ask before editing. For a controlled trial, use its supplied context and output format.\n",
+  "paper_context": "# Writing guide (Paper 2)\n\nUse [write.md](write.md) for the drafting and review workflow and [scientific_expressions.md](scientific_expressions.md) for source-based terminology. This file supplies Paper 2 context and conventions. For sentence style and review acceptance, follow the current workflow in write.md.\n\nFollow this for every sentence written for the paper. Never use semicolons, in the paper or in this file.\nPaper 1 is Gomaa et al., cited as [2]. Its manuscript is `aab paper1/writing/submit/Paper Submit 02/SCHM_Main_Manuscript_Rev1.docx`.\n\n## Versions workflow check\nBefore editing a manuscript HTML file, search it for `<meta name=\"review-workflow\" content=\"enabled\">`.\n- If the flag is present, follow [REVIEW_WORKFLOW.md](REVIEW_WORKFLOW.md) for versions, comments and the user's saved and unsaved edits.\n- If it is missing or not \"enabled\", tell the user that this HTML file may not have a versions workflow, and ask before editing.\n\n## The system (learn this before writing)\n**Hybrid simulation** splits a reference structure into two substructures:\n- the **numerical substructure**, computed in real time and driven by the ground acceleration and the measured force\n- the **physical substructure**, which is the specimen\n\nThe **transfer system** enforces compatibility and equilibrium at their interface by making the specimen follow the numerically computed response.\n\nBlocks, and what each one does:\n- **Numerical substructure**: computes the desired displacement d(t) from the ground acceleration and the measured force f_m(t).\n- **Phase-lead compensator**: advances d(t) to give the reference u(t). It is designed to offset the transfer-system lag and improve tracking. It acts on the reference, outside the outer controller loop.\n- **Outer controller C(s)**: user-designed and run on the real-time computer. It acts on the tracking error u − y and produces the command v(t) to the inner loop. In Paper 2 its output is scaled by the adaptive factor λ.\n- **Plant H(s,k)** (Paper 1 calls it T): the transfer system plus the specimen, from command v(t) to measured actuator displacement y(t). In Paper 2, the **transfer system** means the inner-loop controller (the hardware PID), servo-valve, actuator and control–structure interaction. Account for all four when defining the transfer system. Explain them across clear sentences if needed. Do not repeat the inventory every time the term appears.\n  - The servo-valve regulates the oil flow into the actuator.\n  - The actuator converts hydraulic power into the displacement imposed on the specimen.\n  - Control–structure interaction is the physical coupling between the actuator and the specimen, which makes the plant depend on the specimen dynamics.\n\nTwo loops:\n1. **The numerical substructure loop** runs from the numerical substructure through the transfer system and specimen, and returns through the measured force f_m.\n2. **The outer controller loop** runs from u to y: L = λ C H, with unity feedback.\n\nDelay-based indicators assess only the first loop. Paper 1 showed that degradation threatens the **outer controller loop**, which those indicators miss.\n\n**Why degradation causes instability** (Paper 1):\n1. The outer controller is tuned to overcome the initial stiffness and to meet the tracking target.\n2. When the specimen degrades, its stiffness decreases and it becomes easier to move.\n3. The same control action then overshoots, and the response is amplified.\n4. The dynamics of the outer controller loop change, and its stability margin shrinks.\n\nThis is a **gain amplification** mechanism, not a time delay. Flexible specimens (higher mass, lower stiffness-to-mass ratio) are more susceptible.\n\n**Paper 1's indicator** is the NCF margin, b_g(C_out, T).\n- It splits the loop into the outer controller C_out and the plant T.\n- Its value is at most the scaled margin b_s(L).\n- b ≥ 0.4 guarantees the usual gain- and phase-margin targets and is the practical guideline for experiments.\n- It was computed online from a parametric model, updated with a stiffness factor α estimated by least squares from force and displacement.\n- It was demonstrated numerically (virtual hybrid simulation of a modified benchmark), not experimentally.\n- Intervention was a Lyapunov-guaranteed switch from a high-performance controller to a high-robustness one.\n\n**Paper 2 differs in three ways:**\n- It estimates the loop directly from the measured u and y at each frequency, with no stiffness estimate.\n- It lumps the whole loop into P = L with K = 1, which is not the C_out/T split of Paper 1. The user approved this. State it in the text as a deliberate difference from [2].\n- It replaces controller switching with a continuous adaptive factor λ.\n\n## Technical accuracy\n- Use only established terms: hybrid simulation, numerical substructure loop, outer controller loop, inner loop, transfer system, specimen. Never invent names such as \"hybrid loop\".\n- State causes correctly. Degradation does not \"act on\" anything. The specimen degrades, its stiffness decreases, and the dynamics of the outer controller loop change.\n- A reason must be the engineering cause, not bookkeeping. Write \"the loop response changes as the specimen degrades, so it is identified from measured signals\", not \"equation (3) needs it\".\n- Check every technical statement against Paper 1 and the code in main/ before writing it. If unsure, ask rather than guess.\n\n## Paper 2 wording\n- Use \"hybrid simulation\", \"experiment\", and \"initial\". Call λ the \"adaptive factor\".\n- Spell out \"Figure N\". Name each evidence source and its symbol when introduced: direct identification b_id, output-power inference b_pow, and prior identification of the initial state b_0.\n- Link the estimator to the adaptive controller when explaining the framework. Present each designed component through its purpose.\n- Avoid \"describe\", \"It should be noted\", and \"Moreover\" before a major idea. Keep references concrete and preserve wording the author has approved unless it needs correction.\n",
+  "journal_context": "# Paper 2 — Journal Context\n\nThis file is the concise working context for Paper 2. Keep it focused on the\npaper and update it as the paper develops.\n\n## Current status\n\n- **Working title:** TBD\n- **Target journal:** TBD\n- **Status:** Planning\n- **Last updated:** 2026-09-21\n\n## Central contribution\n\nTBD. State the paper's main contribution in one or two precise sentences.\n\n## Research question and scope\n\n- **Research question:** TBD\n- **Specific objectives:** TBD\n- **In scope:** TBD\n- **Out of scope:** TBD\n\n## Writing style\n\nFollow `writing/writing.md` for every sentence written for Paper 2.\n\n## Relationship to Paper 1\n\n**Paper 1 directory:** `C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\aab paper1`\n\nDescribe what Paper 2 reuses, extends, or deliberately does not repeat from\nPaper 1. Do not assume that results or claims from Paper 1 transfer without\nchecking their source and relevance.\n\n## Canonical SOL-OSI HTML pages\n\n**Primary/main HTML (default):** `C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\main\\docs\\Sol_osi\\index.html`\n\nThis simplified SOL-OSI page is the main page to provide whenever the user\nasks for the OSI HTML, the SOL-OSI HTML, \"the HTML,\" or the main OSI page.\nAlways provide its full path for those generic requests.\n\n**Production/live implementation HTML (explicit requests only):** `C:\\Users\\Victus\\Desktop\\folder_working\\a purdue\\aa reasearch\\Gaurav Setup\\ColumnSetup_gaurav\\main\\docs\\fable\\Sol_osi\\index.html`\n\nUse the production/live page only when the user explicitly asks for the\nproduction, live, or implementation version. Do not substitute it for the\nprimary/main simplified page in a generic OSI HTML request.\n\n## Terminology and notation\n\nRecord paper-specific definitions here. Use the project-level RTHS notation in\nthe repository instructions unless this paper explicitly establishes a\ndifferent convention.\n\n- `λ` is the dimensionless adaptive factor that scales the controller output.\n- `γ_n²(ω)` is the magnitude-squared coherence used in the estimator confidence.\n\n## Manuscript outline\n\n1. Introduction — TBD\n2. Problem formulation / methods — TBD\n3. Results — TBD\n4. Discussion — TBD\n5. Conclusions — TBD\n\n## Claims and evidence\n\nFor each important claim, record the supporting result, figure, table, source\nfile, or citation. Do not promote an interpretation to a conclusion until its\nevidence is identified.\n\n| Claim | Evidence | Source / location | Status |\n| --- | --- | --- | --- |\n| TBD | TBD | TBD | Open |\n\n## Planned figures and tables\n\nKeep a short inventory here while the paper is being planned. Record the\npurpose of each figure or table, not just its filename.\n\n| Item | Purpose | Evidence / source | Status |\n| --- | --- | --- | --- |\n| TBD | TBD | TBD | Open |\n\n## Open decisions and next actions\n\n- TBD\n\n## Limitations and provenance notes\n\n- Keep computational truth in the relevant files under `main/`.\n- Link paper claims to reproducible analysis, saved results, or source\n  literature whenever possible.\n- Record assumptions, exclusions, and unresolved limitations rather than\n  silently filling them in.\n\n## Revision log\n\n| Date | Change | Reason |\n| --- | --- | --- |\n| 2026-09-21 | Created Paper 2 context file | Initial setup |\n| 2026-09-21 | Set the simplified SOL-OSI page as the primary HTML | Clarified the default page |\n| 2026-09-22 | Reserved `λ` for the adaptive factor and `γ²` for coherence | Avoided a notation conflict between controller adaptation and estimator confidence |\n",
+  "dictionary": "# Scientific expressions for the manuscripts\n\nVersion 2. Source terms and verb phrases are preferred vocabulary, not permission to introduce additional claims.\nAn expression can be legitimate in another context and still be unnecessary here.\nOrdinary words do not need to appear in this dictionary.\n\n## Paper 1 vocabulary\n\nSource: SCHM_Main_Manuscript_Rev1.docx in aab paper1/writing/submit/Paper Submit 02.\nParagraph identifiers refer to direct body paragraphs recorded in writing_trials/paper1_paragraphs.json.\n\n| Expression | Meaning or use | Source paragraphs |\n| --- | --- | --- |\n| hybrid simulation | Partition of a structure into numerical and physical substructures | 11 |\n| real-time hybrid simulation (RTHS) | The real-time method used in Paper 1 | 12 |\n| numerical substructure | Numerically evaluated part of the structure | 11, 22 |\n| physical substructure / specimen | Structural component represented physically | 11, 46, 48 |\n| transfer system | System that imposes the computed response on the physical substructure | 22, 35–45 |\n| servo-valve | Regulates hydraulic oil flow into actuator chambers | 38 |\n| hydraulic actuator | Converts hydraulic energy into force or displacement imposed on the specimen | 40 |\n| control-structure interaction | Physical coupling between actuator and experimental structure | 42 |\n| inner loop controller | Typically the hardware PID supplied with the hydraulic system | 44 |\n| outer loop controller / outer controller loop | The user-defined controller / the feedback loop containing it. A controller and a loop are different objects | 45, 55 |\n| tracking performance | How well the imposed response follows the target | 56 |\n| initial stiffness | Specimen stiffness before degradation | 56 uses original stiffness condition |\n| stiffness degradation / loss of stiffness | Reduction in specimen stiffness | 51, 56 |\n| corrective control action | Controller action responding to the tracking error | 56 |\n| displacement response | Displacement resulting from the imposed control action | 56 |\n| response amplification | Increase in the response relative to the initial condition | 56 |\n| specimen mass | A property influencing amplification. This entry establishes no direction of influence | 56 |\n| gain amplification | Mechanism suggested by the example's gain and delay margin trends | 55 |\n| instability mechanism | Physical or dynamic mechanism leading to instability | 55–57 |\n| stability indicator | Quantity used to assess stability or robustness | 54–57 |\n| short-window linear approximation | Approximation used to analyze evolving degradation over short time windows | 52 |\n| degradation factor | Parameter describing stiffness loss in the adopted model | 51 |\n| controller switching | Paper 1's intervention between two controllers | 19, 57 |\n\n## Scientific verb phrases and physical roles\n\nThese examples preserve standard relationships. They are not sentence templates to paste into every paragraph.\n\n| Intended meaning | Natural expression | What to check | Source paragraphs |\n| --- | --- | --- | --- |\n| Measurement instrumentation | The specimen is instrumented with sensors | Sensors are measuring devices. They do not install instrumentation. Avoid making them the actor of \"instrument the specimen\" | 22 |\n| Actuator excitation | Actuators excite the physical substructure / the physical substructure is excited by actuators | Either voice is appropriate. Keep the physical role unchanged | 22 |\n| Numerical calculation | The numerical substructure computes the response / the numerical substructure is evaluated in real time | Use the expression that matches the intended claim. A response and a model are different objects | 22, 35 |\n| Controller design | The controller is tuned to achieve the required tracking performance | The controller receives the tuning action. Do not force an active subject merely to avoid passive voice | 56 |\n\nIf a needed technical expression is absent, consult the relevant source or ask about the meaning. Do not rename a known block for variety. Ordinary connective prose remains free to vary.\n\n## Paper 2 scope\n\nThe Paper 2 definitions and notation are in writing.md. They are not interchangeable with Paper 1.\nPaper 2 uses the adaptive factor lambda and continuous scaling. Paper 1 uses controller switching.\nFor Paper 2 manuscript prose prefer \"hybrid simulation\", \"experiment\", and \"initial\".\nKeep named blocks and symbols unchanged unless the source or author explicitly changes them.\n",
+  "current_manuscript": [
+    {
+      "section": "opening",
+      "type": "source",
+      "source": "RAW('<p class=\"lead\">' + inline(\n    \"The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to \"\n    \"quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness \"\n    \"degradation of the specimen can drive the outer controller loop toward instability through a gain amplification \"\n    \"mechanism. In this study, we extend the analytical study to experimental \"\n    \"implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed \"\n    \"framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The \"\n    \"indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure \"\n    \"and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by \"\n    \"the confidence in its evidence. The first is direct identification, $b_{\\\\mathrm{id}}$, which estimates the \"\n    \"closed-loop frequency response of the outer controller loop, from the desired displacement $u(t)$ to the measured \"\n    \"actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator [6]. The second is output-power inference, \"\n    \"$b_{\\\\mathrm{pow}}$, which can detect amplification of the loop at frequencies that cannot be reliably identified. \"\n    \"This branch compares the output power measured during the experiment against the reference recorded before the \"\n    \"excitation. The third is the prior identification of the initial state, $b_{0}$, which serves as a fallback when \"\n    \"no sufficient information is available. The adaptive controller then utilizes the estimated indicator to scale \"\n    \"the controller output by the adaptive factor $\\\\lambda$ to keep the loop stable \"\n    \"with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The \"\n    \"evaluation of the framework is discussed in detail in this section.\") + '</p>')"
+    },
+    {
+      "section": "2.1",
+      "type": "H2",
+      "args": [
+        "2.1",
+        "Control loop and stability margin",
+        "s1"
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "P",
+      "args": [
+        "In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ from the ground acceleration and measured force $f_m(t)$. To compensate for the transfer-system lag and improve tracking, a phase-lead compensator receives $d(t)$ to produce the reference $u(t)$. The outer controller $C(s)$ takes the tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. Its output is scaled by the adaptive factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ sent to the plant $H(s,k)$."
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "P",
+      "args": [
+        "The plant comprises the transfer system and the specimen of stiffness $k$. The transfer system includes the inner-loop controller, servo-valve and actuator. The control–structure interaction between the actuator and specimen is also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure and closes the numerical substructure loop, while the measured displacement $y(t)$ provides feedback to the outer controller and closes the outer controller loop."
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "P",
+      "args": [
+        "The plant in Figure 1 is characterized by the transfer function $H(s,k)=Y(s)/V(s)$ from the command $v(t)$ to the measured actuator displacement $y(t)$. The open-loop transfer function and closed-loop response from $u(t)$ to $y(t)$ are"
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "E",
+      "args": [
+        "L",
+        "L(s,\\lambda,k)=\\lambda\\,C(s)\\,H(s,k),",
+        "L(s,λ,k)=λ C(s) H(s,k)"
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "E",
+      "args": [
+        "T",
+        "T(s,\\lambda,k)=\\frac{Y(s)}{U(s)}=\\frac{L(s,\\lambda,k)}{1+L(s,\\lambda,k)},",
+        "T(s,λ,k)=(Y(s))/(U(s))=(L(s,λ,k))/(1+L(s,λ,k))"
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "P",
+      "args": [
+        "Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The SISO NCF stability margin for the plant $H(s,k)$ and scaled outer controller $\\lambda C(s)$ is defined as [1]"
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "E",
+      "args": [
+        "bncf",
+        "b_{\\mathrm{NCF}}(\\lambda,k)=\\underset{\\omega}{\\inf}\\;\\delta\\big(H(j\\omega,k),\\lambda C(j\\omega)\\big),",
+        "b_(\"NCF\") (λ,k)=\"inf\"┬ω  δ(H(jω,k),λ C(jω))"
+      ]
+    },
+    {
+      "section": "2.1",
+      "type": "E",
+      "args": [
+        "delta",
+        "\\delta(H,\\lambda C)=\\frac{|1+\\lambda C H|}{\\sqrt{1+|H|^{2}}\\sqrt{1+|\\lambda C|^{2}}}.",
+        "δ(H,λ C)=(|1+λ C H|)/(√(1+|H|^2) √(1+|λ C|^2))"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "H2",
+      "args": [
+        "2.2",
+        "Short-time spectral estimation",
+        "s2"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "P",
+      "args": [
+        "The plant response changes as the specimen degrades, so the margin in {eq:bncf} is estimated from $u$ and $y$ during the experiment. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of these signals. Consecutive windows therefore overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples, giving a Fourier-bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ indexing its samples, the Hann-windowed discrete Fourier transforms are"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "E",
+      "args": [
+        "dft",
+        "X_n(\\omega_m)=\\sum_{r=0}^{N-1}w[r]\\,x_n[r]\\,e^{-j2\\pi mr/N},\\qquad x\\in\\{u,y\\},",
+        "X_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] x_n [r] e^(−j2πmr/N)〗,  x∈{u,y}"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "P",
+      "args": [
+        "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency at bin $m$. The resulting instantaneous auto- and cross-spectra are"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "E",
+      "args": [
+        "spec",
+        "p_{uu,n}=|U_n|^{2},\\qquad p_{yy,n}=|Y_n|^{2},\\qquad p_{yu,n}=Y_n\\,U_n^{*}",
+        "p_(uu,n)=|U_n |^2,  p_(yy,n)=|Y_n |^2,  p_(yu,n)=Y_n U_n^*"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "P",
+      "args": [
+        "The spectra are left unnormalized because normalization cancels in the ratios below. The frequency argument $\\omega_m$ is omitted for brevity. To reduce single-window variability, the instantaneous spectra are averaged recursively with exponential weighting [4], following the modified-periodogram approach of [3]. The first complete window initializes the average:"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "E",
+      "args": [
+        "ewma",
+        "\\bar{p}_{ab,n}(\\omega)=(1-\\eta_s)\\,\\bar{p}_{ab,n-1}(\\omega)+\\eta_s\\,p_{ab,n}(\\omega),\\qquad ab\\in\\{uu,yy,yu\\}.",
+        "p̄_(ab,n) (ω)=(1−η_s) p̄_(ab,n−1) (ω)+η_s p_(ab,n) (ω), ab∈{uu,yy,yu}"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "P",
+      "args": [
+        "The indicator monitors the 2–100 Hz band and excludes frequencies around the 60 Hz line-noise component:"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "E",
+      "args": [
+        "omega",
+        "\\Omega=\\left\\{\\omega_m:\\;2\\le f_m\\le 100\\ \\mathrm{Hz},\\;f_m\\notin[58,62]\\ \\mathrm{Hz}\\right\\},\\qquad f_m=\\frac{\\omega_m}{2\\pi},",
+        "Ω={ω_m:2≤f_m≤100 \"Hz\", f_m∉[58,62]\" Hz\"},  f_m=(ω_m)/(2π)"
+      ]
+    },
+    {
+      "section": "2.2",
+      "type": "P",
+      "args": [
+        "The set $\\Omega$ contains 47 bins. Subsequent expressions use $\\omega\\in\\Omega$. At update $n$, the operating condition is $(\\lambda_n,k_n)$, but the stiffness $k_n$ is unknown and is not estimated."
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "H2",
+      "args": [
+        "2.3",
+        "Direct identification branch",
+        "s3"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "The loop response can be identified directly from the reference $u$ and the measured response $y$. The averaged spectra give the $H_1$ estimate of the closed-loop frequency response [6] and the magnitude-squared coherence"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "that",
+        "\\hat{T}_n(j\\omega)=\\frac{\\bar{p}_{yu,n}(\\omega)}{\\bar{p}_{uu,n}(\\omega)},\\qquad \\gamma_n^{2}(\\omega)=\\frac{|\\bar{p}_{yu,n}(\\omega)|^{2}}{\\bar{p}_{uu,n}(\\omega)\\,\\bar{p}_{yy,n}(\\omega)}.",
+        "T̂_n (jω)=(p̄_(yu,n) (ω))/(p̄_(uu,n) (ω)),  γ_n^2 (ω)=(|p̄_(yu,n) (ω)|^2)/(p̄_(uu,n) (ω) p̄_(yy,n) (ω))"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "This estimate is unbiased only if the output disturbance is uncorrelated with $u$. In hybrid simulation, this condition is not guaranteed, because $u$ is computed from the measured force through the numerical substructure. High coherence is therefore treated as supporting evidence rather than proof of an unbiased estimate [5]."
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "Because this estimate can be poor, each bin receives a confidence between zero and one. The confidence combines three factors. The first is command activity, detected from the window RMS $u_{\\mathrm{rms},n}=\\big(N^{-1}\\sum_r u_n[r]^{2}\\big)^{1/2}$:"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "act",
+        "A_n=\\begin{cases}1, & u_{\\mathrm{rms},n}>\\eta_A,\\\\ 0, & \\text{otherwise}.\\end{cases}",
+        "A_n={■(1,&u_(\"rms\",n)>η_A@0,&\"otherwise\")┤"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "The threshold $\\eta_A$ is approximately $4.54\\,\\sigma_{u,0}$, where $\\sigma_{u,0}$ is the command-noise standard deviation measured in a quiet record. The second factor is the input leverage. Even within an active window, some bins carry little command energy, and these bins are discounted through"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "lev",
+        "\\ell_n(\\omega)=\\frac{p_{\\mathrm{rel},n}(\\omega)}{p_{\\mathrm{rel},n}(\\omega)+p_{\\mathrm{floor}}},\\qquad p_{\\mathrm{rel},n}(\\omega)=\\frac{\\bar{p}_{uu,n}(\\omega)}{\\max_{\\nu\\in\\mathcal{B}}\\bar{p}_{uu,n}(\\nu)},",
+        "ℓ_n (ω)=(p_(\"rel\",n) (ω))/(p_(\"rel\",n) (ω)+p_(\"floor\") ),  p_(\"rel\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈ℬ)  p̄_(uu,n) (ν))"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "where $\\mathcal{B}$ is the full 2–100 Hz grid. The third factor is the coherence, which completes the confidence"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "conf",
+        "c_n(\\omega)=A_n\\,\\gamma_n^{2}(\\omega)\\,\\ell_n(\\omega),\\qquad 0\\le c_n(\\omega)\\le 1.",
+        "c_n (ω)=A_n γ_n^2 (ω) ℓ_n (ω), 0≤c_n (ω)≤1"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "This confidence is a weighting factor, not a probability. Where it is small, the estimate is replaced by the prior identification of the initial state, scaled by the current adaptive factor. With $H_0(j\\omega)=H(j\\omega,k_0)$ and $L_0(j\\omega)=C(j\\omega)H_0(j\\omega)$ at the initial stiffness $k_0$, the prior is"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "prior",
+        "L_{\\mathrm{pr},n}(j\\omega)=\\lambda_n L_0(j\\omega),\\qquad T_{\\mathrm{pr},n}(j\\omega)=\\frac{L_{\\mathrm{pr},n}(j\\omega)}{1+L_{\\mathrm{pr},n}(j\\omega)}.",
+        "L_(\"pr\",n) (jω)=λ_n L_0 (jω),  T_(\"pr\",n) (jω)=(L_(\"pr\",n) (jω))/(1+L_(\"pr\",n) (jω))"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "Measurement and prior are blended in the closed-loop domain, where the spectral estimate is formed. The loop is then recovered by inverting {eq:T}:"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "blend",
+        "\\tilde{T}_n(j\\omega)=c_n\\,\\hat{T}_n(j\\omega)+(1-c_n)\\,T_{\\mathrm{pr},n}(j\\omega),\\qquad \\hat{L}_n(j\\omega)=\\frac{\\tilde{T}_n(j\\omega)}{1-\\tilde{T}_n(j\\omega)}.",
+        "T̃_n (jω)=c_n T̂_n (jω)+(1−c_n ) T_(\"pr\",n) (jω),  L̂_n (jω)=(T̃_n (jω))/(1−T̃_n (jω))"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "As a result, a well-supported measurement governs $\\hat{L}_n$, while a weakly supported one leaves it close to the prior. The plant estimate $\\hat{H}_n(j\\omega)=\\hat{L}_n(j\\omega)/(\\lambda_n C(j\\omega))$ then gives the identified and prior margin curves from {eq:delta}:"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "E",
+      "args": [
+        "bid",
+        "b_{\\mathrm{id},n}(\\omega)=\\operatorname{med}_3\\left\\{\\delta\\big(\\hat{H}_n(j\\omega),\\lambda_n C(j\\omega)\\big)\\right\\},\\qquad b_{0,n}(\\omega)=\\delta\\big(H_0(j\\omega),\\lambda_n C(j\\omega)\\big),",
+        "b_(\"id\",n) (ω)=\"med\"_3 {δ(Ĥ_n (jω),λ_n C(jω))},  b_(0,n) (ω)=δ(H_0 (jω),λ_n C(jω))"
+      ]
+    },
+    {
+      "section": "2.3",
+      "type": "P",
+      "args": [
+        "where $\\operatorname{med}_3$ is a three-bin moving median over frequency that suppresses isolated spectral outliers."
+      ]
+    }
+  ],
+  "paper1_examples": [
+    {
+      "id": 21,
+      "text": "2-Problem Formulation",
+      "math": false
+    },
+    {
+      "id": 22,
+      "text": " The fundamental concept of RTHS is to partition a reference structural model into two substructures. Therefore, an RTHS consists of several major components, including: (i) a numerical substructure that can be evaluated in real-time on a computer; (ii) a physical substructure excited by actuators and instrumented with sensors; and, (iii) a transfer system, comprising the controller, servo-valve and actuator hydraulics, that enforces compatibility and equilibrium interface by synchronizing the physical substructure's response with the numerical evaluated response. Figure 1 illustrates a typical RTHS scheme where the numerical substructure is subjected to a ground acceleration, agt, where dd is the calculated desired displacement from the numerical model, and fe is the measured force from the physical substructure, while Figure 2 provides a closer look inside the transfer system block. Although seismic excitation is used for illustration in this study, the proposed framework is not restricted to earthquake loading and can be applied to other external excitations, such as wind loading, by modifying the corresponding input to the numerical substructure.",
+      "math": true
+    },
+    {
+      "id": 35,
+      "text": "Equation (4) represents the cornerstone to model the numerical substructure block which actively computes the required responses to be imposed on the physical substructure. Realizing this response is where the transfer system is engaged to ensure precise tracking and maintain stability in this process. ",
+      "math": true
+    },
+    {
+      "id": 51,
+      "text": "where  α is a degradation factor ranging from 1 for a healthy structure to 0 for a completely damaged structure, and ζ is the damping ratio. Note that the degradation factor relates specifically to the loss in stiffness. This simplified stiffness-degradation model is needed to obtain a theoretical formulation of the stability boundary. In practice, degradation may also change other properties, particularly damping. However, increased damping has been shown to improve RTHS stability [31]. Therefore, neglecting any additional damping introduced by degradation represents a conservative assumption with respect to this effect.",
+      "math": true
+    },
+    {
+      "id": 52,
+      "text": "To address the nonlinear and time-varying nature of structural degradation, a short-window linear approximation is used to keep the analysis tractable and suitable for online evaluation. Although this method may not be accurate during brief intervals where properties change rapidly, it is typically accurate before and after such events, and during periods where degradation evolves slowly.",
+      "math": false
+    },
+    {
+      "id": 67,
+      "text": "3-Stability Analysis of RTHS Under Structural Degradation",
+      "math": false
+    },
+    {
+      "id": 68,
+      "text": "Physical substructure degradation constitutes a prevalent and often unavoidable phenomenon in realistic RTHS experiments. Such degradation can arise in various forms including gradual processes (e.g., steel bar yielding or fastener loosening) or more abrupt processes (e.g., concrete fracture or fastener rupture). As previously demonstrated in Figure 4, this degradation in physical substructure can drive the system toward instability through mechanisms that are not adequately captured by traditional time delay metrics. In this section, a closed-form solution for the instability boundary is provided as a function of the structural degradation ratio. Subsequently, this framework is leveraged to investigate the relationship between the physical substructure's initial dynamics and its capacity to tolerate damage before the onset of instability. The following derivation assumes the specimen dynamics can be approximated as linear within short windows of time using an equivalent stiffness, noting that real damage can alter more than a reduction in stiffness and those additional effects are not modeled explicitly but are treated as unmodeled dynamics. Alongside this assumption, the specimen mass is assumed to be constant over the test duration.",
+      "math": false
+    },
+    {
+      "id": 69,
+      "text": "To derive the stability boundary, the system is simplified by reducing the block diagram of the transfer system demonstrated in Figure 2. By focusing on an SDOF physical substructure subjected to damage, the definition of Gss,α given in Equation 9 can be utilized. Starting from the innermost loop and moving outwards, for completeness, intermediate transfer functions are defined.",
+      "math": true
+    },
+    {
+      "id": 102,
+      "text": "Since controllers are typically designed based on a healthy system, the poles initially lie in the left-half complex plane. The experiment begins with α=1 (the undamaged state), and as damage accumulates (α decreases), the poles shift gradually towards the imaginary axis. Instability occurs when a pole reaches this axis (Res=0), providing a condition to solve for the degradation factor, α, and the corresponding oscillation frequency, ω. The critical degradation ratio, αcr ​, is thus defined as the maximum value of α  for which the equation CEjω,α has a real solution for  ω, that is ",
+      "math": true
+    },
+    {
+      "id": 104,
+      "text": "3.1-Computational Approach to Determine Critical Damage Ratio αcr ",
+      "math": true
+    },
+    {
+      "id": 105,
+      "text": "To determine the value of αcr that satisfies the previously defined condition, the characteristic equation at s=jωcr is evaluated. A complex expression equals zero if and only if both its real and imaginary parts are simultaneously zero. Substituting s=jωcr into the characteristic equation yields: ",
+      "math": true
+    },
+    {
+      "id": 120,
+      "text": " Although this equation contains complex-valued terms, it has only one real unknown, ωcr This greatly simplifies the numerical solution process, as standard root-finding algorithms can be applied directly to identify all candidate critical frequencies. Moreover, the formulation is computationally more stable and less prone to convergence issues.",
+      "math": true
+    },
+    {
+      "id": 121,
+      "text": "3.2-Linking Structural Properties to RTHS Robustness ",
+      "math": false
+    },
+    {
+      "id": 122,
+      "text": "To investigate the relationship between the initial properties of a physical substructure and its damage tolerance, a parametric study is conducted on a family of structural specimens. These specimens are defined by varying the mass (m) and stiffness (k) parameters, with each system’s robustness evaluated by solving for αcr leveraging Equations (31) and (29). To maintain consistent performance and stability margins, outer and inner controllers are redesigned offline to achieve a target crossover frequency and phase margin for each specimen configuration. ",
+      "math": true
+    },
+    {
+      "id": 129,
+      "text": "4-Integration into an RTHS Framework ",
+      "math": false
+    },
+    {
+      "id": 130,
+      "text": "The preceding section presented a numerical method for quantifying system robustness specifically against structural degradation. This section expands upon that foundation to develop a stability indicator that can be used during an experiment. The goal is to develop a metric that not only offers a continuous, real-time assessment of the system’s actual robustness but also accounts for a wider range of uncertainties that may arise during an experiment. ",
+      "math": false
+    },
+    {
+      "id": 168,
+      "text": "5-Controller Switching ",
+      "math": false
+    },
+    {
+      "id": 169,
+      "text": "Beyond monitoring stability, a key purpose for developing an online stability indicator is to improve the safety of RTHS experiments by enabling real-time protective actions, such as switching controllers when the current configuration approaches instability. By preventing catastrophic failures, this safety mechanism not only protects the specimen and testing equipment but also encourages the research community to explore more aggressive test configurations and novel control strategies, ultimately accelerating advances in the field. Therefore, this section analyzes the stability of the system in preparation for and during such a controller transition, leveraging Lyapunov stability criteria to assess switching feasibility. Consider a general linear time-invariant (LTI) system with input, ",
+      "math": false
+    },
+    {
+      "id": 219,
+      "text": "The selection of the transition duration, Ts, involves a trade-off between switching smoothness and speed. An excessively small Ts may introduce abrupt variations in the command signal, whereas an excessively large Ts may potentially allow the system to approach its stability boundary before the transition is completed. For the transfer system considered here, simulation-based evaluation indicated that Ts=0.25 sec provides a suitable balance.",
+      "math": true
+    },
+    {
+      "id": 220,
+      "text": "6-Illustrative Example ",
+      "math": false
+    },
+    {
+      "id": 221,
+      "text": "In this section, we consider a modified version of the RTHS benchmark problem statement presented to the community in [10] to evaluate and demonstrate our proposed procedure. This benchmark problem examines a three-story steel frame as the reference structure, partitioned such that a portion of the first story is designated as the physical substructure. The numerical substructure models the remaining dynamics, which include the rest of the first story as well as the upper two stories. The benchmark problem statement provides a sample controller design using a proportional-integral (PI) controller augmented with a phase-lead compensator. The original identified parameters for the physical substructure are the mass (me) of 29.1 kg, stiffness (ke) of 1.19x106N/m, and damping (ce) of 114.6 N/m. For this illustrative example, however, the experimental mass is increased by 30% to 37.83 kg. This modification is intentionally introduced to render the system more susceptible to instability, as suggested by the sensitivity analysis in Figure 6. Moreover, a Bouc–Wen model is employed to represent the hysteretic behavior of the degrading physical substructure, providing a challenging and dynamic scenario for assessing the proposed RTHS stability indicator.",
+      "math": true
+    },
+    {
+      "id": 244,
+      "text": "6.3 Physical Substructure Modeling",
+      "math": false
+    },
+    {
+      "id": 245,
+      "text": "The nonlinear response of the simulated physical substructure is represented using a degrading Bouc–Wen model. The Bouc–Wen formulation originates from the hysteresis model introduced by Bouc [47]. It was subsequently extended to represent degrading hysteretic behavior by Baber and Noori [48]. The formulation adopted in this study follows the normalized degrading form described by Song [49], in which stiffness and strength deterioration are introduced through energy-dependent functions.",
+      "math": false
+    },
+    {
+      "id": 258,
+      "text": "During the simulation, the effective specimen stiffness is estimated using a moving least-squares fit of the Bouc-Wen restoring force against measured displacement. The fitted slope is then normalized by the initial stiffness providing the stiffness factor used in the stability calculation as shown in the used expression,",
+      "math": false
+    },
+    {
+      "id": 262,
+      "text": "The window length should balance noise sensitivity and responsiveness. A shorter window provides faster tracking but is more sensitive to noise, whereas a longer window provides a smoother estimate but may delay or rapid stiffness changes. In this study, a 0.5-sec window was found to provide a suitable tradeoff between these effects.",
+      "math": false
+    },
+    {
+      "id": 263,
+      "text": "Using this estimated αt, the parametric transfer-system model is updated to obtain Ts,αt, which is then evaluated at the frequencies of interest to compute the NCF stability margin.",
+      "math": true
+    },
+    {
+      "id": 264,
+      "text": "6.4 Simulations and Results",
+      "math": false
+    },
+    {
+      "id": 265,
+      "text": "To compare the controller designs for the modified benchmark, four simulation cases are considered. Cases I and II correspond to the linear undamaged specimen using Controllers A and B, respectively. Case III considers the degrading nonlinear specimen while retaining Controller A throughout the simulation, whereas Case IV demonstrates the proposed switching strategy under the same degrading nonlinear specimen. ",
+      "math": false
+    }
+  ]
+}

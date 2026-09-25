@@ -1,0 +1,16 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 28,
+  "saved": "2026-09-25T01:50:12.721Z",
+  "comments": [
+    {
+      "id": "c1790300980494",
+      "section": "2.2Short-time spectral estimation",
+      "quote": " Short recent",
+      "prefix": "the confidence weight at each frequency.",
+      "suffix": " records help these spectra reflect chan",
+      "text": "use moving window instead of short recent",
+      "created": "2026-09-25T01:49:40.494Z"
+    }
+  ]
+}

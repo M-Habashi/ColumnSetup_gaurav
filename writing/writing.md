@@ -48,15 +48,15 @@ This is a **gain amplification** mechanism, not a time delay. Flexible specimens
 - It was demonstrated numerically (virtual hybrid simulation of a modified benchmark), not experimentally.
 - Intervention was a Lyapunov-guaranteed switch from a high-performance controller to a high-robustness one.
 
-**Paper 2 differs in three ways:**
+**Paper 2's current formulation:**
 - It estimates the loop directly from the measured u and y at each frequency, with no stiffness estimate.
-- It lumps the whole loop into P = L with K = 1, which is not the C_out/T split of Paper 1. The user approved this. State it in the text as a deliberate difference from [2].
+- Its current NCF formulation retains separate plant $H(s,k)$ and scaled outer controller $\lambda C(s)$. Do not describe it as $P=L$ with $K=1$ or claim a capped margin. Check the current equations before explaining differences from [2].
 - It replaces controller switching with a continuous adaptive factor λ.
 
 ## Technical accuracy
 - Use only established terms: hybrid simulation, numerical substructure loop, outer controller loop, inner loop, transfer system, specimen. Never invent names such as "hybrid loop".
 - State causes correctly. Degradation does not "act on" anything. The specimen degrades, its stiffness decreases, and the dynamics of the outer controller loop change.
-- A reason must be the engineering cause, not bookkeeping. Write "the loop response changes as the specimen degrades, so it is identified from measured signals", not "equation (3) needs it".
+- Before introducing a method, quantity, setting, or equation, establish why it is needed if the reader cannot already infer that need. Let the reason lead into the specific quantities or operations used, and keep the explanation within what the subsection delivers.
 - Check every technical statement against Paper 1 and the code in main/ before writing it. If unsure, ask rather than guess.
 
 ## Paper 2 wording

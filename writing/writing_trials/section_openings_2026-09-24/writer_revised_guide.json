@@ -1,0 +1,20 @@
+{
+  "prose_slots": [
+    [
+      "Short-time spectra of the reference $u(t)$ and measured actuator displacement $y(t)$ provide the measurements needed to estimate the changing outer controller loop response and, in turn, the margin in {eq:bncf}. The spectra are computed from overlapping windows and averaged recursively so the estimate can be updated during the experiment. Updates occur every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of both signals, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a Fourier-bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ indexing its samples, the Hann-windowed discrete Fourier transforms are"
+    ],
+    [
+      "where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the angular frequency at bin $m$. From these transforms, the instantaneous auto- and cross-spectra are"
+    ],
+    [
+      "The spectra are left unnormalized because normalization cancels in the ratios used below. The frequency argument $\\omega_m$ is omitted for brevity. Recursive exponential averaging [4] reduces variation between windows and follows the modified-periodogram approach of [3]. The first complete window initializes the average. Each subsequent update uses"
+    ],
+    [
+      "The indicator is evaluated over the 2–100 Hz band, with bins near the 60 Hz line-noise component excluded:"
+    ],
+    [
+      "This selection leaves 47 bins in $\\Omega$. Subsequent expressions use $\\omega\\in\\Omega$. At update $n$, the operating condition is $(\\lambda_n,k_n)$. The stiffness $k_n$ is unknown and is not estimated."
+    ]
+  ],
+  "review": "The opening now explains how short-time spectra of u and y support the online loop-response and margin estimates before giving window settings. The revision clarifies the transform-to-spectrum sequence, the purpose of recursive averaging, and the monitored-bin selection while retaining all stated parameters and attribution. The smoothing weight $\\eta_s$ has no value or definition in the supplied Section 2.2 context."
+}

@@ -36,36 +36,36 @@ RAW = parts.append
 
 # ---------------------------------------------------------------- content
 RAW('<p class="lead">' + inline(
-    "The normalized coprime factor online stability indicator (NCF OSI) demonstrated by Gomaa et al. [2] was introduced to "
-    "quantify the robustness of the closed-loop system as the plant changes during the experiment. The study showed that stiffness "
-    "degradation of the specimen can drive the outer controller loop toward instability through a gain amplification "
-    "mechanism. In this study, we extend the analytical study to experimental "
-    "implementation, discuss the challenges that arise in the experiment, and propose how to address them. The proposed "
-    "framework comprises two parts, an online estimator of the indicator and an adaptive controller that gets updated accordingly. The "
-    "indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure "
-    "and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by "
-    "the confidence in its evidence. The first is direct identification, $b_{\\mathrm{id}}$, which estimates the "
-    "closed-loop frequency response of the outer controller loop, from the desired displacement $u(t)$ to the measured "
-    "actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator [6]. The second is output-power inference, "
-    "$b_{\\mathrm{pow}}$, which can detect amplification of the loop at frequencies that cannot be reliably identified. "
-    "This branch compares the output power measured during the experiment against the reference recorded before the "
-    "excitation. The third is the prior identification of the initial state, $b_{0}$, which serves as a fallback when "
-    "no sufficient information is available. The adaptive controller then utilizes the estimated indicator to scale "
-    "the controller output by the adaptive factor $\\lambda$ to keep the loop stable "
-    "with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. The "
-    "evaluation of the framework is discussed in detail in this section.") + '</p>')
+    "The NCF online stability indicator (NCF OSI), proposed by Gomaa et al. [2], "
+    "quantifies the robustness of the closed-loop system as the physical plant changes during the experiment. The study "
+    "showed that specimen stiffness degradation can drive the outer controller loop toward instability through a "
+    "gain-amplification mechanism. In this study, we extend the analytical results to experimental implementation, "
+    "discuss the challenges that arise, and propose ways to address them. The proposed framework comprises two "
+    "parts: an online estimator of the indicator and an adaptive controller that gets updated accordingly. The "
+    "indicator is estimated during the experiment from the desired displacement calculated by the numerical "
+    "substructure and the measured actuator displacement by combining three estimator branches at each frequency, "
+    "each weighted by the confidence in its output. The first is direct identification, $b_{\\mathrm{id}}$, which "
+    "estimates the closed-loop transfer function of the outer controller loop from the desired displacement $u(t)$ "
+    "to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator [6]. The second is "
+    "output-power inference, $b_{\\mathrm{pow}}$, which can detect loop amplification at frequencies that cannot "
+    "be reliably identified. This branch compares the output power measured during the experiment against the "
+    "reference recorded before the excitation. The third is the prior identification of the initial state, $b_{0}$, "
+    "which serves as a fallback when insufficient information is available. The adaptive controller then uses the "
+    "estimated indicator to scale the controller output by the adaptive factor $\\lambda$, keeping the loop stable "
+    "with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. "
+    "This section discusses the framework evaluation in detail.") + '</p>')
 
 H2("2.1", "Control loop and stability margin", "s1")
 P("In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ "
-  "from the ground acceleration and measured force $f_m(t)$. To compensate for the transfer-system lag and improve tracking, a "
-  "phase-lead compensator receives $d(t)$ to produce the reference $u(t)$. The outer controller $C(s)$ takes the "
-  "tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. Its output is scaled by the adaptive "
+  "from the ground acceleration and measured force $f_m(t)$. To compensate for transfer-system lag and improve tracking, "
+  "a phase-lead compensator receives $d(t)$ and produces the reference $u(t)$. The outer controller $C(s)$ takes the "
+  "tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. It scales its output by the adaptive "
   "factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ sent to the plant $H(s,k)$.")
 P("The plant comprises the transfer system and the specimen of stiffness $k$. The transfer system includes the "
-  "inner-loop controller, servo-valve and actuator. The control–structure interaction between the actuator and specimen is "
+  "inner-loop controller, servo-valve, and actuator. The control–structure interaction between the actuator and specimen is "
   "also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure and "
-  "closes the numerical substructure loop, while the measured displacement $y(t)$ provides feedback to the outer controller "
-  "and closes the outer controller loop.")
+  "closes the numerical substructure loop, while the measured displacement $y(t)$ is fed back to the outer controller, "
+  "closing the outer-controller loop.")
 RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 1100 280">
 <title id="f1t">Hybrid simulation loop with the NCF OSI framework setup</title>
 <desc id="f1d">The numerical substructure calculates the desired displacement d, which passes through the phase-lead compensator to give u. u enters a summing junction, the controller C, and the adaptive factor lambda, which produce the command v applied to the transfer system and specimen H(s,k). The measured displacement y is fed back to the junction, and the measured force f_m returns to the numerical substructure.</desc>
@@ -109,30 +109,31 @@ E("delta", r"\delta(H,\lambda C)=\frac{|1+\lambda C H|}{\sqrt{1+|H|^{2}}\sqrt{1+
   "δ(H,λ C)=(|1+λ C H|)/(√(1+|H|^2) √(1+|λ C|^2))")
 
 H2("2.2", "Short-time spectral estimation", "s2")
-P("The plant response changes as the specimen degrades, so the margin in {eq:bncf} is estimated from $u$ and $y$ "
-  "during the experiment. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent "
-  "$T_w=0.5\\,\\mathrm{s}$ of these signals. Consecutive windows therefore overlap by 75%. At "
-  "$f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples, giving a Fourier-bin spacing of 2 Hz. "
-  "With $n$ indexing the update and $r=0,\\dots,N-1$ indexing its samples, the Hann-windowed discrete Fourier "
-  "transforms are")
+P('Identifying the closed-loop transfer function requires the autospectrum of reference $u(t)$ and the cross '
+  'spectrum of measured actuator displacement $y(t)$ with $u(t)$. The autospectrum of $y(t)$ is also used to '
+  'calculate coherence, which contributes to the confidence weight at each frequency. A moving window keeps '
+  'these spectra responsive to changes in the specimen during the experiment.')
+P('At each update, the window contains $N=f_sT_w$ samples of $u(t)$ and $y(t)$, where $f_s$ is the sampling '
+  'frequency and $T_w$ is the window duration. Updates are separated by $\\Delta t$, so consecutive windows '
+  'overlap when $\\Delta t<T_w$. Let $n$ index the updates and $r=0,\\dots,N-1$ index samples within each '
+  'window. The Hann-windowed discrete Fourier transforms are')
 E("dft", r"X_n(\omega_m)=\sum_{r=0}^{N-1}w[r]\,x_n[r]\,e^{-j2\pi mr/N},\qquad x\in\{u,y\},",
   "X_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] x_n [r] e^(−j2πmr/N)〗,  x∈{u,y}")
-P("where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and "
-  "$\\omega_m=2\\pi mf_s/N$ is the angular frequency at bin $m$. The resulting instantaneous auto- and "
-  "cross-spectra are")
+P('where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the '
+  'angular frequency at bin $m$. The transforms give the instantaneous spectra')
 E("spec", r"p_{uu,n}=|U_n|^{2},\qquad p_{yy,n}=|Y_n|^{2},\qquad p_{yu,n}=Y_n\,U_n^{*}",
   "p_(uu,n)=|U_n |^2,  p_(yy,n)=|Y_n |^2,  p_(yu,n)=Y_n U_n^*")
-P("The spectra are left unnormalized because normalization cancels in the ratios below. The frequency argument "
-  "$\\omega_m$ is omitted for brevity. To reduce single-window variability, the instantaneous spectra are "
-  "averaged recursively with exponential weighting [4], following the modified-periodogram approach of [3]. "
-  "The first complete window initializes the average:")
+P('The frequency argument $\\omega_m$ is omitted for brevity. To reduce variation between windows, the instantaneous spectra '
+  'are averaged recursively with exponential weighting [4], following the modified-periodogram approach of '
+  '[3]. The first complete window initializes the average. At each subsequent update, the spectral averaging '
+  'weight $\\eta_s$ sets the contribution of the new window:')
 E("ewma", r"\bar{p}_{ab,n}(\omega)=(1-\eta_s)\,\bar{p}_{ab,n-1}(\omega)+\eta_s\,p_{ab,n}(\omega),\qquad ab\in\{uu,yy,yu\}.",
   "p̄_(ab,n) (ω)=(1−η_s) p̄_(ab,n−1) (ω)+η_s p_(ab,n) (ω), ab∈{uu,yy,yu}")
-P("The indicator monitors the 2–100 Hz band and excludes frequencies around the 60 Hz line-noise component:")
+P('The indicator is evaluated over the 2–100 Hz band, excluding bins around the 60 Hz line-noise component:')
 E("omega", r"\Omega=\left\{\omega_m:\;2\le f_m\le 100\ \mathrm{Hz},\;f_m\notin[58,62]\ \mathrm{Hz}\right\},\qquad f_m=\frac{\omega_m}{2\pi},",
   "Ω={ω_m:2≤f_m≤100 \"Hz\", f_m∉[58,62]\" Hz\"},  f_m=(ω_m)/(2π)")
-P("The set $\\Omega$ contains 47 bins. Subsequent expressions use $\\omega\\in\\Omega$. At update $n$, the "
-  "operating condition is $(\\lambda_n,k_n)$, but the stiffness $k_n$ is unknown and is not estimated.")
+P('The set $\\Omega$ contains 47 bins, and subsequent expressions use $\\omega\\in\\Omega$. At update $n$, the '
+  'operating condition is $(\\lambda_n,k_n)$, but the stiffness $k_n$ is unknown and is not estimated.')
 
 H2("2.3", "Direct identification branch", "s3")
 P("The loop response can be identified directly from the reference $u$ and the measured response $y$. The averaged "

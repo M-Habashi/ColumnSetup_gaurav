@@ -1,0 +1,20 @@
+{
+  "prose_slots": [
+    [
+      "As the specimen degrades, the response from the reference $u$ to the measured actuator displacement $y$ can change during the experiment. Short-time spectral estimation forms auto- and cross-spectra from recent records of these signals, supplying frequency-resolved evidence for the online margin estimate in {eq:bncf}. The estimator updates every $\\Delta t=0.125\\,\\mathrm{s}$ using the most recent $T_w=0.5\\,\\mathrm{s}$ of $u$ and $y$, so consecutive windows overlap by 75%. At $f_s=2048\\,\\mathrm{Hz}$, each window contains $N=f_sT_w=1024$ samples and has a Fourier-bin spacing of 2 Hz. With $n$ indexing the update and $r=0,\\dots,N-1$ indexing its samples, the Hann-windowed discrete Fourier transforms are"
+    ],
+    [
+      "Here $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window, and $\\omega_m=2\\pi mf_s/N$ is the angular frequency at bin $m$. The transforms give the instantaneous auto- and cross-spectra at each bin:"
+    ],
+    [
+      "The spectra are left unnormalized because normalization cancels in the ratios below. The frequency argument $\\omega_m$ is omitted for brevity. To reduce variability between windows, the instantaneous spectra are averaged recursively with exponential weighting [4], following the modified-periodogram approach of [3]. The first complete window sets each averaged spectrum equal to its instantaneous spectrum. Subsequent updates use"
+    ],
+    [
+      "The indicator is evaluated over the 2–100 Hz band, with frequencies around the 60 Hz line-noise component excluded:"
+    ],
+    [
+      "The resulting set $\\Omega$ contains 47 bins, and subsequent expressions use $\\omega\\in\\Omega$. At update $n$, the operating condition is $(\\lambda_n,k_n)$. The stiffness $k_n$ remains unknown and is not estimated."
+    ]
+  ],
+  "review": "Recast the opening to explain the spectral estimates' role before the update settings, tightened the transform and averaging transitions, and clarified that the first complete window initializes each average. The existing notation $f_m$ denotes both measured force in Section 2.1 and bin frequency in Section 2.2; resolving that collision would require an equation edit outside this prose-only task."
+}
