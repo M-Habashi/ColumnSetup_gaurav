@@ -22,8 +22,10 @@
   font-family: "STIX Two Text", Cambria, "Times New Roman", serif;
   font-size: 10pt;
   line-height: 1.5;
-  color: var(--foreground);
+  color: var(--paper-ink);
 }
+/* Headings in full ink, body text slightly softer. */
+.paper :is(h1, h2, h3, .secno, figcaption b, th) { color: var(--foreground); }
 .paper h1 { font-size: 14pt; line-height: 1.25; font-weight: 700; margin: 0 0 6pt; }
 .paper h2 { font-size: 11pt; line-height: 1.35; font-weight: 700; margin: 18pt 0 6pt; }
 .paper .secno { display: inline-block; min-width: 2.6em; }

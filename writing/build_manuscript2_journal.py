@@ -292,12 +292,12 @@ P("where $b_{\\mathrm{OSI},n}$ is the NCF OSI margin at update $n$, and $\\Omega
   "evaluating the NCF OSI. The adaptive law then uses it to update $\\lambda_{n+1}$. Figure 2 summarizes one complete "
   "update, from the measured signals to the adaptive factor, and Table 1 lists the estimator parameters.")
 
-RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 510">
+RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 575">
 <title id="f2t">Structure of one estimator update</title>
-<desc id="f2d">Windowed displacements u and y feed a windowed FFT that forms the averaged autospectra and cross spectrum. These spectra feed the direct identification and output-power branches. A third branch is the initial-state prior. The adaptive factor lambda feeds all three branches. The three margin curves are fused per frequency bin with the weights w_id, w_pow and w_0, and the minimum of the fused curve over the analysis band gives b_OSI, which drives the adaptive law that returns lambda.</desc>
+<desc id="f2d">Windowed displacements u and y feed a windowed FFT that forms the averaged autospectra and cross spectrum. These spectra feed the direct identification and output-power branches. A third branch is the initial-state prior. The adaptive factor lambda, shown in green, feeds all three branches. The three margin curves are fused per frequency bin with the weights w_id, w_pow and w_0, and the minimum of the fused curve over the analysis band gives b_OSI, which updates the adaptive factor lambda.</desc>
 <defs>
 <marker id="a2" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#000"/></marker>
-<marker id="a2l" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#AC6420"/></marker>
+<marker id="a2l" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#2A9A48"/></marker>
 <marker id="a2y" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#007CA8"/></marker>
 </defs>
 <g fill="none" stroke="#000" stroke-width="1.5">
@@ -307,29 +307,31 @@ RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 
 <rect x="340" y="320" width="270" height="110" rx="10"/>
 <rect x="700" y="175" width="180" height="110" rx="10"/>
 <rect x="700" y="320" width="180" height="110" rx="10"/>
-<rect x="340" y="455" width="270" height="44" rx="10"/>
-<path d="M2 205 H38" marker-end="url(#a2)"/>
-<path d="M230 230 H280 V85 H338" marker-end="url(#a2)"/>
-<path d="M280 230 H304 A6 6 0 0 1 316 230 H338" marker-end="url(#a2)"/>
-<path d="M610 85 H655 V205 H698" marker-end="url(#a2)"/>
+
+<path d="M2 211.7 H38" marker-end="url(#a2)"/>
+<path d="M230 230 H280 V66.7 H338" marker-end="url(#a2)"/>
+<path d="M280 211.7 H304 A6 6 0 0 1 316 211.7 H338" marker-end="url(#a2)"/>
+<path d="M610 85 H655 V202.5 H698" marker-end="url(#a2)"/>
 <path d="M610 230 H698" marker-end="url(#a2)"/>
-<path d="M610 375 H655 V255 H698" marker-end="url(#a2)"/>
+<path d="M610 375 H655 V257.5 H698" marker-end="url(#a2)"/>
 <path d="M790 285 V318" marker-end="url(#a2)"/>
 <path d="M880 375 H992" marker-end="url(#a2)"/>
-<path d="M940 375 V477 H612" marker-end="url(#a2)"/>
+
 </g>
-<path d="M2 255 H38" fill="none" stroke="#007CA8" stroke-width="1.5" marker-end="url(#a2y)"/>
-<g fill="none" stroke="#AC6420" stroke-width="1.5">
-<path d="M340 477 H310 V120"/>
-<path d="M310 120 H338" marker-end="url(#a2l)"/>
-<path d="M310 265 H338" marker-end="url(#a2l)"/>
-<path d="M310 410 H338" marker-end="url(#a2l)"/>
+<path d="M2 248.3 H38" fill="none" stroke="#007CA8" stroke-width="1.5" marker-end="url(#a2y)"/>
+<g fill="none" stroke="#2A9A48" stroke-width="1.8">
+<rect x="340" y="465" width="270" height="100" rx="10" fill="#EAF7EE"/>
+<path d="M940 375 V515 H612" marker-end="url(#a2l)"/>
+<path d="M340 515 H310 V103.3"/>
+<path d="M310 103.3 H338" marker-end="url(#a2l)"/>
+<path d="M310 248.3 H338" marker-end="url(#a2l)"/>
+<path d="M310 375 H338" marker-end="url(#a2l)"/>
 </g>
-<circle cx="280" cy="230" r="3.5" fill="#000"/><circle cx="940" cy="375" r="3.5" fill="#000"/>
-<circle cx="310" cy="265" r="3" fill="#AC6420"/><circle cx="310" cy="410" r="3" fill="#AC6420"/>
+<circle cx="280" cy="211.7" r="3.5" fill="#000"/><circle cx="940" cy="375" r="3.5" fill="#000"/>
+<circle cx="310" cy="248.3" r="3" fill="#2A9A48"/><circle cx="310" cy="375" r="3" fill="#2A9A48"/>
 <g text-anchor="middle" dominant-baseline="central" style="fill:#000">
-<text x="14" y="190" class="it" style="font-size:22px">u</text>
-<text x="14" y="240" class="it" style="font-size:22px;fill:#007CA8">y</text>
+<text x="14" y="197" class="it" style="font-size:22px">u</text>
+<text x="14" y="234" class="it" style="font-size:22px;fill:#007CA8">y</text>
 <text x="135" y="203" style="font-size:20px">Windowed FFT</text>
 <text x="135" y="231" style="font-size:19px"><tspan class="it">p̄</tspan><tspan style="font-size:13px" dy="5">uu</tspan><tspan dy="-5">, </tspan><tspan class="it">p̄</tspan><tspan style="font-size:13px" dy="5">yy</tspan><tspan dy="-5">, </tspan><tspan class="it">p̄</tspan><tspan style="font-size:13px" dy="5">yu</tspan></text>
 <text x="135" y="259" style="font-size:15px;fill:#6b6b6b">Equations ({n:dftu})–({n:ewyu})</text>
@@ -348,14 +350,16 @@ RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 
 <text x="790" y="348" style="font-size:20px">Minimum over Ω</text>
 <text x="790" y="376" style="font-size:19px"><tspan class="it">b</tspan><tspan style="font-size:13px" dy="5">OSI</tspan></text>
 <text x="790" y="404" style="font-size:15px;fill:#6b6b6b">Equation ({n:bosi})</text>
-<text x="475" y="477" style="font-size:20px">Adaptive law</text>
+<text x="475" y="487" style="font-size:20px">Adaptive factor</text>
+<text x="475" y="515" class="it" style="font-size:19px">λ</text>
+<text x="475" y="543" style="font-size:15px;fill:#6b6b6b">Equation (xx)</text>
 <text x="634" y="70" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">id</tspan></text>
 <text x="640" y="215" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">pow</tspan></text>
 <text x="634" y="360" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">0</tspan></text>
 <text x="960" y="358" class="it" style="font-size:18px">b<tspan style="font-size:12px;font-style:normal" dy="5">OSI</tspan></text>
-<text x="294" y="447" class="it" style="font-size:22px;fill:#AC6420">λ</text>
+
 </g></svg>
-<figcaption><b>Figure 2.</b> One estimator update. Branch weights from Equations ({n:conf}), ({n:w}) and ({n:w0}) are marked on the arrows entering the fusion block. The minimum of the fused curve over Ω gives <i>b</i><sub>OSI</sub>, and the adaptive factor <i>λ</i> (copper) enters all three branches.</figcaption></figure>''')
+<figcaption><b>Figure 2.</b> Flowchart for calculating the NCF OSI margin <i>b</i><sub>OSI</sub>. The reference <i>u</i> and measured displacement <i>y</i> provide spectra for direct identification and output-power inference. These estimates are combined with the initial-state prior, and the resulting margin updates the adaptive factor <i>λ</i>.</figcaption></figure>''')
 
 def trow(cells, tag="td"):
     return "<tr>" + "".join(f"<{tag}>{inline(c)}</{tag}>" for c in cells) + "</tr>"

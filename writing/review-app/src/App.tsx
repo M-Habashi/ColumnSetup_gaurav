@@ -515,22 +515,82 @@ export function App() {
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p))
   const vName = (i: number) => i === -1 ? "Working copy" : `v${versions[i].v}`
 
+  // Notices fade out on their own.
+  useEffect(() => {
+    if (!manuscriptNotice) return
+    const t = setTimeout(() => setManuscriptNotice(""), 5000)
+    return () => clearTimeout(t)
+  }, [manuscriptNotice])
+
+  // The panel keeps its last content while it slides out.
+  const lastPanel = useRef<Panel>("comments")
+  if (panel) lastPanel.current = panel
+  const shown = panel ?? lastPanel.current
+  const pill = selectedWords > 0 || manuscriptNotice !== ""
+
   return (
-    <div className="flex h-svh flex-col bg-background text-foreground">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-        <FileTextIcon className="shrink-0 text-muted-foreground" />
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium">
-            Online NCF stability indicator framework for adaptive control
-          </span>
-          <span className="truncate text-xs text-muted-foreground">Paper 2 · Methodology draft</span>
+    <div className="relative flex h-svh flex-col overflow-hidden text-foreground print:h-auto print:overflow-visible">
+      {/* The manuscript stays centred below the fixed top bar. The panel and scrollbar float above it. */}
+      <ScrollArea className="min-h-0 flex-1" onMouseUp={onDocMouseUp}>
+        <div className="px-6 pt-8 pb-28 print:p-0">
+          <div
+            ref={paperRef}
+            className="relative mx-auto w-[210mm] rounded-2xl bg-card px-[25.4mm] py-[25.4mm] shadow-[0_1px_2px_oklch(0.3_0.03_60/0.06),0_28px_70px_-32px_oklch(0.3_0.05_60/0.4)] ring-1 ring-border/70 print:w-auto print:rounded-none print:p-0 print:shadow-none print:ring-0"
+          >
+            <article
+              ref={docRef}
+              className="paper"
+              onClick={onDocClick}
+              onDoubleClick={onDocDoubleClick}
+              onMouseOver={onDocOver}
+              onMouseOut={(e) => (e.target as Element).closest("a.cite") && hideCite()}
+            />
+            {citePop && (
+              <div
+                className="paper absolute z-20 w-[400px] rounded-xl border bg-popover p-3 text-popover-foreground shadow-lg print:hidden"
+                style={{ top: citePop.top, left: citePop.left, fontSize: "9pt" }}
+                onMouseEnter={() => clearTimeout(citeTimer.current)}
+                onMouseLeave={hideCite}
+                dangerouslySetInnerHTML={{ __html: citePop.html }}
+              />
+            )}
+            {addTop !== null && (
+              <Hint text="Add comment">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Add comment"
+                  className="absolute right-4"
+                  style={{ top: addTop }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={addComment}
+                >
+                  <MessageSquarePlusIcon />
+                </Button>
+              </Hint>
+            )}
+          </div>
         </div>
-        {version && (
-          <Badge variant={comparing ? "secondary" : "outline"}>
-            {compareWith !== null ? `${vName(compareWith)} → ${vName(selected)}` : vName(selected)}
-            {!comparing && selected === last && " · latest saved"}
-          </Badge>
-        )}
+      </ScrollArea>
+
+      <header className="relative z-30 order-first flex h-14 shrink-0 items-center gap-3 border-b bg-background px-3 print:hidden">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <FileTextIcon className="size-4" />
+          </span>
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="font-title truncate text-[15px]">
+              Online NCF stability indicator framework for adaptive control
+            </span>
+            <span className="truncate text-xs text-muted-foreground">Paper 2 · Methodology draft</span>
+          </div>
+          {version && (
+            <Badge variant={comparing ? "secondary" : "outline"} className="shrink-0">
+              {compareWith !== null ? `${vName(compareWith)} → ${vName(selected)}` : vName(selected)}
+              {!comparing && selected === last && " · latest saved"}
+            </Badge>
+          )}
+        </div>
         <div className="ml-auto flex items-center gap-1">
           <Hint
             text={
@@ -588,174 +648,142 @@ export function App() {
           </Hint>
         </div>
       </header>
-      {/* Permanent status bar, so selecting text or a notice never moves the manuscript. */}
-      <div className="flex h-8 shrink-0 items-center gap-4 border-b px-4 text-xs text-muted-foreground">
-        <span className="min-w-28 tabular-nums">
-          {selectedWords > 0 && `${selectedWords.toLocaleString()} words selected`}
-        </span>
-        <span role="status" className="truncate">{manuscriptNotice}</span>
-      </div>
 
-      <div className="flex min-h-0 flex-1 bg-muted/60">
-        <main className="min-w-0 flex-1 overflow-y-auto" onMouseUp={onDocMouseUp}>
-          <div
-            ref={paperRef}
-            className="relative mx-auto my-8 w-[210mm] shrink-0 rounded-2xl border bg-card px-[25.4mm] py-[25.4mm] print:my-0 print:w-auto print:rounded-none print:border-0 print:p-0"
-          >
-            <article
-              ref={docRef}
-              className="paper"
-              onClick={onDocClick}
-              onDoubleClick={onDocDoubleClick}
-              onMouseOver={onDocOver}
-              onMouseOut={(e) => (e.target as Element).closest("a.cite") && hideCite()}
-            />
-            {citePop && (
-              <div
-                className="paper absolute z-20 w-[400px] rounded-xl border bg-popover p-3 text-popover-foreground shadow-md print:hidden"
-                style={{ top: citePop.top, left: citePop.left, fontSize: "9pt" }}
-                onMouseEnter={() => clearTimeout(citeTimer.current)}
-                onMouseLeave={hideCite}
-                dangerouslySetInnerHTML={{ __html: citePop.html }}
-              />
+      {/* Comments and history slide in over the right edge without moving the manuscript. */}
+      <aside
+        aria-hidden={!panel}
+        inert={!panel}
+        className={cn(
+          "absolute top-[4.25rem] right-3 bottom-3 z-20 flex w-[360px] flex-col transition-[opacity,translate] duration-300 ease-out print:hidden",
+          panel ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-6 opacity-0"
+        )}
+      >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-popover/95 shadow-xl backdrop-blur-md">
+          <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <span className="text-sm font-medium">
+              {shown === "history" ? "Version history" : `Comments on ${vName(selected)}`}
+            </span>
+            {shown === "comments" && comments.length > 0 && (
+              <Badge variant="secondary">{comments.length}</Badge>
             )}
-            {addTop !== null && (
-              <Hint text="Add comment">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Add comment"
-                  className="absolute right-4"
-                  style={{ top: addTop }}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={addComment}
-                >
-                  <MessageSquarePlusIcon />
+            <Hint text="Close panel">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="ml-auto"
+                aria-label="Close panel"
+                onClick={() => setPanel(null)}
+              >
+                <XIcon />
+              </Button>
+            </Hint>
+          </div>
+
+          {shown === "history" && comparing && (
+            <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2 text-sm">
+              <span className="text-[var(--ins)] tabular-nums">+{stats.added}</span>
+              <span className="text-[var(--del)] tabular-nums">−{stats.deleted}</span>
+              <span className="text-muted-foreground">words</span>
+              <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+                {changeAt < 0 ? stats.changes : `${changeAt + 1} / ${stats.changes}`} changes
+              </span>
+              <Hint text="Previous change">
+                <Button variant="outline" size="icon-sm" aria-label="Previous change" disabled={!stats.changes} onClick={() => gotoChange(-1)}>
+                  <ChevronUpIcon />
                 </Button>
               </Hint>
-            )}
-          </div>
-        </main>
-
-        {/* Comments and history retain their usual column during in-place editing. */}
-        <aside
-          className={cn(
-            "flex w-[360px] shrink-0 flex-col py-3 pr-3 print:hidden"
-          )}
-        >
-          {panel && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
-              <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-                <span className="text-sm font-medium">
-                  {panel === "history" ? "Version history" : `Comments on ${vName(selected)}`}
-                </span>
-                {panel === "comments" && comments.length > 0 && (
-                  <Badge variant="secondary">{comments.length}</Badge>
-                )}
-                <Hint text="Close panel">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="ml-auto"
-                    aria-label="Close panel"
-                    onClick={() => setPanel(null)}
-                  >
-                    <XIcon />
-                  </Button>
-                </Hint>
-              </div>
-
-              {panel === "history" && comparing && (
-                <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2 text-sm">
-                  <span className="text-[var(--ins)] tabular-nums">+{stats.added}</span>
-                  <span className="text-[var(--del)] tabular-nums">−{stats.deleted}</span>
-                  <span className="text-muted-foreground">words</span>
-                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-                    {changeAt < 0 ? stats.changes : `${changeAt + 1} / ${stats.changes}`} changes
-                  </span>
-                  <Hint text="Previous change">
-                    <Button variant="outline" size="icon-sm" aria-label="Previous change" disabled={!stats.changes} onClick={() => gotoChange(-1)}>
-                      <ChevronUpIcon />
-                    </Button>
-                  </Hint>
-                  <Hint text="Next change">
-                    <Button variant="outline" size="icon-sm" aria-label="Next change" disabled={!stats.changes} onClick={() => gotoChange(1)}>
-                      <ChevronDownIcon />
-                    </Button>
-                  </Hint>
-                </div>
-              )}
-
-              <ScrollArea className="min-h-0 flex-1">
-                {panel === "history" ? (
-                  <ItemGroup className="gap-0.5 p-2">
-                    <Button variant={selected === -1 ? "secondary" : "ghost"} disabled={dirty || busy}
-                      onClick={() => { cancelParagraph(); setEditing(false); setSelected(-1); setCompareWith(null) }}>Working copy</Button>
-                    {dirty && <p className="px-2 py-1 text-xs text-muted-foreground">Update or cancel the open paragraph to browse versions.</p>}
-                    {versions
-                      .map((_, i) => i)
-                      .reverse()
-                      .map((i) => (
-                        <VersionRow
-                          key={i}
-                          name={vName(i)}
-                          date={versions[i].date}
-                          note={versions[i].note}
-                          words={counts[i]}
-                          selected={i === selected}
-                          comparing={i === compareWith}
-                          locked={dirty || busy}
-                          canRestore={disk === true && working !== null && !dirty && !busy}
-                          onRestore={() => void persist("restore", versions[i].v)}
-                          canDelete={versions.length > 1 && !dirty && !busy}
-                          onDelete={() => setDeleting(i)}
-                          onSelect={() => {
-                            cancelParagraph()
-                            setEditing(false)
-                            setSelected(i)
-                            setCompareWith(null)
-                          }}
-                          onCompare={(on) => { cancelParagraph(); setEditing(false); setCompareWith(on ? i : null) }}
-                        />
-                      ))}
-                  </ItemGroup>
-                ) : sorted.length === 0 ? (
-                  <Empty className="py-16">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <MessageSquarePlusIcon />
-                      </EmptyMedia>
-                      <EmptyTitle>No comments on {vName(selected)}</EmptyTitle>
-                      <EmptyDescription>
-                        Select text in the manuscript, then use the comment button in the margin.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                ) : (
-                  <div className="flex flex-col gap-2 p-3">
-                    {sorted.map((c, i) => (
-                      <CommentCard
-                        key={c.id}
-                        n={i + 1}
-                        comment={c}
-                        active={c.id === activeId}
-                        editing={c.id === editingId}
-                        cardRef={(el) =>
-                          el ? cardRefs.current.set(c.id, el) : cardRefs.current.delete(c.id)
-                        }
-                        onFocus={() => focusComment(c.id)}
-                        onEdit={() => setEditingId(c.id)}
-                        onSave={(t) => saveComment(c.id, t)}
-                        onCancel={() => cancelEdit(c.id)}
-                        onDelete={() => saveComment(c.id, "")}
-                      />
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
+              <Hint text="Next change">
+                <Button variant="outline" size="icon-sm" aria-label="Next change" disabled={!stats.changes} onClick={() => gotoChange(1)}>
+                  <ChevronDownIcon />
+                </Button>
+              </Hint>
             </div>
           )}
-        </aside>
+
+          <ScrollArea className="min-h-0 flex-1">
+            {shown === "history" ? (
+              <ItemGroup className="gap-0.5 p-2">
+                <Button variant={selected === -1 ? "secondary" : "ghost"} disabled={dirty || busy}
+                  onClick={() => { cancelParagraph(); setEditing(false); setSelected(-1); setCompareWith(null) }}>Working copy</Button>
+                {dirty && <p className="px-2 py-1 text-xs text-muted-foreground">Update or cancel the open paragraph to browse versions.</p>}
+                {versions
+                  .map((_, i) => i)
+                  .reverse()
+                  .map((i) => (
+                    <VersionRow
+                      key={i}
+                      name={vName(i)}
+                      date={versions[i].date}
+                      note={versions[i].note}
+                      words={counts[i]}
+                      selected={i === selected}
+                      comparing={i === compareWith}
+                      locked={dirty || busy}
+                      canRestore={disk === true && working !== null && !dirty && !busy}
+                      onRestore={() => void persist("restore", versions[i].v)}
+                      canDelete={versions.length > 1 && !dirty && !busy}
+                      onDelete={() => setDeleting(i)}
+                      onSelect={() => {
+                        cancelParagraph()
+                        setEditing(false)
+                        setSelected(i)
+                        setCompareWith(null)
+                      }}
+                      onCompare={(on) => { cancelParagraph(); setEditing(false); setCompareWith(on ? i : null) }}
+                    />
+                  ))}
+              </ItemGroup>
+            ) : sorted.length === 0 ? (
+              <Empty className="py-16">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <MessageSquarePlusIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>No comments on {vName(selected)}</EmptyTitle>
+                  <EmptyDescription>
+                    Select text in the manuscript, then use the comment button in the margin.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <div className="flex flex-col gap-2 p-3">
+                {sorted.map((c, i) => (
+                  <CommentCard
+                    key={c.id}
+                    n={i + 1}
+                    comment={c}
+                    active={c.id === activeId}
+                    editing={c.id === editingId}
+                    cardRef={(el) =>
+                      el ? cardRefs.current.set(c.id, el) : cardRefs.current.delete(c.id)
+                    }
+                    onFocus={() => focusComment(c.id)}
+                    onEdit={() => setEditingId(c.id)}
+                    onSave={(t) => saveComment(c.id, t)}
+                    onCancel={() => cancelEdit(c.id)}
+                    onDelete={() => saveComment(c.id, "")}
+                  />
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      </aside>
+
+      {/* Transient status: fades in for a selection count or a notice, never shifts the page. */}
+      <div
+        role="status"
+        aria-live="polite"
+        className={cn(
+          "pointer-events-none absolute bottom-5 left-1/2 z-30 -translate-x-1/2 transition-[opacity,translate] duration-300 print:hidden",
+          pill ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+        )}
+      >
+        <div className="flex items-center gap-3 rounded-full border bg-popover/90 px-4 py-1.5 text-xs text-muted-foreground shadow-md backdrop-blur-md tabular-nums">
+          {selectedWords > 0 && <span>{selectedWords.toLocaleString()} words selected</span>}
+          {selectedWords > 0 && manuscriptNotice && <span className="h-3 w-px bg-border" />}
+          {manuscriptNotice && <span className="text-foreground">{manuscriptNotice}</span>}
+        </div>
       </div>
 
       {editTarget && createPortal(
