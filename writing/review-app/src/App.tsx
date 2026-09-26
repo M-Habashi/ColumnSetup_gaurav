@@ -135,6 +135,8 @@ export function App() {
   const [stats, setStats] = useState({ added: 0, deleted: 0, changes: 0 })
   const [changeAt, setChangeAt] = useState(-1)
   const [addTop, setAddTop] = useState<number | null>(null)
+  const [citePop, setCitePop] = useState<{ top: number; left: number; html: string } | null>(null)
+  const citeTimer = useRef(0)
   const [selectedWords, setSelectedWords] = useState(0)
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState<number | null>(null)
@@ -460,6 +462,19 @@ export function App() {
       ?.scrollIntoView({ block: "center", behavior: "smooth" })
   }
 
+  // Hovering a citation shows its reference entry, links included, without scrolling to the list.
+  function onDocOver(e: React.MouseEvent) {
+    const a = (e.target as Element).closest("a.cite")
+    const li = a && docRef.current!.querySelector(a.getAttribute("href")!)
+    if (!a || !li) return
+    clearTimeout(citeTimer.current)
+    const r = a.getBoundingClientRect(), p = paperRef.current!.getBoundingClientRect()
+    setCitePop({ top: r.bottom - p.top + 6, left: Math.min(r.left - p.left, p.width - 420), html: li.innerHTML })
+  }
+  function hideCite() {
+    citeTimer.current = window.setTimeout(() => setCitePop(null), 250)
+  }
+
   function onDocClick(e: React.MouseEvent) {
     if (editing) {
       e.preventDefault()
@@ -585,9 +600,25 @@ export function App() {
         <main className="min-w-0 flex-1 overflow-y-auto" onMouseUp={onDocMouseUp}>
           <div
             ref={paperRef}
-            className="relative mx-auto my-8 w-full max-w-[860px] rounded-2xl border bg-card px-16 py-14 print:my-0 print:rounded-none print:border-0 print:px-0"
+            className="relative mx-auto my-8 w-[210mm] shrink-0 rounded-2xl border bg-card px-[25.4mm] py-[25.4mm] print:my-0 print:w-auto print:rounded-none print:border-0 print:p-0"
           >
-            <article ref={docRef} className="paper" onClick={onDocClick} onDoubleClick={onDocDoubleClick} />
+            <article
+              ref={docRef}
+              className="paper"
+              onClick={onDocClick}
+              onDoubleClick={onDocDoubleClick}
+              onMouseOver={onDocOver}
+              onMouseOut={(e) => (e.target as Element).closest("a.cite") && hideCite()}
+            />
+            {citePop && (
+              <div
+                className="paper absolute z-20 w-[400px] rounded-xl border bg-popover p-3 text-popover-foreground shadow-md print:hidden"
+                style={{ top: citePop.top, left: citePop.left, fontSize: "9pt" }}
+                onMouseEnter={() => clearTimeout(citeTimer.current)}
+                onMouseLeave={hideCite}
+                dangerouslySetInnerHTML={{ __html: citePop.html }}
+              />
+            )}
             {addTop !== null && (
               <Hint text="Add comment">
                 <Button

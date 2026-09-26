@@ -1,0 +1,16 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 44,
+  "saved": "2026-09-25T20:46:31.904Z",
+  "comments": [
+    {
+      "id": "c1790369169023",
+      "section": "2.2Direct identification branch, bid",
+      "quote": "the Hann window",
+      "prefix": ",(5)\nwhere w[r]=12{1−cos[2πr/(N−1)]} is ",
+      "suffix": " and ωm=2πmfs/N is the angular frequency",
+      "text": "is it known a Hann window or Hanning window? find the original reference for this",
+      "created": "2026-09-25T20:46:09.023Z"
+    }
+  ]
+}

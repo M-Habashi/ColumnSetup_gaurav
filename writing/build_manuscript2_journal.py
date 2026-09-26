@@ -1,4 +1,5 @@
 import re, json, html, os, sys, datetime
+from urllib.parse import quote_plus
 from latex2mathml.converter import convert
 
 
@@ -36,7 +37,7 @@ RAW = parts.append
 
 # ---------------------------------------------------------------- content
 RAW('<p class="lead">' + inline(
-    "The NCF online stability indicator (NCF OSI), proposed by Gomaa et al. [2], "
+    "The NCF online stability indicator (NCF OSI), proposed by Gomaa et al. {cite:gomaa}, "
     "quantifies the robustness of the closed-loop system as the physical plant changes during the experiment. The study "
     "showed that specimen stiffness degradation can drive the outer controller loop toward instability through a "
     "gain-amplification mechanism. In this study, we extend the analytical results to experimental implementation, "
@@ -46,7 +47,7 @@ RAW('<p class="lead">' + inline(
     "substructure and the measured actuator displacement by combining three estimator branches at each frequency, "
     "each weighted by the confidence in its output. The first is direct identification, $b_{\\mathrm{id}}$, which "
     "estimates the closed-loop transfer function of the outer controller loop from the desired displacement $u(t)$ "
-    "to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator [6]. The second is "
+    "to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator {cite:bendat}. The second is "
     "output-power inference, $b_{\\mathrm{pow}}$, which can detect loop amplification at frequencies that cannot "
     "be reliably identified. This branch compares the output power measured during the experiment against the "
     "reference recorded before the excitation. The third is the prior identification of the initial state, $b_{0}$, "
@@ -55,7 +56,7 @@ RAW('<p class="lead">' + inline(
     "with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. "
     "This section discusses the framework evaluation in detail.") + '</p>')
 
-H2("2.1", "Control loop and stability margin", "s1")
+H2("2.1", "Framework Architecture", "s1")
 P("In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ "
   "from the ground acceleration and measured force $f_m(t)$. To compensate for transfer-system lag and improve tracking, "
   "a phase-lead compensator receives $d(t)$ and produces the reference $u(t)$. The outer controller $C(s)$ takes the "
@@ -66,34 +67,54 @@ P("The plant comprises the transfer system and the specimen of stiffness $k$. Th
   "also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure and "
   "closes the numerical substructure loop, while the measured displacement $y(t)$ is fed back to the outer controller, "
   "closing the outer-controller loop.")
-RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 1100 280">
+P("The NCF OSI block runs alongside the outer-controller loop and does not alter the signals within it. It collects "
+  "the reference $u(t)$ and the measured displacement $y(t)$ over a moving window and estimates the NCF margin of "
+  "the current loop at each update. The adaptive law then compares this estimate with a target margin and updates "
+  "the adaptive factor $\\lambda$. A lower margin reduces $\\lambda$ to restore stability, while a sufficient margin "
+  "lets $\\lambda$ recover toward one to retain tracking performance.")
+RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 602 200" data-units="px">
 <title id="f1t">Hybrid simulation loop with the NCF OSI framework setup</title>
-<desc id="f1d">The numerical substructure calculates the desired displacement d, which passes through the phase-lead compensator to give u. u enters a summing junction, the controller C, and the adaptive factor lambda, which produce the command v applied to the transfer system and specimen H(s,k). The measured displacement y is fed back to the junction, and the measured force f_m returns to the numerical substructure.</desc>
-<defs><marker id="a1" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
-<g fill="none" stroke="currentColor" stroke-width="1.8">
-<rect x="10" y="55" width="140" height="90"/><rect x="210" y="55" width="130" height="90"/><rect x="490" y="55" width="110" height="90"/>
-<rect x="640" y="55" width="110" height="90"/><rect x="810" y="55" width="200" height="90"/><circle cx="430" cy="100" r="18"/>
-<path d="M150 100 H207" marker-end="url(#a1)"/><path d="M340 100 H409" marker-end="url(#a1)"/>
-<path d="M448 100 H487" marker-end="url(#a1)"/><path d="M600 100 H637" marker-end="url(#a1)"/>
+<desc id="f1d">The numerical substructure computes the desired displacement d, which the phase-lead compensator turns into the reference u. The tracking error u minus d_m enters the controller C(s). The adaptive factor lambda scales its output to give the command v applied to the transfer system and specimen H(s,k), whose output is y. The measured displacement d_m returns to the summing junction. The measured force f_m returns to the numerical substructure. The NCF OSI collects the reference u and the measured displacement d_m and updates lambda.</desc>
+<defs><marker id="f1a" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
+<g fill="#CCCCCC" stroke="#000" stroke-width="0.8">
+<rect x="4" y="95" width="82" height="40"/><rect x="110" y="95" width="78" height="40"/><rect x="270" y="95" width="58" height="40"/>
+<rect x="352" y="95" width="58" height="40"/><rect x="442" y="95" width="94" height="40"/>
+<rect x="440" y="6" width="96" height="34" fill="#BEDCC6"/>
 </g>
-<g fill="none" stroke-width="1.8">
-<path d="M750 100 H807" stroke="#AC6420" marker-end="url(#a1)"/>
-<path d="M1010 100 H1092" stroke="#007CA8" marker-end="url(#a1)"/><path d="M1045 100 V200 H430 V121" stroke="#007CA8" marker-end="url(#a1)"/>
-<path d="M910 145 V250 H80 V148" stroke="#74058A" stroke-dasharray="7 5" marker-end="url(#a1)"/>
-</g><circle cx="1045" cy="100" r="4" fill="#007CA8"/>
-<g text-anchor="middle">
-<text x="80" y="96" class="nt">Numerical</text><text x="80" y="120" class="nt">substructure</text>
-<text x="178" y="86" class="it">d(t)</text>
-<text x="275" y="96" class="nt">Phase-lead</text><text x="275" y="120" class="nt">compensator</text>
-<text x="372" y="86" class="it">u(t)</text><text x="403" y="84" class="nt">+</text><text x="450" y="138" class="nt">−</text>
-<text x="545" y="92" class="it">C(s)</text><text x="545" y="120" class="nt">Controller</text>
-<text x="695" y="86" class="it">λ</text><text x="695" y="112" class="nt">Adaptive</text><text x="695" y="134" class="nt">factor</text>
-<text x="779" y="86" class="it" fill="#AC6420">v(t)</text>
-<text x="910" y="86" class="it">H(s, k)</text><text x="910" y="112" class="nt">Transfer system</text><text x="910" y="134" class="nt">and specimen</text>
-<text x="1068" y="86" class="it" fill="#007CA8">y(t)</text>
-<text x="700" y="191" class="nt" fill="#007CA8">Measured actuator displacement</text>
-<text x="500" y="241" class="nt" fill="#74058A"><tspan class="it">f</tspan><tspan class="it" font-size="14" dy="5">m</tspan><tspan dy="-5">(t), measured force</tspan></text>
-</g></svg>
+<circle cx="238" cy="115" r="8" fill="#fff" stroke="#000" stroke-width="0.8"/>
+<g fill="none" stroke-width="1">
+<path d="M86 115 H108" stroke="#404040" marker-end="url(#f1a)"/>
+<path d="M188 115 H228" stroke="#404040" marker-end="url(#f1a)"/>
+<path d="M246 115 H268" stroke="#404040" marker-end="url(#f1a)"/>
+<path d="M328 115 H350" stroke="#404040" marker-end="url(#f1a)"/>
+<path d="M410 115 H440" stroke="#000" stroke-width="1.3" marker-end="url(#f1a)"/>
+<path d="M536 111 H600" stroke="#1689BA" marker-end="url(#f1a)"/>
+<path d="M556 111 V168 H238 V125" stroke="#1689BA" marker-end="url(#f1a)"/>
+<path d="M536 124 H574 V190 H45 V137" stroke="#A518AD" marker-end="url(#f1a)"/>
+<path d="M216 115 V23 H438" stroke="#278A42" marker-end="url(#f1a)"/>
+<path d="M556 111 V23 H538" stroke="#278A42" marker-end="url(#f1a)"/>
+<path d="M470 40 V62 H381 V93" stroke="#278A42" marker-end="url(#f1a)"/>
+</g>
+<circle cx="556" cy="111" r="2.2" fill="#1689BA"/><circle cx="216" cy="115" r="2.2" fill="#278A42"/>
+<g text-anchor="middle" fill="#000">
+<text x="45" y="112">Numerical</text><text x="45" y="125">substructure</text>
+<text x="149" y="112">Phase-lead</text><text x="149" y="125">compensator</text>
+<text x="299" y="112" class="it">C(s)</text><text x="299" y="125">Controller</text>
+<text x="381" y="106" class="it">λ</text><text x="381" y="119">Adaptive</text><text x="381" y="131">factor</text>
+<text x="489" y="106" class="it">H(s, k)</text><text x="489" y="119">Transfer system</text><text x="489" y="131">and specimen</text>
+<text x="488" y="27">NCF OSI</text>
+</g>
+<g fill="currentColor">
+<text x="98" y="108" text-anchor="middle" class="it">d(t)</text>
+<text x="200" y="108" text-anchor="middle" class="it">u(t)</text>
+<text x="225" y="104" text-anchor="middle">+</text><text x="229" y="137" text-anchor="middle">−</text>
+<text x="426" y="108" text-anchor="middle" class="it" font-weight="700">v(t)</text>
+<text x="589" y="104" text-anchor="middle" class="it">y(t)</text>
+<text x="394" y="163" text-anchor="middle" class="it">d<tspan dy="3" font-size="9">m</tspan></text>
+<text x="300" y="185" text-anchor="middle" class="it">f<tspan dy="3" font-size="9">m</tspan></text>
+</g>
+<text x="426" y="57" text-anchor="middle" fill="#278A42" class="sm">update</text>
+</svg>
 <figcaption><b>Figure 1.</b> Hybrid simulation loop with the NCF OSI framework setup.</figcaption></figure>''')
 P('The plant in Figure 1 is characterized by the transfer function $H(s,k)=Y(s)/V(s)$ from the command $v(t)$ '
   'to the measured actuator displacement $y(t)$. The open-loop transfer function and closed-loop response from '
@@ -101,170 +122,240 @@ P('The plant in Figure 1 is characterized by the transfer function $H(s,k)=Y(s)/
 E("L", r"L(s,\lambda,k)=\lambda\,C(s)\,H(s,k),", "L(s,λ,k)=λ C(s) H(s,k)")
 E("T", r"T(s,\lambda,k)=\frac{Y(s)}{U(s)}=\frac{L(s,\lambda,k)}{1+L(s,\lambda,k)},",
   "T(s,λ,k)=(Y(s))/(U(s))=(L(s,λ,k))/(1+L(s,λ,k))")
-P('Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The SISO NCF stability margin '
-  'for the plant $H(s,k)$ and scaled outer controller $\\lambda C(s)$ is defined as [1]')
-E("bncf", r"b_{\mathrm{NCF}}(\lambda,k)=\underset{\omega}{\inf}\;\delta\big(H(j\omega,k),\lambda C(j\omega)\big),",
-  "b_(\"NCF\") (λ,k)=\"inf\"┬ω  δ(H(jω,k),λ C(jω))")
-E("delta", r"\delta(H,\lambda C)=\frac{|1+\lambda C H|}{\sqrt{1+|H|^{2}}\sqrt{1+|\lambda C|^{2}}}.",
-  "δ(H,λ C)=(|1+λ C H|)/(√(1+|H|^2) √(1+|λ C|^2))")
+P('Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF stability margin '
+  'of the outer controller loop is evaluated for the loop $L$ under unity feedback {cite:glover}:')
+E("bncf", r"b_{\mathrm{NCF}}(L)=\inf_{\omega}\frac{|1+L(j\omega)|}{\sqrt{2\big(1+|L(j\omega)|^{2}\big)}}.",
+  "b_(\"NCF\") (L)=\"inf\"┬ω  (|1+L(jω)|)/√(2(1+|L(jω)|^2)).")
+P('As the specimen changes during a hybrid simulation, the loop $L(j\\omega)$ changes with it. {eq:bncf} '
+  'could be applied directly only if $L(j\\omega)$ were identified with high confidence at every frequency, but '
+  'online measurements rarely support this across the full band. The NCF OSI is therefore estimated from three '
+  'complementary branches, direct identification $b_{\\mathrm{id}}$, output-power inference $b_{\\mathrm{pow}}$ '
+  'and prior identification of the initial state $b_0$, which the following sections develop in turn.')
 
-H2("2.2", "Short-time spectral estimation", "s2")
+H2("2.2", "Direct identification branch, " + inline("$b_{\\mathrm{id}}$"), "s2")
 P('Identifying the closed-loop transfer function requires the autospectrum of reference $u(t)$ and the cross '
-  'spectrum of measured actuator displacement $y(t)$ with $u(t)$. The autospectrum of $y(t)$ is also used to '
-  'calculate coherence, which contributes to the confidence weight at each frequency. A moving window keeps '
-  'these spectra responsive to changes in the specimen during the experiment.')
-P('At each update, the window contains $N=f_sT_w$ samples of $u(t)$ and $y(t)$, where $f_s$ is the sampling '
-  'frequency and $T_w$ is the window duration. Updates are separated by $\\Delta t$, so consecutive windows '
-  'overlap when $\\Delta t<T_w$. Let $n$ index the updates and $r=0,\\dots,N-1$ index samples within each '
-  'window. The Hann-windowed discrete Fourier transforms are')
-E("dft", r"X_n(\omega_m)=\sum_{r=0}^{N-1}w[r]\,x_n[r]\,e^{-j2\pi mr/N},\qquad x\in\{u,y\},",
-  "X_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] x_n [r] e^(−j2πmr/N)〗,  x∈{u,y}")
-P('where $w[r]=\\tfrac{1}{2}\\{1-\\cos[2\\pi r/(N-1)]\\}$ is the Hann window and $\\omega_m=2\\pi mf_s/N$ is the '
-  'angular frequency at bin $m$. The transforms give the instantaneous spectra')
-E("spec", r"p_{uu,n}=|U_n|^{2},\qquad p_{yy,n}=|Y_n|^{2},\qquad p_{yu,n}=Y_n\,U_n^{*}",
-  "p_(uu,n)=|U_n |^2,  p_(yy,n)=|Y_n |^2,  p_(yu,n)=Y_n U_n^*")
-P('The frequency argument $\\omega_m$ is omitted for brevity. To reduce variation between windows, the instantaneous spectra '
-  'are averaged recursively with exponential weighting [4], following the modified-periodogram approach of '
-  '[3]. The first complete window initializes the average. At each subsequent update, the spectral averaging '
-  'weight $\\eta_s$ sets the contribution of the new window:')
-E("ewma", r"\bar{p}_{ab,n}(\omega)=(1-\eta_s)\,\bar{p}_{ab,n-1}(\omega)+\eta_s\,p_{ab,n}(\omega),\qquad ab\in\{uu,yy,yu\}.",
-  "p̄_(ab,n) (ω)=(1−η_s) p̄_(ab,n−1) (ω)+η_s p_(ab,n) (ω), ab∈{uu,yy,yu}")
-P('The indicator is evaluated over the 2–100 Hz band, excluding bins around the 60 Hz line-noise component:')
-E("omega", r"\Omega=\left\{\omega_m:\;2\le f_m\le 100\ \mathrm{Hz},\;f_m\notin[58,62]\ \mathrm{Hz}\right\},\qquad f_m=\frac{\omega_m}{2\pi},",
-  "Ω={ω_m:2≤f_m≤100 \"Hz\", f_m∉[58,62]\" Hz\"},  f_m=(ω_m)/(2π)")
-P('The set $\\Omega$ contains 47 bins, and subsequent expressions use $\\omega\\in\\Omega$. At update $n$, the '
-  'operating condition is $(\\lambda_n,k_n)$, but the stiffness $k_n$ is unknown and is not estimated.')
+  'spectrum of measured actuator displacement $y(t)$ with $u(t)$. The autospectrum of $y(t)$ is also needed to '
+  'calculate coherence, which helps set the confidence weight at each frequency. A moving window lets these '
+  'spectra follow changes in the specimen during the experiment.')
+P('Each window contains $N=f_sT_w$ samples of $u(t)$ and $y(t)$, where $f_s$ is the sampling frequency and '
+  '$T_w$ is the window duration. Updates occur at intervals $\\Delta t$, so consecutive windows overlap when '
+  '$\\Delta t<T_w$. The update index is $n$, and $r=0,\\dots,N-1$ indexes samples within each window. The '
+  'Hann-windowed discrete Fourier transforms are')
+E("dftu", r"U_n(\omega_m)=\sum_{r=0}^{N-1}w[r]\,u_n[r]\,e^{-j2\pi mr/N},",
+  "U_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] u_n [r] e^(−j2πmr/N)〗,")
+E("dfty", r"Y_n(\omega_m)=\sum_{r=0}^{N-1}w[r]\,y_n[r]\,e^{-j2\pi mr/N},",
+  "Y_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] y_n [r] e^(−j2πmr/N)〗,")
+P('where $u_n[r]$ and $y_n[r]$ are the samples of window $n$, and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of '
+  'bin $m$. The samples of each window are weighted by the Hann window presented by Blackman and Tukey {cite:blackman}:')
+E("hann", r"w[r]=\frac{1}{2}\left[1-\cos\!\left(\frac{2\pi r}{N-1}\right)\right].",
+  "w[r]=1/2 [1−cos((2πr)/(N−1))].")
+P('Welch {cite:welch} proposed estimating the power spectrum by averaging, with equal weight, the squared Fourier '
+  'magnitudes of overlapping windowed segments of a record. Cross spectra are estimated in the same way from products '
+  'of paired Fourier transforms, with one transform conjugated. In the present study, the plant changes as the '
+  'specimen degrades, so recent windows should carry more weight than earlier ones. Each window therefore provides '
+  'one raw estimate of the autospectra of $u$ and $y$ and the cross spectrum of $y$ with $u$:')
+E("puu", r"p_{uu,n}(\omega_m)=|U_n(\omega_m)|^{2},", "p_(uu,n) (ω_m)=|U_n (ω_m)|^2,")
+E("pyy", r"p_{yy,n}(\omega_m)=|Y_n(\omega_m)|^{2},", "p_(yy,n) (ω_m)=|Y_n (ω_m)|^2,")
+E("pyu", r"p_{yu,n}(\omega_m)=Y_n(\omega_m)\,U_n^{*}(\omega_m),", "p_(yu,n) (ω_m)=Y_n (ω_m) U_n^* (ω_m),")
+P('where the superscript $*$ denotes the complex conjugate. These raw estimates are averaged with the geometric moving average proposed by Roberts {cite:roberts}, which '
+  'updates an average from its previous value and the newest observation. Earlier spectra are retained, but their '
+  'contributions decay as new windows arrive. This reduces scatter between updates while still following changes in '
+  'the plant. The first complete window initializes the average. At each subsequent update, $\\eta_s$ '
+  'weights the new spectrum and $1-\\eta_s$ weights the previous average:')
+E("ewuu", r"\bar{p}_{uu,n}(\omega_m)=(1-\eta_s)\,\bar{p}_{uu,n-1}(\omega_m)+\eta_s\,p_{uu,n}(\omega_m),",
+  "p̄_(uu,n) (ω_m)=(1−η_s) p̄_(uu,n−1) (ω_m)+η_s p_(uu,n) (ω_m),")
+E("ewyy", r"\bar{p}_{yy,n}(\omega_m)=(1-\eta_s)\,\bar{p}_{yy,n-1}(\omega_m)+\eta_s\,p_{yy,n}(\omega_m),",
+  "p̄_(yy,n) (ω_m)=(1−η_s) p̄_(yy,n−1) (ω_m)+η_s p_(yy,n) (ω_m),")
+E("ewyu", r"\bar{p}_{yu,n}(\omega_m)=(1-\eta_s)\,\bar{p}_{yu,n-1}(\omega_m)+\eta_s\,p_{yu,n}(\omega_m).",
+  "p̄_(yu,n) (ω_m)=(1−η_s) p̄_(yu,n−1) (ω_m)+η_s p_(yu,n) (ω_m).")
+P('The NCF OSI is evaluated over $\\Omega$, the set of frequencies considered in the analysis.')
 
-H2("2.3", "Direct identification branch", "s3")
-P("The loop response can be identified directly from the reference $u$ and the measured response $y$. The averaged "
-  "spectra give the $H_1$ estimate of the closed-loop frequency response [6] and the magnitude-squared coherence")
-E("that", r"\hat{T}_n(j\omega)=\frac{\bar{p}_{yu,n}(\omega)}{\bar{p}_{uu,n}(\omega)},\qquad \gamma_n^{2}(\omega)=\frac{|\bar{p}_{yu,n}(\omega)|^{2}}{\bar{p}_{uu,n}(\omega)\,\bar{p}_{yy,n}(\omega)}.",
-  "T̂_n (jω)=(p̄_(yu,n) (ω))/(p̄_(uu,n) (ω)),  γ_n^2 (ω)=(|p̄_(yu,n) (ω)|^2)/(p̄_(uu,n) (ω) p̄_(yy,n) (ω))")
-P("This estimate is unbiased only if the output disturbance is uncorrelated with $u$. In hybrid simulation, this "
-  "condition is not guaranteed, because $u$ is computed from the measured force through the numerical substructure. "
-  "High coherence is therefore treated as supporting evidence rather than proof of an unbiased estimate [5].")
-P("Because this estimate can be poor, each bin receives a confidence between zero and one. The confidence combines "
-  "three factors. The first is command activity, detected from the window RMS "
-  "$u_{\\mathrm{rms},n}=\\big(N^{-1}\\sum_r u_n[r]^{2}\\big)^{1/2}$:")
-E("act", r"A_n=\begin{cases}1, & u_{\mathrm{rms},n}>\eta_A,\\ 0, & \text{otherwise}.\end{cases}",
-  "A_n={■(1,&u_(\"rms\",n)>η_A@0,&\"otherwise\")┤")
-P("The threshold $\\eta_A$ is approximately $4.54\\,\\sigma_{u,0}$, where $\\sigma_{u,0}$ is the command-noise standard "
-  "deviation measured in a quiet record. The second factor is the input leverage. Even within an active window, some "
-  "bins carry little command energy, and these bins are discounted through")
-E("lev", r"\ell_n(\omega)=\frac{p_{\mathrm{rel},n}(\omega)}{p_{\mathrm{rel},n}(\omega)+p_{\mathrm{floor}}},\qquad p_{\mathrm{rel},n}(\omega)=\frac{\bar{p}_{uu,n}(\omega)}{\max_{\nu\in\mathcal{B}}\bar{p}_{uu,n}(\nu)},",
-  "ℓ_n (ω)=(p_(\"rel\",n) (ω))/(p_(\"rel\",n) (ω)+p_(\"floor\") ),  p_(\"rel\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈ℬ)  p̄_(uu,n) (ν))")
-P("where $\\mathcal{B}$ is the full 2–100 Hz grid. The third factor is the coherence, which completes the confidence")
-E("conf", r"c_n(\omega)=A_n\,\gamma_n^{2}(\omega)\,\ell_n(\omega),\qquad 0\le c_n(\omega)\le 1.",
-  "c_n (ω)=A_n γ_n^2 (ω) ℓ_n (ω), 0≤c_n (ω)≤1")
-P("This confidence is a weighting factor, not a probability. Where it is small, the estimate is replaced by the prior "
-  "identification of the initial state, scaled by the current adaptive factor. With "
-  "$H_0(j\\omega)=H(j\\omega,k_0)$ and $L_0(j\\omega)=C(j\\omega)H_0(j\\omega)$ at the initial stiffness $k_0$, the prior is")
-E("prior", r"L_{\mathrm{pr},n}(j\omega)=\lambda_n L_0(j\omega),\qquad T_{\mathrm{pr},n}(j\omega)=\frac{L_{\mathrm{pr},n}(j\omega)}{1+L_{\mathrm{pr},n}(j\omega)}.",
-  "L_(\"pr\",n) (jω)=λ_n L_0 (jω),  T_(\"pr\",n) (jω)=(L_(\"pr\",n) (jω))/(1+L_(\"pr\",n) (jω))")
-P("Measurement and prior are blended in the closed-loop domain, where the spectral estimate is formed. The loop is then "
-  "recovered by inverting {eq:T}:")
-E("blend", r"\tilde{T}_n(j\omega)=c_n\,\hat{T}_n(j\omega)+(1-c_n)\,T_{\mathrm{pr},n}(j\omega),\qquad \hat{L}_n(j\omega)=\frac{\tilde{T}_n(j\omega)}{1-\tilde{T}_n(j\omega)}.",
-  "T̃_n (jω)=c_n T̂_n (jω)+(1−c_n ) T_(\"pr\",n) (jω),  L̂_n (jω)=(T̃_n (jω))/(1−T̃_n (jω))")
-P("As a result, a well-supported measurement governs $\\hat{L}_n$, while a weakly supported one leaves it close to the "
-  "prior. The plant estimate $\\hat{H}_n(j\\omega)=\\hat{L}_n(j\\omega)/(\\lambda_n C(j\\omega))$ then gives the identified "
-  "and prior margin curves from {eq:delta}:")
-E("bid", r"b_{\mathrm{id},n}(\omega)=\operatorname{med}_3\left\{\delta\big(\hat{H}_n(j\omega),\lambda_n C(j\omega)\big)\right\},\qquad b_{0,n}(\omega)=\delta\big(H_0(j\omega),\lambda_n C(j\omega)\big),",
-  "b_(\"id\",n) (ω)=\"med\"_3 {δ(Ĥ_n (jω),λ_n C(jω))},  b_(0,n) (ω)=δ(H_0 (jω),λ_n C(jω))")
-P("where $\\operatorname{med}_3$ is a three-bin moving median over frequency that suppresses isolated spectral outliers.")
+P("At each selected frequency, the loop response can be identified directly from the reference $u$ and the measured response $y$. The averaged "
+  "spectra give the $H_1$ estimate of the closed-loop frequency response {cite:bendat} and the magnitude-squared coherence")
+E("that", r"\hat{T}_n(j\omega)=\frac{\bar{p}_{yu,n}(\omega)}{\bar{p}_{uu,n}(\omega)},",
+  "T̂_n (jω)=(p̄_(yu,n) (ω))/(p̄_(uu,n) (ω)),")
+E("coh", r"\gamma_n^{2}(\omega)=\frac{|\bar{p}_{yu,n}(\omega)|^{2}}{\bar{p}_{uu,n}(\omega)\,\bar{p}_{yy,n}(\omega)}.",
+  "γ_n^2 (ω)=(|p̄_(yu,n) (ω)|^2)/(p̄_(uu,n) (ω) p̄_(yy,n) (ω)).")
+P("Inverting {eq:T} gives the identified loop:")
+E("lhat", r"\hat{L}_n(j\omega)=\frac{\hat{T}_n(j\omega)}{1-\hat{T}_n(j\omega)}.",
+  "L̂_n (jω)=(T̂_n (jω))/(1−T̂_n (jω)).")
+P("Here, the identified loop is smoothed with the running median over neighbouring frequencies discussed by "
+  "Di Matteo et al. {cite:dimatteo}, so the median is taken over each frequency and its two neighbours. The smoothed "
+  "loop $\\hat{L}_{\\mathrm{s},n}$ is hence given by")
+E("lmed", r"\hat{L}_{\mathrm{s},n}(j\omega_m)=\underset{i\in\{m-1,\,m,\,m+1\}}{\operatorname{median}}\;\hat{L}_n(j\omega_i).",
+  "L̂_(\"s\",n) (jω_m)=\"median\"┬(i∈{m−1,m,m+1})  L̂_n (jω_i).")
+P("The identified margin then follows from {eq:bncf}:")
+E("bid", r"b_{\mathrm{id},n}=b_{\mathrm{NCF}}\big(\hat{L}_{\mathrm{s},n}\big).",
+  "b_(\"id\",n)=b_(\"NCF\") (L̂_(\"s\",n)).")
+P("The quality of this estimate varies with time and frequency for two reasons. First, the command can be too weak "
+  "for the measured response to rise above the sensor noise. Second, even an active command concentrates its energy "
+  "in a limited band set by the ground motion and the structural modes, so bins outside that band carry little "
+  "information.")
+P("Each bin therefore receives an identification weight $w_{\\mathrm{id},n}$ between zero and one, built from three "
+  "factors. "
+  "The first is command activity $A_n$, detected from the root mean square of the window:")
+E("act", r"A_n=\begin{cases}1, & \sqrt{\dfrac{1}{N}\displaystyle\sum_{r=0}^{N-1}u_n[r]^{2}}>\eta_A\,\sigma_u,\\ 0, & \text{otherwise}.\end{cases}",
+  "A_n={■(1,&√(1/N ∑_(r=0)^(N−1)▒〖u_n [r]^2 〗)>η_A σ_u@0,&\"otherwise\")┤")
+P("where $\\sigma_u$ is the standard deviation of the command noise measured in a quiet record, and $\\eta_A$ is a "
+  "hyperparameter to be tuned. The second factor is the input leverage $\\ell_n$, which reduces "
+  "the weight of bins that carry little command energy. The command power in each bin is first normalized by its "
+  "maximum over $\\Omega$:")
+E("prel", r"\ell_{\mathrm{raw},n}(\omega)=\frac{\bar{p}_{uu,n}(\omega)}{\max_{\nu\in\Omega}\bar{p}_{uu,n}(\nu)}.",
+  "ℓ_(\"raw\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈Ω)  p̄_(uu,n) (ν)).")
+P("To ensure numerical stability for low values of $\\ell_{\\mathrm{raw},n}$, the hyperparameter $\\ell_{\\mathrm{floor}}$ "
+  "is introduced in the final expression of the leverage:")
+E("lev", r"\ell_n(\omega)=\frac{\ell_{\mathrm{raw},n}(\omega)}{\ell_{\mathrm{raw},n}(\omega)+\ell_{\mathrm{floor}}},",
+  "ℓ_n (ω)=(ℓ_(\"raw\",n) (ω))/(ℓ_(\"raw\",n) (ω)+ℓ_(\"floor\") ),")
+P("where $\\ell_{\\mathrm{floor}}$ sets the relative power at which a bin receives half weight. Bins well above "
+  "$\\ell_{\\mathrm{floor}}$ receive nearly full weight. The third factor is the coherence, which completes the weight")
+E("conf", r"w_{\mathrm{id},n}(\omega)=A_n\,\gamma_n^{2}(\omega)\,\ell_n(\omega).",
+  "w_(\"id\",n) (ω)=A_n γ_n^2 (ω) ℓ_n (ω).")
+P("This weight sets the share of this branch in the fusion of Section 2.4.")
 
-H2("2.4", "Output-power inference branch", "s4")
-P("Direct identification fails when the command is weak, yet a degrading specimen can still drive the loop toward "
-  "instability during such periods. The measured output power offers a second source of evidence, because it reflects "
-  "the loop even without strong excitation. This power is compared against a reference taken from the first three "
-  "non-overlapping windows, which are assumed to represent the initial loop at full gain. The reference power and the "
-  "observed ratio are")
-E("qobs", r"p_{yy,0}(\omega)=\underset{h=1,2,3}{\operatorname{median}}\left|Y_h^{(0)}(\omega)\right|^{2},\qquad q_{\mathrm{obs},n}(\omega)=\frac{\bar{p}_{yy,n}(\omega)}{p_{yy,0}(\omega)},",
-  "p_(yy,0) (ω)=\"median\"┬(h=1,2,3)  |Y_h^((0)) (ω)|^2,  q_(\"obs\",n) (ω)=(p̄_(yy,n) (ω))/(p_(yy,0) (ω))")
-P("where $Y_h^{(0)}$ is the transform of $y$ in reference window $h$. To interpret this ratio, assume that $y$ is "
-  "dominated by an equivalent output disturbance and that the spectrum of this disturbance is unchanged from the "
-  "reference period. The output is then shaped by the sensitivity $1/(1+L)$, and a candidate loop $\\lambda_n g L_0$ "
-  "predicts the ratio")
-E("qmod", r"q_{\mathrm{mod},n}(\omega,g)=\left|\frac{1+L_0(j\omega)}{1+\lambda_n g\,L_0(j\omega)}\right|^{2}.",
-  "q_(\"mod\",n) (ω,g)=〖|(1+L_0 (jω))/(1+λ_n g L_0 (jω))|〗^2")
-P("Here, the positive scalar $g$ is an effective change in loop magnitude, not an estimate of $k$. It is fitted in each "
-  "bin by matching the observed and predicted ratios on a logarithmic scale:")
-E("gfit", r"g_{\mathrm{fit},n}(\omega)=\underset{g\in\mathcal{G}}{\operatorname{arg\,min}}\;\left|\log\,q_{\mathrm{obs},n}(\omega)-\log\,q_{\mathrm{mod},n}(\omega,g)\right|,",
-  "g_(\"fit\",n) (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"mod\",n) (ω,g)|")
-P("where $\\mathcal{G}$ holds 25 logarithmically spaced values from 0.5 to 6. Because each bin is fitted independently, "
-  "the curve $g(\\omega)$ is an inference model rather than an identified transfer function. A single fit is noisy, and "
-  "the excitation may fade after a change is detected. The fitted change is therefore retained in a logarithmic memory "
-  "initialized at $\\bar{g}_0=1$:")
-E("gmem", r"\log\,\bar{g}_n(\omega)=(1-\eta_g)\log\,\bar{g}_{n-1}(\omega)+\eta_g\log\,g_{\mathrm{tar},n}(\omega).",
-  "log ḡ_n (ω)=(1−η_g) log ḡ_(n−1) (ω)+η_g log g_(\"tar\",n) (ω)")
-P("While the command is active ($A_n=1$), the target is $g_{\\mathrm{tar},n}=g_{\\mathrm{fit},n}$. The memory releases "
-  "a change once the loop recovers, and recovery is detected from the band-median ratio")
-E("rband", r"r_{\Omega,n}=\underset{\omega\in\Omega}{\operatorname{median}}q_{\mathrm{obs},n}(\omega).",
-  "r_(Ω,n)=\"median\"┬(ω∈Ω)  q_(\"obs\",n) (ω)")
-P("When $r_{\\Omega,n}<1$, the output power has fallen below the initial reference. The memory then decays toward "
-  "$\\bar{g}=1$, with $g_{\\mathrm{tar},n}=1$ and $\\eta_g$ replaced by $\\eta_r$. Otherwise, $\\bar{g}_n$ is held, so a "
-  "detected change remains represented while the excitation is weak. Finally, the output-power margin curve uses the "
-  "pointwise NCF margin from {eq:delta}:")
-E("bres", r"b_{\mathrm{pow},n}(\omega)=\operatorname{med}_3\left\{\delta\big(\bar{g}_n(\omega)H_0(j\omega),\lambda_n C(j\omega)\big)\right\}.",
-  "b_(\"pow\",n) (ω)=\"med\"_3 {δ(ḡ_n (ω) H_0 (jω),λ_n C(jω))}")
+H2("2.3", "Output-power inference branch", "s3")
+P("Direct identification fails when the command is weak or does not excite the relevant frequency band. Even then, a "
+  "degrading specimen can still drive the system toward instability. However, the change in output power relative to "
+  "the initial state can reveal loop amplification even at frequencies without strong excitation. This change therefore "
+  "provides a second source of evidence for a reduction in the stability margin. To quantify this change, the averaged "
+  "output power is compared with its initial reference:")
+E("qobs", r"q_{\mathrm{obs},n}(\omega)=\frac{\bar{p}_{yy,n}(\omega)}{p_{yy,0}(\omega)},",
+  "q_(\"obs\",n) (ω)=(p̄_(yy,n) (ω))/(p_(yy,0) (ω)),")
+P("where $q_{\\mathrm{obs},n}$ is the observed power ratio, which measures the change in output power at each frequency "
+  "relative to the initial state, $\\bar{p}_{yy,n}$ is the averaged autospectrum of $y$ from {eq:ewyy}, and $p_{yy,0}$ is "
+  "the reference autospectrum recorded in the initial state before the excitation, with $\\lambda=1$.")
+P("According to the observation discussed in Gomaa et al. {cite:gomaa} and the experimental verification presented in "
+  "Section xx, the change due to specimen degradation is assumed to be an amplification $g$ of the open-loop gain. "
+  "Consequently, a candidate loop $\\lambda_n g L_0$ predicts the ratio")
+E("qmod", r"q_{\mathrm{mod},n}(\omega,g)=\left|\frac{1+L_0(j\omega)}{1+\lambda_n g\,L_0(j\omega)}\right|^{2},",
+  "q_(\"mod\",n) (ω,g)=〖|(1+L_0 (jω))/(1+λ_n g L_0 (jω))|〗^2,")
+P("where $q_{\\mathrm{mod},n}$ is the predicted power ratio, and $L_0(j\\omega)=C(j\\omega)H_0(j\\omega)$ is the loop of "
+  "the prior identification of the initial state. The amplification is then selected as the candidate in $\\mathcal{G}$ "
+  "that minimizes the logarithmic difference between the observed and predicted ratios:")
+E("gfit", r"\hat{g}_n(\omega)=\underset{g\in\mathcal{G}}{\operatorname{arg\,min}}\;\left|\log q_{\mathrm{obs},n}(\omega)-\log q_{\mathrm{mod},n}(\omega,g)\right|,",
+  "ĝ_n (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"mod\",n) (ω,g)|,")
+P("where $\\hat{g}_n$ is the selected amplification, and $\\mathcal{G}$ is a grid of candidate values of $g$.")
+P("The selected amplification at update $n$ inherits the scatter of $q_{\\mathrm{obs},n}$ and therefore varies between "
+  "updates. To reduce this scatter while following the degrading specimen, successive selections are averaged "
+  "recursively, as for the spectra in Equations ({n:ewuu})–({n:ewyu}), with more weight on recent values. The average is formed on a "
+  "logarithmic scale:")
+E("gmem", r"\log\hat{g}_{\mathrm{s},n}(\omega)=(1-\eta_g)\log\hat{g}_{\mathrm{s},n-1}(\omega)+\eta_g\log\hat{g}_n(\omega),",
+  "log ĝ_(\"s\",n) (ω)=(1−η_g) log ĝ_(\"s\",n−1) (ω)+η_g log ĝ_n (ω),")
+P("where $\\hat{g}_{\\mathrm{s},n}$ is the smoothed amplification, and $\\eta_g$ is the averaging factor that weights the "
+  "newest selection. {eq:bncf} then gives the margin of this branch:")
+E("bres", r"b_{\mathrm{pow},n}=b_{\mathrm{NCF}}\big(\lambda_n\hat{g}_{\mathrm{s},n}L_0\big),",
+  "b_(\"pow\",n)=b_(\"NCF\") (λ_n ĝ_(\"s\",n) L_0),")
+P("where $b_{\\mathrm{pow},n}$ is the output-power margin.")
+P("To reduce false positives and chattering at small changes, the evidence from this branch is weighted by the size "
+  "of the smoothed amplification up to the threshold $g_{\\mathrm{th}}$:")
+E("det", r"d_n(\omega)=\frac{\hat{g}_{\mathrm{s},n}(\omega)-1}{g_{\mathrm{th}}-1},\qquad d_n(\omega)\in[0,1],",
+  "d_n (ω)=(ĝ_(\"s\",n) (ω)−1)/(g_(\"th\")−1),  d_n (ω)∈[0,1],")
+P("where $d_n$ is the detection weight, limited to the interval $[0,1]$, and $g_{\\mathrm{th}}$ is the amplification "
+  "threshold above which the evidence is fully trusted. Consequently, the detection weight rises linearly from zero at "
+  "$\\hat{g}_{\\mathrm{s},n}=1$ to one at $\\hat{g}_{\\mathrm{s},n}=g_{\\mathrm{th}}$. Together with the identification "
+  "weight, it sets the weight of this branch:")
+E("w", r"w_{\mathrm{pow},n}=(1-w_{\mathrm{id},n})\,d_n,",
+  "w_(\"pow\",n)=(1−w_(\"id\",n) ) d_n,")
+P("where $w_{\\mathrm{pow},n}$ is the weight of the output-power branch, and $w_{\\mathrm{id},n}$ is the identification "
+  "weight from {eq:conf}. Consequently, this branch receives the share left by direct identification, in proportion to "
+  "the detected amplification.")
+P("Unlike direct identification, which reflects both losses and gains in the stability margin, the output-power "
+  "branch detects only open-loop gain amplification. Consequently, once the adaptive controller restores stability "
+  "and the output power returns to its initial level, this branch cannot reflect a recovered loop. A recovery step is "
+  "therefore introduced. While the median of $q_{\\mathrm{obs},n}$ over $\\Omega$ remains below one, the smoothed "
+  "amplification is reduced gradually:")
+E("gdecay", r"\log\hat{g}_{\mathrm{s},n}(\omega)=r_g\,\log\hat{g}_{\mathrm{s},n-1}(\omega),",
+  "log ĝ_(\"s\",n) (ω)=r_g log ĝ_(\"s\",n−1) (ω),")
+P("where $r_g$ is the recovery factor, with $0<r_g<1$. The reduction stops once the output power rises above its "
+  "initial reference. As a result, the output power itself limits how far the amplification is released.")
 
-H2("2.5", "Per-frequency fusion and reported indicator", "s5")
+H2("2.4", "Per-frequency fusion and reported indicator", "s4")
+P("The third branch is the margin of the prior identification of the initial state, evaluated with the current "
+  "adaptive factor:")
+E("b0", r"b_{0,n}=b_{\mathrm{NCF}}\big(\lambda_nL_0\big).",
+  "b_(0,n)=b_(\"NCF\") (λ_n L_0).")
 P("At each frequency, the three branches now provide three margin estimates, which are combined according to the "
-  "evidence behind each. The output-power branch is trusted in proportion to the size of the inferred change,")
-E("det", r"d_n(\omega)=\operatorname{clip}_{[0,1]}\left(\frac{\bar{g}_n(\omega)-1}{g_{\mathrm{det}}-1}\right),",
-  "d_n (ω)=\"clip\"_([0,1]) ((ḡ_n (ω)−1)/(g_(\"det\")−1))")
-P("which rises linearly from zero at $\\bar{g}_n=1$ to one at $\\bar{g}_n=g_{\\mathrm{det}}$. Together with the "
-  "confidence $c_n$, this detection weight sets the weights of the three branches at each frequency:")
-E("w", r"w_{\mathrm{id},n}=c_n,\qquad w_{\mathrm{pow},n}=(1-c_n)\,d_n,\qquad w_{0,n}=(1-c_n)(1-d_n).",
-  "w_(\"id\",n)=c_n,  w_(\"pow\",n)=(1−c_n ) d_n,  w_(0,n)=(1−c_n )(1−d_n )")
-P("These weights are nonnegative and sum to one. Direct identification receives the share supported by the measurement. "
-  "The output-power branch receives the remainder in proportion to its detection weight, and the prior receives what "
-  "neither measurement supports (Table 2). The fused margin curve is therefore")
+  "evidence behind each. The prior receives the weight left by the two measured branches:")
+E("w0", r"w_{0,n}=(1-w_{\mathrm{id},n})(1-d_n).",
+  "w_(0,n)=(1−w_(\"id\",n) )(1−d_n ).")
+P("The three margins are then combined with these weights at each frequency bin:")
 E("beta", r"\beta_n(\omega)=w_{\mathrm{id},n}\,b_{\mathrm{id},n}(\omega)+w_{\mathrm{pow},n}\,b_{\mathrm{pow},n}(\omega)+w_{0,n}\,b_{0,n}(\omega).",
   "β_n (ω)=w_(\"id\",n) b_(\"id\",n) (ω)+w_(\"pow\",n) b_(\"pow\",n) (ω)+w_(0,n) b_(0,n) (ω)")
 P("Fusion is performed bin by bin, before any reduction over frequency, so margins evaluated at different frequencies "
   "are never combined. This choice also handles the idle case without special treatment. When the command is inactive, "
-  "$c_n=0$ in every bin. An unchanged loop then reads its gain-scaled prior, and a bin with a remembered change "
+  "$w_{\\mathrm{id},n}=0$ in every bin. An unchanged loop then reads its gain-scaled prior, and a bin with a remembered change "
   "continues to report it.")
-P("To drive the adaptive controller, the fused curve is reduced to a single value. The instantaneous indicator is the "
-  "second-smallest value of $\\beta_n$ over $\\Omega$,")
-E("binst", r"b_{\mathrm{inst},n}=\beta_{n,(2)}=\beta_n(\omega_{*,n}),", "b_(\"inst\",n)=β_(n,(2))=β_n (ω_(*,n))")
-P("where $\\omega_{*,n}$ is the governing frequency. Discarding the lowest bin prevents a single outlier from governing "
-  "the estimate, at the cost of attenuating a genuine minimum that is only one bin wide. To suppress fluctuations "
-  "between updates, the reported indicator is smoothed in time,")
-E("bosi", r"b_{\mathrm{OSI},n}=(1-\eta_b)\,b_{\mathrm{OSI},n-1}+\eta_b\,b_{\mathrm{inst},n},",
-  "b_(\"OSI\",n)=(1−η_b) b_(\"OSI\",n−1)+η_b b_(\"inst\",n)")
-P("and the adaptive law uses it to update $\\lambda_{n+1}$. Figure 2 summarizes one complete update, from the measured "
-  "signals to the adaptive factor, and Table 1 lists the estimator parameters.")
+P("To drive the adaptive controller, the fused curve is reduced to a single value. The NCF OSI margin is taken as "
+  "the lowest value of $\\beta_n$ over $\\Omega$:")
+E("bosi", r"b_{\mathrm{OSI},n}=\min_{\omega\in\Omega}\beta_n(\omega),",
+  "b_(\"OSI\",n)=\"min\"┬(ω∈Ω)  β_n (ω),")
+P("where $b_{\\mathrm{OSI},n}$ is the NCF OSI margin at update $n$, and $\\Omega$ is the set of frequencies considered in "
+  "evaluating the NCF OSI. The adaptive law then uses it to update $\\lambda_{n+1}$. Figure 2 summarizes one complete "
+  "update, from the measured signals to the adaptive factor, and Table 1 lists the estimator parameters.")
 
-RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 480">
+RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 510">
 <title id="f2t">Structure of one estimator update</title>
-<desc id="f2d">Windowed displacements u and y feed the spectral estimator. Its spectra feed the identification and output-power branches. A third branch is the initial-state prior scaled by lambda. The three margin curves are fused per frequency bin, reduced by the second-smallest value over the analysis band, and smoothed to give b_OSI, which drives the adaptive law that returns lambda.</desc>
-<defs><marker id="a2" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
-<g fill="none" stroke="currentColor" stroke-width="1.6">
-<rect x="56" y="150" width="208" height="100"/>
-<rect x="320" y="30" width="280" height="90"/><rect x="320" y="155" width="280" height="90"/><rect x="320" y="280" width="280" height="90"/>
-<rect x="680" y="150" width="180" height="100"/><rect x="680" y="300" width="180" height="70"/>
-<rect x="320" y="400" width="280" height="56"/>
-<path d="M10 180 H54" marker-end="url(#a2)"/>
-<path d="M264 200 H318" marker-end="url(#a2)"/><path d="M285 200 V75 H318" marker-end="url(#a2)"/>
-<path d="M600 75 H640 V180 H678" marker-end="url(#a2)"/><path d="M600 200 H678" marker-end="url(#a2)"/><path d="M600 325 H640 V220 H678" marker-end="url(#a2)"/>
-<path d="M770 250 V298" marker-end="url(#a2)"/><path d="M860 335 H988" marker-end="url(#a2)"/>
-<path d="M930 335 V428 H602" marker-end="url(#a2)"/><path d="M460 400 V372" marker-end="url(#a2)"/>
-</g><path d="M10 220 H54" fill="none" stroke="#007CA8" stroke-width="1.6" marker-end="url(#a2)"/><circle cx="285" cy="200" r="3.5" fill="currentColor"/><circle cx="930" cy="335" r="3.5" fill="currentColor"/>
-<g text-anchor="middle">
-<text x="28" y="172" class="it">u</text><text x="28" y="212" class="it" fill="#007CA8">y</text>
-<text x="160" y="190">Windowed DFT,</text><text x="160" y="214">averaged spectra</text><text x="160" y="238" class="nt">Equations (5)–(7)</text>
-<text x="460" y="64">Direct identification</text><text x="460" y="90" class="nt">T̂, γ², c → b<tspan font-size="13" dy="4">id</tspan><tspan dy="-4">(ω)</tspan></text><text x="460" y="112" class="nt">Equations (9)–(15)</text>
-<text x="460" y="189">Output-power inference</text><text x="460" y="215" class="nt">q<tspan font-size="13" dy="4">obs</tspan><tspan dy="-4">, ḡ → b</tspan><tspan font-size="13" dy="4">pow</tspan><tspan dy="-4">(ω)</tspan></text><text x="460" y="237" class="nt">Equations (16)–(21)</text>
-<text x="460" y="314">Initial-state prior</text><text x="460" y="340" class="nt">H<tspan font-size="13" dy="4">0</tspan><tspan dy="-4">, λC → b</tspan><tspan font-size="13" dy="4">0</tspan><tspan dy="-4">(ω)</tspan></text><text x="460" y="362" class="nt">Equations (13), (15)</text>
-<text x="770" y="190">Per-bin fusion</text><text x="770" y="215" class="nt">β(ω)</text><text x="770" y="238" class="nt">Equations (22)–(24)</text>
-<text x="770" y="330">Trim and smooth</text><text x="770" y="356" class="nt">Equations (25)–(26)</text>
-<text x="460" y="434">Adaptive law</text>
-<text x="620" y="66" class="it">w<tspan font-size="14" dy="4">id</tspan></text><text x="624" y="190" class="it">w<tspan font-size="14" dy="4">pow</tspan></text><text x="620" y="316" class="it">w<tspan font-size="14" dy="4">0</tspan></text>
-<text x="958" y="322" class="nt">b<tspan font-size="13" dy="4">OSI</tspan></text>
-<text x="484" y="392" class="it">λ</text>
+<desc id="f2d">Windowed displacements u and y feed a windowed FFT that forms the averaged autospectra and cross spectrum. These spectra feed the direct identification and output-power branches. A third branch is the initial-state prior. The adaptive factor lambda feeds all three branches. The three margin curves are fused per frequency bin with the weights w_id, w_pow and w_0, and the minimum of the fused curve over the analysis band gives b_OSI, which drives the adaptive law that returns lambda.</desc>
+<defs>
+<marker id="a2" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#000"/></marker>
+<marker id="a2l" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#AC6420"/></marker>
+<marker id="a2y" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#007CA8"/></marker>
+</defs>
+<g fill="none" stroke="#000" stroke-width="1.5">
+<rect x="40" y="175" width="190" height="110" rx="10"/>
+<rect x="340" y="30" width="270" height="110" rx="10"/>
+<rect x="340" y="175" width="270" height="110" rx="10"/>
+<rect x="340" y="320" width="270" height="110" rx="10"/>
+<rect x="700" y="175" width="180" height="110" rx="10"/>
+<rect x="700" y="320" width="180" height="110" rx="10"/>
+<rect x="340" y="455" width="270" height="44" rx="10"/>
+<path d="M2 205 H38" marker-end="url(#a2)"/>
+<path d="M230 230 H280 V85 H338" marker-end="url(#a2)"/>
+<path d="M280 230 H304 A6 6 0 0 1 316 230 H338" marker-end="url(#a2)"/>
+<path d="M610 85 H655 V205 H698" marker-end="url(#a2)"/>
+<path d="M610 230 H698" marker-end="url(#a2)"/>
+<path d="M610 375 H655 V255 H698" marker-end="url(#a2)"/>
+<path d="M790 285 V318" marker-end="url(#a2)"/>
+<path d="M880 375 H992" marker-end="url(#a2)"/>
+<path d="M940 375 V477 H612" marker-end="url(#a2)"/>
+</g>
+<path d="M2 255 H38" fill="none" stroke="#007CA8" stroke-width="1.5" marker-end="url(#a2y)"/>
+<g fill="none" stroke="#AC6420" stroke-width="1.5">
+<path d="M340 477 H310 V120"/>
+<path d="M310 120 H338" marker-end="url(#a2l)"/>
+<path d="M310 265 H338" marker-end="url(#a2l)"/>
+<path d="M310 410 H338" marker-end="url(#a2l)"/>
+</g>
+<circle cx="280" cy="230" r="3.5" fill="#000"/><circle cx="940" cy="375" r="3.5" fill="#000"/>
+<circle cx="310" cy="265" r="3" fill="#AC6420"/><circle cx="310" cy="410" r="3" fill="#AC6420"/>
+<g text-anchor="middle" dominant-baseline="central" style="fill:#000">
+<text x="14" y="190" class="it" style="font-size:22px">u</text>
+<text x="14" y="240" class="it" style="font-size:22px;fill:#007CA8">y</text>
+<text x="135" y="203" style="font-size:20px">Windowed FFT</text>
+<text x="135" y="231" style="font-size:19px"><tspan class="it">p̄</tspan><tspan style="font-size:13px" dy="5">uu</tspan><tspan dy="-5">, </tspan><tspan class="it">p̄</tspan><tspan style="font-size:13px" dy="5">yy</tspan><tspan dy="-5">, </tspan><tspan class="it">p̄</tspan><tspan style="font-size:13px" dy="5">yu</tspan></text>
+<text x="135" y="259" style="font-size:15px;fill:#6b6b6b">Equations ({n:dftu})–({n:ewyu})</text>
+<text x="475" y="58" style="font-size:20px">Direct identification</text>
+<text x="475" y="86" style="font-size:19px"><tspan class="it">L̂</tspan><tspan style="font-size:13px" dy="5">s</tspan><tspan dy="-5">, </tspan><tspan class="it">w</tspan><tspan style="font-size:13px" dy="5">id</tspan><tspan dy="-5"> → </tspan><tspan class="it">b</tspan><tspan style="font-size:13px" dy="5">id</tspan><tspan dy="-5">(ω)</tspan></text>
+<text x="475" y="114" style="font-size:15px;fill:#6b6b6b">Equations ({n:that})–({n:conf})</text>
+<text x="475" y="203" style="font-size:20px">Output-power inference</text>
+<text x="475" y="231" style="font-size:19px"><tspan class="it">q</tspan><tspan style="font-size:13px" dy="5">obs</tspan><tspan dy="-5">, </tspan><tspan class="it">ĝ</tspan><tspan style="font-size:13px" dy="5">s</tspan><tspan dy="-5"> → </tspan><tspan class="it">b</tspan><tspan style="font-size:13px" dy="5">pow</tspan><tspan dy="-5">(ω)</tspan></text>
+<text x="475" y="259" style="font-size:15px;fill:#6b6b6b">Equations ({n:qobs})–({n:gdecay})</text>
+<text x="475" y="348" style="font-size:20px">Initial-state prior</text>
+<text x="475" y="376" style="font-size:19px"><tspan class="it">L</tspan><tspan style="font-size:13px" dy="5">0</tspan><tspan dy="-5"> → </tspan><tspan class="it">b</tspan><tspan style="font-size:13px" dy="5">0</tspan><tspan dy="-5">(ω)</tspan></text>
+<text x="475" y="404" style="font-size:15px;fill:#6b6b6b">Equation ({n:b0})</text>
+<text x="790" y="203" style="font-size:20px">Per-bin fusion</text>
+<text x="790" y="231" style="font-size:19px" class="it">β(ω)</text>
+<text x="790" y="259" style="font-size:15px;fill:#6b6b6b">Equations ({n:w0})–({n:beta})</text>
+<text x="790" y="348" style="font-size:20px">Minimum over Ω</text>
+<text x="790" y="376" style="font-size:19px"><tspan class="it">b</tspan><tspan style="font-size:13px" dy="5">OSI</tspan></text>
+<text x="790" y="404" style="font-size:15px;fill:#6b6b6b">Equation ({n:bosi})</text>
+<text x="475" y="477" style="font-size:20px">Adaptive law</text>
+<text x="634" y="70" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">id</tspan></text>
+<text x="640" y="215" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">pow</tspan></text>
+<text x="634" y="360" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">0</tspan></text>
+<text x="960" y="358" class="it" style="font-size:18px">b<tspan style="font-size:12px;font-style:normal" dy="5">OSI</tspan></text>
+<text x="294" y="447" class="it" style="font-size:22px;fill:#AC6420">λ</text>
 </g></svg>
-<figcaption><b>Figure 2.</b> One estimator update. Branch weights from Equation (23) are marked on the arrows entering the fusion block, and the adaptive factor also enters the initial-state prior and the output-power model.</figcaption></figure>''')
+<figcaption><b>Figure 2.</b> One estimator update. Branch weights from Equations ({n:conf}), ({n:w}) and ({n:w0}) are marked on the arrows entering the fusion block. The minimum of the fused curve over Ω gives <i>b</i><sub>OSI</sub>, and the adaptive factor <i>λ</i> (copper) enters all three branches.</figcaption></figure>''')
 
 def trow(cells, tag="td"):
     return "<tr>" + "".join(f"<{tag}>{inline(c)}</{tag}>" for c in cells) + "</tr>"
@@ -273,65 +364,69 @@ T1 = [
     ("$\\Delta t$", "0.125 s", "—", "Update interval"),
     ("$T_w$, $N$", "0.5 s, 1024", "—", "Window length at $f_s=2048$ Hz"),
     ("$\\Omega$", "2–100 Hz, 47 bins", "—", "Analysis set, 58–62 Hz rejected"),
-    ("$\\eta_s$", "0.39", "0.25 s", "Spectral averaging, {eq:ewma}"),
-    ("$\\eta_A$", "0.0575", "—", "Activity threshold, recorded displacement units, {eq:act}"),
-    ("$p_{\\mathrm{floor}}$", "$10^{-3}$", "—", "Input-leverage reference, {eq:lev}"),
+    ("$\\eta_s$", "0.39", "0.25 s", "Spectral averaging, Equations ({n:ewuu})–({n:ewyu})"),
+    ("$\\eta_A$", "4.54", "—", "Activity threshold relative to command noise, {eq:act}"),
+    ("$\\ell_{\\mathrm{floor}}$", "$10^{-3}$", "—", "Input-leverage reference, {eq:lev}"),
     ("$\\mathcal{G}$", "0.5–6, 25 values", "—", "Candidate loop-magnitude changes, {eq:gfit}"),
     ("$\\eta_g$", "0.12", "1.0 s", "Output-power memory, accumulation, {eq:gmem}"),
-    ("$\\eta_r$", "0.27", "0.4 s", "Output-power memory, recovery"),
-    ("$g_{\\mathrm{det}}$", "1.75", "—", "Detection scale, {eq:det}"),
-    ("$\\eta_b$", "0.39", "0.25 s", "Indicator smoothing, {eq:bosi}"),
+    ("$r_g$", "0.73", "0.4 s", "Recovery factor per update, {eq:gdecay}"),
+    ("$g_{\\mathrm{th}}$", "1.75", "—", "Amplification threshold, {eq:det}"),
 ]
 RAW('<figure class="table" id="tab1"><figcaption><b>Table 1.</b> Estimator parameters. Smoothing coefficients follow '
     + inline("$\\eta=1-\\exp(-\\Delta t/\\tau)$") + ' from the listed time constant.</figcaption><table class="border-white/10">'
     + "<thead>" + trow(["Symbol", "Value", "$\\tau$", "Role"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in T1) + "</tbody></table></figure>")
 
-T2 = [
-    ("Direct identification", "Cross-spectrum of $u$ and $y$", "$c$", "Active, coherent, well-excited bins",
-     "Disturbance uncorrelated with $u$"),
-    ("Output-power inference", "$\\bar{p}_{yy}$ relative to initial reference", "$(1-c)\\,d$",
-     "Weak excitation after a detected change", "Stationary disturbance and a magnitude-only change"),
-    ("Initial-state prior", "$H_0$ and $\\lambda_n C$", "$(1-c)(1-d)$", "No measured evidence", "Loop unchanged from the initial state"),
-]
-RAW('<figure class="table" id="tab2"><figcaption><b>Table 2.</b> Evidence sources fused in '
-    + ref("beta") + '.</figcaption><table class="border-white/10">'
-    + "<thead>" + trow(["Branch", "Evidence", "Weight", "Governs in", "Principal assumption"], "th") + "</thead><tbody>"
-    + "".join(trow(r) for r in T2) + "</tbody></table></figure>")
 
-H2("2.6", "Assumptions and limitations", "s6")
+H2("2.5", "Assumptions and limitations", "s5")
 P("The estimator relies on four assumptions, and each one limits how the reported indicator should be interpreted.")
 RAW('<ol class="assumptions">' + "".join(f"<li>{inline(t)}</li>" for t in [
     "The identification branch assumes that the output disturbance is uncorrelated with $u$. Feedback through the "
-    "numerical substructure can violate this assumption and bias $\\hat{T}_n$ even at high coherence [5].",
+    "numerical substructure can violate this assumption and bias $\\hat{T}_n$ even at high coherence.",
     "The output-power branch assumes that the disturbance spectrum is unchanged from the reference period and that the "
     "first 1.5 s represent the initial loop at full gain. A change in disturbance intensity or in the command-driven "
     "response can therefore alter $q_{\\mathrm{obs}}$ without any change in stability.",
     "The factor $g$ is real. The output-power branch therefore captures changes in loop magnitude but not in loop phase.",
-    "Band limitation, trimming, and temporal smoothing mean that $b_{\\mathrm{OSI}}$ is not a guaranteed lower bound on "
-    "the full-frequency margin $b_{\\mathrm{NCF}}$. The reported indicator also follows abrupt changes with a delay set "
-    "by $\\eta_b$.",
+    "Band limitation means that $b_{\\mathrm{OSI}}$ is not a guaranteed lower bound on the full-frequency margin "
+    "$b_{\\mathrm{NCF}}$, because frequencies outside $\\Omega$ are not evaluated.",
 ]) + "</ol>")
 
-REFS = '''<li id="citation1">K. Glover and D. McFarlane, “Robust stabilization of normalized coprime factor plant descriptions with H<sub>∞</sub>-bounded uncertainty,” <i>IEEE Transactions on Automatic Control</i>, vol. 34, no. 8, pp. 821–830, 1989. <a href="https://doi.org/10.1109/9.29424">doi:10.1109/9.29424</a></li>
-<li id="citation2">M. Gomaa, E. D. Patino, J. N. Villamizar, J. W. Condori Uribe, and S. J. Dyke, “An online stability indicator for real-time hybrid simulation emphasizing physical substructure degradation,” author manuscript.</li>
-<li id="citation3">P. D. Welch, “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms,” <i>IEEE Transactions on Audio and Electroacoustics</i>, vol. 15, no. 2, pp. 70–73, 1967. <a href="https://doi.org/10.1109/TAU.1967.1161901">doi:10.1109/TAU.1967.1161901</a></li>
-<li id="citation4">S. W. Roberts, “Control chart tests based on geometric moving averages,” <i>Technometrics</i>, vol. 1, no. 3, pp. 239–250, 1959. <a href="https://doi.org/10.1080/00401706.1959.10489860">doi:10.1080/00401706.1959.10489860</a></li>
-<li id="citation5">U. Forssell and L. Ljung, “Closed-loop identification revisited,” <i>Automatica</i>, vol. 35, no. 7, pp. 1215–1241, 1999. <a href="https://doi.org/10.1016/S0005-1098(99)00022-9">doi:10.1016/S0005-1098(99)00022-9</a></li>
-<li id="citation6">J. S. Bendat and A. G. Piersol, <i>Random Data: Analysis and Measurement Procedures</i>, 4th ed., Hoboken, NJ: Wiley, 2010.</li>'''
+REFS = {  # key -> entry. Cite as {cite:key} or {cite:a,b}. Numbers follow first appearance.
+    "glover": 'K. Glover and D. McFarlane, “Robust stabilization of normalized coprime factor plant descriptions with H<sub>∞</sub>-bounded uncertainty,” <i>IEEE Transactions on Automatic Control</i>, vol. 34, no. 8, pp. 821–830, 1989. <a href="https://doi.org/10.1109/9.29424">doi:10.1109/9.29424</a>',
+    "gomaa": 'M. Gomaa, E. D. Patino, J. N. Villamizar, J. W. Condori Uribe, and S. J. Dyke, “An online stability indicator for real-time hybrid simulation emphasizing physical substructure degradation,” author manuscript.',
+    "welch": 'P. D. Welch, “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms,” <i>IEEE Transactions on Audio and Electroacoustics</i>, vol. 15, no. 2, pp. 70–73, 1967. <a href="https://doi.org/10.1109/TAU.1967.1161901">doi:10.1109/TAU.1967.1161901</a>',
+    "roberts": 'S. W. Roberts, “Control chart tests based on geometric moving averages,” <i>Technometrics</i>, vol. 1, no. 3, pp. 239–250, 1959. <a href="https://doi.org/10.1080/00401706.1959.10489860">doi:10.1080/00401706.1959.10489860</a>',
+    "bendat": 'J. S. Bendat and A. G. Piersol, <i>Random Data: Analysis and Measurement Procedures</i>, 4th ed., Hoboken, NJ: Wiley, 2010.',
+    "blackman": 'R. B. Blackman and J. W. Tukey, “The measurement of power spectra from the point of view of communications engineering — Part I,” <i>The Bell System Technical Journal</i>, vol. 37, no. 1, pp. 185–282, 1958. <a href="https://doi.org/10.1002/j.1538-7305.1958.tb03874.x">doi:10.1002/j.1538-7305.1958.tb03874.x</a>',
+    "dimatteo": 'S. Di Matteo, N. M. Viall, and L. Kepko, “Power spectral density background estimate and signal detection via the multitaper method,” <i>Journal of Geophysical Research: Space Physics</i>, vol. 126, no. 2, e2020JA028748, 2021. <a href="https://doi.org/10.1029/2020JA028748">doi:10.1029/2020JA028748</a>',
+}
 
 body = "\n".join(parts)
-body = re.sub(r"\[(\d)\]", r'[<a href="#citation\1">\1</a>]', body)
 
 # ---------------------------------------------------------------- page
 ARTICLE = f"""
 <h1>2. Online NCF stability indicator framework for adaptive control</h1>
-<p class="meta">Section draft rewritten from manuscript2 for journal submission. Readers are assumed to be familiar with Ref. [<a href="#citation2">2</a>].</p>
+<p class="meta">Section draft rewritten from manuscript2 for journal submission. Readers are assumed to be familiar with Ref. {{cite:gomaa}}.</p>
 {body}
 <section class="references" aria-labelledby="refs"><h2 id="refs">References</h2><ol>
-{REFS}
+{{REFS}}
 </ol></section>
 """
+CITED = []
+def cite(m):
+    for k in m.group(1).split(","):
+        if k not in CITED: CITED.append(k)
+    return "[" + ", ".join(f'<a class="cite" href="#ref-{k}">{CITED.index(k) + 1}</a>' for k in m.group(1).split(",")) + "]"
+ARTICLE = re.sub(r"\{n:(\w+)\}", lambda m: str(EQ[m.group(1)]), ARTICLE)
+ARTICLE = re.sub(r"\{cite:([a-z0-9_,]+)\}", cite, ARTICLE)
+def scholar(t):  # title links to a Google Scholar search, DOI stays plain text
+    t = re.sub(r'<a href="[^"]+">(doi:[^<]+)</a>', r"\1", t)
+    m = re.search(r"“(.+?)(,?)”|<i>(.+?)</i>", t)
+    title = m.group(1) or m.group(3)
+    a = (f'<a href="https://scholar.google.com/scholar?q={quote_plus(re.sub("<[^>]+>", "", title))}" '
+         f'target="_blank" rel="noopener">{title}</a>')
+    return t.replace(m.group(0), f"“{a}{m.group(2)}”" if m.group(1) else f"<i>{a}</i>", 1)
+ARTICLE = ARTICLE.replace("{REFS}", "\n".join(f'<li id="ref-{k}">{scholar(REFS[k])}</li>' for k in CITED))
 
 # ---- content store read by the review app (writing/review-app builds manuscript2_journal.html)
 # usage: python build_manuscript2_journal.py "short note about this revision"
