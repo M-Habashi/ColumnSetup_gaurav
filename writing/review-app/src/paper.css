@@ -96,3 +96,6 @@
   .paper .eq-copy { display: none; }
   .paper mark.cmt { background: none; }
 }
+
+/* Headings land below the top edge when reached from the sections panel. */
+.paper :is(h1, h2) { scroll-margin-top: 24px; }

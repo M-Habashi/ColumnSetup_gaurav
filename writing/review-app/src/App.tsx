@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   GitCompareArrowsIcon,
   HistoryIcon,
+  ListTreeIcon,
   LoaderIcon,
   MessageSquareIcon,
   MessageSquarePlusIcon,
@@ -515,6 +516,39 @@ export function App() {
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p))
   const vName = (i: number) => i === -1 ? "Working copy" : `v${versions[i].v}`
 
+  // Sections outline: the manuscript's headings, rebuilt whenever the displayed document changes.
+  const [outlineOpen, setOutlineOpen] = useState(true)
+  const [outline, setOutline] = useState<{ id: string; num: string; html: string; level: number }[]>([])
+  const [activeSection, setActiveSection] = useState("")
+  useEffect(() => {
+    const doc = docRef.current
+    if (!doc) return
+    const heads = Array.from(doc.querySelectorAll<HTMLElement>("h1, h2"))
+    setOutline(heads.map((h, k) => {
+      if (!h.id) h.id = `sec-${k}`
+      const c = h.cloneNode(true) as HTMLElement
+      const num = c.querySelector(".secno")?.textContent ?? ""
+      c.querySelector(".secno")?.remove()
+      return { id: h.id, num, html: c.innerHTML, level: h.tagName === "H1" ? 1 : 2 }
+    }))
+  }, [version, compareWith, editing])
+  useEffect(() => {
+    const view = paperRef.current?.closest<HTMLElement>("[data-slot=scroll-area-viewport]")
+    if (!view) return
+    const onScroll = () => {
+      const top = view.getBoundingClientRect().top + 120
+      let current = outline[0]?.id ?? ""
+      for (const o of outline) {
+        const el = document.getElementById(o.id)
+        if (el && el.getBoundingClientRect().top <= top) current = o.id
+      }
+      setActiveSection(current)
+    }
+    onScroll()
+    view.addEventListener("scroll", onScroll, { passive: true })
+    return () => view.removeEventListener("scroll", onScroll)
+  }, [outline])
+
   // Notices fade out on their own.
   useEffect(() => {
     if (!manuscriptNotice) return
@@ -575,6 +609,11 @@ export function App() {
 
       <header className="relative z-30 order-first flex h-14 shrink-0 items-center gap-3 border-b bg-background px-3 print:hidden">
         <div className="flex min-w-0 items-center gap-3">
+          <Hint text="Sections">
+            <Toggle aria-label="Sections" pressed={outlineOpen} onPressedChange={setOutlineOpen}>
+              <ListTreeIcon />
+            </Toggle>
+          </Hint>
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
             <FileTextIcon className="size-4" />
           </span>
@@ -648,6 +687,42 @@ export function App() {
           </Hint>
         </div>
       </header>
+
+      {/* Sections float over the left edge, mirroring the right panel, and never move the manuscript. */}
+      <nav
+        aria-label="Sections"
+        aria-hidden={!outlineOpen}
+        inert={!outlineOpen}
+        className={cn(
+          "absolute top-[4.25rem] left-3 z-20 flex max-h-[calc(100%-5.5rem)] w-60 flex-col transition-[opacity,translate] duration-300 ease-out print:hidden",
+          outlineOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-6 opacity-0"
+        )}
+      >
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-popover/95 shadow-xl backdrop-blur-md">
+          <div className="flex h-11 shrink-0 items-center border-b px-4 text-sm font-medium">Sections</div>
+          <ScrollArea className="min-h-0">
+            <ol className="flex flex-col gap-0.5 p-2">
+              {outline.map((o) => (
+                <li key={o.id}>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById(o.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    className={cn(
+                      "relative flex w-full items-baseline gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] leading-snug text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      o.level === 1 && "font-title text-[14px] text-foreground",
+                      activeSection === o.id && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    {activeSection === o.id && <span className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-primary" />}
+                    {o.num && <span className="w-6 shrink-0 tabular-nums">{o.num}</span>}
+                    <span className="min-w-0" dangerouslySetInnerHTML={{ __html: o.html }} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </ScrollArea>
+        </div>
+      </nav>
 
       {/* Comments and history slide in over the right edge without moving the manuscript. */}
       <aside

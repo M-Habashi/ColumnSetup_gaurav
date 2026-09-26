@@ -1,9 +1,0 @@
-{
-  "completed_writer_trials": 15,
-  "fresh_evaluators": 8,
-  "packet_or_isolation_content_faults": 0,
-  "final_version_trials": 5,
-  "final_mechanical_faults": 0,
-  "delivered_guide_matches_tested_snapshot": true,
-  "delivered_dictionary_matches_tested_snapshot": true
-}

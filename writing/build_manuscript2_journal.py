@@ -56,7 +56,7 @@ RAW('<p class="lead">' + inline(
     "with an adequate margin as the specimen degrades while retaining as much tracking performance as possible. "
     "This section discusses the framework evaluation in detail.") + '</p>')
 
-H2("2.1", "Framework Architecture", "s1")
+H2("3.1", "Framework Architecture", "s1")
 P("In the hybrid simulation block diagram shown in Figure 1, the numerical substructure computes the desired displacement $d(t)$ "
   "from the ground acceleration and measured force $f_m(t)$. To compensate for transfer-system lag and improve tracking, "
   "a phase-lead compensator receives $d(t)$ and produces the reference $u(t)$. The outer controller $C(s)$ takes the "
@@ -132,7 +132,7 @@ P('As the specimen changes during a hybrid simulation, the loop $L(j\\omega)$ ch
   'complementary branches, direct identification $b_{\\mathrm{id}}$, output-power inference $b_{\\mathrm{pow}}$ '
   'and prior identification of the initial state $b_0$, which the following sections develop in turn.')
 
-H2("2.2", "Direct identification branch, " + inline("$b_{\\mathrm{id}}$"), "s2")
+H2("3.2", "Direct identification branch, " + inline("$b_{\\mathrm{id}}$"), "s2")
 P('Identifying the closed-loop transfer function requires the autospectrum of reference $u(t)$ and the cross '
   'spectrum of measured actuator displacement $y(t)$ with $u(t)$. The autospectrum of $y(t)$ is also needed to '
   'calculate coherence, which helps set the confidence weight at each frequency. A moving window lets these '
@@ -210,9 +210,9 @@ P("where $\\ell_{\\mathrm{floor}}$ sets the relative power at which a bin receiv
   "$\\ell_{\\mathrm{floor}}$ receive nearly full weight. The third factor is the coherence, which completes the weight")
 E("conf", r"w_{\mathrm{id},n}(\omega)=A_n\,\gamma_n^{2}(\omega)\,\ell_n(\omega).",
   "w_(\"id\",n) (ω)=A_n γ_n^2 (ω) ℓ_n (ω).")
-P("This weight sets the share of this branch in the fusion of Section 2.4.")
+P("This weight sets the share of this branch in the fusion of Section 3.4.")
 
-H2("2.3", "Output-power inference branch", "s3")
+H2("3.3", "Output-power inference branch", "s3")
 P("Direct identification fails when the command is weak or does not excite the relevant frequency band. Even then, a "
   "degrading specimen can still drive the system toward instability. However, the change in output power relative to "
   "the initial state can reveal loop amplification even at frequencies without strong excitation. This change therefore "
@@ -268,7 +268,7 @@ E("gdecay", r"\log\hat{g}_{\mathrm{s},n}(\omega)=r_g\,\log\hat{g}_{\mathrm{s},n-
 P("where $r_g$ is the recovery factor, with $0<r_g<1$. The reduction stops once the output power rises above its "
   "initial reference. As a result, the output power itself limits how far the amplification is released.")
 
-H2("2.4", "Per-frequency fusion and reported indicator", "s4")
+H2("3.4", "Per-frequency fusion and reported indicator", "s4")
 P("The third branch is the margin of the prior identification of the initial state, evaluated with the current "
   "adaptive factor:")
 E("b0", r"b_{0,n}=b_{\mathrm{NCF}}\big(\lambda_nL_0\big).",
@@ -292,9 +292,28 @@ P("where $b_{\\mathrm{OSI},n}$ is the NCF OSI margin at update $n$, and $\\Omega
   "evaluating the NCF OSI. The adaptive law then uses it to update $\\lambda_{n+1}$. Figure 2 summarizes one complete "
   "update, from the measured signals to the adaptive factor, and Table 1 lists the estimator parameters.")
 
+H2("3.5", "Adaptive factor update", "s5")
+P("The NCF OSI estimated in Section 3.4 provides the margin needed to adjust the adaptive controller factor "
+  "$\\lambda$. When the margin falls below a specified target, $\\lambda$ is reduced to maintain the stability "
+  "of the system. This reduction is intended to counteract the gain amplification caused by specimen degradation, "
+  "as discussed earlier in Section 2.")
+P("To achieve this while retaining as much tracking performance as possible, $\\lambda$ is updated from the "
+  "difference between the estimated margin and a target margin:")
+E("lerr", r"e_n=b_{\mathrm{OSI},n}-b_{\mathrm{tar}},",
+  "e_n=b_(\"OSI\",n)−b_(\"tar\"),")
+P("where $e_n$ is the margin error, and $b_{\\mathrm{tar}}$ is the target NCF margin. A negative error indicates "
+  "insufficient margin, and a positive error indicates spare margin. The adaptive factor is then updated "
+  "multiplicatively:")
+E("lam", r"\lambda_{n+1}=\lambda_n\exp\left(\kappa\,e_n\right),\qquad \lambda_{n+1}\in[\lambda_{\min},1],",
+  "λ_(n+1)=λ_n exp(κ e_n),  λ_(n+1)∈[λ_\"min\",1],")
+P("where $\\kappa$ is the adaptation gain, and $\\lambda_{\\min}$ is the smallest permitted adaptive factor. "
+  "Consequently, $\\lambda$ decreases while the margin is below the target and recovers toward one once spare margin "
+  "returns. The multiplicative form keeps $\\lambda$ positive and makes each change proportional to its current value. "
+  "The upper bound $\\lambda=1$ restores the full outer controller.")
+
 RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 575">
 <title id="f2t">Structure of one estimator update</title>
-<desc id="f2d">Windowed displacements u and y feed a windowed FFT that forms the averaged autospectra and cross spectrum. These spectra feed the direct identification and output-power branches. A third branch is the initial-state prior. The adaptive factor lambda, shown in green, feeds all three branches. The three margin curves are fused per frequency bin with the weights w_id, w_pow and w_0, and the minimum of the fused curve over the analysis band gives b_OSI, which updates the adaptive factor lambda.</desc>
+<desc id="f2d">Windowed displacements u and y feed a windowed FFT that forms the averaged autospectra and cross spectrum. These spectra feed the direct identification and output-power branches. A third branch is the initial-state prior. The adaptive factor lambda, shown in green, feeds the output-power and initial-state prior branches. The three margin curves are fused per frequency bin with the weights w_id, w_pow and w_0, and the minimum of the fused curve over the analysis band gives b_OSI, which updates the adaptive factor lambda.</desc>
 <defs>
 <marker id="a2" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#000"/></marker>
 <marker id="a2l" markerWidth="8" markerHeight="8" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#2A9A48"/></marker>
@@ -309,8 +328,8 @@ RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 
 <rect x="700" y="320" width="180" height="110" rx="10"/>
 
 <path d="M2 211.7 H38" marker-end="url(#a2)"/>
-<path d="M230 230 H280 V66.7 H338" marker-end="url(#a2)"/>
-<path d="M280 211.7 H304 A6 6 0 0 1 316 211.7 H338" marker-end="url(#a2)"/>
+<path d="M230 230 H280 V85 H338" marker-end="url(#a2)"/>
+<path d="M280 211.7 H338" marker-end="url(#a2)"/>
 <path d="M610 85 H655 V202.5 H698" marker-end="url(#a2)"/>
 <path d="M610 230 H698" marker-end="url(#a2)"/>
 <path d="M610 375 H655 V257.5 H698" marker-end="url(#a2)"/>
@@ -322,13 +341,12 @@ RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 
 <g fill="none" stroke="#2A9A48" stroke-width="1.8">
 <rect x="340" y="465" width="270" height="100" rx="10" fill="#EAF7EE"/>
 <path d="M940 375 V515 H612" marker-end="url(#a2l)"/>
-<path d="M340 515 H310 V103.3"/>
-<path d="M310 103.3 H338" marker-end="url(#a2l)"/>
+<path d="M340 515 H310 V248.3"/>
 <path d="M310 248.3 H338" marker-end="url(#a2l)"/>
 <path d="M310 375 H338" marker-end="url(#a2l)"/>
 </g>
 <circle cx="280" cy="211.7" r="3.5" fill="#000"/><circle cx="940" cy="375" r="3.5" fill="#000"/>
-<circle cx="310" cy="248.3" r="3" fill="#2A9A48"/><circle cx="310" cy="375" r="3" fill="#2A9A48"/>
+<circle cx="310" cy="375" r="3" fill="#2A9A48"/>
 <g text-anchor="middle" dominant-baseline="central" style="fill:#000">
 <text x="14" y="197" class="it" style="font-size:22px">u</text>
 <text x="14" y="234" class="it" style="font-size:22px;fill:#007CA8">y</text>
@@ -352,7 +370,7 @@ RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 
 <text x="790" y="404" style="font-size:15px;fill:#6b6b6b">Equation ({n:bosi})</text>
 <text x="475" y="487" style="font-size:20px">Adaptive factor</text>
 <text x="475" y="515" class="it" style="font-size:19px">λ</text>
-<text x="475" y="543" style="font-size:15px;fill:#6b6b6b">Equation (xx)</text>
+<text x="475" y="543" style="font-size:15px;fill:#6b6b6b">Equation ({n:lam})</text>
 <text x="634" y="70" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">id</tspan></text>
 <text x="640" y="215" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">pow</tspan></text>
 <text x="634" y="360" class="it" style="font-size:18px">w<tspan style="font-size:12px;font-style:normal" dy="5">0</tspan></text>
@@ -374,6 +392,9 @@ T1 = [
     ("$\\mathcal{G}$", "0.5–6, 25 values", "—", "Candidate loop-magnitude changes, {eq:gfit}"),
     ("$\\eta_g$", "0.12", "1.0 s", "Output-power memory, accumulation, {eq:gmem}"),
     ("$r_g$", "0.73", "0.4 s", "Recovery factor per update, {eq:gdecay}"),
+    ("$b_{\\mathrm{tar}}$", "0.55", "—", "Target NCF margin, Equation ({n:lerr})"),
+    ("$\\kappa$", "0.625", "—", "Adaptation gain per update, Equation ({n:lam})"),
+    ("$\\lambda_{\\min}$", "0.20", "—", "Smallest adaptive factor, Equation ({n:lam})"),
     ("$g_{\\mathrm{th}}$", "1.75", "—", "Amplification threshold, {eq:det}"),
 ]
 RAW('<figure class="table" id="tab1"><figcaption><b>Table 1.</b> Estimator parameters. Smoothing coefficients follow '
@@ -382,7 +403,7 @@ RAW('<figure class="table" id="tab1"><figcaption><b>Table 1.</b> Estimator param
     + "".join(trow(r) for r in T1) + "</tbody></table></figure>")
 
 
-H2("2.5", "Assumptions and limitations", "s5")
+H2("3.6", "Assumptions and limitations", "s6")
 P("The estimator relies on four assumptions, and each one limits how the reported indicator should be interpreted.")
 RAW('<ol class="assumptions">' + "".join(f"<li>{inline(t)}</li>" for t in [
     "The identification branch assumes that the output disturbance is uncorrelated with $u$. Feedback through the "
@@ -409,7 +430,7 @@ body = "\n".join(parts)
 
 # ---------------------------------------------------------------- page
 ARTICLE = f"""
-<h1>2. Online NCF stability indicator framework for adaptive control</h1>
+<h1>3. Online NCF stability indicator framework for adaptive control</h1>
 <p class="meta">Section draft rewritten from manuscript2 for journal submission. Readers are assumed to be familiar with Ref. {{cite:gomaa}}.</p>
 {body}
 <section class="references" aria-labelledby="refs"><h2 id="refs">References</h2><ol>
