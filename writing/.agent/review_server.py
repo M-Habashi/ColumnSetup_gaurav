@@ -1,6 +1,6 @@
 """Local server for the manuscript review page.
 
-Serves this folder and stores review comments per version in comments/v<N>.json,
+Serves writing/ (the review page) and stores review comments per version in comments/v<N>.json,
 so the page saves automatically without any file picker.
 Run: python review_server.py   (or double-click open_review.cmd)
 """
@@ -15,6 +15,7 @@ import webbrowser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)  # writing/, which holds the review page
 COMMENTS = os.path.join(HERE, "comments")
 VERSIONS = os.path.join(HERE, "manuscript2_journal_versions.js")
 DRAFT = os.path.join(HERE, "manuscript2_journal_draft.json")
@@ -62,7 +63,7 @@ def read_draft(versions):
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=HERE, **kwargs)
+        super().__init__(*args, directory=ROOT, **kwargs)
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")

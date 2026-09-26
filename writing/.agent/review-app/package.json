@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node -e \"require('fs').copyFileSync('dist/index.html','../manuscript2_journal.html')\"",
+    "build": "tsc -b && vite build && node -e \"require('fs').copyFileSync('dist/index.html','../../manuscript2_journal.html')\"",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",

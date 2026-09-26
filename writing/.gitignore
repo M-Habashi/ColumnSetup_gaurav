@@ -1,0 +1,6 @@
+__pycache__/
+~$*
+~WRL*.tmp
+*.tmp
+.agent/review-app/dist/
+.agent/review-app/node_modules/

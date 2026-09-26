@@ -5,7 +5,7 @@ import { defineConfig } from "vite"
 import { viteSingleFile } from "vite-plugin-singlefile"
 
 // Builds one self-contained HTML file so the review page opens straight from disk.
-// The manuscript content is loaded at runtime from ../manuscript2_journal_versions.js.
+// The manuscript content is loaded at runtime from writing/.agent/manuscript2_journal_versions.js.
 export default defineConfig({
   base: "./",
   publicDir: false,

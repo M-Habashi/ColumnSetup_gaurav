@@ -51,7 +51,7 @@ export async function writeManuscript(action: "draft" | "versions" | "restore", 
 export async function fetchVersions(): Promise<string | null> {
   if (!location.protocol.startsWith("http")) return null
   try {
-    const r = await fetch("manuscript2_journal_versions.js", { cache: "no-store" })
+    const r = await fetch(".agent/manuscript2_journal_versions.js", { cache: "no-store" })
     return r.ok ? r.text() : null
   } catch {
     return null

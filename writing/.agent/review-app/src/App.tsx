@@ -637,7 +637,7 @@ export function App() {
                 ? "Not saving to disk. Open the page with open_review.cmd"
                 : save === "saving"
                   ? "Saving…"
-                  : `Saved to writing/comments/v${version?.v}.json`
+                  : `Saved to writing/.agent/comments/v${version?.v}.json`
             }
           >
             <span
