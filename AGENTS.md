@@ -44,10 +44,10 @@
 
 ## Paper 2 writing context
 
-- The Paper 2 context file is `writing/journal_paper.md`.
+- The Paper 2 context file is `writing/md/journal_paper.md`.
 - When a prompt concerns Paper 2, its research question, literature,
   manuscript, equations, figures, tables, results interpretation, citations,
-  reviews, or submission, read `writing/journal_paper.md` before acting.
+  reviews, or submission, read `writing/md/journal_paper.md` before acting.
 - Do not read it for unrelated MATLAB, Simulink, coding, or general project
   prompts unless the user connects the task to Paper 2.
 - Treat `journal_paper.md` as paper-specific context. Keep computational truth

@@ -10,7 +10,7 @@ The workflow is active when `manuscript2_journal.html` contains `<meta name="rev
 | `manuscript2_journal_draft.json` | The user's working copy, including unsaved edits. | the page |
 | `comments/v<N>.json` | The user's comments on version N (quote, prefix, suffix, text). | the page |
 | `../manuscript2_journal.html` | The review page, kept in `writing/`. Built from `review-app/` (`pnpm build`) only for UI changes. | never by hand |
-| `review_server.py`, `../open_review.cmd` | Local server at http://127.0.0.1:8765/manuscript2_journal.html. It saves comments and edits. | — |
+| `review_server.py`, `open_review.cmd` | Local server at http://127.0.0.1:8765/manuscript2_journal.html. It saves comments and edits. | — |
 
 ## Every task starts with
 `python writing/.agent/review_status.py`
@@ -32,4 +32,4 @@ It reports the latest version, **saved** user edits (trailing versions with auth
 - Comments belong to the version they were made on. Answer them in the next version. Never delete comment files or versions unless asked.
 - Never edit the versions file, the working copy or the comment files by hand.
 - If a comment asks to discuss first, propose options and wait.
-- Write the text by `writing.md`. Never edit `writing.md`, `write.md` or `scientific_expressions.md` without the user's permission.
+- Write the text by `../md/writing.md`. Never edit the guides in `../md/` (`writing.md`, `write.md`, `scientific_expressions.md`, `journal_paper.md`) without the user's permission.

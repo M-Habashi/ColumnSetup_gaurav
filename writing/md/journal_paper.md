@@ -23,7 +23,7 @@ TBD. State the paper's main contribution in one or two precise sentences.
 
 ## Writing style
 
-Follow `writing/writing.md` for every sentence written for Paper 2.
+Follow `writing/md/writing.md` for every sentence written for Paper 2.
 
 ## Relationship to Paper 1
 

@@ -1,6 +1,6 @@
 # Reference evidence archive
 
-Evidence records for manuscript citations. Writing instructions are maintained in [write.md](write.md).
+Evidence records for manuscript citations. Writing instructions are maintained in [write.md](../md/write.md).
 
 ## Welch1967 — manuscript reference [3]
 
