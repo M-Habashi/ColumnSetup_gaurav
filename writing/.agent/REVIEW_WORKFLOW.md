@@ -32,4 +32,4 @@ It reports the latest version, **saved** user edits (trailing versions with auth
 - Comments belong to the version they were made on. Answer them in the next version. Never delete comment files or versions unless asked.
 - Never edit the versions file, the working copy or the comment files by hand.
 - If a comment asks to discuss first, propose options and wait.
-- Write the text by `../md/writing.md`. Never edit the guides in `../md/` (`writing.md`, `write.md`, `scientific_expressions.md`, `journal_paper.md`) without the user's permission.
+- Write the text by `../md/writing_guide.md` and `../md/paper2.md`. Never edit the guides in `../md/` (`paper2.md`, `paper1.md`, `writing_guide.md`) without the user's permission.

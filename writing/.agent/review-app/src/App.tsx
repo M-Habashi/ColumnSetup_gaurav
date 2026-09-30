@@ -694,12 +694,12 @@ export function App() {
         aria-hidden={!outlineOpen}
         inert={!outlineOpen}
         className={cn(
-          "absolute top-[4.25rem] left-3 z-20 flex max-h-[calc(100%-5.5rem)] w-60 flex-col transition-[opacity,translate] duration-300 ease-out print:hidden",
+          "absolute top-[4.25rem] left-3 z-20 flex max-h-[calc(100%-5.5rem)] w-[360px] flex-col transition-[opacity,translate] duration-300 ease-out print:hidden",
           outlineOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-6 opacity-0"
         )}
       >
         <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-popover/95 shadow-xl backdrop-blur-md">
-          <div className="flex h-11 shrink-0 items-center border-b px-4 text-sm font-medium">Sections</div>
+          <div className="flex h-12 shrink-0 items-center border-b px-4 text-sm font-medium">Sections</div>
           <ScrollArea className="min-h-0">
             <ol className="flex flex-col gap-0.5 p-2">
               {outline.map((o) => (

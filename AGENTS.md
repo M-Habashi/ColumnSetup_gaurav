@@ -44,13 +44,17 @@
 
 ## Paper 2 writing context
 
-- The Paper 2 context file is `writing/md/journal_paper.md`.
+- The writing guides are in `writing/md/`: `paper2.md` (Paper 2 context,
+  system, notation, wording), `paper1.md` (Paper 1 findings and vocabulary),
+  and `writing_guide.md` (prose, citation, and review rules).
 - When a prompt concerns Paper 2, its research question, literature,
   manuscript, equations, figures, tables, results interpretation, citations,
-  reviews, or submission, read `writing/md/journal_paper.md` before acting.
-- Do not read it for unrelated MATLAB, Simulink, coding, or general project
+  reviews, or submission, read `writing/md/paper2.md` before acting. Before
+  drafting or reviewing manuscript prose, also read `paper1.md` and
+  `writing_guide.md`.
+- Do not read them for unrelated MATLAB, Simulink, coding, or general project
   prompts unless the user connects the task to Paper 2.
-- Treat `journal_paper.md` as paper-specific context. Keep computational truth
+- Treat `paper2.md` as paper-specific context. Keep computational truth
   in the relevant files under `main/` and verify paper claims against those
   sources.
 - For generic requests about the OSI HTML, SOL-OSI HTML, "the HTML," or the

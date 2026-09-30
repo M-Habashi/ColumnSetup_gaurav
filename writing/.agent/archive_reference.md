@@ -1,6 +1,6 @@
 # Reference evidence archive
 
-Evidence records for manuscript citations. Writing instructions are maintained in [write.md](../md/write.md).
+Evidence records for manuscript citations. Writing instructions are maintained in [writing_guide.md](../md/writing_guide.md).
 
 ## Welch1967 — manuscript reference [3]
 
@@ -39,6 +39,18 @@ Evidence records for manuscript citations. Writing instructions are maintained i
 **Application check — 2026-09-25:** Rechecked the original recurrence and its expansion on p. 240, and compared them with `main/control_and_HS/OSI/sol_osi.m`, lines 188–196. At each update, the previous spectral average is multiplied by (1 - eta_s) and eta_s times the new spectrum is added. Thus, the contribution of earlier data decays at each subsequent update. With first-window initialization, that initial spectrum can still outweigh the newest spectrum during startup. For example, eta_s = 0.39 gives weights 0.61 and 0.39 at the second complete window. Decaying past contributions is the property used here. Roberts's control-chart detection results do not establish tracking or variance performance for this spectral adaptation.
 
 **Origin check:** The introduction credits a graphical suggestion to J. W. Tukey and cites Roberts's 1958 zone-test paper. This supports citing Roberts's published recurrence, not claiming sole or earliest invention.
+
+## WuWang2020 — power-based discrimination of operating regime (manuscript key `wu`)
+
+**Source:** H. Wu, X. Wang (2020), “A mode-adaptive power-angle control method for transient stability enhancement of virtual synchronous generators.” IEEE Journal of Emerging and Selected Topics in Power Electronics 8(2), 1034–1049. [DOI](https://doi.org/10.1109/JESTPE.2020.2976791). The metadata was checked against Crossref.
+
+**Verified:** Abstract only (2026-09-26). The open accepted manuscript at vbn.aau.dk sits behind a browser challenge.
+
+**Exact quotation — abstract:**
+
+> In this approach, the positive-feedback mode of the power-angle control of the VSG is detected and adaptively switched to the negative-feedback mode after large disturbances.
+
+**Citation role:** Section 3.3 says the output-power branch “is inspired by” this work. The author supplied the specific claim, that they “used active-power deviation and its rate of change to discriminate changes in the transient operating regime”, and asked for it to be used without further checking (2026-09-26). That detail has not been verified against the body of the paper.
 
 ## BlackmanTukey1958 — Hann window (manuscript key `blackman`)
 
@@ -90,7 +102,7 @@ The preceding sentences explain the compromise between concentrating the main lo
 
 ## Published examples of citation use
 
-The following records support the five examples in write.md. Each relevant PDF page was rendered and visually checked on 2026-09-25. The claims verified here concern what the citing article says and how it uses the citation. The cited predecessors have not been independently verified for these examples. Their scientific claims are not evidence for Paper 2. Short complementary quotations below and the excerpts in write.md together stay within 25 quoted words per source.
+The following records support the five examples in writing_guide.md. Each relevant PDF page was rendered and visually checked on 2026-09-25. The claims verified here concern what the citing article says and how it uses the citation. The cited predecessors have not been independently verified for these examples. Their scientific claims are not evidence for Paper 2. Short complementary quotations below and the excerpts in write.md together stay within 25 quoted words per source.
 
 ### Shrestha2013
 

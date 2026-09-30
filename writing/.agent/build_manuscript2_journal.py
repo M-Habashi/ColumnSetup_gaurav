@@ -37,7 +37,7 @@ RAW = parts.append
 
 # ---------------------------------------------------------------- content
 RAW('<p class="lead">' + inline(
-    "The NCF online stability indicator (NCF OSI), proposed by Gomaa et al. {cite:gomaa}, "
+    "The NCF online stability indicator (NCF OSI), proposed by {citet:gomaa}, "
     "quantifies the robustness of the closed-loop system as the physical plant changes during the experiment. The study "
     "showed that specimen stiffness degradation can drive the outer controller loop toward instability through a "
     "gain-amplification mechanism. In this study, we extend the analytical results to experimental implementation, "
@@ -47,7 +47,7 @@ RAW('<p class="lead">' + inline(
     "substructure and the measured actuator displacement by combining three estimator branches at each frequency, "
     "each weighted by the confidence in its output. The first is direct identification, $b_{\\mathrm{id}}$, which "
     "estimates the closed-loop transfer function of the outer controller loop from the desired displacement $u(t)$ "
-    "to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator {cite:bendat}. The second is "
+    "to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator {citep:bendat}. The second is "
     "output-power inference, $b_{\\mathrm{pow}}$, which can detect loop amplification at frequencies that cannot "
     "be reliably identified. This branch compares the output power measured during the experiment against the "
     "reference recorded before the excitation. The third is the prior identification of the initial state, $b_{0}$, "
@@ -123,7 +123,7 @@ E("L", r"L(s,\lambda,k)=\lambda\,C(s)\,H(s,k),", "L(s,λ,k)=λ C(s) H(s,k)")
 E("T", r"T(s,\lambda,k)=\frac{Y(s)}{U(s)}=\frac{L(s,\lambda,k)}{1+L(s,\lambda,k)},",
   "T(s,λ,k)=(Y(s))/(U(s))=(L(s,λ,k))/(1+L(s,λ,k))")
 P('Here $U(s)$ and $Y(s)$ are the Laplace transforms of $u(t)$ and $y(t)$. The NCF stability margin '
-  'of the outer controller loop is evaluated for the loop $L$ under unity feedback {cite:glover}:')
+  'of the outer controller loop is evaluated for the loop $L$ under unity feedback {citep:glover}:')
 E("bncf", r"b_{\mathrm{NCF}}(L)=\inf_{\omega}\frac{|1+L(j\omega)|}{\sqrt{2\big(1+|L(j\omega)|^{2}\big)}}.",
   "b_(\"NCF\") (L)=\"inf\"┬ω  (|1+L(jω)|)/√(2(1+|L(jω)|^2)).")
 P('As the specimen changes during a hybrid simulation, the loop $L(j\\omega)$ changes with it. {eq:bncf} '
@@ -146,10 +146,10 @@ E("dftu", r"U_n(\omega_m)=\sum_{r=0}^{N-1}w[r]\,u_n[r]\,e^{-j2\pi mr/N},",
 E("dfty", r"Y_n(\omega_m)=\sum_{r=0}^{N-1}w[r]\,y_n[r]\,e^{-j2\pi mr/N},",
   "Y_n (ω_m)=∑_(r=0)^(N−1)▒〖w[r] y_n [r] e^(−j2πmr/N)〗,")
 P('where $u_n[r]$ and $y_n[r]$ are the samples of window $n$, and $\\omega_m=2\\pi mf_s/N$ is the angular frequency of '
-  'bin $m$. The samples of each window are weighted by the Hann window presented by Blackman and Tukey {cite:blackman}:')
+  'bin $m$. The samples of each window are weighted by the Hann window presented by {citet:blackman}:')
 E("hann", r"w[r]=\frac{1}{2}\left[1-\cos\!\left(\frac{2\pi r}{N-1}\right)\right].",
   "w[r]=1/2 [1−cos((2πr)/(N−1))].")
-P('Welch {cite:welch} proposed estimating the power spectrum by averaging, with equal weight, the squared Fourier '
+P('{citet:welch} proposed estimating the power spectrum by averaging, with equal weight, the squared Fourier '
   'magnitudes of overlapping windowed segments of a record. Cross spectra are estimated in the same way from products '
   'of paired Fourier transforms, with one transform conjugated. In the present study, the plant changes as the '
   'specimen degrades, so recent windows should carry more weight than earlier ones. Each window therefore provides '
@@ -157,7 +157,7 @@ P('Welch {cite:welch} proposed estimating the power spectrum by averaging, with 
 E("puu", r"p_{uu,n}(\omega_m)=|U_n(\omega_m)|^{2},", "p_(uu,n) (ω_m)=|U_n (ω_m)|^2,")
 E("pyy", r"p_{yy,n}(\omega_m)=|Y_n(\omega_m)|^{2},", "p_(yy,n) (ω_m)=|Y_n (ω_m)|^2,")
 E("pyu", r"p_{yu,n}(\omega_m)=Y_n(\omega_m)\,U_n^{*}(\omega_m),", "p_(yu,n) (ω_m)=Y_n (ω_m) U_n^* (ω_m),")
-P('where the superscript $*$ denotes the complex conjugate. These raw estimates are averaged with the geometric moving average proposed by Roberts {cite:roberts}, which '
+P('where the superscript $*$ denotes the complex conjugate. These raw estimates are averaged with the geometric moving average proposed by {citet:roberts}, which '
   'updates an average from its previous value and the newest observation. Earlier spectra are retained, but their '
   'contributions decay as new windows arrive. This reduces scatter between updates while still following changes in '
   'the plant. The first complete window initializes the average. At each subsequent update, $\\eta_s$ '
@@ -171,7 +171,7 @@ E("ewyu", r"\bar{p}_{yu,n}(\omega_m)=(1-\eta_s)\,\bar{p}_{yu,n-1}(\omega_m)+\eta
 P('The NCF OSI is evaluated over $\\Omega$, the set of frequencies considered in the analysis.')
 
 P("At each selected frequency, the loop response can be identified directly from the reference $u$ and the measured response $y$. The averaged "
-  "spectra give the $H_1$ estimate of the closed-loop frequency response {cite:bendat} and the magnitude-squared coherence")
+  "spectra give the $H_1$ estimate of the closed-loop frequency response {citep:bendat} and the magnitude-squared coherence")
 E("that", r"\hat{T}_n(j\omega)=\frac{\bar{p}_{yu,n}(\omega)}{\bar{p}_{uu,n}(\omega)},",
   "T̂_n (jω)=(p̄_(yu,n) (ω))/(p̄_(uu,n) (ω)),")
 E("coh", r"\gamma_n^{2}(\omega)=\frac{|\bar{p}_{yu,n}(\omega)|^{2}}{\bar{p}_{uu,n}(\omega)\,\bar{p}_{yy,n}(\omega)}.",
@@ -180,7 +180,7 @@ P("Inverting {eq:T} gives the identified loop:")
 E("lhat", r"\hat{L}_n(j\omega)=\frac{\hat{T}_n(j\omega)}{1-\hat{T}_n(j\omega)}.",
   "L̂_n (jω)=(T̂_n (jω))/(1−T̂_n (jω)).")
 P("Here, the identified loop is smoothed with the running median over neighbouring frequencies discussed by "
-  "Di Matteo et al. {cite:dimatteo}, so the median is taken over each frequency and its two neighbours. The smoothed "
+  "{citet:dimatteo}, so the median is taken over each frequency and its two neighbours. The smoothed "
   "loop $\\hat{L}_{\\mathrm{s},n}$ is hence given by")
 E("lmed", r"\hat{L}_{\mathrm{s},n}(j\omega_m)=\underset{i\in\{m-1,\,m,\,m+1\}}{\operatorname{median}}\;\hat{L}_n(j\omega_i).",
   "L̂_(\"s\",n) (jω_m)=\"median\"┬(i∈{m−1,m,m+1})  L̂_n (jω_i).")
@@ -216,14 +216,16 @@ H2("3.3", "Output-power inference branch", "s3")
 P("Direct identification fails when the command is weak or does not excite the relevant frequency band. Even then, a "
   "degrading specimen can still drive the system toward instability. However, the change in output power relative to "
   "the initial state can reveal loop amplification even at frequencies without strong excitation. This change therefore "
-  "provides a second source of evidence for a reduction in the stability margin. To quantify this change, the averaged "
+  "provides a second source of evidence for a reduction in the stability margin. This method is inspired by {citet:wu}, "
+  "who used active-power deviation and its rate of change to discriminate changes in the transient operating regime "
+  "of a virtual synchronous generator. To quantify this change, the averaged "
   "output power is compared with its initial reference:")
 E("qobs", r"q_{\mathrm{obs},n}(\omega)=\frac{\bar{p}_{yy,n}(\omega)}{p_{yy,0}(\omega)},",
   "q_(\"obs\",n) (ω)=(p̄_(yy,n) (ω))/(p_(yy,0) (ω)),")
 P("where $q_{\\mathrm{obs},n}$ is the observed power ratio, which measures the change in output power at each frequency "
   "relative to the initial state, $\\bar{p}_{yy,n}$ is the averaged autospectrum of $y$ from {eq:ewyy}, and $p_{yy,0}$ is "
   "the reference autospectrum recorded in the initial state before the excitation, with $\\lambda=1$.")
-P("According to the observation discussed in Gomaa et al. {cite:gomaa} and the experimental verification presented in "
+P("According to the observation discussed in {citet:gomaa} and the experimental verification presented in "
   "Section xx, the change due to specimen degradation is assumed to be an amplification $g$ of the open-loop gain. "
   "Consequently, a candidate loop $\\lambda_n g L_0$ predicts the ratio")
 E("qmod", r"q_{\mathrm{mod},n}(\omega,g)=\left|\frac{1+L_0(j\omega)}{1+\lambda_n g\,L_0(j\omega)}\right|^{2},",
@@ -416,14 +418,15 @@ RAW('<ol class="assumptions">' + "".join(f"<li>{inline(t)}</li>" for t in [
     "$b_{\\mathrm{NCF}}$, because frequencies outside $\\Omega$ are not evaluated.",
 ]) + "</ol>")
 
-REFS = {  # key -> entry. Cite as {cite:key} or {cite:a,b}. Numbers follow first appearance.
-    "glover": 'K. Glover and D. McFarlane, “Robust stabilization of normalized coprime factor plant descriptions with H<sub>∞</sub>-bounded uncertainty,” <i>IEEE Transactions on Automatic Control</i>, vol. 34, no. 8, pp. 821–830, 1989. <a href="https://doi.org/10.1109/9.29424">doi:10.1109/9.29424</a>',
-    "gomaa": 'M. Gomaa, E. D. Patino, J. N. Villamizar, J. W. Condori Uribe, and S. J. Dyke, “An online stability indicator for real-time hybrid simulation emphasizing physical substructure degradation,” author manuscript.',
-    "welch": 'P. D. Welch, “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms,” <i>IEEE Transactions on Audio and Electroacoustics</i>, vol. 15, no. 2, pp. 70–73, 1967. <a href="https://doi.org/10.1109/TAU.1967.1161901">doi:10.1109/TAU.1967.1161901</a>',
-    "roberts": 'S. W. Roberts, “Control chart tests based on geometric moving averages,” <i>Technometrics</i>, vol. 1, no. 3, pp. 239–250, 1959. <a href="https://doi.org/10.1080/00401706.1959.10489860">doi:10.1080/00401706.1959.10489860</a>',
-    "bendat": 'J. S. Bendat and A. G. Piersol, <i>Random Data: Analysis and Measurement Procedures</i>, 4th ed., Hoboken, NJ: Wiley, 2010.',
-    "blackman": 'R. B. Blackman and J. W. Tukey, “The measurement of power spectra from the point of view of communications engineering — Part I,” <i>The Bell System Technical Journal</i>, vol. 37, no. 1, pp. 185–282, 1958. <a href="https://doi.org/10.1002/j.1538-7305.1958.tb03874.x">doi:10.1002/j.1538-7305.1958.tb03874.x</a>',
-    "dimatteo": 'S. Di Matteo, N. M. Viall, and L. Kepko, “Power spectral density background estimate and signal detection via the multitaper method,” <i>Journal of Geophysical Research: Space Physics</i>, vol. 126, no. 2, e2020JA028748, 2021. <a href="https://doi.org/10.1029/2020JA028748">doi:10.1029/2020JA028748</a>',
+REFS = {  # key -> (in-text name, year, entry). Cite as {citet:key} "Name [n]" or {citep:key} "[n]". Numbered by first appearance.
+    "glover": ("Glover and McFarlane", "1989", 'Glover, K., and McFarlane, D. (1989), “Robust stabilization of normalized coprime factor plant descriptions with H<sub>∞</sub>-bounded uncertainty,” <i>IEEE Transactions on Automatic Control</i>, 34(8), 821–830. DOI: 10.1109/9.29424'),
+    "gomaa": ("Gomaa et al.", "in press", 'Gomaa, M., Patino, E. D., Villamizar, J. N., Condori Uribe, J. W., and Dyke, S. J. (in press), “An online stability indicator for real-time hybrid simulation emphasizing physical substructure degradation,” author manuscript.'),
+    "welch": ("Welch", "1967", 'Welch, P. D. (1967), “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms,” <i>IEEE Transactions on Audio and Electroacoustics</i>, 15(2), 70–73. DOI: 10.1109/TAU.1967.1161901'),
+    "roberts": ("Roberts", "1959", 'Roberts, S. W. (1959), “Control chart tests based on geometric moving averages,” <i>Technometrics</i>, 1(3), 239–250. DOI: 10.1080/00401706.1959.10489860'),
+    "bendat": ("Bendat and Piersol", "2010", 'Bendat, J. S., and Piersol, A. G. (2010), <i>Random Data: Analysis and Measurement Procedures</i>, 4th ed., Wiley, Hoboken, NJ.'),
+    "blackman": ("Blackman and Tukey", "1958", 'Blackman, R. B., and Tukey, J. W. (1958), “The measurement of power spectra from the point of view of communications engineering — Part I,” <i>The Bell System Technical Journal</i>, 37(1), 185–282. DOI: 10.1002/j.1538-7305.1958.tb03874.x'),
+    "dimatteo": ("Di Matteo et al.", "2021", 'Di Matteo, S., Viall, N. M., and Kepko, L. (2021), “Power spectral density background estimate and signal detection via the multitaper method,” <i>Journal of Geophysical Research: Space Physics</i>, 126(2), e2020JA028748. DOI: 10.1029/2020JA028748'),
+    "wu": ("Wu and Wang", "2020", 'Wu, H., and Wang, X. (2020), “A mode-adaptive power-angle control method for transient stability enhancement of virtual synchronous generators,” <i>IEEE Journal of Emerging and Selected Topics in Power Electronics</i>, 8(2), 1034–1049. DOI: 10.1109/JESTPE.2020.2976791'),
 }
 
 body = "\n".join(parts)
@@ -431,27 +434,29 @@ body = "\n".join(parts)
 # ---------------------------------------------------------------- page
 ARTICLE = f"""
 <h1>3. Online NCF stability indicator framework for adaptive control</h1>
-<p class="meta">Section draft rewritten from manuscript2 for journal submission. Readers are assumed to be familiar with Ref. {{cite:gomaa}}.</p>
+<p class="meta">Section draft rewritten from manuscript2 for journal submission. Readers are assumed to be familiar with {{citet:gomaa}}.</p>
 {body}
 <section class="references" aria-labelledby="refs"><h2 id="refs">References</h2><ol>
 {{REFS}}
 </ol></section>
 """
 CITED = []
-def cite(m):
-    for k in m.group(1).split(","):
+def cite(m):  # numbered by first appearance: narrative "Name [n]" or bare "[n]"
+    keys = m.group(2).split(",")
+    for k in keys:
         if k not in CITED: CITED.append(k)
-    return "[" + ", ".join(f'<a class="cite" href="#ref-{k}">{CITED.index(k) + 1}</a>' for k in m.group(1).split(",")) + "]"
+    nums = "[" + ", ".join(f'<a class="cite" href="#ref-{k}">{CITED.index(k) + 1}</a>' for k in keys) + "]"
+    return (" and ".join(REFS[k][0] for k in keys) + " " + nums) if m.group(1) == "t" else nums
 ARTICLE = re.sub(r"\{n:(\w+)\}", lambda m: str(EQ[m.group(1)]), ARTICLE)
-ARTICLE = re.sub(r"\{cite:([a-z0-9_,]+)\}", cite, ARTICLE)
+ARTICLE = re.sub(r"\{cite([tp]):([a-z0-9_,]+)\}", cite, ARTICLE)
 def scholar(t):  # title links to a Google Scholar search, DOI stays plain text
-    t = re.sub(r'<a href="[^"]+">(doi:[^<]+)</a>', r"\1", t)
     m = re.search(r"“(.+?)(,?)”|<i>(.+?)</i>", t)
     title = m.group(1) or m.group(3)
     a = (f'<a href="https://scholar.google.com/scholar?q={quote_plus(re.sub("<[^>]+>", "", title))}" '
          f'target="_blank" rel="noopener">{title}</a>')
     return t.replace(m.group(0), f"“{a}{m.group(2)}”" if m.group(1) else f"<i>{a}</i>", 1)
-ARTICLE = ARTICLE.replace("{REFS}", "\n".join(f'<li id="ref-{k}">{scholar(REFS[k])}</li>' for k in CITED))
+ARTICLE = ARTICLE.replace("{REFS}", "\n".join(f'<li id="ref-{k}">{scholar(REFS[k][2])}</li>'
+                                              for k in CITED))
 
 # ---- content store read by the review app (writing/review-app builds manuscript2_journal.html)
 # usage: python build_manuscript2_journal.py "short note about this revision"

@@ -1,13 +1,34 @@
-# Scientific expressions for the manuscripts
+# Paper 1 — Context and vocabulary
 
-Version 2. Source terms and verb phrases are preferred vocabulary, not permission to introduce additional claims.
-An expression can be legitimate in another context and still be unnecessary here.
-Ordinary words do not need to appear in this dictionary.
+Paper 1 is Gomaa et al., cited as [2]. It is background for Paper 2. Do not assume that its results or claims transfer to Paper 2 without checking their source and relevance.
 
-## Paper 1 vocabulary
+- **Directory:** `C:\Users\Victus\Desktop\folder_working\a purdue\aa reasearch\aab paper1`
+- **Manuscript:** `aab paper1/writing/submit/Paper Submit 02/SCHM_Main_Manuscript_Rev1.docx`
+- **Paragraph identifiers** below refer to direct body paragraphs recorded in [paper1_paragraphs.json](../.agent/paper1_paragraphs.json).
 
-Source: SCHM_Main_Manuscript_Rev1.docx in aab paper1/writing/submit/Paper Submit 02.
-Paragraph identifiers refer to direct body paragraphs recorded in writing_trials/paper1_paragraphs.json.
+## What Paper 1 showed
+
+Delay-based indicators assess only the numerical substructure loop. Paper 1 showed that degradation threatens the **outer controller loop**, which those indicators miss.
+
+**Why degradation causes instability:**
+1. The outer controller is tuned to overcome the initial stiffness and to meet the tracking target.
+2. When the specimen degrades, its stiffness decreases and it becomes easier to move.
+3. The same control action then overshoots, and the response is amplified.
+4. The dynamics of the outer controller loop change, and its stability margin shrinks.
+
+This is a **gain amplification** mechanism, not a time delay. Flexible specimens (higher mass, lower stiffness-to-mass ratio) are more susceptible.
+
+**Paper 1's indicator** is the NCF margin, b_g(C_out, T).
+- It splits the loop into the outer controller C_out and the plant T.
+- Its value is at most the scaled margin b_s(L).
+- b ≥ 0.4 guarantees the usual gain- and phase-margin targets and is the practical guideline for experiments.
+- It was computed online from a parametric model, updated with a stiffness factor α estimated by least squares from force and displacement.
+- It was demonstrated numerically (virtual hybrid simulation of a modified benchmark), not experimentally.
+- Intervention was a Lyapunov-guaranteed switch from a high-performance controller to a high-robustness one.
+
+## Vocabulary
+
+Source terms and verb phrases are preferred vocabulary, not permission to introduce additional claims. An expression can be legitimate in another context and still be unnecessary here. Ordinary words do not need to appear in this list.
 
 | Expression | Meaning or use | Source paragraphs |
 | --- | --- | --- |
@@ -48,9 +69,6 @@ These examples preserve standard relationships. They are not sentence templates 
 
 If a needed technical expression is absent, consult the relevant source or ask about the meaning. Do not rename a known block for variety. Ordinary connective prose remains free to vary.
 
-## Paper 2 scope
+## Differences from Paper 2
 
-The Paper 2 definitions and notation are in writing.md. They are not interchangeable with Paper 1.
-Paper 2 uses the adaptive factor lambda and continuous scaling. Paper 1 uses controller switching.
-For Paper 2 manuscript prose prefer "hybrid simulation", "experiment", and "initial".
-Keep named blocks and symbols unchanged unless the source or author explicitly changes them.
+Paper 2 definitions and notation are in [paper2.md](paper2.md). They are not interchangeable with Paper 1. Paper 2 uses the adaptive factor λ and continuous scaling. Paper 1 uses controller switching. Keep named blocks and symbols unchanged unless the source or author explicitly changes them.
