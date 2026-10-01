@@ -2,7 +2,27 @@
 
 Evidence records for manuscript citations. Writing instructions are maintained in [writing_guide.md](../md/writing_guide.md).
 
-## Welch1967 — manuscript reference [3]
+## Maghareh2020 — manuscript reference [2]
+
+**Source:** A. Maghareh, Y. Fu, H. Montoya, J. Condori, Z. Wang, S. J. Dyke, and A. Montoya (2020), “A reflective framework for performance management (REFORM) of real-time hybrid simulation.” Frontiers in Built Environment 6, 568742. [DOI](https://doi.org/10.3389/fbuil.2020.568742) · [Full PDF](https://par.nsf.gov/servlets/purl/10217004)
+
+**Verified:** 2026-10-01. Read the abstract, introduction (p. 2) and the section “State Estimation, Model Updating, and Uncertainty Quantification” (p. 4) from the PDF text.
+
+**Exact quotation — p. 4, “State Estimation, Model Updating, and Uncertainty Quantification”:**
+
+> a part of the physical substructure may experience a failure, drastically changing its dynamics. Such a change will impact the safety and integrity of the experiment.
+
+**Supporting excerpt — p. 2, introduction:**
+
+> the need for aggressive control to maintain stability and safety
+
+**Citation role:** Section 2.1. Supports that a failure in the physical substructure drastically changes its dynamics and affects the safety and integrity of the experiment. This motivates monitoring stability as the specimen degrades.
+
+**Use and limits:** The paper is a framework paper. It does not quantify equipment damage or test termination, so the manuscript sentences on equipment damage and early termination are not attributed to it. It does not analyze the outer controller loop or the NCF margin.
+
+**Origin check:** Not needed. The claim is cited as the authors' statement, not as a first finding.
+
+## Welch1967 — manuscript reference [7]
 
 **Source:** P. D. Welch (1967), “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms.” IEEE Transactions on Audio and Electroacoustics 15(2), 70–73. [DOI](https://doi.org/10.1109/TAU.1967.1161901) · [Full PDF](https://ocean.phys.msu.ru/courses/geoseries/1967%20Welch%2C%20The%20Use%20of%20Fast%20Fourier%20Transform%20for%20the%20Estimation%20of%20Power%20Spectra_%20A%20Method%20Based%20on%20Time%20Averaging%20Over%20Short%2C%20Modified%20Periodograms.pdf)
 

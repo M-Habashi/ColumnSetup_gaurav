@@ -102,7 +102,8 @@ Record the purpose of each figure or table, not just its filename.
 
 ## Open decisions and next actions
 
-- TBD
+- Target margin b_tar: Table 1 uses 0.55. Consider matching the b ≥ 0.4 guideline of Paper 1. A change requires rerunning the benchmark without recalibration (in the worktree, not in `main/`).
+- Calibration damage model: output mixing of the two identified plants through the damage index δ(t), as in `OSI_tests/fable/fable_synthetic_suite.m`. Do not call it an in-between stiffness.
 
 ## Limitations and provenance notes
 

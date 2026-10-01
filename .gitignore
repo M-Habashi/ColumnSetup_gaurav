@@ -16,3 +16,4 @@ main/OSI_tests/overloadin_test/mex_build/
 *.slx.autosave
 *.zip
 .playwright-mcp/
+writing/.agent/worktree/

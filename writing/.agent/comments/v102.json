@@ -1,0 +1,43 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 102,
+  "saved": "2026-10-01T19:05:45.587Z",
+  "comments": [
+    {
+      "id": "c1790880463189",
+      "section": "2.2Experimental setup",
+      "quote": "To examine the outer controller loop alone, the tests in this section exclude the numerical substructure. The reference u(t) is then a prescribed displacement instead of a computed response. Consequently, the measured force is not fed back, and only the outer controller loop remains closed. The specimen is [description: column, material, dimensions], tested at [laboratory]. A [actuator model] imposes the lateral displacement at [location], and [sensor] measures it. The outer controller C(s) runs on a Speedgoat real-time target at 2048 Hz.",
+      "prefix": "sical experiment.\n2.2Experimental setup\n",
+      "suffix": "\n2.3Initial and damaged systems\nThe plan",
+      "text": "wrong ! there is no numericl substructure here I will give you a screenshot so you can have more context about the experiment but I don't think we need to be very specific about the equipment. We can explain the main things but I will just think about what I know and you can gather more information and correct the wording.\n- The actuator is an MTA actuator with a 10 cubic capacity.\n- We are using Speedgoat to send the external commands.\n- The command you are measuring here is the output from this speaker.\n- The specimen is a steel column specimen that is anchored to the concrete with four Hilti anchors.\n- As we send the commands the damage that we are targeting here is, I would say, the pullout cracking of the concrete. You need to search online and find out if these words are correct, by the way, to describe this.\n- The pullout cracking of the concrete occurs while we push the specimen so the base loses some of its rotational stiffness. That affects the relative stiffness at the control point of the actuator.\n- The column is connected to the concrete at the bottom with these anchors and free from the top. It is designed this way so that it represents the part of the height at which the moment is zero in the reference substructure. That will be discussed later in Section XX, let's give it XX now.\nLet's forget about this part. Let's just say it is connected to the concrete from the bottom and to the frame from the top. No need to explain why that is. Also I will give you an image that we can use.",
+      "created": "2026-10-01T18:47:43.189Z"
+    },
+    {
+      "id": "c1790881384467",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "Because both loops use the same C(s), any difference between them comes from the specimen. Figure 1 compares the open-loop frequency responses L0=CH0 and Ld=CHd. Below 10 Hz, the magnitude of Ld is about 2.4 times that of L0. However, the phases of the two loops differ by less than 4° in this range. The loss of stiffness therefore mainly raises the loop gain rather than adding phase lag.\n[Open-loop Bode plot of L0 and Ld, 0.5–100 Hz, with the NCF chordal curve. To be generated.]Figure 1. Open-loop frequency responses of the outer controller loop for the initial and damaged systems.",
+      "prefix": ".\n2.4Effect of degradation on stability\n",
+      "suffix": "\nTable 1 lists the resulting margins. Th",
+      "text": "Man, you can generate the plot. You can use the same style you used for Figure 3 and it will just be simply a part of Figure 3, where we have:\n- beauty that goes to the subtraction of the DM and then the controller\n- no adaptive factor here\n- the transfer system and specimen\nIt is a very simple diagram.",
+      "created": "2026-10-01T19:03:04.467Z"
+    },
+    {
+      "id": "c1790881454458",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "2.4Effect of degradation on stability\nBecause both loops use the same C(s), any difference between them comes from the specimen. Figure 1 compares the open-loop frequency responses L0=CH0 and Ld=CHd. Below 10 Hz, the magnitude of Ld is about 2.4 times that of L0. However, the phases of the two loops differ by less than 4° in this range. The loss of stiffness therefore mainly raises the loop gain rather than adding phase lag.",
+      "prefix": " with five poles for H0 and six for Hd.\n",
+      "suffix": "\n[Open-loop Bode plot of L0 and Ld, 0.5–",
+      "text": "I don't think it's a good way to start this subsection by saying, \"Because both loops use the same CS,\" because people don't understand what both loops are, right? I think it's a better way to:\n1. Say, \"Consider the following figure,\" and provide a brief description.\n2. Mention that they are not both loops. They are the same loop but the sequence changes, right? They are not two loops.\n3. Provide a brief description of what happens and so on.",
+      "created": "2026-10-01T19:04:14.458Z"
+    },
+    {
+      "id": "c1790881493039",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "Because both loops use the same C(s), any difference between them comes from the specimen. Figure 1 compares the open-loop frequency responses L0=CH0 and Ld=CHd. Below 10 Hz, the magnitude of Ld is about 2.4 times that of L0. However, the phases of the two loops differ by less than 4° in this range. The loss of stiffness therefore mainly raises the loop gain rather than adding phase lag.\n[Open-loop Bode plot of L0 and Ld, 0.5–100 Hz, with the NCF chordal curve. To be generated.]Figure 1. Open-loop frequency responses of the outer controller loop for the initial and damaged systems.\nTable 1 lists the resulting margins. The gain margin falls from 16.4 dB to 6.9 dB, whereas the phase margin stays near 87°. Consequently, the NCF margin falls from 0.59 to 0.34. This is below the 0.4 guideline recommended by Gomaa et al. [1]. These trends agree with the gain-amplification mechanism reported in [1]. They also support the assumption in Section 3.1.2 that degradation scales the open-loop gain by a real factor g.",
+      "prefix": ".\n2.4Effect of degradation on stability\n",
+      "suffix": "\nTable 1. Stability margins of the outer",
+      "text": "Oh sorry, I was confused about the figures thing. There is a figure showing the block diagram for this experiment specifically, as I discussed earlier, and there should be another figure that shows the open-loop Bode plot. You can generate that. You have the files. Ask me if you don't know what the file is. You can decide at which subsection you can add each figure. It is fine if you change the order. Think about what is best to keep the flow smooth.",
+      "created": "2026-10-01T19:04:53.039Z"
+    }
+  ]
+}

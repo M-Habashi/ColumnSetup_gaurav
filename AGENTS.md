@@ -54,6 +54,9 @@
   `writing_guide.md`.
 - Do not read them for unrelated MATLAB, Simulink, coding, or general project
   prompts unless the user connects the task to Paper 2.
+- While working on Paper 2, do not change any code under `main/`. Do all
+  Paper 2 coding (reruns, new scenarios, figure scripts) in a Git worktree
+  located inside the paper folder at `writing/.agent/worktree/`.
 - Treat `paper2.md` as paper-specific context. Keep computational truth
   in the relevant files under `main/` and verify paper claims against those
   sources.
