@@ -336,29 +336,41 @@ P("where $q_{\\mathrm{model},n}$ is the predicted power ratio, and $L_0(j\\omega
 E("gfit", r"\hat{g}_n(\omega)=\underset{g\in\mathcal{G}}{\operatorname{arg\,min}}\;\left|\log q_{\mathrm{obs},n}(\omega)-\log q_{\mathrm{model},n}(\omega,g)\right|,",
   "ĝ_n (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"model\",n) (ω,g)|,")
 P("where $\\hat{g}_n$ is the selected amplification, and $\\mathcal{G}$ is a grid of candidate values of $g$.")
-P("At frequencies without excitation, the output consists mainly of sensor noise, so $\\hat{g}_n$ can indicate an amplification that does not exist. "
-  "At the excited frequencies, however, the loop is identified directly, and degradation appears as an increase in its magnitude. "
-  "Section 2.4 observed such an increase by a factor of about 2.4. "
-  "An amplification inferred from output power is therefore accepted only when the identified loop also shows an increase.")
-P("This increase is measured by the real factor $\\rho_n$ that best scales the prior loop $\\lambda_n L_0$ to the identified loop $\\hat{L}_n$. "
-  "The factor is fitted in the weighted least-squares sense:")
+P("The predicted ratio in {eq:qmod} assumes that only the loop has changed since the reference was recorded. "
+  "At frequencies without excitation, however, the output consists mainly of sensor noise. Its power is estimated "
+  "from few windows and therefore scatters. The reference is also the median of only three windows. Consequently, "
+  "$\\hat{g}_n$ can indicate an amplification that does not exist, and the estimated margin would decrease without "
+  "degradation.")
+P("The identified margin $b_{\\mathrm{id},n}$ cannot correct this error, because it is valid only at the excited "
+  "frequencies. Degradation, however, changes the loop at all frequencies. At the excited frequencies, it appears as "
+  "an increase in the magnitude of the identified loop. Section 2.4 observed such an increase by a factor of about 2.4. "
+  "A real amplification inferred from output power should therefore be accompanied by an increase in the identified "
+  "loop. The factor $\\rho_n$ measures this increase and thus confirms whether the amplification indicated by "
+  "$\\hat{g}_n$ is real.")
+P("The factor $\\rho_n$ is the real scale that best fits the prior loop $\\lambda_n L_0$ to the identified loop "
+  "$\\hat{L}_n$ in the weighted least-squares sense:")
+E("rhols", r"\rho_n=\underset{\rho\in\mathbb{R}}{\operatorname{arg\,min}}\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,\big|\hat{L}_n(j\omega)-\rho\,\lambda_n L_0(j\omega)\big|^{2}.",
+  "ρ_n=\"arg min\"┬(ρ∈ℝ) ∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) |L̂_n (jω)−ρ λ_n L_0 (jω)|^2〗.")
+P("The factor is real, consistent with the real amplification $g$ in {eq:qmod}. Each term of the sum expands as")
+E("rhoexp", r"\big|\hat{L}_n-\rho\lambda_n L_0\big|^{2}=|\hat{L}_n|^{2}-2\rho\operatorname{Re}\{\lambda_n L_0^{*}\hat{L}_n\}+\rho^{2}|\lambda_n L_0|^{2}.",
+  "|L̂_n−ρ λ_n L_0|^2=|L̂_n|^2−2ρ Re{λ_n L_0^* L̂_n}+ρ^2 |λ_n L_0|^2.")
+P("Setting the derivative with respect to $\\rho$ to zero gives")
 E("rho", r"\rho_n=\frac{\operatorname{Re}\{\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,\lambda_n L_0^{*}(j\omega)\,\hat{L}_n(j\omega)\}}{\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,|\lambda_n L_0(j\omega)|^{2}}.",
   "ρ_n=(Re{∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) λ_n L_0^* (jω) L̂_n (jω)〗})/(∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) |λ_n L_0 (jω)|^2〗).")
 P("The weight $w_{\\mathrm{id},n}$ lets the well-identified excited frequencies dominate. "
   "The identified loop $\\hat{L}_n$ is taken before frequency-median smoothing. "
-  "The factor is real, consistent with the real amplification $g$ assumed above, so only the real part of the numerator is retained. "
-  "The denominator is real already. For an unchanged specimen $\\rho_n\\approx1$, whereas for the damaged specimen of Section 2 $\\rho_n\\approx2.4$.")
-P("The factor $\\rho_n$ then sets how much of the inferred amplification is accepted:")
-E("confirm", r"c_n=2(\rho_n-1),\qquad c_n\in[0,1],",
-  "c_n=2(ρ_n−1),  c_n∈[0,1],")
-P("where $c_n$ is limited to the interval $[0,1]$. "
-  "Accordingly, none of the inferred amplification is accepted when $\\rho_n=1$, and all of it is accepted once the loop is 50% larger. "
-  "The accepted amplification is")
-E("gaccept", r"\tilde{g}_n(\omega)=1+[c_n+\epsilon A_n(1-c_n)](\hat{g}_n(\omega)-1),",
-  "g̃_n (ω)=1+[c_n+ε A_n (1−c_n)](ĝ_n (ω)−1),")
-P("where $\\epsilon=0.1$, and $\\tilde{g}_n$ replaces $\\hat{g}_n$ in the averaging equation, {eq:gmem}. "
-  "Without confirmation, 10% of the inferred amplification is still accepted while the command is active. "
-  "A persistent change can therefore accumulate slowly, whereas a brief noise burst cannot.")
+  "For an unchanged specimen $\\rho_n\\approx1$, whereas for the damaged specimen of Section 2 $\\rho_n\\approx2.4$.")
+P("The confirmation $c_n$ sets how much the amplification inferred from output power is trusted. It depends on the "
+  "loop increase $\\rho_n$ identified at the excited frequencies:")
+E("confirm", r"c_n=\frac{\rho_n-1}{\rho_{\mathrm{th}}-1},\qquad c_n\in[\epsilon,\,1],",
+  "c_n=(ρ_n−1)/(ρ_(\"th\")−1),  c_n∈[ε,1],")
+P("where $\\rho_{\\mathrm{th}}$ is the confirmation threshold. Once $\\rho_n$ reaches $\\rho_{\\mathrm{th}}$, $c_n$ "
+  "equals one, and the amplification inferred from output power is fully trusted. The lower bound $\\epsilon=0.1$ is "
+  "a safety minimum. It accounts for amplification that cannot be observed at any excited frequency, such as "
+  "amplification from unmodeled dynamics or higher-mode effects. The accepted amplification is")
+E("gaccept", r"\tilde{g}_n(\omega)=1+c_n\big(\hat{g}_n(\omega)-1\big),",
+  "g̃_n (ω)=1+c_n (ĝ_n (ω)−1),")
+P("where $\\tilde{g}_n$ replaces $\\hat{g}_n$ in the averaging equation, {eq:gmem}.")
 P("The accepted amplification at update $n$ inherits the scatter of $q_{\\mathrm{obs},n}$ and therefore varies between "
   "updates. To reduce this scatter while following the degrading specimen, successive accepted amplifications are averaged "
   "recursively. As for the spectra in Equations ({n:ewuu})–({n:ewyu}), more weight is placed on recent values. The average is formed on a "
@@ -515,7 +527,8 @@ T1 = [
     ("$\\eta_A$", "4.54", "—", "Calibrated", "Activity threshold relative to command noise, {eq:act}"),
     ("$\\ell_{\\mathrm{floor}}$", "$10^{-3}$", "—", "Calibrated", "Input-leverage reference, {eq:lev}"),
     ("$\\mathcal{G}$", "0.5–6, 25 values", "—", "Design", "Candidate loop-magnitude changes, {eq:gfit}"),
-    ("$\\epsilon$", "0.1", "—", "Design", "Share of the inferred amplification accepted without confirmation"),
+    ("$\\epsilon$", "0.1", "—", "Design", "Minimum confirmation, Equation ({n:confirm})"),
+    ("$\\rho_{\\mathrm{th}}$", "1.5", "—", "Calibrated", "Confirmation threshold, Equation ({n:confirm})"),
     ("$\\eta_g$", "0.12", "1.0 s", "Calibrated", "Output-power memory, accumulation, {eq:gmem}"),
     ("$r_g$", "0.73", "0.4 s", "Calibrated", "Recovery factor per update, {eq:gdecay}"),
     ("$b_{\\mathrm{tar}}$", "0.40", "—", "Design", "Target NCF margin, Equation ({n:lerr})"),
@@ -527,14 +540,14 @@ T1 = [
 
 
 H2("3.2", "Calibration", "s32")
-P("The framework of Section 3.1 contains 15 parameters, listed in Table 2. Seven of them are design values set by the "
+P("The framework of Section 3.1 contains 16 parameters, listed in Table 2. Seven of them are design values set by the "
   "test and the analysis. The window duration $T_w$ and the update interval $\\Delta t$ are defined in Section 3.1.1. "
   "The window duration of 0.5 s gives a frequency resolution of 2 Hz, which also sets the lower bound of $\\Omega$. "
   "The update interval of 0.125 s sets how often the indicator and $\\lambda$ are updated. The upper bound of "
   "$\\Omega$, 80 Hz, matches the band over which the plants were identified in Section 2.3. "
   "The grid $\\mathcal{G}$ spans the amplifications expected from degradation. The target $b_{\\mathrm{tar}}=0.4$ "
   "follows the guideline of {citet:gomaa}, and $\\lambda_{\\min}$ keeps part of the controller active.")
-P("The remaining eight are hyperparameters. They set how quickly the indicator follows a change, how much evidence "
+P("The remaining nine are hyperparameters. They set how quickly the indicator follows a change, how much evidence "
   "each branch requires, and how strongly the adaptive factor responds. Their values depend on the laboratory, the "
   "equipment, the specimen and its material. They therefore cannot be fixed from theory and must be calibrated "
   "against cases with a known margin.")
