@@ -45,8 +45,8 @@ H2("2.1", "Motivation", "s21")
 P("Hybrid simulation relies on the transfer system to impose the computed displacements on the specimen. When the "
   "outer controller loop loses stability, the actuator drives the specimen beyond its target displacements. Such "
   "instability creates safety hazards for laboratory personnel. In addition, it can damage the specimen and expensive "
-  "equipment such as the actuator and servo-valve. Instability then requires the test to be stopped early, and the "
-  "experiment is lost. Because the specimen may already be damaged, the test must be repeated with a new specimen. "
+  "equipment such as the actuator and servo-valve. Instability then necessitates early termination of the "
+  "test, and the experiment is lost. Because the specimen may already be damaged, the test must be repeated with a new specimen. "
   "The specimen itself can change during the test. {citet:maghareh} noted that a failure in part of the "
   "physical substructure can drastically change its dynamics. They also noted that such a change affects the safety "
   "and integrity of the experiment.")
