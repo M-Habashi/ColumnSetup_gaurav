@@ -1,7 +1,7 @@
 {
   "page": "manuscript2_journal.html",
   "version": 110,
-  "saved": "2026-10-13T19:16:32.707Z",
+  "saved": "2026-10-13T19:48:51.595Z",
   "comments": [
     {
       "id": "c1791918958313",
@@ -11,6 +11,24 @@
       "suffix": "Such instability creates safety hazards ",
       "text": "Remova far and makr it beyond its target displacements rather than response",
       "created": "2026-10-13T19:15:58.313Z"
+    },
+    {
+      "id": "c1791920786111",
+      "section": "2.1Motivation",
+      "quote": "usually",
+      "prefix": "d servo-valve. An unstable test is also ",
+      "suffix": " terminated early, so the experiment fai",
+      "text": "Usually is not the right word can force? Or something like that?",
+      "created": "2026-10-13T19:46:26.112Z"
+    },
+    {
+      "id": "c1791920874701",
+      "section": "2.1Motivation",
+      "quote": "the experiment fails and must be repeated with a new specimen. Maghareh",
+      "prefix": "st is also usually terminated early, so ",
+      "suffix": " et al. [2] noted that a failure in part",
+      "text": "This is a weak sentence\nI want you to revise this paragraph overall as a technical writing reviewer\nFollow the best practices for engineerign paper journals get into loop for qa",
+      "created": "2026-10-13T19:47:54.702Z"
     }
   ]
 }
