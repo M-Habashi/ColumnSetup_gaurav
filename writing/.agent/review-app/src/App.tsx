@@ -7,9 +7,7 @@ import {
   CloudCheckIcon,
   CloudOffIcon,
   CopyIcon,
-  EyeIcon,
   FileTextIcon,
-  GitCompareArrowsIcon,
   HistoryIcon,
   ListTreeIcon,
   LoaderIcon,
@@ -162,6 +160,8 @@ export function App() {
   const version = useMemo(() => selected === -1
     ? { ...versions[last], html: working?.html ?? versions[last]?.html, author: "user" as const }
     : versions[selected], [versions, selected, last, working])
+  // Version index -1 is the working copy, listed and compared like any saved version.
+  const htmlOf = (i: number) => (i === -1 ? working?.html ?? versions[last]?.html ?? "" : versions[i].html)
   const comparing = compareWith !== null
   const reviewing = !comparing && !editing && loadedFor === version?.v
   const canEdit = disk === true && working !== null && !comparing && selected === -1 && !busy
@@ -229,7 +229,7 @@ export function App() {
     const doc = docRef.current!
     if (!version) return
     if (compareWith !== null) {
-      const r = compare(versions[compareWith].html, version.html)
+      const r = compare(htmlOf(compareWith), version.html)
       doc.replaceChildren(...r.nodes)
       setStats(r)
     } else doc.innerHTML = version.html
@@ -770,15 +770,18 @@ export function App() {
             {shown === "comments" && comments.length > 0 && (
               <Badge variant="secondary">{comments.length}</Badge>
             )}
-            <Hint text="Copy all comments as JSON">
-              <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="Copy all comments" onClick={copyComments}>
-                <CopyIcon />
-              </Button>
-            </Hint>
+            {shown === "comments" && (
+              <Hint text="Copy these comments as JSON">
+                <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="Copy all comments" onClick={copyComments}>
+                  <CopyIcon />
+                </Button>
+              </Hint>
+            )}
             <Hint text="Close panel">
               <Button
                 variant="ghost"
                 size="icon-sm"
+                className={shown === "comments" ? undefined : "ml-auto"}
                 aria-label="Close panel"
                 onClick={() => setPanel(null)}
               >
@@ -787,6 +790,23 @@ export function App() {
             </Hint>
           </div>
 
+          {shown === "history" && compareWith !== null && (
+            <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2 text-sm">
+              <span className="text-muted-foreground">Changes from</span>
+              <Badge className="border-sky-500 bg-sky-500 text-white">{vName(compareWith)}</Badge>
+              <span className="text-muted-foreground">→</span>
+              <Badge>{vName(selected)}</Badge>
+              <Button variant="outline" size="xs" className="ml-auto" disabled={dirty || busy}
+                onClick={() => { cancelParagraph(); setEditing(false); setSelected(compareWith); setCompareWith(selected) }}>
+                Swap
+              </Button>
+              <Hint text="Stop comparing">
+                <Button variant="ghost" size="icon-sm" aria-label="Stop comparing" onClick={() => setCompareWith(null)}>
+                  <XIcon />
+                </Button>
+              </Hint>
+            </div>
+          )}
           {shown === "history" && comparing && (
             <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2 text-sm">
               <span className="text-[var(--ins)] tabular-nums">+{stats.added}</span>
@@ -811,35 +831,32 @@ export function App() {
           <ScrollArea className="min-h-0 flex-1">
             {shown === "history" ? (
               <ItemGroup className="gap-0.5 p-2">
-                <Button variant={selected === -1 ? "secondary" : "ghost"} disabled={dirty || busy}
-                  onClick={() => { cancelParagraph(); setEditing(false); setSelected(-1); setCompareWith(null) }}>Working copy</Button>
+                <p className="px-2 pb-1 text-xs text-muted-foreground">
+                  Tap a version to make it active. Tap Compare on another to see its changes.
+                </p>
                 {dirty && <p className="px-2 py-1 text-xs text-muted-foreground">Update or cancel the open paragraph to browse versions.</p>}
-                {versions
-                  .map((_, i) => i)
-                  .reverse()
-                  .map((i) => (
-                    <VersionRow
-                      key={i}
-                      name={vName(i)}
-                      date={versions[i].date}
-                      note={versions[i].note}
-                      words={counts[i]}
-                      selected={i === selected}
-                      comparing={i === compareWith}
-                      locked={dirty || busy}
-                      canRestore={disk === true && working !== null && !dirty && !busy}
-                      onRestore={() => void persist("restore", versions[i].v)}
-                      canDelete={versions.length > 1 && !dirty && !busy}
-                      onDelete={() => setDeleting(i)}
-                      onSelect={() => {
-                        cancelParagraph()
-                        setEditing(false)
-                        setSelected(i)
-                        setCompareWith(null)
-                      }}
-                      onCompare={(on) => { cancelParagraph(); setEditing(false); setCompareWith(on ? i : null) }}
-                    />
-                  ))}
+                {[-1, ...versions.map((_, i) => i).reverse()].map((i) => (
+                  <VersionRow
+                    key={i}
+                    name={vName(i)}
+                    date={i === -1 ? "now" : versions[i].date.slice(5)}
+                    note={i === -1 ? "Working copy" : versions[i].note}
+                    words={i === -1 ? wordCount(htmlOf(-1)) : counts[i]}
+                    role={i === selected ? "active" : i === compareWith ? "compared" : null}
+                    locked={dirty || busy}
+                    canRestore={disk === true && working !== null && !dirty && !busy}
+                    onRestore={i === -1 ? undefined : () => void persist("restore", versions[i].v)}
+                    canDelete={versions.length > 1 && !dirty && !busy}
+                    onDelete={i === -1 ? undefined : () => setDeleting(i)}
+                    onSelect={() => {
+                      cancelParagraph()
+                      setEditing(false)
+                      setSelected(i)
+                      if (compareWith === i) setCompareWith(null)
+                    }}
+                    onCompare={() => { cancelParagraph(); setEditing(false); setCompareWith(compareWith === i ? null : i) }}
+                  />
+                ))}
               </ItemGroup>
             ) : sorted.length === 0 ? (
               <Empty className="py-16">
@@ -949,77 +966,76 @@ function VersionRow(props: {
   date: string
   note: string
   words: number
-  selected: boolean
-  comparing: boolean
+  role: "active" | "compared" | null
   locked: boolean
   canRestore: boolean
-  onRestore: () => void
+  onRestore?: () => void
   canDelete: boolean
-  onDelete: () => void
+  onDelete?: () => void
   onSelect: () => void
-  onCompare: (on: boolean) => void
+  onCompare: () => void
 }) {
-  const { name, date, note, words, selected, comparing, locked } = props
+  const { name, date, note, words, role, locked } = props
   return (
     <Item
       size="xs"
-      variant={selected ? "muted" : "default"}
-      className={cn("group/version cursor-pointer hover:bg-muted/50", locked && "pointer-events-none opacity-50")}
+      className={cn(
+        "group/version cursor-pointer border-l-4 border-transparent hover:bg-muted/50",
+        role === "active" && "border-l-primary bg-primary/12 hover:bg-primary/15",
+        role === "compared" && "border-l-sky-500 bg-sky-500/10 hover:bg-sky-500/15",
+        locked && "pointer-events-none opacity-50"
+      )}
       render={
         <div
           role="button"
           tabIndex={0}
           aria-disabled={locked}
+          aria-current={role === "active" || undefined}
           title={[date, note].filter(Boolean).join(" · ")}
-          onClick={() => { if (!locked) props.onSelect() }}
+          onClick={() => { if (!locked && role !== "active") props.onSelect() }}
           onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget && !locked) props.onSelect() }}
         />
       }
     >
-      <ItemContent className="flex-row items-center gap-3 text-sm whitespace-nowrap">
-        <span className="w-9 font-medium tabular-nums">{name}</span>
-        <span className="text-muted-foreground tabular-nums">{date.slice(5)}</span>
-        <span className="ml-auto text-muted-foreground tabular-nums">
-          {words.toLocaleString()} words
-        </span>
+      <ItemContent className="min-w-0 text-sm whitespace-nowrap">
+        <div className="flex items-baseline">
+          <span className="mr-2 font-medium tabular-nums">{name}</span>
+          <span className="text-xs text-muted-foreground tabular-nums">{date}</span>
+          <span className="ml-auto pl-2 text-xs text-muted-foreground tabular-nums">{words.toLocaleString()} w</span>
+        </div>
       </ItemContent>
       <ItemActions className="justify-center">
-        <Hint text={`Revert the working copy to ${name}`}>
-          <Button variant="ghost" size="icon-sm" aria-label={`Revert to ${name}`} disabled={!props.canRestore}
-            className="opacity-0 group-hover/version:opacity-100 focus-visible:opacity-100"
-            onClick={(e) => { e.stopPropagation(); props.onRestore() }}>
-            <RotateCcwIcon />
-          </Button>
-        </Hint>
-        <Hint text={`Delete ${name}`}>
-          <Button variant="ghost" size="icon-sm" aria-label={`Delete ${name}`} disabled={!props.canDelete}
-            className="opacity-0 group-hover/version:opacity-100 focus-visible:opacity-100"
-            onClick={(e) => { e.stopPropagation(); props.onDelete() }}>
-            <Trash2Icon />
-          </Button>
-        </Hint>
-        {selected ? (
-          <Hint text="Viewing this version">
-            <span className="flex text-muted-foreground" aria-label="Viewing this version" tabIndex={0}>
-              <EyeIcon className="size-4" />
-            </span>
+        {props.onRestore && (
+          <Hint text={`Revert the working copy to ${name}`}>
+            <Button variant="ghost" size="icon-sm" aria-label={`Revert to ${name}`} disabled={!props.canRestore}
+              className="opacity-0 group-hover/version:opacity-100 focus-visible:opacity-100"
+              onClick={(e) => { e.stopPropagation(); props.onRestore!() }}>
+              <RotateCcwIcon />
+            </Button>
           </Hint>
+        )}
+        {props.onDelete && (
+          <Hint text={`Delete ${name}`}>
+            <Button variant="ghost" size="icon-sm" aria-label={`Delete ${name}`} disabled={!props.canDelete}
+              className="opacity-0 group-hover/version:opacity-100 focus-visible:opacity-100"
+              onClick={(e) => { e.stopPropagation(); props.onDelete!() }}>
+              <Trash2Icon />
+            </Button>
+          </Hint>
+        )}
+        {role === "active" ? (
+          <Badge className="w-20 justify-center">Active</Badge>
         ) : (
-          <Hint text={comparing ? "Stop comparing" : `Compare with ${name}`}>
-            <Toggle
-              size="sm"
-              disabled={locked}
-              aria-label={`Compare with ${name}`}
-              pressed={comparing}
-              onPressedChange={props.onCompare}
-              onClick={(e) => e.stopPropagation()}
-              className={cn(
-                !comparing && "opacity-0 group-hover/version:opacity-100 focus-visible:opacity-100"
-              )}
-            >
-              <GitCompareArrowsIcon />
-            </Toggle>
-          </Hint>
+          <Button
+            variant={role === "compared" ? "default" : "outline"}
+            size="xs"
+            disabled={locked}
+            aria-pressed={role === "compared"}
+            className={cn("w-20", role === "compared" && "bg-sky-500 text-white hover:bg-sky-600")}
+            onClick={(e) => { e.stopPropagation(); props.onCompare() }}
+          >
+            {role === "compared" ? "Compared" : "Compare"}
+          </Button>
         )}
       </ItemActions>
     </Item>
