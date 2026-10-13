@@ -518,25 +518,12 @@ export function App() {
 
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p))
   // Copies every version's comments as JSON, using the open version's live list instead of the saved file.
-  // Every version's comments as JSON, prepared while the panel is open: phones only allow a
-  // clipboard write made directly in the tap, so the copy itself must not wait for loading.
-  const copyText = useRef({ text: "", count: 0 })
-  useEffect(() => {
-    if (panel !== "comments") return
-    let live = true
-    Promise.all(versions.map((v) => (v.v === loadedFor ? comments : loadComments(v.v, disk === true)))).then((lists) => {
-      const all: Record<string, ReviewComment[]> = {}
-      lists.forEach((cs, i) => { if (cs.length) all[`v${versions[i].v}`] = cs })
-      if (live) copyText.current = { text: JSON.stringify(all, null, 2), count: lists.flat().length }
-    })
-    return () => { live = false }
-  }, [panel, versions, comments, loadedFor, disk])
-
+  // Copies the open version's comments as JSON. They are already loaded, so the write happens
+  // directly in the tap, which phones require.
   function copyComments() {
-    const { text, count } = copyText.current
-    if (!text) return setManuscriptNotice("Comments are still loading, tap copy again")
+    const text = JSON.stringify({ [`v${loadedFor}`]: comments }, null, 2)
     const done = (ok: boolean) =>
-      setManuscriptNotice(ok ? `Copied ${count} comments as JSON` : "Copy failed: the browser blocked the clipboard")
+      setManuscriptNotice(ok ? `Copied ${comments.length} comments as JSON` : "Copy failed: the browser blocked the clipboard")
     const legacy = () => {
       const ta = document.createElement("textarea")
       ta.value = text
