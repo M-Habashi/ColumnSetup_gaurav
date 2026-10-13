@@ -518,24 +518,38 @@ export function App() {
 
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p))
   // Copies every version's comments as JSON, using the open version's live list instead of the saved file.
-  // The clipboard write starts inside the tap; phones block writes made after awaited loads.
-  async function copyComments() {
-    let count = 0
-    const text = (async () => {
+  // Every version's comments as JSON, prepared while the panel is open: phones only allow a
+  // clipboard write made directly in the tap, so the copy itself must not wait for loading.
+  const copyText = useRef({ text: "", count: 0 })
+  useEffect(() => {
+    if (panel !== "comments") return
+    let live = true
+    Promise.all(versions.map((v) => (v.v === loadedFor ? comments : loadComments(v.v, disk === true)))).then((lists) => {
       const all: Record<string, ReviewComment[]> = {}
-      for (const v of versions) {
-        const cs = v.v === loadedFor ? comments : await loadComments(v.v, disk === true)
-        if (cs.length) all[`v${v.v}`] = cs
-      }
-      count = Object.values(all).flat().length
-      return JSON.stringify(all, null, 2)
-    })()
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ "text/plain": text.then((t) => new Blob([t], { type: "text/plain" })) })])
-    } catch {
-      await navigator.clipboard.writeText(await text)
+      lists.forEach((cs, i) => { if (cs.length) all[`v${versions[i].v}`] = cs })
+      if (live) copyText.current = { text: JSON.stringify(all, null, 2), count: lists.flat().length }
+    })
+    return () => { live = false }
+  }, [panel, versions, comments, loadedFor, disk])
+
+  function copyComments() {
+    const { text, count } = copyText.current
+    if (!text) return setManuscriptNotice("Comments are still loading, tap copy again")
+    const done = (ok: boolean) =>
+      setManuscriptNotice(ok ? `Copied ${count} comments as JSON` : "Copy failed: the browser blocked the clipboard")
+    const legacy = () => {
+      const ta = document.createElement("textarea")
+      ta.value = text
+      ta.style.cssText = "position:fixed;top:0;opacity:0"
+      document.body.appendChild(ta)
+      ta.select()
+      ta.setSelectionRange(0, text.length)
+      const ok = document.execCommand("copy")
+      ta.remove()
+      return ok
     }
-    setManuscriptNotice(`Copied ${count} comments as JSON`)
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => done(true), () => done(legacy()))
+    else done(legacy())
   }
 
   const vName = (i: number) => i === -1 ? "Working copy" : `v${versions[i].v}`
@@ -882,7 +896,7 @@ export function App() {
         role="status"
         aria-live="polite"
         className={cn(
-          "pointer-events-none absolute bottom-5 left-1/2 z-30 -translate-x-1/2 transition-[opacity,translate] duration-300 print:hidden",
+          "pointer-events-none absolute bottom-5 left-1/2 z-50 -translate-x-1/2 transition-[opacity,translate] duration-300 print:hidden",
           pill ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         )}
       >
