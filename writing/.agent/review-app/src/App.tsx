@@ -124,7 +124,8 @@ export function App() {
   const busyRef = useRef(false)
   const [manuscriptNotice, setManuscriptNotice] = useState("")
   const [compareWith, setCompareWith] = useState<number | null>(null)
-  const [panel, setPanel] = useState<Panel>("comments")
+  // Phones start with the manuscript uncovered; the panel is a full-width overlay there.
+  const [panel, setPanel] = useState<Panel>(window.innerWidth >= 640 ? "comments" : null)
   const [disk, setDisk] = useState<boolean | null>(null)
   const [save, setSave] = useState<Save>("local")
   const [comments, setComments] = useState<ReviewComment[]>([])
@@ -410,10 +411,12 @@ export function App() {
       const sel = getSelection()
       setSelectedWords(selectionWords(sel))
       if (!sel || sel.isCollapsed) setAddTop(null)
+      // Touch selection fires no mouseup, so place the add button as the selection changes.
+      else if (matchMedia("(pointer: coarse)").matches) onDocMouseUp()
     }
     document.addEventListener("selectionchange", onSelection)
     return () => document.removeEventListener("selectionchange", onSelection)
-  }, [editing])
+  }, [editing, reviewing])
 
   const sorted = useMemo(() => {
     const rank = (c: ReviewComment) => {
@@ -514,10 +517,21 @@ export function App() {
   }
 
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p))
+  // Copies every version's comments as JSON, using the open version's live list instead of the saved file.
+  async function copyComments() {
+    const all: Record<string, ReviewComment[]> = {}
+    for (const v of versions) {
+      const cs = v.v === loadedFor ? comments : await loadComments(v.v, disk === true)
+      if (cs.length) all[`v${v.v}`] = cs
+    }
+    await navigator.clipboard.writeText(JSON.stringify(all, null, 2))
+    setManuscriptNotice(`Copied ${Object.values(all).flat().length} comments as JSON`)
+  }
+
   const vName = (i: number) => i === -1 ? "Working copy" : `v${versions[i].v}`
 
   // Sections outline: the manuscript's headings, rebuilt whenever the displayed document changes.
-  const [outlineOpen, setOutlineOpen] = useState(true)
+  const [outlineOpen, setOutlineOpen] = useState(window.innerWidth >= 640)
   const [outline, setOutline] = useState<{ id: string; num: string; html: string; level: number }[]>([])
   const [activeSection, setActiveSection] = useState("")
   useEffect(() => {
@@ -566,10 +580,10 @@ export function App() {
     <div className="relative flex h-svh flex-col overflow-hidden text-foreground print:h-auto print:overflow-visible">
       {/* The manuscript stays centred below the fixed top bar. The panel and scrollbar float above it. */}
       <ScrollArea className="min-h-0 flex-1" onMouseUp={onDocMouseUp}>
-        <div className="px-6 pt-8 pb-28 print:p-0">
+        <div className="px-3 pt-4 pb-28 sm:px-6 sm:pt-8 print:p-0">
           <div
             ref={paperRef}
-            className="relative mx-auto w-[210mm] rounded-2xl bg-card px-[25.4mm] py-[25.4mm] shadow-[0_1px_2px_oklch(0.3_0.03_60/0.06),0_28px_70px_-32px_oklch(0.3_0.05_60/0.4)] ring-1 ring-border/70 print:w-auto print:rounded-none print:p-0 print:shadow-none print:ring-0"
+            className="relative mx-auto w-full max-w-[210mm] rounded-2xl bg-card px-5 py-8 shadow-[0_1px_2px_oklch(0.3_0.03_60/0.06),0_28px_70px_-32px_oklch(0.3_0.05_60/0.4)] ring-1 ring-border/70 sm:px-[25.4mm] sm:py-[25.4mm] print:w-auto print:max-w-none print:rounded-none print:p-0 print:shadow-none print:ring-0"
           >
             <article
               ref={docRef}
@@ -581,7 +595,7 @@ export function App() {
             />
             {citePop && (
               <div
-                className="paper absolute z-20 w-[400px] rounded-xl border bg-popover p-3 text-popover-foreground shadow-lg print:hidden"
+                className="paper absolute z-20 w-[400px] max-w-[calc(100vw-1.5rem)] rounded-xl border bg-popover p-3 text-popover-foreground shadow-lg print:hidden"
                 style={{ top: citePop.top, left: citePop.left, fontSize: "9pt" }}
                 onMouseEnter={() => clearTimeout(citeTimer.current)}
                 onMouseLeave={hideCite}
@@ -597,6 +611,10 @@ export function App() {
                   className="absolute right-4"
                   style={{ top: addTop }}
                   onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => {
+                    // A tap would clear the selection (and this button) before click fires.
+                    if (e.pointerType !== "mouse") { e.preventDefault(); addComment() }
+                  }}
                   onClick={addComment}
                 >
                   <MessageSquarePlusIcon />
@@ -614,10 +632,10 @@ export function App() {
               <ListTreeIcon />
             </Toggle>
           </Hint>
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+          <span className="hidden size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary sm:flex">
             <FileTextIcon className="size-4" />
           </span>
-          <div className="flex min-w-0 flex-col leading-tight">
+          <div className="hidden min-w-0 flex-col leading-tight sm:flex">
             <span className="font-title truncate text-[15px]">
               Online NCF stability indicator framework for adaptive control
             </span>
@@ -694,7 +712,7 @@ export function App() {
         aria-hidden={!outlineOpen}
         inert={!outlineOpen}
         className={cn(
-          "absolute top-[4.25rem] left-3 z-20 flex max-h-[calc(100%-5.5rem)] w-[360px] flex-col transition-[opacity,translate] duration-300 ease-out print:hidden",
+          "absolute top-[4.25rem] left-3 z-20 flex max-h-[calc(100%-5.5rem)] w-[calc(100%-1.5rem)] flex-col sm:w-[360px] transition-[opacity,translate] duration-300 ease-out print:hidden",
           outlineOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-6 opacity-0"
         )}
       >
@@ -729,7 +747,7 @@ export function App() {
         aria-hidden={!panel}
         inert={!panel}
         className={cn(
-          "absolute top-[4.25rem] right-3 bottom-3 z-20 flex w-[360px] flex-col transition-[opacity,translate] duration-300 ease-out print:hidden",
+          "absolute top-[4.25rem] inset-x-3 bottom-3 z-20 flex flex-col sm:inset-x-auto sm:right-3 sm:w-[360px] transition-[opacity,translate] duration-300 ease-out print:hidden",
           panel ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-6 opacity-0"
         )}
       >
@@ -741,11 +759,15 @@ export function App() {
             {shown === "comments" && comments.length > 0 && (
               <Badge variant="secondary">{comments.length}</Badge>
             )}
+            <Hint text="Copy all comments as JSON">
+              <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="Copy all comments" onClick={copyComments}>
+                <CopyIcon />
+              </Button>
+            </Hint>
             <Hint text="Close panel">
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="ml-auto"
                 aria-label="Close panel"
                 onClick={() => setPanel(null)}
               >

@@ -109,7 +109,7 @@ P("The 25% loss of lateral stiffness raised the loop gain by a factor of about 2
   "by {citet:gomaa}. These trends agree with the gain-amplification mechanism reported in {citep:gomaa}. They also "
   "support the assumption in Section 3.1.2 that degradation scales the open-loop gain by a real factor $g$.")
 RAW('<figure class="table" id="tab_margins"><figcaption><b>Table 1.</b> Initial and damaged systems.</figcaption>'
-    '<table class="border-white/10">'
+    '<table>'
     + "<thead>" + trow(["", "Initial", "Damaged"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in [
         ("Lateral stiffness", "7.20 MN/m, $k_0$", "5.38 MN/m, $0.75\\,k_0$"),
@@ -545,7 +545,7 @@ P("The remaining eight are hyperparameters. They set how quickly the indicator f
   "equipment, the specimen and its material. They therefore cannot be fixed from theory and must be calibrated "
   "against cases with a known margin.")
 RAW('<figure class="table" id="tab1"><figcaption><b>Table 2.</b> Estimator parameters. Smoothing coefficients follow '
-    + inline("$\\eta=1-\\exp(-\\Delta t/\\tau)$") + ' from the listed time constant.</figcaption><table class="border-white/10">'
+    + inline("$\\eta=1-\\exp(-\\Delta t/\\tau)$") + ' from the listed time constant.</figcaption><table>'
     + "<thead>" + trow(["Symbol", "Value", "$\\tau$", "Type", "Role"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in T1) + "</tbody></table></figure>")
 P("The two plants identified in Section 2 provide such cases. Because both models are known, the true NCF margin "
@@ -569,7 +569,7 @@ P("Wideband excitation covers 2 to 80 Hz and therefore includes the frequencies 
   "active, the same cases test whether the loop is held at the target while tracking is retained. Table 3 lists the "
   "resulting eight cases.")
 RAW('<figure class="table" id="tab_cases"><figcaption><b>Table 3.</b> Calibration cases.</figcaption>'
-    '<table class="border-white/10">'
+    '<table>'
     + "<thead>" + trow(["Case", "Damage history", "Excitation", "Adaptive factor"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in [
         ("1", "Sudden", "Wideband, 2–80 Hz", "Fixed, $\\lambda=1$"),
@@ -593,7 +593,7 @@ P("Four simple metrics summarize each case after the first 5 s. The estimation e
   "of $\\lambda$, which measures how much the controller is adjusted. The unsafe time is the percentage of time "
   "with $b_{\\mathrm{NCF}}<b_{\\mathrm{tar}}-0.02$. Table 4 lists the results.")
 RAW('<figure class="table" id="tab_metrics"><figcaption><b>Table 4.</b> Calibration metrics with '
-    + inline("$b_{\\mathrm{tar}}=0.4$") + '.</figcaption><table class="border-white/10">'
+    + inline("$b_{\\mathrm{tar}}=0.4$") + '.</figcaption><table>'
     + "<thead>" + trow(["Case", "Estimation error", "Roughness", "Travel of $\\lambda$", "Unsafe time (%)"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in [
         ("1", "0.014", "10.5", "—", "34.8"), ("2", "0.014", "11.8", "—", "25.1"),

@@ -1,13 +1,11 @@
 # MATLAB/MCP/Simulink and Tooling Runbook
 
-Load this file only when the task involves MATLAB, Simulink, Speedgoat/SLRT, SAP/FEM workflows, MCP tool execution, browser/uncodixify recovery, GitHub CLI work, or recovery from a recurring tool failure. Do not load it for planning-only or discussion-only prompts.
+Load this file only when the task involves MATLAB, Simulink, Speedgoat/SLRT, SAP/FEM workflows, MCP tool execution, browser recovery, GitHub CLI work, or recovery from a recurring tool failure. Do not load it for planning-only or discussion-only prompts.
 
 # Detailed Instructions
 
 - For Python snippets containing quoted HTML attributes in PowerShell, pipe a single-quoted here-string to `python -` rather than nesting the snippet in `python -c`. PowerShell does not treat `\"` as an escaped quote and can truncate the Python string. Check the shell quoting before retrying a resulting `SyntaxError: unterminated string literal`.
 
-- On Windows, if the uncodixify Bash wrapper fails while attaching a WSL disk with `ERROR_PATH_NOT_FOUND`, do not retry WSL. Run the same validator natively from the skill directory with `pnpm exec tsx toolchain/uncodixify.ts <absolute-html-path>`.
-- If the native uncodixify validator command above fails with `ERR_PNPM_IGNORED_BUILDS` because `pnpm exec` attempts an install, do not run `pnpm approve-builds` during the task. Pre-check that `node_modules\.bin\tsx.cmd` exists in the skill directory, then run `.\node_modules\.bin\tsx.cmd toolchain\uncodixify.ts <absolute-html-path>` from the skill directory.
 - In the in-app browser, `browser.user.openTabs()` can list a user-opened `file://` tab whose ID is not attachable through `browser.tabs.get()`. If `tabs.get` says the ID is absent, do not retry or navigate an alternate tab to the blocked file URL; leave the user tab intact and ask the user to refresh it manually.
 - In the in-app browser backend, `tab.playwright.waitForLoadState({state:'networkidle'})` can fail with `playwright_wait_for_load_state does not support networkidle`. For local HTML QA, use `domcontentloaded` (or `load`) and then verify the expected DOM element instead of retrying `networkidle`.
 - In in-app browser local-page QA, coordinate scrolling can fail with `Unable to translate Input.dispatchMouseEvent ... No element found at point`. Do not retry guessed coordinates; navigate to a stable element hash/ID or use a locator supported by the latest DOM snapshot, then verify the target is visible before interacting.
