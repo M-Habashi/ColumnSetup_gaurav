@@ -518,14 +518,24 @@ export function App() {
 
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p))
   // Copies every version's comments as JSON, using the open version's live list instead of the saved file.
+  // The clipboard write starts inside the tap; phones block writes made after awaited loads.
   async function copyComments() {
-    const all: Record<string, ReviewComment[]> = {}
-    for (const v of versions) {
-      const cs = v.v === loadedFor ? comments : await loadComments(v.v, disk === true)
-      if (cs.length) all[`v${v.v}`] = cs
+    let count = 0
+    const text = (async () => {
+      const all: Record<string, ReviewComment[]> = {}
+      for (const v of versions) {
+        const cs = v.v === loadedFor ? comments : await loadComments(v.v, disk === true)
+        if (cs.length) all[`v${v.v}`] = cs
+      }
+      count = Object.values(all).flat().length
+      return JSON.stringify(all, null, 2)
+    })()
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "text/plain": text.then((t) => new Blob([t], { type: "text/plain" })) })])
+    } catch {
+      await navigator.clipboard.writeText(await text)
     }
-    await navigator.clipboard.writeText(JSON.stringify(all, null, 2))
-    setManuscriptNotice(`Copied ${Object.values(all).flat().length} comments as JSON`)
+    setManuscriptNotice(`Copied ${count} comments as JSON`)
   }
 
   const vName = (i: number) => i === -1 ? "Working copy" : `v${versions[i].v}`
