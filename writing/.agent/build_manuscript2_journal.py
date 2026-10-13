@@ -382,19 +382,13 @@ P("where $\\hat{g}_{\\mathrm{s},n}$ is the smoothed amplification, and $\\eta_g$
 E("bres", r"b_{\mathrm{pow},n}=b_{\mathrm{NCF}}\big(\lambda_n\hat{g}_{\mathrm{s},n}L_0\big),",
   "b_(\"pow\",n)=b_(\"NCF\") (λ_n ĝ_(\"s\",n) L_0),")
 P("where $b_{\\mathrm{pow},n}$ is the output-power margin.")
-P("To reduce false positives and chattering at small changes, the evidence from this branch is weighted by the size "
-  "of the smoothed amplification up to the threshold $g_{\\mathrm{th}}$:")
-E("det", r"d_n(\omega)=\frac{\hat{g}_{\mathrm{s},n}(\omega)-1}{g_{\mathrm{th}}-1},\qquad d_n(\omega)\in[0,1],",
-  "d_n (ω)=(ĝ_(\"s\",n) (ω)−1)/(g_(\"th\")−1),  d_n (ω)∈[0,1],")
-P("where $d_n$ is the detection weight, limited to the interval $[0,1]$, and $g_{\\mathrm{th}}$ is the amplification "
-  "threshold above which the evidence is fully trusted. Consequently, the detection weight rises linearly from zero at "
-  "$\\hat{g}_{\\mathrm{s},n}=1$ to one at $\\hat{g}_{\\mathrm{s},n}=g_{\\mathrm{th}}$. Together with the identification "
-  "weight, it sets the weight of this branch:")
-E("w", r"w_{\mathrm{pow},n}=(1-w_{\mathrm{id},n})\,d_n,",
-  "w_(\"pow\",n)=(1−w_(\"id\",n) ) d_n,")
+P("An unconfirmed amplification should also carry little weight in the fused margin. The confirmation $c_n$ "
+  "therefore also weights this branch, together with the identification weight:")
+E("w", r"w_{\mathrm{pow},n}=(1-w_{\mathrm{id},n})\,c_n,",
+  "w_(\"pow\",n)=(1−w_(\"id\",n) ) c_n,")
 P("where $w_{\\mathrm{pow},n}$ is the weight of the output-power branch, and $w_{\\mathrm{id},n}$ is the identification "
   "weight from {eq:conf}. Consequently, this branch receives the share left by direct identification, in proportion to "
-  "the detected amplification.")
+  "the confirmation.")
 P("Unlike direct identification, which reflects both losses and gains in the stability margin, the output-power "
   "branch detects only open-loop gain amplification. Consequently, once the adaptive controller restores stability "
   "and the output power returns to its initial level, this branch cannot reflect a recovered loop. A recovery step is "
@@ -412,8 +406,8 @@ E("b0", r"b_{0,n}=b_{\mathrm{NCF}}\big(\lambda_nL_0\big).",
   "b_(0,n)=b_(\"NCF\") (λ_n L_0).")
 P("At each frequency, the three branches now provide three margin estimates, which are combined according to the "
   "evidence behind each. The prior receives the weight left by the two measured branches:")
-E("w0", r"w_{0,n}=(1-w_{\mathrm{id},n})(1-d_n).",
-  "w_(0,n)=(1−w_(\"id\",n) )(1−d_n ).")
+E("w0", r"w_{0,n}=(1-w_{\mathrm{id},n})(1-c_n).",
+  "w_(0,n)=(1−w_(\"id\",n) )(1−c_n ).")
 P("The three margins are then combined with these weights at each frequency bin:")
 E("beta", r"\beta_n(\omega)=w_{\mathrm{id},n}\,b_{\mathrm{id},n}(\omega)+w_{\mathrm{pow},n}\,b_{\mathrm{pow},n}(\omega)+w_{0,n}\,b_{0,n}(\omega).",
   "β_n (ω)=w_(\"id\",n) b_(\"id\",n) (ω)+w_(\"pow\",n) b_(\"pow\",n) (ω)+w_(0,n) b_(0,n) (ω)")
@@ -535,19 +529,18 @@ T1 = [
     ("$\\kappa$", "0.625", "—", "Calibrated", "Adaptation gain per update, Equation ({n:lam})"),
     ("$\\mu$", "0.32", "—", "Calibrated", "Ratio of the recovery rate to the reduction rate of $\\lambda$"),
     ("$\\lambda_{\\min}$", "0.20", "—", "Design", "Smallest adaptive factor, Equation ({n:lam})"),
-    ("$g_{\\mathrm{th}}$", "1.75", "—", "Calibrated", "Amplification threshold, {eq:det}"),
 ]
 
 
 H2("3.2", "Calibration", "s32")
-P("The framework of Section 3.1 contains 16 parameters, listed in Table 2. Seven of them are design values set by the "
+P("The framework of Section 3.1 contains 15 parameters, listed in Table 2. Seven of them are design values set by the "
   "test and the analysis. The window duration $T_w$ and the update interval $\\Delta t$ are defined in Section 3.1.1. "
   "The window duration of 0.5 s gives a frequency resolution of 2 Hz, which also sets the lower bound of $\\Omega$. "
   "The update interval of 0.125 s sets how often the indicator and $\\lambda$ are updated. The upper bound of "
   "$\\Omega$, 80 Hz, matches the band over which the plants were identified in Section 2.3. "
   "The grid $\\mathcal{G}$ spans the amplifications expected from degradation. The target $b_{\\mathrm{tar}}=0.4$ "
   "follows the guideline of {citet:gomaa}, and $\\lambda_{\\min}$ keeps part of the controller active.")
-P("The remaining nine are hyperparameters. They set how quickly the indicator follows a change, how much evidence "
+P("The remaining eight are hyperparameters. They set how quickly the indicator follows a change, how much evidence "
   "each branch requires, and how strongly the adaptive factor responds. Their values depend on the laboratory, the "
   "equipment, the specimen and its material. They therefore cannot be fixed from theory and must be calibrated "
   "against cases with a known margin.")
@@ -603,14 +596,14 @@ RAW('<figure class="table" id="tab_metrics"><figcaption><b>Table 4.</b> Calibrat
     + inline("$b_{\\mathrm{tar}}=0.4$") + '.</figcaption><table class="border-white/10">'
     + "<thead>" + trow(["Case", "Estimation error", "Roughness", "Travel of $\\lambda$", "Unsafe time (%)"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in [
-        ("1", "0.016", "11.2", "—", "34.8"), ("2", "0.016", "11.6", "—", "25.1"),
-        ("3", "0.075", "0.003", "—", "34.8"), ("4", "0.073", "2.2", "—", "25.1"),
-        ("5", "0.017", "11.2", "2.54", "3.4"), ("6", "0.017", "11.4", "2.14", "0.0"),
-        ("7", "0.075", "0.003", "0.03", "34.8"), ("8", "0.073", "2.3", "0.33", "25.1"),
+        ("1", "0.014", "10.5", "—", "34.8"), ("2", "0.014", "11.8", "—", "25.1"),
+        ("3", "0.017", "0.010", "—", "34.8"), ("4", "0.032", "0.52", "—", "25.1"),
+        ("5", "0.014", "10.1", "1.44", "1.5"), ("6", "0.015", "11.1", "1.38", "0.0"),
+        ("7", "0.022", "0.023", "2.44", "3.6"), ("8", "0.037", "0.53", "2.64", "1.0"),
     ]) + "</tbody></table></figure>")
 P("Each case constrains particular hyperparameters. The wideband cases set the spectral averaging $\\eta_s$, the "
   "activity threshold $\\eta_A$ and the leverage reference $\\ell_{\\mathrm{floor}}$ of direct identification. The "
-  "narrowband cases set the output-power parameters. Their damage onset sets $g_{\\mathrm{th}}$ and $\\eta_g$, and "
+  "narrowband cases set the output-power parameters. Their damage onset sets $\\rho_{\\mathrm{th}}$ and $\\eta_g$, and "
   "their return to the initial state sets $r_g$. The adaptive cases set the adaptation gain $\\kappa$. The values in "
   "Table 2 were tuned on a wider benchmark, which also included a closed-loop experimental record and a replay of a "
   "recorded hybrid simulation. The eight cases above illustrate their behavior.")
