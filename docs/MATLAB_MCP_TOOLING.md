@@ -4,6 +4,8 @@ Load this file only when the task involves MATLAB, Simulink, Speedgoat/SLRT, SAP
 
 # Detailed Instructions
 
+- For Python snippets containing quoted HTML attributes in PowerShell, pipe a single-quoted here-string to `python -` rather than nesting the snippet in `python -c`. PowerShell does not treat `\"` as an escaped quote and can truncate the Python string. Check the shell quoting before retrying a resulting `SyntaxError: unterminated string literal`.
+
 - On Windows, if the uncodixify Bash wrapper fails while attaching a WSL disk with `ERROR_PATH_NOT_FOUND`, do not retry WSL. Run the same validator natively from the skill directory with `pnpm exec tsx toolchain/uncodixify.ts <absolute-html-path>`.
 - If the native uncodixify validator command above fails with `ERR_PNPM_IGNORED_BUILDS` because `pnpm exec` attempts an install, do not run `pnpm approve-builds` during the task. Pre-check that `node_modules\.bin\tsx.cmd` exists in the skill directory, then run `.\node_modules\.bin\tsx.cmd toolchain\uncodixify.ts <absolute-html-path>` from the skill directory.
 - In the in-app browser, `browser.user.openTabs()` can list a user-opened `file://` tab whose ID is not attachable through `browser.tabs.get()`. If `tabs.get` says the ID is absent, do not retry or navigate an alternate tab to the blocked file URL; leave the user tab intact and ask the user to refresh it manually.

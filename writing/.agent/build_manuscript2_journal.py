@@ -23,7 +23,6 @@ def ref(k):
 
 def inline(text):
     text = re.sub(r"\$(.+?)\$", lambda m: mml(m.group(1)), text)
-    text = re.sub(r"\{eq:([A-Za-z0-9_]+)\}", lambda m: ref(m.group(1)), text)
     return text
 
 def eqs_range(a, b):
@@ -284,20 +283,24 @@ P("The quality of this estimate varies with time and frequency for two reasons. 
 P("Each bin therefore receives an identification weight $w_{\\mathrm{id},n}$ between zero and one, built from three "
   "factors. "
   "The first is command activity $A_n$, detected from the root mean square of the window:")
-E("act", r"A_n=\begin{cases}1, & \sqrt{\dfrac{1}{N}\displaystyle\sum_{r=0}^{N-1}u_n[r]^{2}}>\eta_A\,\sigma_u,\\ 0, & \text{otherwise}.\end{cases}",
-  "A_n={■(1,&√(1/N ∑_(r=0)^(N−1)▒〖u_n [r]^2 〗)>η_A σ_u@0,&\"otherwise\")┤")
-P("where $\\sigma_u$ is the standard deviation of the command noise measured in a quiet record, and $\\eta_A$ is a "
+E("act", r"A_n=\begin{cases}1, & \operatorname{RMS}(u_n)>\eta_A\,\sigma_u,\\ 0, & \text{otherwise},\end{cases}",
+  "A_n={■(1,&\"RMS\"(u_n)>η_A σ_u,@0,&\"otherwise\",)┤")
+P("where $\\operatorname{RMS}(u_n)$ is the root mean square of the command samples in the considered window $n$, "
+  "$\\sigma_u$ is the standard deviation of the command noise measured in a quiet record, and $\\eta_A$ is a "
   "hyperparameter to be tuned. The second factor is the input leverage $\\ell_n$, which reduces "
   "the weight of bins that carry little command energy. The command power in each bin is first normalized by its "
   "maximum over $\\Omega$:")
 E("prel", r"\ell_{\mathrm{raw},n}(\omega)=\frac{\bar{p}_{uu,n}(\omega)}{\max_{\nu\in\Omega}\bar{p}_{uu,n}(\nu)}.",
   "ℓ_(\"raw\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈Ω)  p̄_(uu,n) (ν)).")
-P("To ensure numerical stability for low values of $\\ell_{\\mathrm{raw},n}$, the hyperparameter $\\ell_{\\mathrm{floor}}$ "
-  "is introduced in the final expression of the leverage:")
+P("The raw leverage cannot serve as the weight directly. It is proportional to the bin power, so a bin with one "
+  "tenth of the peak power would receive one tenth of the weight even though its estimate is still reliable. The "
+  "weight should instead stay close to one while a bin carries enough command power and fall toward zero only when "
+  "it carries too little. The hyperparameter $\\ell_{\\mathrm{floor}}$ sets this boundary:")
 E("lev", r"\ell_n(\omega)=\frac{\ell_{\mathrm{raw},n}(\omega)}{\ell_{\mathrm{raw},n}(\omega)+\ell_{\mathrm{floor}}},",
   "ℓ_n (ω)=(ℓ_(\"raw\",n) (ω))/(ℓ_(\"raw\",n) (ω)+ℓ_(\"floor\") ),")
-P("where $\\ell_{\\mathrm{floor}}$ sets the relative power at which a bin receives half weight. Bins well above "
-  "$\\ell_{\\mathrm{floor}}$ receive nearly full weight. The third factor is the coherence, which completes the weight")
+P("which stays close to one in bins with $\\ell_{\\mathrm{raw},n}\\gg\\ell_{\\mathrm{floor}}$ and decreases smoothly "
+  "toward zero in bins with $\\ell_{\\mathrm{raw},n}\\ll\\ell_{\\mathrm{floor}}$. A bin with command power equal to "
+  "$\\ell_{\\mathrm{floor}}$ times the peak receives half weight. The third factor is the coherence, which completes the weight")
 E("conf", r"w_{\mathrm{id},n}(\omega)=A_n\,\gamma_n^{2}(\omega)\,\ell_n(\omega).",
   "w_(\"id\",n) (ω)=A_n γ_n^2 (ω) ℓ_n (ω).")
 P("This weight sets the share of this branch in the fusion of Section 3.1.3.")
@@ -313,27 +316,57 @@ P("Direct identification fails when the command is weak or does not excite the r
 E("qobs", r"q_{\mathrm{obs},n}(\omega)=\frac{\bar{p}_{yy,n}(\omega)}{p_{yy,0}(\omega)},",
   "q_(\"obs\",n) (ω)=(p̄_(yy,n) (ω))/(p_(yy,0) (ω)),")
 P("where $q_{\\mathrm{obs},n}$ is the observed power ratio, which measures the change in output power at each frequency "
-  "relative to the initial state, $\\bar{p}_{yy,n}$ is the averaged autospectrum of $y$ from {eq:ewyy}, and $p_{yy,0}$ is "
-  "the reference autospectrum recorded in the initial state before the excitation, with $\\lambda=1$.")
+  "relative to the initial state. The averaged autospectrum of $y$ is $\\bar{p}_{yy,n}$ from {eq:ewyy}, and "
+  "$p_{yy,0}$ is the reference autospectrum of $y$ recorded in the initial state.")
+P("The output-power branch detects a change by comparing the present output power with a reference from the initial state. "
+  "A single window of output power fluctuates strongly, so a reference taken from one window could bias every later comparison. "
+  "The reference autospectrum is therefore the median of three raw autospectra recorded in the initial state. "
+  "These are taken at 0.5, 1.0 and 1.5 s, with $\\lambda=1$:")
+E("pyyref", r"p_{yy,0}(\omega)=\operatorname{med}\{p_{yy,n_1}(\omega),\,p_{yy,n_2}(\omega),\,p_{yy,n_3}(\omega)\},",
+  "p_(yy,0) (ω)=\"med\"{p_(yy,n_1) (ω),p_(yy,n_2) (ω),p_(yy,n_3) (ω)},")
+P("where $n_1$, $n_2$ and $n_3$ are the corresponding updates. The median discards one unusually loud or quiet window.")
 P("According to the observation discussed in {citet:gomaa} and the experimental verification presented in "
-  "Section 2.4, the change due to specimen degradation is assumed to be an amplification $g$ of the open-loop gain. "
+  "Section 2.4, the change due to specimen degradation can be represented by an amplification $g$ of the open-loop gain. "
   "Consequently, a candidate loop $\\lambda_n g L_0$ predicts the ratio")
-E("qmod", r"q_{\mathrm{mod},n}(\omega,g)=\left|\frac{1+L_0(j\omega)}{1+\lambda_n g\,L_0(j\omega)}\right|^{2},",
-  "q_(\"mod\",n) (ω,g)=〖|(1+L_0 (jω))/(1+λ_n g L_0 (jω))|〗^2,")
-P("where $q_{\\mathrm{mod},n}$ is the predicted power ratio, and $L_0(j\\omega)=C(j\\omega)H_0(j\\omega)$ is the loop of "
+E("qmod", r"q_{\mathrm{model},n}(\omega,g)=\left|\frac{1+L_0(j\omega)}{1+\lambda_n g\,L_0(j\omega)}\right|^{2},",
+  "q_(\"model\",n) (ω,g)=〖|(1+L_0 (jω))/(1+λ_n g L_0 (jω))|〗^2,")
+P("where $q_{\\mathrm{model},n}$ is the predicted power ratio, and $L_0(j\\omega)=C(j\\omega)H_0(j\\omega)$ is the loop of "
   "the prior identification of the initial state. The amplification is then selected as the candidate in $\\mathcal{G}$ "
   "that minimizes the logarithmic difference between the observed and predicted ratios:")
-E("gfit", r"\hat{g}_n(\omega)=\underset{g\in\mathcal{G}}{\operatorname{arg\,min}}\;\left|\log q_{\mathrm{obs},n}(\omega)-\log q_{\mathrm{mod},n}(\omega,g)\right|,",
-  "ĝ_n (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"mod\",n) (ω,g)|,")
+E("gfit", r"\hat{g}_n(\omega)=\underset{g\in\mathcal{G}}{\operatorname{arg\,min}}\;\left|\log q_{\mathrm{obs},n}(\omega)-\log q_{\mathrm{model},n}(\omega,g)\right|,",
+  "ĝ_n (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"model\",n) (ω,g)|,")
 P("where $\\hat{g}_n$ is the selected amplification, and $\\mathcal{G}$ is a grid of candidate values of $g$.")
-P("The selected amplification at update $n$ inherits the scatter of $q_{\\mathrm{obs},n}$ and therefore varies between "
-  "updates. To reduce this scatter while following the degrading specimen, successive selections are averaged "
-  "recursively, as for the spectra in Equations ({n:ewuu})–({n:ewyu}), with more weight on recent values. The average is formed on a "
+P("At frequencies without excitation, the output consists mainly of sensor noise, so $\\hat{g}_n$ can indicate an amplification that does not exist. "
+  "At the excited frequencies, however, the loop is identified directly, and degradation appears as an increase in its magnitude. "
+  "Section 2.4 observed such an increase by a factor of about 2.4. "
+  "An amplification inferred from output power is therefore accepted only when the identified loop also shows an increase.")
+P("This increase is measured by the real factor $\\rho_n$ that best scales the prior loop $\\lambda_n L_0$ to the identified loop $\\hat{L}_n$. "
+  "The factor is fitted in the weighted least-squares sense:")
+E("rho", r"\rho_n=\frac{\operatorname{Re}\{\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,\lambda_n L_0^{*}(j\omega)\,\hat{L}_n(j\omega)\}}{\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,|\lambda_n L_0(j\omega)|^{2}}.",
+  "ρ_n=(Re{∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) λ_n L_0^* (jω) L̂_n (jω)〗})/(∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) |λ_n L_0 (jω)|^2〗).")
+P("The weight $w_{\\mathrm{id},n}$ lets the well-identified excited frequencies dominate. "
+  "The identified loop $\\hat{L}_n$ is taken before frequency-median smoothing. "
+  "The factor is real, consistent with the real amplification $g$ assumed above, so only the real part of the numerator is retained. "
+  "The denominator is real already. For an unchanged specimen $\\rho_n\\approx1$, whereas for the damaged specimen of Section 2 $\\rho_n\\approx2.4$.")
+P("The factor $\\rho_n$ then sets how much of the inferred amplification is accepted:")
+E("confirm", r"c_n=2(\rho_n-1),\qquad c_n\in[0,1],",
+  "c_n=2(ρ_n−1),  c_n∈[0,1],")
+P("where $c_n$ is limited to the interval $[0,1]$. "
+  "Accordingly, none of the inferred amplification is accepted when $\\rho_n=1$, and all of it is accepted once the loop is 50% larger. "
+  "The accepted amplification is")
+E("gaccept", r"\tilde{g}_n(\omega)=1+[c_n+\epsilon A_n(1-c_n)](\hat{g}_n(\omega)-1),",
+  "g̃_n (ω)=1+[c_n+ε A_n (1−c_n)](ĝ_n (ω)−1),")
+P("where $\\epsilon=0.1$, and $\\tilde{g}_n$ replaces $\\hat{g}_n$ in the averaging equation, {eq:gmem}. "
+  "Without confirmation, 10% of the inferred amplification is still accepted while the command is active. "
+  "A persistent change can therefore accumulate slowly, whereas a brief noise burst cannot.")
+P("The accepted amplification at update $n$ inherits the scatter of $q_{\\mathrm{obs},n}$ and therefore varies between "
+  "updates. To reduce this scatter while following the degrading specimen, successive accepted amplifications are averaged "
+  "recursively. As for the spectra in Equations ({n:ewuu})–({n:ewyu}), more weight is placed on recent values. The average is formed on a "
   "logarithmic scale:")
-E("gmem", r"\log\hat{g}_{\mathrm{s},n}(\omega)=(1-\eta_g)\log\hat{g}_{\mathrm{s},n-1}(\omega)+\eta_g\log\hat{g}_n(\omega),",
-  "log ĝ_(\"s\",n) (ω)=(1−η_g) log ĝ_(\"s\",n−1) (ω)+η_g log ĝ_n (ω),")
+E("gmem", r"\log\hat{g}_{\mathrm{s},n}(\omega)=(1-\eta_g)\log\hat{g}_{\mathrm{s},n-1}(\omega)+\eta_g\log\tilde{g}_n(\omega),",
+  "log ĝ_(\"s\",n) (ω)=(1−η_g) log ĝ_(\"s\",n−1) (ω)+η_g log g̃_n (ω),")
 P("where $\\hat{g}_{\\mathrm{s},n}$ is the smoothed amplification, and $\\eta_g$ is the averaging factor that weights the "
-  "newest selection. {eq:bncf} then gives the margin of this branch:")
+  "newest accepted amplification. {eq:bncf} then gives the margin of this branch:")
 E("bres", r"b_{\mathrm{pow},n}=b_{\mathrm{NCF}}\big(\lambda_n\hat{g}_{\mathrm{s},n}L_0\big),",
   "b_(\"pow\",n)=b_(\"NCF\") (λ_n ĝ_(\"s\",n) L_0),")
 P("where $b_{\\mathrm{pow},n}$ is the output-power margin.")
@@ -394,14 +427,16 @@ P("To achieve this while retaining as much tracking performance as possible, $\\
 E("lerr", r"e_n=b_{\mathrm{OSI},n}-b_{\mathrm{tar}},",
   "e_n=b_(\"OSI\",n)−b_(\"tar\"),")
 P("where $e_n$ is the margin error, and $b_{\\mathrm{tar}}$ is the target NCF margin. A negative error indicates "
-  "insufficient margin, and a positive error indicates spare margin. The adaptive factor is then updated "
-  "multiplicatively:")
-E("lam", r"\lambda_{n+1}=\lambda_n\exp\left(\kappa\,e_n\right),\qquad \lambda_{n+1}\in[\lambda_{\min},1],",
-  "λ_(n+1)=λ_n exp(κ e_n),  λ_(n+1)∈[λ_\"min\",1],")
-P("where $\\kappa$ is the adaptation gain, and $\\lambda_{\\min}$ is the smallest permitted adaptive factor. "
-  "Consequently, $\\lambda$ decreases while the margin is below the target and recovers toward one once spare margin "
-  "returns. The multiplicative form keeps $\\lambda$ positive and makes each change proportional to its current value. "
-  "The upper bound $\\lambda=1$ restores the full outer controller.")
+  "insufficient margin, and a positive error indicates spare margin.")
+P("Reducing and restoring the adaptive factor carry different risks. "
+  "A slow reduction leaves the loop exposed while the margin is insufficient. "
+  "Conversely, a fast recovery can raise $\\lambda$ back toward instability before the estimate settles. "
+  "The adaptive factor is therefore reduced and restored at different rates:")
+E("lam", r"\lambda_{n+1}=\begin{cases}\lambda_n\exp(\kappa e_n),&e_n<0,\\\lambda_n\exp(\mu\kappa e_n),&e_n\ge0,\end{cases}\qquad\lambda_{n+1}\in[\lambda_{\min},1],",
+  "λ_(n+1)={■(λ_n exp(κ e_n),&e_n<0,@λ_n exp(μ κ e_n),&e_n≥0,)┤  λ_(n+1)∈[λ_\"min\",1],")
+P("where $\\mu=0.32$ is the ratio of the recovery rate to the reduction rate. "
+  "Consequently, $\\lambda$ falls at full rate when the margin is below the target and recovers about three times more slowly. "
+  "The adaptation gain is $\\kappa$, and $\\lambda_{\\min}$ is the smallest permitted adaptive factor.")
 
 RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 575">
 <title id="f2t">Structure of one estimator update</title>
@@ -480,24 +515,26 @@ T1 = [
     ("$\\eta_A$", "4.54", "—", "Calibrated", "Activity threshold relative to command noise, {eq:act}"),
     ("$\\ell_{\\mathrm{floor}}$", "$10^{-3}$", "—", "Calibrated", "Input-leverage reference, {eq:lev}"),
     ("$\\mathcal{G}$", "0.5–6, 25 values", "—", "Design", "Candidate loop-magnitude changes, {eq:gfit}"),
+    ("$\\epsilon$", "0.1", "—", "Design", "Share of the inferred amplification accepted without confirmation"),
     ("$\\eta_g$", "0.12", "1.0 s", "Calibrated", "Output-power memory, accumulation, {eq:gmem}"),
     ("$r_g$", "0.73", "0.4 s", "Calibrated", "Recovery factor per update, {eq:gdecay}"),
     ("$b_{\\mathrm{tar}}$", "0.40", "—", "Design", "Target NCF margin, Equation ({n:lerr})"),
     ("$\\kappa$", "0.625", "—", "Calibrated", "Adaptation gain per update, Equation ({n:lam})"),
+    ("$\\mu$", "0.32", "—", "Calibrated", "Ratio of the recovery rate to the reduction rate of $\\lambda$"),
     ("$\\lambda_{\\min}$", "0.20", "—", "Design", "Smallest adaptive factor, Equation ({n:lam})"),
     ("$g_{\\mathrm{th}}$", "1.75", "—", "Calibrated", "Amplification threshold, {eq:det}"),
 ]
 
 
 H2("3.2", "Calibration", "s32")
-P("The framework of Section 3.1 contains 13 parameters, listed in Table 2. Six of them are design values set by the "
+P("The framework of Section 3.1 contains 15 parameters, listed in Table 2. Seven of them are design values set by the "
   "test and the analysis. The window duration $T_w$ and the update interval $\\Delta t$ are defined in Section 3.1.1. "
   "The window duration of 0.5 s gives a frequency resolution of 2 Hz, which also sets the lower bound of $\\Omega$. "
   "The update interval of 0.125 s sets how often the indicator and $\\lambda$ are updated. The upper bound of "
   "$\\Omega$, 80 Hz, matches the band over which the plants were identified in Section 2.3. "
   "The grid $\\mathcal{G}$ spans the amplifications expected from degradation. The target $b_{\\mathrm{tar}}=0.4$ "
   "follows the guideline of {citet:gomaa}, and $\\lambda_{\\min}$ keeps part of the controller active.")
-P("The remaining seven are hyperparameters. They set how quickly the indicator follows a change, how much evidence "
+P("The remaining eight are hyperparameters. They set how quickly the indicator follows a change, how much evidence "
   "each branch requires, and how strongly the adaptive factor responds. Their values depend on the laboratory, the "
   "equipment, the specimen and its material. They therefore cannot be fixed from theory and must be calibrated "
   "against cases with a known margin.")
@@ -607,6 +644,7 @@ def cite(m):  # numbered by first appearance: narrative "Name [n]" or bare "[n]"
         if k not in CITED: CITED.append(k)
     nums = "[" + ", ".join(f'<a class="cite" href="#ref-{k}">{CITED.index(k) + 1}</a>' for k in keys) + "]"
     return (" and ".join(REFS[k][0] for k in keys) + " " + nums) if m.group(1) == "t" else nums
+ARTICLE = re.sub(r"\{eq:([A-Za-z0-9_]+)\}", lambda m: ref(m.group(1)), ARTICLE)
 ARTICLE = re.sub(r"\{n:(\w+)\}", lambda m: str(EQ[m.group(1)]), ARTICLE)
 ARTICLE = re.sub(r"\{cite([tp]):([a-z0-9_,]+)\}", cite, ARTICLE)
 def scholar(t):  # title links to a Google Scholar search, DOI stays plain text

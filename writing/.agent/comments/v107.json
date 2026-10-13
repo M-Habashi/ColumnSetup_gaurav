@@ -1,0 +1,34 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 107,
+  "saved": "2026-10-13T03:43:43.598Z",
+  "comments": [
+    {
+      "id": "c1791862881259",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "where qobs,n is the observed power ratio, which measures the change in output power at each frequency relative to the initial state. The averaged autospectrum of y is p¯yy,n from Equation (11).",
+      "prefix": "rence:\nqobs,n(ω)=p¯yy,n(ω)pyy,0(ω),(22)\n",
+      "suffix": "\nThe output-power branch detects a chang",
+      "text": "define pyy,0 here too",
+      "created": "2026-10-13T03:41:21.259Z"
+    },
+    {
+      "id": "c1791862949977",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "is assumed to be",
+      "prefix": " the change due to specimen degradation ",
+      "suffix": " an amplification g of the open-loop gai",
+      "text": "can be represented by",
+      "created": "2026-10-13T03:42:29.977Z"
+    },
+    {
+      "id": "c1791862981540",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "qmod,",
+      "prefix": "candidate loop λngL0 predicts the ratio\n",
+      "suffix": "n(ω,g)=|1+L0(jω)1+λngL0(jω)|2,(24)\nwhere",
+      "text": "q_model",
+      "created": "2026-10-13T03:43:01.540Z"
+    }
+  ]
+}
