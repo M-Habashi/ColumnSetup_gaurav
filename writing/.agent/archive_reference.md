@@ -183,3 +183,23 @@ The following records support the five examples in writing_guide.md. Each releva
 > energy analysis of the linearised disturbance equations
 
 **Connection:** Rees attributes an energy analysis and a linear-stability result to Gill (1969), then uses it to investigate separate solid and fluid temperatures. This connects a borrowed analysis to a new question.
+
+### Dyke1995
+
+**Source:** S. J. Dyke, B. F. Spencer, P. Quast, and M. K. Sain (1995), “Role of Control-Structure Interaction in Protective System Design.” Journal of Engineering Mechanics 121(2), 322–338. [DOI](https://doi.org/10.1061/(ASCE)0733-9399(1995)121:2(322)) · [Illinois Experts abstract](https://experts.illinois.edu/en/publications/role-of-control-structure-interaction-in-protective-system-design/).
+
+**Verified 2026-10-18. Sections checked:** Abstract only; the full text is paywalled.
+
+**Exact supporting excerpt — Abstract:**
+
+> a natural velocity feedback link is shown to exist which tightly couples the dynamics of the hydraulic actuator
+
+**Connection:** Paper 2, Section 3.1: “The control–structure interaction discussed by Dyke et al. [n] is also accounted for in the transfer-system dynamics.” The source establishes that actuator and structure dynamics are coupled, so the identified plant includes this interaction. Paper 1 cites it for the same finding.
+
+### Vinnicombe1993
+
+**Source:** G. Vinnicombe (1993), “Frequency Domain Uncertainty and the Graph Topology.” IEEE Transactions on Automatic Control 38(9), 1371–1383. [DOI](https://doi.org/10.1109/9.237648).
+
+**Verified 2026-10-18, secondary only:** two research agents read a transcription. Section I, p. 1371, Eq. (1) defines the generalized stability margin b_{P,C}; p. 1372 gives its chordal (Riemann sphere) interpretation. Codrons (2005), Section 2.2.2, p. 10, Eq. (2.12) states b = min κ(G, −1/K) and attributes it to this paper. The original PDF was not opened.
+
+**Connection:** Paper 2, Section 2.3: the chordal distance χ(ω) is Vinnicombe's margin with P = L and C = 1, and its minimum is the NCF margin. No claim that Vinnicombe was first is made.

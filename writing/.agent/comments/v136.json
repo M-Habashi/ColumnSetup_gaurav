@@ -1,0 +1,25 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 136,
+  "saved": "2026-10-19T01:38:17.833Z",
+  "comments": [
+    {
+      "id": "c1792373670785",
+      "section": "3.1.1Direct identification branch, bid",
+      "quote": "A frequency is insufficiently excited when the whole command is too weak or when little of its power falls at that frequency.",
+      "prefix": "r noise and carries little information. ",
+      "suffix": "\nEach bin therefore receives an identifi",
+      "text": "This is redundant remove",
+      "created": "2026-10-19T01:34:30.785Z"
+    },
+    {
+      "id": "c1792373817364",
+      "section": "3.1.1Direct identification branch, bid",
+      "quote": "The raw leverage cannot serve as the weight directly because it is proportional to the bin power. A bin with one tenth of the peak power would therefore receive one tenth of the weight even though its estimate is still reliable. The weight should instead stay close to one while a bin carries enough command power and fall toward zero only when it carries too little. The hyperparameter ℓfloor sets this boundary as a fraction of the peak command power over Ω:",
+      "prefix": "ℓraw,n(ω)=p¯uu,n(ω)maxν∈Ωp¯uu,n(ν).(20)\n",
+      "suffix": "\nℓn(ω)=ℓraw,n(ω)ℓraw,n(ω)+ℓfloor,(21)\nwh",
+      "text": "I think here we can improve this by saying the role leverage can then be used to calculate or evaluate the weight of each pen. If the leverage is higher than the threshold LETH, it should be close to 1, and if it is much smaller, it should be close to 0. The same thing that we added after the equation, so that it is more clear. Instead of L floor, we can use LTH to indicate the threshold. This sentence and the sentence after the equation both should be improved accordingly.",
+      "created": "2026-10-19T01:36:57.364Z"
+    }
+  ]
+}

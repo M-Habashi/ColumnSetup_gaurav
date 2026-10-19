@@ -78,15 +78,15 @@ RAW('''<figure id="fig_loop"><svg role="img" aria-labelledby="flt fld" viewBox="
 <title id="flt">Outer controller loop with a prescribed reference u(t), used to identify the plant H(s,k) in the initial and damaged states</title>
 <desc id="fld">The reference u enters a summing junction, where the measured displacement y is subtracted. The tracking error enters the controller C(s), which sends the command v to the transfer system and specimen H(s,k). The output y is fed back to the summing junction.</desc>
 <style>#fig_loop svg text{font-size:13px}#fig_loop svg .lb{font-size:14px}</style>
-<defs><marker id="fla" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
+<defs><marker id="fla000" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#000"/></marker><marker id="fla1689BA" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#1689BA"/></marker><marker id="fla404040" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#404040"/></marker></defs>
 <g fill="#CCCCCC" stroke="#000" stroke-width="0.8"><rect x="170" y="30" width="90" height="46"/><rect x="320" y="30" width="130" height="46"/></g>
 <circle cx="115" cy="53" r="9" fill="#fff" stroke="#000" stroke-width="0.8"/>
 <g fill="none" stroke-width="1.1">
-<path d="M30 53 H104" stroke="#404040" marker-end="url(#fla)"/>
-<path d="M124 53 H168" stroke="#404040" marker-end="url(#fla)"/>
-<path d="M260 53 H318" stroke="#000" stroke-width="1.4" marker-end="url(#fla)"/>
-<path d="M450 53 H540" stroke="#1689BA" marker-end="url(#fla)"/>
-<path d="M495 53 V110 H115 V64" stroke="#1689BA" marker-end="url(#fla)"/>
+<path d="M30 53 H104" stroke="#404040" marker-end="url(#fla404040)"/>
+<path d="M124 53 H168" stroke="#404040" marker-end="url(#fla404040)"/>
+<path d="M260 53 H318" stroke="#000" stroke-width="1.4" marker-end="url(#fla000)"/>
+<path d="M450 53 H540" stroke="#1689BA" marker-end="url(#fla1689BA)"/>
+<path d="M495 53 V110 H115 V64" stroke="#1689BA" marker-end="url(#fla1689BA)"/>
 </g>
 <circle cx="495" cy="53" r="2.4" fill="#1689BA"/>
 <g text-anchor="middle" fill="#000">
@@ -146,14 +146,14 @@ RAW('<p class="lead">' + inline(
     "This section presents the framework first and then its calibration against cases with a known margin.") + '</p>')
 
 H2("3.1", "Framework Architecture", "s1")
-P("In the hybrid simulation block diagram of Figure 4, the numerical substructure computes the desired displacement $d(t)$ "
+P("In the hybrid simulation of Figure 4, the numerical substructure computes the desired displacement $d(t)$ "
   "from the ground acceleration and measured force $f_m(t)$. To compensate for transfer-system lag and improve tracking, "
   "a phase-lead compensator receives $d(t)$ and produces the reference $u(t)$. The outer controller $C(s)$ takes the "
   "tracking error $u(t)-y(t)$, where $y(t)$ is the measured actuator displacement. It scales its output by the adaptive "
   "factor $\\lambda\\in(0,1]$ to produce the command $v(t)$ sent to the plant $H(s,k)$.")
 P("The plant comprises the specimen of stiffness $k$ and the transfer system, which includes the inner-loop "
-  "controller, servo-valve, and actuator. The control–structure interaction between the actuator and specimen is "
-  "also included in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure "
+  "controller, servo-valve, and actuator. The control–structure interaction discussed by "
+  "{citet:dyke} is also accounted for in the transfer-system dynamics. The measured force $f_m(t)$ is fed back to the numerical substructure "
   "and closes the numerical substructure loop. Similarly, the measured displacement $y(t)$ is fed back to the outer "
   "controller and closes the outer controller loop.")
 P("The NCF OSI block runs alongside the outer-controller loop and does not alter the signals within it. It collects "
@@ -164,7 +164,7 @@ P("The NCF OSI block runs alongside the outer-controller loop and does not alter
 RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 602 200" data-units="px">
 <title id="f1t">Hybrid simulation loop with the NCF OSI framework setup</title>
 <desc id="f1d">The numerical substructure computes the desired displacement d, which the phase-lead compensator turns into the reference u. The tracking error u minus d_m enters the controller C(s). The adaptive factor lambda scales its output to give the command v applied to the transfer system and specimen H(s,k), whose output is y. The measured displacement d_m returns to the summing junction. The measured force f_m returns to the numerical substructure. The NCF OSI collects the reference u and the measured displacement d_m and updates lambda.</desc>
-<defs><marker id="f1a" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>
+<defs><marker id="f1a000" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#000"/></marker><marker id="f1a1689BA" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#1689BA"/></marker><marker id="f1a278A42" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#278A42"/></marker><marker id="f1a404040" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#404040"/></marker><marker id="f1aA518AD" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#A518AD"/></marker></defs>
 <g fill="#CCCCCC" stroke="#000" stroke-width="0.8">
 <rect x="4" y="95" width="82" height="40"/><rect x="110" y="95" width="78" height="40"/><rect x="270" y="95" width="58" height="40"/>
 <rect x="352" y="95" width="58" height="40"/><rect x="442" y="95" width="94" height="40"/>
@@ -172,17 +172,17 @@ RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 
 </g>
 <circle cx="238" cy="115" r="8" fill="#fff" stroke="#000" stroke-width="0.8"/>
 <g fill="none" stroke-width="1">
-<path d="M86 115 H108" stroke="#404040" marker-end="url(#f1a)"/>
-<path d="M188 115 H228" stroke="#404040" marker-end="url(#f1a)"/>
-<path d="M246 115 H268" stroke="#404040" marker-end="url(#f1a)"/>
-<path d="M328 115 H350" stroke="#404040" marker-end="url(#f1a)"/>
-<path d="M410 115 H440" stroke="#000" stroke-width="1.3" marker-end="url(#f1a)"/>
-<path d="M536 111 H600" stroke="#1689BA" marker-end="url(#f1a)"/>
-<path d="M556 111 V168 H238 V125" stroke="#1689BA" marker-end="url(#f1a)"/>
-<path d="M536 124 H574 V190 H45 V137" stroke="#A518AD" marker-end="url(#f1a)"/>
-<path d="M216 115 V23 H438" stroke="#278A42" marker-end="url(#f1a)"/>
-<path d="M556 111 V23 H538" stroke="#278A42" marker-end="url(#f1a)"/>
-<path d="M470 40 V62 H381 V93" stroke="#278A42" marker-end="url(#f1a)"/>
+<path d="M86 115 H108" stroke="#404040" marker-end="url(#f1a404040)"/>
+<path d="M188 115 H228" stroke="#404040" marker-end="url(#f1a404040)"/>
+<path d="M246 115 H268" stroke="#404040" marker-end="url(#f1a404040)"/>
+<path d="M328 115 H350" stroke="#404040" marker-end="url(#f1a404040)"/>
+<path d="M410 115 H440" stroke="#000" stroke-width="1.3" marker-end="url(#f1a000)"/>
+<path d="M536 111 H600" stroke="#1689BA" marker-end="url(#f1a1689BA)"/>
+<path d="M556 111 V168 H238 V125" stroke="#1689BA" marker-end="url(#f1a1689BA)"/>
+<path d="M536 124 H574 V190 H45 V137" stroke="#A518AD" marker-end="url(#f1aA518AD)"/>
+<path d="M216 115 V23 H438" stroke="#278A42" marker-end="url(#f1a278A42)"/>
+<path d="M556 111 V23 H538" stroke="#278A42" marker-end="url(#f1a278A42)"/>
+<path d="M470 40 V62 H381 V87.2" stroke="#278A42"/><circle cx="381" cy="91" r="3.8" fill="#fff" stroke="#278A42" stroke-width="1.2"/>
 </g>
 <circle cx="556" cy="111" r="2.2" fill="#1689BA"/><circle cx="216" cy="115" r="2.2" fill="#278A42"/>
 <g text-anchor="middle" fill="#000">
@@ -218,9 +218,9 @@ E("bncf", r"b_{\mathrm{NCF}}(L)=\inf_{\omega}\chi(\omega).",
 P('As the specimen changes during a hybrid simulation, the loop $L(j\\omega)$ changes with it, and so does its '
   'margin. {eq:bncf} '
   'could be applied directly only if $L(j\\omega)$ were identified with high confidence at every frequency, but '
-  'online measurements rarely support this across the full band. The NCF OSI is therefore estimated from three '
-  'complementary branches, direct identification $b_{\\mathrm{id}}$, output-power inference $b_{\\mathrm{pow}}$ '
-  'and prior identification of the initial state $b_0$, which the following sections develop in turn.')
+  'online measurements rarely support this. The NCF OSI is therefore estimated from three complementary branches, '
+  'which the following sections develop in turn. These are direct identification $b_{\\mathrm{id}}$, output-power inference $b_{\\mathrm{pow}}$ '
+  'and the prior identification of the initial state $b_0$.')
 
 H2("3.1.1", "Direct identification branch, " + inline("$b_{\\mathrm{id}}$"), "s2")
 P('Identifying the closed-loop transfer function requires the autospectrum of reference $u(t)$ and the cross '
@@ -271,7 +271,7 @@ P("Inverting {eq:T} gives the identified loop, which is the open-loop transfer f
   "measured closed-loop response:")
 E("lhat", r"\hat{L}_n(j\omega)=\frac{\hat{T}_n(j\omega)}{1-\hat{T}_n(j\omega)}.",
   "L̂_n (jω)=(T̂_n (jω))/(1−T̂_n (jω)).")
-P("Here, the identified loop is smoothed with the running median over neighbouring frequencies discussed by "
+P("Here, the identified loop is smoothed with the running median over neighbouring frequencies, as recommended by "
   "{citet:dimatteo}, so the median is taken over each frequency and its two neighbours. With three values, a "
   "single outlying bin cannot set the median, and the smoothed loop $\\hat{L}_{\\mathrm{s},n}$ is given by")
 E("lmed", r"\hat{L}_{\mathrm{s},n}(j\omega_m)=\underset{i\in\{m-1,\,m,\,m+1\}}{\operatorname{median}}\;\hat{L}_n(j\omega_i).",
@@ -279,13 +279,12 @@ E("lmed", r"\hat{L}_{\mathrm{s},n}(j\omega_m)=\underset{i\in\{m-1,\,m,\,m+1\}}{\
 P("The identified margin then follows from {eq:bncf}, with the smoothed loop in place of the unknown loop $L$:")
 E("bid", r"b_{\mathrm{id},n}=b_{\mathrm{NCF}}\big(\hat{L}_{\mathrm{s},n}\big).",
   "b_(\"id\",n)=b_(\"NCF\") (L̂_(\"s\",n)).")
-P("The quality of this estimate, however, varies with time and frequency during the experiment for two reasons. First, the command can be too weak "
-  "for the measured response to rise above the sensor noise. Second, even an active command concentrates its energy "
-  "in a limited band set by the ground motion and the structural modes, so bins outside that band carry little "
-  "information.")
+P("At each update, however, the estimate is uncertain at any frequency that the command does not excite sufficiently. "
+  "The measured response at that frequency then stays close to the sensor noise and carries little information.")
 P("Each bin therefore receives an identification weight $w_{\\mathrm{id},n}$ between zero and one, built from three "
   "factors. "
-  "The first is command activity $A_n$, detected from the root mean square of the window:")
+  "The first is command activity $A_n$, which checks from the root mean square of the window that the command "
+  "rises above the noise:")
 E("act", r"A_n=\begin{cases}1, & \operatorname{RMS}(u_n)>\eta_A\,\sigma_u,\\ 0, & \text{otherwise},\end{cases}",
   "A_n={■(1,&\"RMS\"(u_n)>η_A σ_u,@0,&\"otherwise\",)┤")
 P("where $\\operatorname{RMS}(u_n)$ is the root mean square of the command samples in the considered window $n$, "
@@ -295,16 +294,14 @@ P("where $\\operatorname{RMS}(u_n)$ is the root mean square of the command sampl
   "normalized by its maximum over $\\Omega$:")
 E("prel", r"\ell_{\mathrm{raw},n}(\omega)=\frac{\bar{p}_{uu,n}(\omega)}{\max_{\nu\in\Omega}\bar{p}_{uu,n}(\nu)}.",
   "ℓ_(\"raw\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈Ω)  p̄_(uu,n) (ν)).")
-P("The raw leverage cannot serve as the weight directly because it is proportional to the bin power. A bin with "
-  "one tenth of the peak power would therefore receive one tenth of the weight even though its estimate is still "
-  "reliable. The weight should instead stay close to one while a bin carries enough command power and fall toward "
-  "zero only when it carries too little. The hyperparameter $\\ell_{\\mathrm{floor}}$ sets this boundary as a "
-  "fraction of the peak command power over $\\Omega$:")
-E("lev", r"\ell_n(\omega)=\frac{\ell_{\mathrm{raw},n}(\omega)}{\ell_{\mathrm{raw},n}(\omega)+\ell_{\mathrm{floor}}},",
-  "ℓ_n (ω)=(ℓ_(\"raw\",n) (ω))/(ℓ_(\"raw\",n) (ω)+ℓ_(\"floor\") ),")
-P("which stays close to one in bins with $\\ell_{\\mathrm{raw},n}\\gg\\ell_{\\mathrm{floor}}$ and decreases smoothly "
-  "toward zero in bins with $\\ell_{\\mathrm{raw},n}\\ll\\ell_{\\mathrm{floor}}$. Consequently, a bin with command "
-  "power equal to $\\ell_{\\mathrm{floor}}$ times the peak receives a leverage of one half. The third factor is the "
+P("The raw leverage then sets the weight of each bin through the threshold $\\ell_{\\mathrm{th}}$, expressed as a "
+  "fraction of the peak command power. A bin with $\\ell_{\\mathrm{raw},n}$ well above $\\ell_{\\mathrm{th}}$ should "
+  "receive a weight close to one, and a bin well below it a weight close to zero:")
+E("lev", r"\ell_n(\omega)=\frac{\ell_{\mathrm{raw},n}(\omega)}{\ell_{\mathrm{raw},n}(\omega)+\ell_{\mathrm{th}}},",
+  "ℓ_n (ω)=(ℓ_(\"raw\",n) (ω))/(ℓ_(\"raw\",n) (ω)+ℓ_(\"th\") ),")
+P("which changes smoothly between these limits and equals one half when $\\ell_{\\mathrm{raw},n}=\\ell_{\\mathrm{th}}$, "
+  "that is, when the bin carries $\\ell_{\\mathrm{th}}$ times the peak command power. The leverage is relative to the peak bin, so $A_n$ is still needed to reject "
+  "a command that is weak at all frequencies. The third factor is the "
   "coherence $\\gamma_n^{2}$ from {eq:coh}, which multiplies the activity and the leverage to complete the weight")
 E("conf", r"w_{\mathrm{id},n}(\omega)=A_n\,\gamma_n^{2}(\omega)\,\ell_n(\omega).",
   "w_(\"id\",n) (ω)=A_n γ_n^2 (ω) ℓ_n (ω).")
@@ -544,7 +541,7 @@ T1 = [
     ("$\\Omega$", "2–80 Hz, 37 bins", "—", "Design", "Analysis set, 58–62 Hz rejected"),
     ("$\\eta_s$", "0.39", "0.25 s", "Calibrated", "Spectral averaging, Equations ({n:ewuu})–({n:ewyu})"),
     ("$\\eta_A$", "4.54", "—", "Calibrated", "Activity threshold relative to command noise, {eq:act}"),
-    ("$\\ell_{\\mathrm{floor}}$", "$10^{-3}$", "—", "Calibrated", "Input-leverage reference, {eq:lev}"),
+    ("$\\ell_{\\mathrm{th}}$", "$10^{-3}$", "—", "Calibrated", "Input-leverage threshold, {eq:lev}"),
     ("$\\mathcal{G}$", "0.5–6, 25 values", "—", "Design", "Candidate loop-magnitude changes, {eq:gfit}"),
     ("$\\epsilon$", "0.1", "—", "Design", "Minimum confirmation, Equation ({n:confirm})"),
     ("$\\rho_{\\mathrm{th}}$", "1.5", "—", "Calibrated", "Confirmation threshold, Equation ({n:confirm})"),
@@ -636,7 +633,7 @@ RAW('<figure class="table" id="tab_metrics"><figcaption><b>Table 3.</b> Calibrat
     ]) + "</tbody></table></figure>")
 P("Each case constrains the hyperparameters of the branch or the adaptive law that it exercises most strongly. "
   "The wideband cases set the spectral averaging $\\eta_s$, the "
-  "activity threshold $\\eta_A$ and the leverage reference $\\ell_{\\mathrm{floor}}$ of direct identification. The "
+  "activity threshold $\\eta_A$ and the leverage threshold $\\ell_{\\mathrm{th}}$ of direct identification. The "
   "narrowband cases set the output-power parameters, with their damage onset setting $\\rho_{\\mathrm{th}}$ and "
   "$\\eta_g$ and their return to the initial state setting $r_g$. The adaptive cases set the adaptation gain $\\kappa$ "
   "and the ratio $\\mu$ of the recovery rate to the reduction rate. The values in Table 1 were tuned on a wider "
@@ -659,6 +656,7 @@ RAW('<ol class="assumptions">' + "".join(f"<li>{inline(t)}</li>" for t in [
 REFS = {  # key -> (in-text name, year, entry). Cite as {citet:key} "Name [n]" or {citep:key} "[n]". Numbered by first appearance.
     "glover": ("Glover and McFarlane", "1989", 'Glover, K., and McFarlane, D. (1989), “Robust stabilization of normalized coprime factor plant descriptions with H<sub>∞</sub>-bounded uncertainty,” <i>IEEE Transactions on Automatic Control</i>, 34(8), 821–830. DOI: 10.1109/9.29424'),
     "vinnicombe": ("Vinnicombe", "1993", 'Vinnicombe, G. (1993), “Frequency domain uncertainty and the graph topology,” <i>IEEE Transactions on Automatic Control</i>, 38(9), 1371–1383. DOI: 10.1109/9.237648'),
+    "dyke": ("Dyke et al.", "1995", 'Dyke, S. J., Spencer, B. F., Quast, P., and Sain, M. K. (1995), “Role of control-structure interaction in protective system design,” <i>Journal of Engineering Mechanics</i>, 121(2), 322–338. DOI: 10.1061/(ASCE)0733-9399(1995)121:2(322)'),
     "gomaa": ("Gomaa et al.", "in press", 'Gomaa, M., Patino, E. D., Villamizar, J. N., Condori Uribe, J. W., and Dyke, S. J. (in press), “An online stability indicator for real-time hybrid simulation emphasizing physical substructure degradation,” author manuscript.'),
     "welch": ("Welch", "1967", 'Welch, P. D. (1967), “The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms,” <i>IEEE Transactions on Audio and Electroacoustics</i>, 15(2), 70–73. DOI: 10.1109/TAU.1967.1161901'),
     "roberts": ("Roberts", "1959", 'Roberts, S. W. (1959), “Control chart tests based on geometric moving averages,” <i>Technometrics</i>, 1(3), 239–250. DOI: 10.1080/00401706.1959.10489860'),
