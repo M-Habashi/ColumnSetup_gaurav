@@ -1,0 +1,16 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 115,
+  "saved": "2026-10-18T17:18:24.034Z",
+  "comments": [
+    {
+      "id": "c1792343786020",
+      "section": "2.2Experimental setup",
+      "quote": "The breakout cone did not form, and the cracks were not yet visible, so the damage is partial. The base nevertheless loses part of its rotational stiffness, and the lateral stiffness at the actuator control point decreases as a result.",
+      "prefix": " concrete separates around the anchors. ",
+      "suffix": "\nNo numerical substructure is involved i",
+      "text": "This is a sudden jump!\nWe haven't yet mentioned what we did so that cracks didn't form\nAlso there is no need to mention that cracks were not visible\nI am thinking of statement of the goal is to identify the initial system with the initial stiffness the push the specimen so that it degrades by or something like that then identify the new degraded system for comparison",
+      "created": "2026-10-18T17:16:26.020Z"
+    }
+  ]
+}

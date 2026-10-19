@@ -1,0 +1,25 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 114,
+  "saved": "2026-10-18T16:17:09.692Z",
+  "comments": [
+    {
+      "id": "c1792339893985",
+      "section": "2.1Motivation",
+      "quote": "The resulting",
+      "prefix": "trol action produces a larger response. ",
+      "suffix": " gain amplification, rather than an adde",
+      "text": "This result in gain amplification dont mention time delay yet",
+      "created": "2026-10-18T16:11:33.986Z"
+    },
+    {
+      "id": "c1792340170576",
+      "section": "2.1Motivation",
+      "quote": "controller",
+      "prefix": "duces the stability margin of the outer ",
+      "suffix": " loop. However, that finding was obtaine",
+      "text": "After that, we can add a mechanism that can be missed by conventional time-delay-based margins, which encourages the use of NCF-based margin. [1]",
+      "created": "2026-10-18T16:16:10.576Z"
+    }
+  ]
+}

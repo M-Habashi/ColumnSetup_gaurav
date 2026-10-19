@@ -574,6 +574,24 @@ export function App() {
     return () => view.removeEventListener("scroll", onScroll)
   }, [outline])
 
+  // A refresh returns to the last reading position, once the figures have their height.
+  const scrollRestored = useRef(false)
+  useEffect(() => {
+    const view = paperRef.current?.closest<HTMLElement>("[data-slot=scroll-area-viewport]")
+    if (!view || !version) return
+    if (!scrollRestored.current) {
+      scrollRestored.current = true
+      const y = Number(localStorage.getItem("m2-scroll") ?? 0)
+      const imgs = Array.from(docRef.current?.querySelectorAll("img") ?? [])
+      view.scrollTop = y
+      Promise.all(imgs.map((i) => i.complete || new Promise((r) => { i.onload = i.onerror = r })))
+        .then(() => { view.scrollTop = y })
+    }
+    const onScroll = () => localStorage.setItem("m2-scroll", String(view.scrollTop))
+    view.addEventListener("scroll", onScroll, { passive: true })
+    return () => view.removeEventListener("scroll", onScroll)
+  }, [version])
+
   // Notices fade out on their own.
   useEffect(() => {
     if (!manuscriptNotice) return

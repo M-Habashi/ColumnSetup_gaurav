@@ -1,0 +1,34 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 120,
+  "saved": "2026-10-18T22:52:46.916Z",
+  "comments": [
+    {
+      "id": "c1792363712396",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "The chordal distance b",
+      "prefix": " state and Ld=CHd in the damaged state. ",
+      "suffix": "etween L(jω) and the critical point −1 i",
+      "text": "First this is the normalized chordal..\nSecond I want you to spawn sol 6.1 agents to find an original reference that initialized this equation in the literature it should give you the reference link the ecaxt text location you revise it and lets cite it",
+      "created": "2026-10-18T22:48:32.396Z"
+    },
+    {
+      "id": "c1792363888632",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "Table 1 summarizes the two states and shows that the damaged margin is below the 0.4 guideline recommended by Gomaa et al. [1]. These trends agree with the gain-amplification mechanism reported in [1],",
+      "prefix": " to 0.34 at 39 Hz in the damaged state. ",
+      "suffix": " so the mechanism also appears in a phys",
+      "text": "First no need for table 1 it doesn't add additional information\nSecond try to cite Gomaa only once here",
+      "created": "2026-10-18T22:51:28.632Z"
+    },
+    {
+      "id": "c1792363952870",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "assumption in Section 3.1.2 that degradation scales the open-loop gain",
+      "prefix": "sical experiment. They also support the ",
+      "suffix": " by a real factor g.\nTable 1. Initial an",
+      "text": "Will be needed in section..",
+      "created": "2026-10-18T22:52:32.870Z"
+    }
+  ]
+}

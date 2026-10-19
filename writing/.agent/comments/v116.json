@@ -1,0 +1,25 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 116,
+  "saved": "2026-10-18T17:35:54.433Z",
+  "comments": [
+    {
+      "id": "c1792344773154",
+      "section": "2.2Experimental setup",
+      "quote": "Figure 2. Outer controller loop used in the tests of this section",
+      "prefix": "fer systemand specimen\nu(t)+−\nv(t)y(t)\n\n",
+      "suffix": ".\n2.3Initial and damaged systems\nThe pla",
+      "text": "The caption should be standalone. I think something like \"in the text of this section\" is not the right thing. If we have table figures, this caption will not make sense.",
+      "created": "2026-10-18T17:32:53.155Z"
+    },
+    {
+      "id": "c1792344918234",
+      "section": "2.3Initial and damaged systems",
+      "quote": "The plant H(s,k) was identified in two specimen states to quantify the effect of the anchorage damage. In the initial state, the lateral stiffness of the specimen at the actuator control point was k0=7.20 MN/m. After the anchorage was damaged, the lateral stiffness fell to 5.38 MN/m, or 0.75k0, which is a 25% loss. The two identified plants are denoted H0 and Hd hereafter, for the initial and damaged states respectively.\nIn each state, band-limited white noise up to 80 Hz was applied through the loop of Figure 2 with the same C(s). The transfer function from the command v(t) to the measured displacement y(t) was then estimated between 0.1 and 80 Hz. Frequencies with coherence below 0.8 were excluded before a parametric model was fitted to each estimate, with five poles for H0 and six for Hd.",
+      "prefix": "section.\n2.3Initial and damaged systems\n",
+      "suffix": "\n2.4Effect of degradation on stability\nI",
+      "text": "I think it's better to mention first how we did the identification, then mention the result. Saying something like, \"The initial stiffness was like this, and then the damage is like this,\" and then you mention the method is not the right flow. Start by mentioning the band-limited white noise and the frequency, and how it is applied, and then mention the result.",
+      "created": "2026-10-18T17:35:18.234Z"
+    }
+  ]
+}

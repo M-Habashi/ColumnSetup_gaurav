@@ -1,0 +1,61 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 122,
+  "saved": "2026-10-18T23:42:38.797Z",
+  "comments": [
+    {
+      "id": "c1792366701028",
+      "section": "2.4Effect of degradation on stability",
+      "quote": "used in this study [3]. F",
+      "prefix": "inimum over frequency is the NCF margin ",
+      "suffix": "igure 3 compares the experimentally iden",
+      "text": "Not by this study this is not the right way to cite a paper!! You talk about the authors to give respect example presented by Mohamed [1]",
+      "created": "2026-10-18T23:38:21.031Z"
+    },
+    {
+      "id": "c1792366811320",
+      "section": "2.5Problem statement",
+      "quote": " remains",
+      "prefix": "a controller tuned for the damaged state",
+      "suffix": " stable but sacrifices tracking performa",
+      "text": "Can remain stable",
+      "created": "2026-10-18T23:40:11.321Z"
+    },
+    {
+      "id": "c1792366827130",
+      "section": "2.5Problem statement",
+      "quote": "sacrifices",
+      "prefix": "or the damaged state remains stable but ",
+      "suffix": " tracking performance in the initial sta",
+      "text": "Compromises",
+      "created": "2026-10-18T23:40:27.130Z"
+    },
+    {
+      "id": "c1792366858160",
+      "section": "2.5Problem statement",
+      "quote": "unknown",
+      "prefix": "itial state. The specimen state is also ",
+      "suffix": " during the experiment, so the appropria",
+      "text": "We want to say something deliver high Uncertainity. It is not completely unknown it is more uncertain",
+      "created": "2026-10-18T23:40:58.160Z"
+    },
+    {
+      "id": "c1792366926571",
+      "section": "2.5Problem statement",
+      "quote": "from the available",
+      "prefix": "oop must therefore be quantified online ",
+      "suffix": " measurements. The controller must then ",
+      "text": "Based on the observed",
+      "created": "2026-10-18T23:42:06.571Z"
+    },
+    {
+      "id": "c1792366945829",
+      "section": "2.5Problem statement",
+      "quote": "must",
+      "prefix": " available measurements. The controller ",
+      "suffix": " then be updated accordingly so the expe",
+      "text": "Using must in two sentences in the same way is weak",
+      "created": "2026-10-18T23:42:25.829Z"
+    }
+  ]
+}
