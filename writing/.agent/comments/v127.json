@@ -1,0 +1,16 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 127,
+  "saved": "2026-10-19T00:29:15.324Z",
+  "comments": [
+    {
+      "id": "c1792369740895",
+      "section": "2.4Problem statement",
+      "quote": "The indicator is estimated during the experiment from the desired displacement calculated by the numerical substructure and the measured actuator displacement by combining three estimator branches at each frequency, each weighted by the confidence in its output.",
+      "prefix": "ntroller that gets updated accordingly. ",
+      "suffix": " The first is direct identification, bid",
+      "text": "This is a very long sentence",
+      "created": "2026-10-19T00:29:00.895Z"
+    }
+  ]
+}

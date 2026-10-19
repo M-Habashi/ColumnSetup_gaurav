@@ -17,3 +17,4 @@ main/OSI_tests/overloadin_test/mex_build/
 *.zip
 .playwright-mcp/
 writing/.agent/worktree/
+writing/.agent/suggest/

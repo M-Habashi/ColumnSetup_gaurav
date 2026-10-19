@@ -16,7 +16,9 @@ import {
   MoonIcon,
   PencilIcon,
   RotateCcwIcon,
+  RefreshCwIcon,
   SaveIcon,
+  SparklesIcon,
   SunIcon,
   Trash2Icon,
   XIcon,
@@ -50,7 +52,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useTheme } from "@/components/theme-provider"
 import { type ReviewComment, draftFromRange, paintComments } from "@/lib/anchor"
 import { compare } from "@/lib/diff"
-import { deleteVersion, fetchVersions, hasDisk, loadComments, saveComments, loadDraft, writeManuscript, type WorkingDraft } from "@/lib/store"
+import { applySuggestion, deleteVersion, discardSuggestion, fetchVersions, hasDisk, loadComments, pollSuggestion, saveComments, startSuggestion, loadDraft, writeManuscript, type Suggestion, type WorkingDraft } from "@/lib/store"
 import { acceptedHtml, lockBlocks } from "@/lib/track"
 import { EDITABLE_BLOCKS, baseWords, insertedRanges, paragraphDocument, updatedParagraph } from "@/lib/paragraph-editor"
 import { cn } from "@/lib/utils"
@@ -148,6 +150,9 @@ export function App() {
   const pendingParagraphRef = useRef<number | null>(null)
   const editingRef = useRef(false)
   editingRef.current = editing
+  // One comment at a time can be applied by the agent; its result is shown as a diff in place.
+  const [suggest, setSuggest] = useState<(Suggestion & { commentId: string; version: number; prompt: string }) | null>(null)
+  const suggestHtml = suggest?.status === "done" ? suggest.html : undefined
 
   const commentsRef = useRef(comments)
   const loadedRef = useRef<ReviewComment[] | null>(null)
@@ -228,7 +233,11 @@ export function App() {
   useLayoutEffect(() => {
     const doc = docRef.current!
     if (!version) return
-    if (compareWith !== null) {
+    if (suggestHtml && compareWith === null) {
+      const r = compare(version.html, suggestHtml)
+      doc.replaceChildren(...r.nodes)
+      setStats(r)
+    } else if (compareWith !== null) {
       const r = compare(htmlOf(compareWith), version.html)
       doc.replaceChildren(...r.nodes)
       setStats(r)
@@ -253,8 +262,23 @@ export function App() {
         return { host, id: eq.id || `eq${k + 1}` }
       })
     )
-    if (reviewing) setOrder(paintComments(doc, commentsRef.current).order)
-  }, [version, versions, compareWith, reviewing, reviewAnchors, editing])
+    if (reviewing && !suggestHtml) setOrder(paintComments(doc, commentsRef.current).order)
+    if (suggestHtml) doc.querySelector("ins, del")?.scrollIntoView({ block: "center", behavior: "smooth" })
+  }, [version, versions, compareWith, reviewing, reviewAnchors, editing, suggestHtml])
+
+  // Follow a running suggestion until the agent finishes.
+  useEffect(() => {
+    if (suggest?.status !== "running") return
+    const t = setInterval(async () => {
+      try {
+        const r = await pollSuggestion(suggest.id)
+        if (r.status !== "running") setSuggest((s) => (s && s.id === r.id ? { ...s, ...r } : s))
+      } catch (error) {
+        setSuggest((s) => s && { ...s, status: "error", error: String(error) })
+      }
+    }, 2000)
+    return () => clearInterval(t)
+  }, [suggest?.id, suggest?.status])
 
   // Theme changes do not reload the frame or reset native undo.
   useEffect(() => {
@@ -452,6 +476,35 @@ export function App() {
       t ? cs.map((c) => (c.id === id ? { ...c, text: t } : c)) : cs.filter((c) => c.id !== id)
     )
     setEditingId(null)
+  }
+
+  async function runSuggestion(c: ReviewComment, prompt: string) {
+    if (suggest) void discardSuggestion(suggest.id).catch(() => {})
+    try {
+      const { id } = await startSuggestion({ section: c.section, quote: c.quote, prefix: c.prefix, suffix: c.suffix, text: prompt })
+      setSuggest({ id, status: "running", commentId: c.id, version: version!.v, prompt })
+    } catch (error) {
+      setManuscriptNotice(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  function closeSuggestion() {
+    if (suggest) void discardSuggestion(suggest.id).catch(() => {})
+    setSuggest(null)
+  }
+
+  async function acceptSuggestion() {
+    if (!suggest) return
+    try {
+      const result = await applySuggestion(suggest.id, suggest.commentId, suggest.version)
+      window.MANUSCRIPT_VERSIONS = result.versions
+      setVersions(result.versions)
+      setWorking(result.draft)
+      setSuggest(null)
+      setManuscriptNotice(`Applied as v${result.versions[result.versions.length - 1].v}`)
+    } catch (error) {
+      setSuggest((s) => s && { ...s, status: "error", error: error instanceof Error ? error.message : String(error) })
+    }
   }
 
   function cancelEdit(id: string) {
@@ -905,6 +958,11 @@ export function App() {
                     onSave={(t) => saveComment(c.id, t)}
                     onCancel={() => cancelEdit(c.id)}
                     onDelete={() => saveComment(c.id, "")}
+                    suggestion={suggest?.commentId === c.id ? suggest : null}
+                    canSuggest={disk === true && selected === -1 && !comparing && !editing}
+                    onSuggest={(prompt) => runSuggestion(c, prompt)}
+                    onApply={acceptSuggestion}
+                    onDiscard={closeSuggestion}
                   />
                 ))}
               </div>
@@ -1092,10 +1150,17 @@ function CommentCard(props: {
   onSave: (text: string) => void
   onCancel: () => void
   onDelete: () => void
+  suggestion: (Suggestion & { prompt: string }) | null
+  canSuggest: boolean
+  onSuggest: (prompt: string) => void
+  onApply: () => void
+  onDiscard: () => void
 }) {
-  const { n, comment: c, active, editing } = props
+  const { n, comment: c, active, editing, suggestion: s } = props
   const [draft, setDraft] = useState(c.text)
   useEffect(() => setDraft(c.text), [c.text, editing])
+  const [prompt, setPrompt] = useState(c.text)
+  useEffect(() => setPrompt(s?.prompt ?? c.text), [s?.prompt, c.text])
   return (
     <div
       ref={props.cardRef}
@@ -1110,6 +1175,21 @@ function CommentCard(props: {
         <span className="truncate">{c.section}</span>
         {!editing && (
           <div className="ml-auto flex gap-0.5">
+            {props.canSuggest && !s && (
+              <Hint text="Apply with the agent">
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Apply comment with the agent"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    props.onSuggest(c.text)
+                  }}
+                >
+                  <SparklesIcon />
+                </Button>
+              </Hint>
+            )}
             <Hint text="Edit">
               <Button
                 variant="ghost"
@@ -1179,6 +1259,38 @@ function CommentCard(props: {
         </div>
       ) : (
         <p className="whitespace-pre-wrap">{c.text}</p>
+      )}
+      {s && (
+        <div className="flex flex-col gap-2 border-t pt-2" onClick={(e) => e.stopPropagation()}>
+          {s.status === "running" && (
+            <p className="flex items-center gap-2 text-muted-foreground">
+              <LoaderIcon className="size-4 animate-spin" /> The agent is revising the passage…
+              <Button variant="ghost" size="xs" className="ml-auto" onClick={props.onDiscard}>Cancel</Button>
+            </p>
+          )}
+          {s.status === "error" && <p className="text-destructive">{s.error}</p>}
+          {s.status === "done" && (
+            <p className="text-muted-foreground">{s.summary || "The changes are shown in the manuscript."}</p>
+          )}
+          {s.status !== "running" && (
+            <>
+              <Textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} aria-label="Prompt for the agent" />
+              <div className="flex justify-end gap-1">
+                <Button variant="ghost" size="sm" onClick={props.onDiscard}>
+                  <XIcon /> Cancel
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => props.onSuggest(prompt)}>
+                  <RefreshCwIcon /> Regenerate
+                </Button>
+                {s.status === "done" && (
+                  <Button size="sm" onClick={props.onApply}>
+                    <CheckIcon /> Apply
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   )

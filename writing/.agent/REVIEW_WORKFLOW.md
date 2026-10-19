@@ -33,3 +33,11 @@ It reports the latest version, **saved** user edits (trailing versions with auth
 - Never edit the versions file, the working copy or the comment files by hand.
 - If a comment asks to discuss first, propose options and wait.
 - Write the text by `../md/writing_guide.md` and `../md/paper2.md`. Never edit the guides in `../md/` (`paper2.md`, `paper1.md`, `writing_guide.md`) without the user's permission.
+
+## Apply a comment from the page (optional)
+The sparkle button on a comment card asks an agent (`claude -p`, Opus, medium effort) to apply that one comment.
+- `review_server.py` copies the builder to `suggest/<id>/build.py`, the agent edits only that copy by `writing_guide.md`, and the server rejects any change outside string literals before it renders the preview with `--preview`.
+- The page shows the result as a diff in place. The card offers Apply, Cancel, and Regenerate with an editable prompt.
+- Apply copies the reviewed builder back and runs the builder, so the result is an ordinary agent version with the note "Comment applied: …". It is refused if the builder changed meanwhile or if unmerged page edits exist.
+- The applied comment stays in its own version file. The other comments of that version are copied to the new version so they stay open.
+- Nothing else changes: comments, page edits and agent versions follow the rules above.

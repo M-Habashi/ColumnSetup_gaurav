@@ -65,3 +65,23 @@ export async function deleteVersion(v: number) {
   if (!r.ok) throw new Error(result.error || "Deleting failed. Try again.")
   return result
 }
+
+// An agent applies one comment to a copy of the manuscript; the page shows the diff before Apply.
+export type Suggestion = { id: string; status: "running" | "done" | "error"; html?: string; summary?: string; error?: string }
+
+async function suggestCall(path: string, method: string, body?: object) {
+  const r = await fetch(`api/suggest${path}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  const result = await r.json()
+  if (!r.ok) throw new Error(result.error || "The suggestion request failed. Try again.")
+  return result
+}
+export const startSuggestion = (c: { section: string; quote: string; prefix: string; suffix: string; text: string }) =>
+  suggestCall("", "POST", c) as Promise<{ id: string }>
+export const pollSuggestion = (id: string) => suggestCall(`/${id}`, "GET") as Promise<Suggestion>
+export const applySuggestion = (id: string, comment: string, version: number) =>
+  suggestCall(`/${id}/apply`, "POST", { comment, version })
+export const discardSuggestion = (id: string) => suggestCall(`/${id}`, "DELETE")

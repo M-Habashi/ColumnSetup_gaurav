@@ -67,7 +67,7 @@ RAW('<figure id="fig_setup"><img src="figures/fig_setup.jpg" alt="Steel column s
 P("The goal of the tests is to compare the outer controller loop before and after damage. The plant is first "
   "identified in the initial state, while the anchorage is undamaged and the specimen has its initial stiffness. The "
   "specimen is then pushed laterally until the concrete around the anchors cracks and the base loses part of its "
-  "rotational stiffness. Finally, the plant of the degraded specimen is identified, and Sections 2.3 and 2.4 compare "
+  "rotational stiffness. Finally, the plant of the degraded specimen is identified, and Section 2.3 compares "
   "the two states.")
 P("No numerical substructure is involved in the tests of this section, and the measured force is therefore not fed "
   "back. The reference $u(t)$ is a prescribed displacement, so only the outer controller loop is closed. As Figure 2 "
@@ -133,8 +133,8 @@ RAW('<p class="lead">' + inline(
     "discusses the challenges that arise, and proposes ways to address them. The proposed framework comprises two "
     "parts: an online estimator of the indicator and an adaptive controller that gets updated accordingly. The "
     "indicator is estimated during the experiment from the desired displacement calculated by the numerical "
-    "substructure and the measured actuator displacement by combining three estimator branches at each frequency, "
-    "each weighted by the confidence in its output. The first is direct identification, $b_{\\mathrm{id}}$, which "
+    "substructure and the measured actuator displacement. To this end, three estimator branches are combined at each "
+    "frequency, each weighted by the confidence in its output. The first is direct identification, $b_{\\mathrm{id}}$, which "
     "estimates the closed-loop transfer function of the outer controller loop from the desired displacement $u(t)$ "
     "to the measured actuator displacement $y(t)$, with the $H_1$ cross-spectral estimator {citep:bendat}. The second is "
     "output-power inference, $b_{\\mathrm{pow}}$, which can detect loop amplification at frequencies that cannot "
@@ -697,6 +697,10 @@ def scholar(t):  # title links to a Google Scholar search, DOI stays plain text
     return t.replace(m.group(0), f"“{a}{m.group(2)}”" if m.group(1) else f"<i>{a}</i>", 1)
 ARTICLE = ARTICLE.replace("{REFS}", "\n".join(f'<li id="ref-{k}">{scholar(REFS[k][2])}</li>'
                                               for k in CITED))
+
+if "--preview" in sys.argv:  # comment suggestions: write the article only, no new version
+    open(sys.argv[sys.argv.index("--preview") + 1], "w", encoding="utf-8").write(ARTICLE)
+    sys.exit()
 
 # ---- content store read by the review app (writing/review-app builds manuscript2_journal.html)
 # usage: python build_manuscript2_journal.py "short note about this revision"
