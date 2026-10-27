@@ -4,8 +4,12 @@
   .intro-aside { grid-column: 2; padding: 28px 44px 0; }
   .report-layout { grid-template-columns: 220px minmax(0, 1fr); }
   .toc-rail { width: 100%; padding: 32px 20px 0; }
-  main { grid-column: 2; padding-right: 44px; padding-left: 44px; }
-  .context-rail { display: none; }
+  main { grid-column: 2; padding-right: 44px; padding-left: 44px; padding-bottom: 32px; }
+  .file-rail { grid-row: span 2; }
+  .plot-section { padding-bottom: 8px; }
+  .context-rail { grid-column: 2; position: static; max-height: none; overflow: visible; padding: 28px 44px 72px; border-top: 1px solid var(--border-soft); border-left: 0; }
+  .rail-alpha-control { max-width: 360px; }
+  .selected-details { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 }
 
 @media (max-width: 900px) {
@@ -14,14 +18,15 @@
   .intro-aside { padding: 24px 32px 0; }
   .report-layout { grid-template-columns: 200px minmax(0, 1fr); }
   .toc-rail { padding: 32px 18px 0; }
-  main { padding: 0 32px 80px; }
+  main { padding: 0 32px 24px; }
+  .context-rail { padding: 24px 32px 64px; }
   .split { grid-template-columns: 1fr; }
   .plot-workbench { grid-template-columns: 1fr; }
   .plot-controls { position: static; padding: 16px 0 0; border-top: 1px solid var(--border); border-left: 0; }
 }
 
 @media (max-width: 720px) {
-  .topbar { position: static; padding: 0 16px; }
+  .topbar { padding: 0 16px; }
   .article-panel { top: 54px; }
   .article-panel-backdrop { top: 54px; }
   .article-panel-toggle { margin-right: 12px; }
@@ -35,7 +40,8 @@
   .file-rail { max-height: none; overflow: visible; }
   .file-lists { max-height: 420px; }
   .nav a { min-height: 40px; align-items: center; }
-  main { width: 100%; padding: 0 24px 72px; }
+  main { width: 100%; padding: 0 24px 24px; }
+  .context-rail { padding: 24px 24px 56px; }
   h1 { font-size: 34px; }
   section { padding: 48px 0; }
   .metric-grid { grid-template-columns: 1fr; }
@@ -43,6 +49,14 @@
   .alpha-control { width: 100%; margin-top: 14px; }
   .plot-toolbar { margin-top: 12px; }
   .hysteresis-shell, .plotly-host { min-height: 400px; }
+  .structure-diagram svg { min-width: 480px; }
+}
+
+@media (pointer: coarse) {
+  .time-slider, .time-slider input { height: 32px; }
+  .time-slider input::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: -10px; }
+  .time-slider input::-moz-range-thumb { width: 24px; height: 24px; }
+  .tree-file, .tree-folder summary { min-height: 40px; }
 }
 
 @media print {

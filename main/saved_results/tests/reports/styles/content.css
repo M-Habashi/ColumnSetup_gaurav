@@ -37,7 +37,7 @@ td strong { color: var(--foreground); font-weight: 500; }
   background: var(--surface);
   color: var(--foreground);
 }
-.input::placeholder { color: #77736b; }
+.input::placeholder { color: var(--muted-dim); }
 .button {
   display: inline-flex;
   align-items: center;
@@ -58,23 +58,25 @@ td strong { color: var(--foreground); font-weight: 500; }
 
 .driver-popover.rths-tour {
   --tour-border: color-mix(in srgb, var(--accent) 70%, var(--border));
-  max-width: 320px;
-  padding: 14px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 16px;
   border: 1px solid var(--tour-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: var(--surface-strong);
-  box-shadow: none;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 50%);
   color: var(--foreground);
   font-family: var(--font-sans);
 }
 .rths-tour .driver-popover-title { padding-right: 28px; font-size: 15px; font-weight: 600; }
 .rths-tour .driver-popover-description { color: var(--muted-strong); font-size: 13px; line-height: 1.5; }
-.rths-tour .driver-popover-close-btn { color: var(--muted); }
+.rths-tour .driver-popover-close-btn { top: 6px; right: 6px; border-radius: var(--radius); color: var(--muted); }
 .rths-tour .driver-popover-close-btn:hover,
-.rths-tour .driver-popover-close-btn:focus { color: var(--foreground); }
+.rths-tour .driver-popover-close-btn:focus { background: var(--surface); color: var(--foreground); }
+.rths-tour .driver-popover-close-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .rths-tour .driver-popover-progress-text { color: var(--muted); font-family: var(--font-mono); font-size: 11px; }
 .rths-tour .driver-popover-footer-btn {
   border-color: var(--border);
+  padding: 5px 12px;
   border-radius: var(--radius);
   background: transparent;
   color: var(--foreground);

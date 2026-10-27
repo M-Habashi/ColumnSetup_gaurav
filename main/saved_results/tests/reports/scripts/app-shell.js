@@ -46,6 +46,8 @@ export function initAppShell(config) {
     articleLabel.textContent = articleNames.get(articleId);
     document.title = `${articleNames.get(articleId)} · ${config.title}`;
     setPanel(false);
+    window.dispatchEvent(new CustomEvent("articlechange", { detail: articleId }));
+    requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
     history.replaceState(null, "", nextHash || `#${articleId}`);
     const target = nextHash && nextHash !== `#${articleId}` ? document.querySelector(nextHash) : null;
     if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });

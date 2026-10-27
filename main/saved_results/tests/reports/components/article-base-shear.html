@@ -1,0 +1,145 @@
+<article class="report-article" id="article-2" data-article="article-2">
+  <div class="report-intro">
+    <header class="intro reveal">
+      <div class="intro-copy">
+        <span class="context-line">Hybrid frame response</span>
+        <h1>Base shear of the hybrid frame</h1>
+        <p>The base shear sums the measured specimen shear <code>fm</code> and the three numerical column shears. The numerical floor response <code>x_n</code> is replayed from the logged <code>fm</code> with the same FEM used during the test.</p>
+      </div>
+    </header>
+  </div>
+
+  <div class="report-layout explorer-layout" id="baseShearExplorer">
+    <aside class="toc-rail file-rail" aria-label="Base shear test files">
+      <div class="file-browser-head">
+        <h2 class="rail-title">Test files</h2>
+        <span class="selection-count" id="bsSelectionCount">0 selected</span>
+      </div>
+      <label class="field-label" for="bsFileSearch">Filter files</label>
+      <input class="input" id="bsFileSearch" type="search" placeholder="Search .mat files" autocomplete="off">
+      <div class="tree-actions">
+        <button class="button button-ghost" id="bsClearAll" type="button">Clear</button>
+      </div>
+      <div class="file-lists scroll-area">
+        <div class="file-tree" id="bsFileTree" role="tree" aria-label="Current saved result folders"></div>
+      </div>
+      <p class="file-menu-hint">Tests marked ! have no numerical FEM stored.</p>
+    </aside>
+
+    <main>
+      <section id="base-shear-structure" class="reveal plot-section">
+        <div class="plot-header">
+          <div>
+            <h2>Structure and reactions</h2>
+            <p>Three-story, three-bay steel moment frame. The lower 1.016 m of the left exterior column is the lab specimen; the rest of the frame is the numerical FEM.</p>
+          </div>
+        </div>
+        <div class="structure-diagram">
+          <svg viewBox="0 -44 680 464" role="img" aria-labelledby="bsDiagramTitle">
+            <title id="bsDiagramTitle">Hybrid frame with the specimen at the lower left column, floor displacements x1 to x3, and base reactions fm, V2, V3, and V4</title>
+            <defs>
+              <marker id="bsArrowFm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#74058A"/></marker>
+              <marker id="bsArrowMuted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#aaa69d"/></marker>
+              <marker id="bsArrowX1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#39BF5E"/></marker>
+            </defs>
+
+            <g class="diagram-legend">
+              <line x1="20" y1="-26" x2="44" y2="-26" class="specimen-line"/><text x="52" y="-22">Lab specimen: W8x28, 1.016 m</text>
+              <line x1="20" y1="-4" x2="44" y2="-4" class="frame-line"/><text x="52" y="0">Numerical FEM: W8x24 beams, W8x28 / W12x40 columns</text>
+            </g>
+
+            <g class="frame-line">
+              <line x1="150" y1="281" x2="150" y2="60"/>
+              <line x1="290" y1="330" x2="290" y2="60"/>
+              <line x1="430" y1="330" x2="430" y2="60"/>
+              <line x1="570" y1="330" x2="570" y2="60"/>
+              <line x1="150" y1="240" x2="570" y2="240"/>
+              <line x1="150" y1="150" x2="570" y2="150"/>
+              <line x1="150" y1="60" x2="570" y2="60"/>
+            </g>
+            <line x1="150" y1="330" x2="150" y2="281" class="specimen-line"/>
+            <circle cx="150" cy="281" r="5" class="interface-node"/>
+
+            <g class="ground">
+              <line x1="105" y1="330" x2="615" y2="330"/>
+              <path d="M115 330l-10 10M155 330l-10 10M195 330l-10 10M235 330l-10 10M275 330l-10 10M315 330l-10 10M355 330l-10 10M395 330l-10 10M435 330l-10 10M475 330l-10 10M515 330l-10 10M555 330l-10 10M595 330l-10 10"/>
+            </g>
+            <g class="base-spring">
+              <path d="M142 330a8 8 0 0 1 16 0"/><path d="M282 330a8 8 0 0 1 16 0"/><path d="M422 330a8 8 0 0 1 16 0"/><path d="M562 330a8 8 0 0 1 16 0"/>
+            </g>
+            <text x="582" y="324" class="diagram-note">k&#952;</text>
+
+            <line x1="146" y1="281" x2="96" y2="281" class="fm-arrow" marker-end="url(#bsArrowFm)"/>
+            <text x="90" y="286" text-anchor="end" class="fm-label">fm</text>
+            <text x="160" y="300" class="dm-label">dm &#8776; d<tspan baseline-shift="sub" font-size="10">n</tspan></text>
+            <text x="160" y="316" class="diagram-note">interface I (zero moment)</text>
+
+            <g class="floor-label">
+              <text x="160" y="232">m<tspan baseline-shift="sub" font-size="10">1</tspan></text>
+              <text x="160" y="142">m<tspan baseline-shift="sub" font-size="10">2</tspan></text>
+              <text x="160" y="52">m<tspan baseline-shift="sub" font-size="10">3</tspan></text>
+            </g>
+            <line x1="578" y1="240" x2="632" y2="240" class="x1-arrow" marker-end="url(#bsArrowX1)"/>
+            <text x="638" y="245" class="x1-label">x<tspan baseline-shift="sub" font-size="10">1</tspan></text>
+            <line x1="578" y1="150" x2="632" y2="150" class="muted-arrow" marker-end="url(#bsArrowMuted)"/>
+            <text x="638" y="155" class="diagram-note">x<tspan baseline-shift="sub" font-size="9">2</tspan></text>
+            <line x1="578" y1="60" x2="632" y2="60" class="muted-arrow" marker-end="url(#bsArrowMuted)"/>
+            <text x="638" y="65" class="diagram-note">x<tspan baseline-shift="sub" font-size="9">3</tspan></text>
+
+            <line x1="150" y1="352" x2="110" y2="352" class="fm-arrow" marker-end="url(#bsArrowFm)"/>
+            <text x="156" y="357" class="fm-label">fm</text>
+            <line x1="290" y1="352" x2="250" y2="352" class="muted-arrow" marker-end="url(#bsArrowMuted)"/>
+            <text x="296" y="357">V<tspan baseline-shift="sub" font-size="10">2</tspan></text>
+            <line x1="430" y1="352" x2="390" y2="352" class="muted-arrow" marker-end="url(#bsArrowMuted)"/>
+            <text x="436" y="357">V<tspan baseline-shift="sub" font-size="10">3</tspan></text>
+            <line x1="570" y1="352" x2="530" y2="352" class="muted-arrow" marker-end="url(#bsArrowMuted)"/>
+            <text x="576" y="357">V<tspan baseline-shift="sub" font-size="10">4</tspan></text>
+
+            <line x1="30" y1="330" x2="80" y2="330" class="muted-arrow" marker-start="url(#bsArrowMuted)" marker-end="url(#bsArrowMuted)"/>
+            <text x="55" y="320" text-anchor="middle">a<tspan baseline-shift="sub" font-size="10">g</tspan></text>
+
+            <path d="M110 372v8h460v-8M340 380v8" class="brace"/>
+            <text x="340" y="408" text-anchor="middle" class="equation">V<tspan baseline-shift="sub" font-size="11">b</tspan> = fm + V<tspan baseline-shift="sub" font-size="11">2</tspan> + V<tspan baseline-shift="sub" font-size="11">3</tspan> + V<tspan baseline-shift="sub" font-size="11">4</tspan></text>
+          </svg>
+        </div>
+        <p class="plot-note">The numerical model keeps three floor DOFs and a massless interface DOF with a roller; only horizontal force crosses the interface. Its floor-force sum gives the total base shear without a separate column-shear calculation: <code>V_b = 1ᵀ(K·x_n − force_to_floor·force_sign·fm)</code> = −Σ m<sub>i</sub>(ẍ<sub>i</sub> + a<sub>g</sub>) − damping force. <code>corr(d_n, dm)</code> in the side panel checks how closely the specimen followed the replayed interface command.</p>
+      </section>
+
+      <section id="base-shear-time" class="reveal plot-section">
+        <div class="plot-header">
+          <div>
+            <h2>Base shear time history</h2>
+            <p>Zoom on the time axis to choose the window shown in the loop below. Click <code>fm</code> in the legend to overlay the specimen share.</p>
+          </div>
+        </div>
+        <div class="plot-shell">
+          <div id="bsTimePlot" class="plotly-host base-shear-host" role="img" aria-label="Base shear versus earthquake time"></div>
+          <div class="empty-state bs-empty"><strong>No tests selected</strong><p>Choose files from the explorer.</p></div>
+        </div>
+      </section>
+
+      <section id="base-shear-loop" class="reveal plot-section">
+        <div class="plot-header">
+          <div>
+            <h2>Base shear versus first-floor displacement</h2>
+            <p id="bsLoopSummary">Full record.</p>
+          </div>
+        </div>
+        <div class="plot-shell">
+          <div id="bsLoopPlot" class="plotly-host base-shear-host" role="img" aria-label="Base shear versus first-floor displacement loops"></div>
+          <div class="empty-state bs-empty"><strong>No tests selected</strong><p>Choose files from the explorer.</p></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="context-rail" aria-label="Selected base shear tests">
+      <h2 class="rail-title">Selected tests</h2>
+      <label class="alpha-control rail-alpha-control" for="bsAlphaSlider">
+        <span>Density alpha</span>
+        <output id="bsAlphaValue" for="bsAlphaSlider">0.10</output>
+        <input id="bsAlphaSlider" type="range" min="0.10" max="1.00" step="0.01" value="0.10">
+      </label>
+      <div id="bsDetails" class="selected-details"><p class="muted-copy">No files selected.</p></div>
+    </aside>
+  </div>
+</article>

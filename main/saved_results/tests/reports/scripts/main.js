@@ -1,8 +1,9 @@
 "use strict";
 
-import { initAppShell } from "./app-shell.js?v=20260828-1";
-import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20260829-5";
-import { initGuidedTour } from "./guided-tour.js?v=20260829-7";
+import { initAppShell } from "./app-shell.js?v=20261027-1";
+import { initHysteresisExplorer } from "./hysteresis-explorer.js?v=20261027-3";
+import { initBaseShear } from "./base-shear.js?v=20261027-2";
+import { initGuidedTour } from "./guided-tour.js?v=20261027-3";
 
 async function fetchJson(path) {
   const response = await fetch(path, { cache: "no-store" });
@@ -60,8 +61,10 @@ async function start() {
           // Local report exports remain the fallback when no cloud links exist.
         }
       }
-      await initHysteresisExplorer(explorer, metadata, metadataWritable, downloadLinks);
+      const shared = await initHysteresisExplorer(explorer, metadata, metadataWritable, downloadLinks);
       initGuidedTour(explorer);
+      const baseShear = document.getElementById("baseShearExplorer");
+      if (baseShear) await initBaseShear(baseShear, shared);
     }
   } catch (error) {
     mount.innerHTML = `<main class="load-error"><h1>Report unavailable</h1><p>${error.message}</p></main>`;

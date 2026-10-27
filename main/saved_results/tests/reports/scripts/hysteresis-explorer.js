@@ -1,12 +1,12 @@
 "use strict";
 
-const DEFAULT_COLORS = ["#4477AA", "#EE6677", "#228833", "#CCBB44"];
+export const DEFAULT_COLORS = ["#4477AA", "#EE6677", "#228833", "#CCBB44"];
 const FORCE_UNITS = {
   kN: { divisor: 1000, next: "kip" },
   kip: { divisor: 4448.2216152605, next: "kN" }
 };
 
-function escapeHtml(value) {
+export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
@@ -16,23 +16,23 @@ function visibleName(value) {
   return String(value).trim().replace(/\.mat$/i, "");
 }
 
-function visiblePath(value) {
+export function visiblePath(value) {
   return String(value).replace(/\.mat$/i, "");
 }
 
-function formatFactor(value) {
+export function formatFactor(value) {
   const number = Number(value);
   return Number.isFinite(number)
     ? `${number.toLocaleString(undefined, { maximumFractionDigits: 3 })}×`
     : "—";
 }
 
-function rgba(hex, alpha) {
+export function rgba(hex, alpha) {
   const value = Number.parseInt(hex.slice(1), 16);
   return `rgba(${value >> 16},${value >> 8 & 255},${value & 255},${alpha})`;
 }
 
-function upperBound(values, limit) {
+export function upperBound(values, limit) {
   let low = 0;
   let high = values.length;
   while (low < high) {
@@ -43,7 +43,7 @@ function upperBound(values, limit) {
   return low;
 }
 
-function lowerBound(values, limit) {
+export function lowerBound(values, limit) {
   let low = 0;
   let high = values.length;
   while (low < high) {
@@ -73,7 +73,7 @@ function validView(view) {
     && range.length === 2 && range.every(Number.isFinite));
 }
 
-function buildTree(entries) {
+export function buildTree(entries) {
   const root = { folders: new Map(), files: [] };
   entries.forEach(entry => {
     const parts = entry.path.split("/");
@@ -91,7 +91,7 @@ function countFiles(branch) {
   return branch.files.length + [...branch.folders.values()].reduce((sum, child) => sum + countFiles(child), 0);
 }
 
-function treeMarkup(branch, metadata, depth = 0) {
+export function treeMarkup(branch, metadata, depth = 0) {
   const folders = [...branch.folders.entries()].sort(([a], [b]) => a.localeCompare(b));
   const files = [...branch.files].sort((a, b) => metadata.files[a.path].display_name.localeCompare(metadata.files[b.path].display_name));
   return [
@@ -621,7 +621,7 @@ export async function initHysteresisExplorer(container, initialMetadata, canPers
       paper_bgcolor: "#141412",
       plot_bgcolor: "#141412",
       font: { color: "#d6d4cb", family: "IBM Plex Sans, sans-serif", size: 12 },
-      margin: { l: 82, r: 24, t: 72, b: 68 },
+      margin: plot.clientWidth < 560 ? { l: 64, r: 12, t: 64, b: 60 } : { l: 82, r: 24, t: 72, b: 68 },
       showlegend: true,
       legend: { orientation: "h", x: 0, y: 1, yanchor: "bottom", itemclick: "toggle", itemdoubleclick: "toggleothers", uirevision: "hysteresis-series" },
       hovermode: "closest",
@@ -679,4 +679,5 @@ export async function initHysteresisExplorer(container, initialMetadata, canPers
   render();
   scheduleMetadataSave(0);
   window.addEventListener("resize", () => Plotly.Plots.resize(plot), { passive: true });
+  return { metadata, entries: state.manifest };
 }

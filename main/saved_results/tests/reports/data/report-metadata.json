@@ -10,24 +10,21 @@
         "label": "Hysteresis comparison",
         "summary": "Select saved tests and compare measured force-displacement loops.",
         "component": "components/article-explorer.html"
+      },
+      {
+        "id": "article-2",
+        "label": "Base shear",
+        "summary": "Hybrid-frame base shear: time history and loops against first-floor displacement.",
+        "component": "components/article-base-shear.html"
       }
     ]
   },
   "settings": {
-    "density_alpha": 0.5,
+    "density_alpha": 0.52,
     "earthquake_time_start": 0,
-    "earthquake_time_end": 41.1,
-    "custom_view": {
-      "x": [
-        -1.2030462854855346,
-        1.193159895415701
-      ],
-      "y": [
-        -6.1431023314695565,
-        6.11902491358372
-      ]
-    },
-    "force_unit": "kN",
+    "earthquake_time_end": null,
+    "custom_view": null,
+    "force_unit": "kip",
     "archived_tree_collapsed": true
   },
   "files": {
@@ -347,5 +344,5 @@
       "visible": true
     }
   },
-  "updated_at": "Sat, 29 Aug 2026 17:08:16 GMT"
+  "updated_at": "Tue, 27 Oct 2026 02:18:49 GMT"
 }

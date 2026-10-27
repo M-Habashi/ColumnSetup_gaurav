@@ -1,4 +1,4 @@
-function numerical_sub = recompute_numerical_sub_response(result)
+function [numerical_sub, hs] = recompute_numerical_sub_response(result)
 %RECOMPUTE_NUMERICAL_SUB_RESPONSE Recompute d_n by stepping from logged fm.
 % Units: result.t/effective_time [s], result.fm [N], d_n [mm], x_n [m].
 

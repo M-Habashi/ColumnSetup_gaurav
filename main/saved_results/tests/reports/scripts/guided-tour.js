@@ -51,21 +51,35 @@ function tourFile(folder) {
 }
 
 function fileStep(container, path, folderName) {
-  const checkbox = rowForPath(container, path).querySelector('input[type="checkbox"]');
-  const selected = checkbox.checked;
+  const checkbox = () => rowForPath(container, path).querySelector('input[type="checkbox"]');
+  const selected = checkbox().checked;
+  let listener = null;
+  let advancing = false;
+  const advance = async activeTour => {
+    if (advancing) return;
+    advancing = true;
+    if (!checkbox().checked) checkbox().click();
+    if (await waitForColorPicker(container, path)) {
+      requestAnimationFrame(() => requestAnimationFrame(() => activeTour.moveNext()));
+    }
+    advancing = false;
+  };
   return {
     element: `${rowSelector(path)} .tree-file-select`,
     advanceOnClick: false,
-    onNextClick: async (_element, _step, { driver: activeTour }) => {
-      if (!rowForPath(container, path).querySelector('input[type="checkbox"]').checked) return;
-      if (!await waitForColorPicker(container, path)) return;
-      requestAnimationFrame(() => requestAnimationFrame(() => activeTour.moveNext()));
+    onHighlighted: (_element, _step, { driver: activeTour }) => {
+      listener = new AbortController();
+      checkbox().addEventListener("change", event => {
+        if (event.target.checked) advance(activeTour);
+      }, { signal: listener.signal });
     },
+    onDeselected: () => listener?.abort(),
     popover: {
+      onNextClick: (_element, _step, { driver: activeTour }) => advance(activeTour),
       title: `Select a file from ${escapeHtml(folderName)}`,
       description: selected
         ? "This test is already selected."
-        : "Click this file row to add it to the comparison.",
+        : "Tap this file to add it to the comparison, or press Next to add it for you.",
       side: "right",
       align: "start",
       showButtons: ["next", "close"]
@@ -78,6 +92,7 @@ export function initGuidedTour(container) {
 
   const startTour = () => {
     localStorage.setItem(TOUR_SEEN_KEY, "true");
+    document.querySelector(`.article-option[data-article-target="${container.closest(".report-article").id}"]`)?.click();
     const search = container.querySelector("#fileSearch");
     search.value = "";
     search.dispatchEvent(new Event("input", { bubbles: true }));
@@ -102,7 +117,7 @@ export function initGuidedTour(container) {
       overlayColor: "#000000",
       overlayOpacity: 0.72,
       stagePadding: 6,
-      stageRadius: 3,
+      stageRadius: 8,
       popoverClass: "rths-tour",
       showProgress: true,
       progressText: "{{current}} / {{total}}",

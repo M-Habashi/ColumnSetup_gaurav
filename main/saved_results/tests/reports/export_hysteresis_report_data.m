@@ -4,6 +4,7 @@ function export_hysteresis_report_data
 reportFolder = fileparts(mfilename('fullpath'));
 projectFolder = fileparts(fileparts(fileparts(reportFolder)));
 testFolder = fullfile(projectFolder, 'saved_results', 'tests');
+addpath(fullfile(projectFolder, 'helpers', 'utils'));
 dataFolder = fullfile(reportFolder, 'data', 'tests');
 if ~isfolder(dataFolder)
     mkdir(dataFolder)
@@ -29,7 +30,8 @@ for k = 1:numel(files)
         'path', char(relativePath), 'data', char("data/tests/" + outputName), ...
         'available', false, 'error', '', ...
         'xlsx', char(xlsxRelativePath), ...
-        'xlsx_available', isfile(xlsxPath), 'xlsx_error', '');
+        'xlsx_available', isfile(xlsxPath), 'xlsx_error', '', ...
+        'base_shear_available', false, 'base_shear_error', '');
 
     try
         loaded = load(filePath, 'result');
@@ -76,6 +78,13 @@ for k = 1:numel(files)
             'test_date', testDate, ...
             'earthquake_duration', earthquakeDuration, ...
             'filter_cutoff_hz', 30, 'filter_order', 4);
+        try
+            [plotData.vb, plotData.x1, plotData.dn_dm_corr] = ...
+                baseShear(result, plotIndex, earthquakeIndex);
+            entry.base_shear_available = true;
+        catch exception
+            entry.base_shear_error = exception.message;
+        end
         writeJson(fullfile(dataFolder, outputName), plotData)
         entry.available = true;
         fprintf('[%d/%d] %s\n', k, numel(files), relativePath)
@@ -124,6 +133,20 @@ function pauseEnable = getPauseEnable(result)
     else
         error('No HS pause/run log is stored in this result.')
     end
+end
+
+function [vb, x1, dnDmCorr] = baseShear(result, plotIndex, earthquakeIndex)
+% Units: vb [N], x1 [mm]. Replays the numerical FEM from logged fm; the
+% base shear is the elastic floor-force sum including the specimen fm:
+% V_b = 1'*(K*x_n - force_to_floor*force_sign*fm).
+    [numericalSub, hs] = recompute_numerical_sub_response(result);
+    xn = numericalSub.x_n_m(plotIndex, :);
+    fm = result.fm(plotIndex);
+    vb = sum(xn*hs.K.' - fm(:)*(hs.force_sign*hs.force_to_floor(:).'), 2).';
+    x1 = 1000*xn(:, 1).';
+    c = corrcoef(numericalSub.d_n_mm(earthquakeIndex), ...
+        result.dm(earthquakeIndex));
+    dnDmCorr = c(2);
 end
 
 function y = filtfiltDm(dm, fs, cutoffHz, order)
