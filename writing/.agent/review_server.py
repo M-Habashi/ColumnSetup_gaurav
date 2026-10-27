@@ -255,6 +255,7 @@ class Handler(SimpleHTTPRequestHandler):
             versions.append({"v": versions[-1]["v"] + 1,
                              "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                              "note": note, "author": "user", "html": html})
+            versions[:] = versions[-10:]   # keep the last 10 versions
             atomic_write(VERSIONS, HEAD + json.dumps(versions, ensure_ascii=False) + ";\n" + rest)
 
         if self.path == "/api/restore":

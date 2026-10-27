@@ -98,11 +98,11 @@ The preceding sentences explain the compromise between concentrating the main lo
 
 > Strong signal peaks can bias a fitted PSD background upward; smoothing is proposed to reduce that influence. The next paragraphs define the Mann–Lees running median over 2w+1 frequency points, describe shorter windows at the frequency limits, and warn that the median can distort a steep spectrum. They say window width must be chosen carefully so smoothing does not erase the shape being estimated.
 
-**Citation role:** Supports the running median over neighbouring frequencies used in Equation (17), with w = 1 (three points). The manuscript says “discussed by”, not “proposed by”.
+**Citation role:** Supports the running median over neighbouring frequencies used in Equation (17), with w = 1 (three points). The manuscript says “as proposed by” (chosen by the author 2026-10-19). The summary supports proposing smoothing, not a specific window width. §4.1 credits the running median itself to Mann and Lees (1996).
 
 **Origin check:** §4.1 credits the running median to Mann and Lees (1996), “Robust estimation of background noise and signal detection in climatic time series,” Climatic Change 33, 409–445. Not read. The author chose not to cite it (2026-09-26).
 
-**To do:** Open the PDF, replace the summary with an exact §4.1 quotation and its page number, and check that the three-point window and the edge handling agree.
+**Closed:** the author decided on 2026-10-19 that no PDF check is needed. The summary above is the accepted record.
 
 ## Tukey1971 — running medians (manuscript key `tukey`, removed from the manuscript 2026-09-26)
 

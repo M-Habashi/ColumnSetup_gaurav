@@ -1,0 +1,43 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 143,
+  "saved": "2026-10-20T04:50:28.586Z",
+  "comments": [
+    {
+      "id": "c1792471617774",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "updates",
+      "prefix": "ere n1, n2 and n3 are the corresponding ",
+      "suffix": ", and the median discards one unusually ",
+      "text": "Windows,",
+      "created": "2026-10-20T04:46:57.775Z"
+    },
+    {
+      "id": "c1792471681572",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "discards one unusually loud or quiet window.",
+      "prefix": "e corresponding updates, and the median ",
+      "suffix": "\nAccording to the experimental verificat",
+      "text": "Rejects noisy outliers",
+      "created": "2026-10-20T04:48:01.573Z"
+    },
+    {
+      "id": "c1792471767592",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "amplification",
+      "prefix": ",n(ω,g)|,(26)\nwhere g^n is the selected ",
+      "suffix": ".\nThe predicted ratio in Equation (25) a",
+      "text": "Estimate for amplification",
+      "created": "2026-10-20T04:49:27.592Z"
+    },
+    {
+      "id": "c1792471821031",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "only the loop",
+      "prefix": "ted ratio in Equation (25) assumes that ",
+      "suffix": " has changed since the reference was rec",
+      "text": "Only the loop gain",
+      "created": "2026-10-20T04:50:21.032Z"
+    }
+  ]
+}

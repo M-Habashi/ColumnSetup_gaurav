@@ -110,7 +110,7 @@ E("chi", r"\chi(\omega)=\frac{|1+L(j\omega)|}{\sqrt{2\big(1+|L(j\omega)|^{2}\big
   "χ(ω)=(|1+L(jω)|)/√(2(1+|L(jω)|^2)),")
 P("and its minimum over frequency is the NCF margin, presented by {citet:vinnicombe} as the generalized stability margin. Figure 3 compares the experimentally "
   "identified frequency responses of the two states and their chordal distances.")
-RAW('<figure id="fig_ol"><img src="figures/fig_open_loop.svg" alt="Open-loop magnitude, phase and chordal distance for the initial and damaged systems" style="width:70%;max-width:100%;display:block;margin:0 auto;background:#fff"/><figcaption><b>Figure 3.</b> Experimentally identified open-loop frequency response of the outer controller loop and its chordal distance for the initial and damaged systems. Markers show the measured points, lines show the fitted models, blue dots show the NCF margins, and the dotted line shows the 0.4 guideline.</figcaption></figure>')
+RAW('<figure id="fig_ol"><img src="figures/fig_open_loop.png" alt="Open-loop magnitude, phase and chordal distance for the initial and damaged systems" style="width:70%;max-width:100%;display:block;margin:0 auto;background:#fff"/><figcaption><b>Figure 3.</b> Experimentally identified open-loop frequency response of the outer controller loop and its chordal distance for the initial and damaged systems. Markers show the measured points, lines show the fitted models, blue dots show the NCF margins, and the dotted line shows the 0.4 guideline.</figcaption></figure>')
 P("The 25% loss of lateral stiffness raised the loop gain by a factor of about 2.4. However, the "
   "phase of the loop changed only slightly, as Figure 3 shows. The loss of stiffness therefore mainly amplifies the loop "
   "gain rather than adding phase lag. Consequently, the NCF margin falls from 0.59 at 35 Hz in the initial state to "
@@ -131,7 +131,7 @@ RAW('<p class="lead">' + inline(
     "The NCF OSI introduced in Section 2.1 "
     "quantifies the robustness of the closed-loop system as the physical plant changes during the experiment. This study extends the analytical results to experimental implementation, "
     "discusses the challenges that arise, and proposes ways to address them. The proposed framework comprises two "
-    "parts: an online estimator of the indicator and an adaptive controller that gets updated accordingly. The "
+    "parts: an online estimator of the indicator and an adaptive controller that scales the outer controller output according to the estimated indicator. The "
     "indicator is estimated during the experiment from the desired displacement calculated by the numerical "
     "substructure and the measured actuator displacement. To this end, three estimator branches are combined at each "
     "frequency, each weighted by the confidence in its output. The first is direct identification, $b_{\\mathrm{id}}$, which "
@@ -166,8 +166,8 @@ RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 
 <desc id="f1d">The numerical substructure computes the desired displacement d, which the phase-lead compensator turns into the reference u. The tracking error u minus d_m enters the controller C(s). The adaptive factor lambda scales its output to give the command v applied to the transfer system and specimen H(s,k), whose output is y. The measured displacement d_m returns to the summing junction. The measured force f_m returns to the numerical substructure. The NCF OSI collects the reference u and the measured displacement d_m and updates lambda.</desc>
 <defs><marker id="f1a000" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#000"/></marker><marker id="f1a1689BA" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#1689BA"/></marker><marker id="f1a278A42" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#278A42"/></marker><marker id="f1a404040" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#404040"/></marker><marker id="f1aA518AD" markerWidth="7" markerHeight="7" refX="9" refY="5" viewBox="0 0 10 10" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#A518AD"/></marker></defs>
 <g fill="#CCCCCC" stroke="#000" stroke-width="0.8">
-<rect x="4" y="95" width="82" height="40"/><rect x="110" y="95" width="78" height="40"/><rect x="270" y="95" width="58" height="40"/>
-<rect x="352" y="95" width="58" height="40"/><rect x="442" y="95" width="94" height="40"/>
+<rect x="4" y="89" width="82" height="52"/><rect x="110" y="89" width="78" height="52"/><rect x="270" y="89" width="58" height="52"/>
+<rect x="352" y="89" width="58" height="52"/><rect x="442" y="89" width="94" height="52"/>
 <rect x="440" y="6" width="96" height="34" fill="#BEDCC6"/>
 </g>
 <circle cx="238" cy="115" r="8" fill="#fff" stroke="#000" stroke-width="0.8"/>
@@ -179,10 +179,10 @@ RAW('''<figure id="fig1"><svg role="img" aria-labelledby="f1t f1d" viewBox="0 0 
 <path d="M410 115 H440" stroke="#000" stroke-width="1.3" marker-end="url(#f1a000)"/>
 <path d="M536 111 H600" stroke="#1689BA" marker-end="url(#f1a1689BA)"/>
 <path d="M556 111 V168 H238 V125" stroke="#1689BA" marker-end="url(#f1a1689BA)"/>
-<path d="M536 124 H574 V190 H45 V137" stroke="#A518AD" marker-end="url(#f1aA518AD)"/>
+<path d="M536 124 H574 V190 H45 V143" stroke="#A518AD" marker-end="url(#f1aA518AD)"/>
 <path d="M216 115 V23 H438" stroke="#278A42" marker-end="url(#f1a278A42)"/>
 <path d="M556 111 V23 H538" stroke="#278A42" marker-end="url(#f1a278A42)"/>
-<path d="M470 40 V62 H381 V87.2" stroke="#278A42"/><circle cx="381" cy="91" r="3.8" fill="#fff" stroke="#278A42" stroke-width="1.2"/>
+<path d="M470 40 V62 H381 V86.5" stroke="#278A42"/><circle cx="381" cy="89" r="2.5" fill="#fff" stroke="#278A42" stroke-width="1.2"/>
 </g>
 <circle cx="556" cy="111" r="2.2" fill="#1689BA"/><circle cx="216" cy="115" r="2.2" fill="#278A42"/>
 <g text-anchor="middle" fill="#000">
@@ -225,7 +225,7 @@ P('As the specimen changes during a hybrid simulation, the loop $L(j\\omega)$ ch
 H2("3.1.1", "Direct identification branch, " + inline("$b_{\\mathrm{id}}$"), "s2")
 P('Identifying the closed-loop transfer function requires the autospectrum of reference $u(t)$ and the cross '
   'spectrum of measured actuator displacement $y(t)$ with $u(t)$. The autospectrum of $y(t)$ is also needed to '
-  'calculate coherence, which helps set the confidence weight at each frequency. A moving window lets these '
+  'calculate coherence, which helps set the identification weight at each frequency. A moving window lets these '
   'spectra follow changes in the specimen during the experiment instead of averaging over the whole record.')
 P('Each window contains $N=f_sT_w$ samples of $u(t)$ and $y(t)$, where $f_s$ is the sampling frequency and '
   '$T_w$ is the window duration. Updates occur at intervals $\\Delta t$, so consecutive windows overlap when '
@@ -271,7 +271,7 @@ P("Inverting {eq:T} gives the identified loop, which is the open-loop transfer f
   "measured closed-loop response:")
 E("lhat", r"\hat{L}_n(j\omega)=\frac{\hat{T}_n(j\omega)}{1-\hat{T}_n(j\omega)}.",
   "L̂_n (jω)=(T̂_n (jω))/(1−T̂_n (jω)).")
-P("Here, the identified loop is smoothed with the running median over neighbouring frequencies, as recommended by "
+P("Here, the identified loop is smoothed with the running median over neighbouring frequencies, as proposed by "
   "{citet:dimatteo}, so the median is taken over each frequency and its two neighbours. With three values, a "
   "single outlying bin cannot set the median, and the smoothed loop $\\hat{L}_{\\mathrm{s},n}$ is given by")
 E("lmed", r"\hat{L}_{\mathrm{s},n}(j\omega_m)=\underset{i\in\{m-1,\,m,\,m+1\}}{\operatorname{median}}\;\hat{L}_n(j\omega_i).",
@@ -290,7 +290,7 @@ E("act", r"A_n=\begin{cases}1, & \operatorname{RMS}(u_n)>\eta_A\,\sigma_u,\\ 0, 
 P("where $\\operatorname{RMS}(u_n)$ is the root mean square of the command samples in the considered window $n$, "
   "$\\sigma_u$ is the standard deviation of the command noise measured in a quiet record, and $\\eta_A$ is a "
   "hyperparameter to be tuned. The second factor is the input leverage $\\ell_n$, which reduces "
-  "the weight of bins that carry little command energy. To measure this, the command power in each bin is first "
+  "the weight of bins that carry little command energy relative to the other bins. To measure this, the command power in each bin is first "
   "normalized by its maximum over $\\Omega$:")
 E("prel", r"\ell_{\mathrm{raw},n}(\omega)=\frac{\bar{p}_{uu,n}(\omega)}{\max_{\nu\in\Omega}\bar{p}_{uu,n}(\nu)}.",
   "ℓ_(\"raw\",n) (ω)=(p̄_(uu,n) (ω))/(\"max\"┬(ν∈Ω)  p̄_(uu,n) (ν)).")
@@ -309,23 +309,23 @@ P("This weight sets the share of direct identification in the per-frequency fusi
   "Section 3.1.3.")
 
 H2("3.1.2", "Output-power inference branch", "s3")
-P("Direct identification fails when the command is weak or does not excite the relevant frequency band. Even then, a "
-  "degrading specimen can still drive the outer controller loop toward instability without any warning from direct "
-  "identification. However, the change in output power relative to "
-  "the initial state can reveal loop amplification even at frequencies without strong excitation. This change therefore "
-  "provides a second source of evidence for a reduction in the stability margin. This method is inspired by {citet:wu}, "
-  "who used active-power deviation and its rate of change to discriminate changes in the transient operating regime "
-  "of a virtual synchronous generator. To quantify this change at each frequency, the averaged "
-  "output power is compared with its reference from the initial state:")
+P("Where the command carries little energy, the identification weight $w_{\\mathrm{id},n}$ falls toward zero, and direct "
+  "identification then provides little evidence of the margin. A degrading specimen can still reduce the margin of the "
+  "outer controller loop at these frequencies, so another stability indication is needed. In this case, the output power "
+  "can be used because the outer controller loop shapes signals that pass through it, including sensor noise. "
+  "{citet:wu} used the active-power deviation and its rate of change to detect the positive-feedback "
+  "mode of a virtual synchronous generator. The output-power inference branch is inspired by this approach and uses the "
+  "change in output power as evidence of a reduced margin. To quantify this change, the averaged "
+  "output power at each frequency is compared with its reference from the initial state:")
 E("qobs", r"q_{\mathrm{obs},n}(\omega)=\frac{\bar{p}_{yy,n}(\omega)}{p_{yy,0}(\omega)},",
   "q_(\"obs\",n) (ω)=(p̄_(yy,n) (ω))/(p_(yy,0) (ω)),")
-P("where $q_{\\mathrm{obs},n}$ is the observed power ratio, which measures the change in output power at each frequency "
+P("where $q_{\\mathrm{obs},n}$ is the observed power ratio at window $n$, which measures the change in output power at each frequency "
   "relative to the initial state. The averaged autospectrum of $y$ is $\\bar{p}_{yy,n}$ from {eq:ewyy}, and "
   "$p_{yy,0}$ is the reference autospectrum of $y$ recorded in the initial state.")
 P("The output-power branch detects a change by comparing the present output power with a reference from the initial state. "
   "A single window of output power fluctuates strongly, so a reference taken from one window could bias every later comparison. "
   "The reference autospectrum is therefore the median of three raw autospectra recorded in the initial state. "
-  "These autospectra are taken at 0.5, 1.0 and 1.5 s after the start of the experiment, with $\\lambda=1$:")
+  "These autospectra are taken from the first three non-overlapping windows of the experiment, with $\\lambda=1$:")
 E("pyyref", r"p_{yy,0}(\omega)=\operatorname{med}\{p_{yy,n_1}(\omega),\,p_{yy,n_2}(\omega),\,p_{yy,n_3}(\omega)\},",
   "p_(yy,0) (ω)=\"med\"{p_(yy,n_1) (ω),p_(yy,n_2) (ω),p_(yy,n_3) (ω)},")
 P("where $n_1$, $n_2$ and $n_3$ are the corresponding updates, and the median discards one unusually loud or quiet window.")
@@ -336,135 +336,71 @@ P("According to the experimental verification presented in "
 E("qmod", r"q_{\mathrm{model},n}(\omega,g)=\left|\frac{1+L_0(j\omega)}{1+\lambda_n g\,L_0(j\omega)}\right|^{2},",
   "q_(\"model\",n) (ω,g)=〖|(1+L_0 (jω))/(1+λ_n g L_0 (jω))|〗^2,")
 P("where $q_{\\mathrm{model},n}$ is the predicted power ratio, and $L_0(j\\omega)=C(j\\omega)H_0(j\\omega)$ is the loop of "
-  "the prior identification of the initial state. The amplification is then selected as the candidate in $\\mathcal{G}$ "
+  "the prior identification of the initial state. The amplification is then selected as the value "
   "that minimizes the logarithmic difference between the observed and predicted ratios:")
-E("gfit", r"\hat{g}_n(\omega)=\underset{g\in\mathcal{G}}{\operatorname{arg\,min}}\;\left|\log q_{\mathrm{obs},n}(\omega)-\log q_{\mathrm{model},n}(\omega,g)\right|,",
-  "ĝ_n (ω)=\"arg min\"┬(g∈𝒢)  |log q_(\"obs\",n) (ω)−log q_(\"model\",n) (ω,g)|,")
-P("where $\\hat{g}_n$ is the selected amplification, and $\\mathcal{G}$ is a grid of candidate values of $g$.")
-P("The predicted ratio in {eq:qmod} assumes that only the loop has changed since the reference was recorded. "
-  "At frequencies without excitation, however, the output consists mainly of sensor noise, and its power scatters "
-  "because it is estimated from few windows. The reference is the median of only three windows, so it is also "
-  "uncertain at these frequencies. Consequently, "
-  "$\\hat{g}_n$ can indicate an amplification that does not exist, and the estimated margin would decrease without "
-  "degradation.")
-P("The identified margin $b_{\\mathrm{id},n}$ cannot correct this error, because it is valid only at the excited "
-  "frequencies. Degradation, however, changes the loop at all frequencies, so it also increases the magnitude of the "
-  "identified loop at the excited frequencies. Section 2.3 observed such an increase by a factor of about 2.4 "
-  "in the damaged specimen. "
-  "A real amplification inferred from output power should therefore be accompanied by an increase in the identified "
-  "loop. The factor $\\rho_n$ measures this increase and thus confirms whether the amplification indicated by "
-  "$\\hat{g}_n$ is real.")
-P("The factor $\\rho_n$ is the real scale that best fits the prior loop $\\lambda_n L_0$ to the identified loop "
-  "$\\hat{L}_n$ in the weighted least-squares sense:")
+E("gfit", r"\hat{g}_n(\omega)=\underset{g}{\operatorname{arg\,min}}\;\left|\log q_{\mathrm{obs},n}(\omega)-\log q_{\mathrm{model},n}(\omega,g)\right|.",
+  "ĝ_n (ω)=\"arg min\"┬g  |log q_(\"obs\",n) (ω)−log q_(\"model\",n) (ω,g)|.")
+P("The amplification $\\hat{g}_n(\\omega)$ is reliable only when the observed power ratio reflects a change in the loop. At weakly excited frequencies, however, the output consists mainly of sensor noise, and its averaged power scatters because it is estimated from few windows. The reference $p_{yy,0}$ is the median of only three windows, so it is equally uncertain at these frequencies. Consequently, $\\hat{g}_n$ can exceed one for an unchanged specimen, and the margin of this branch would then fall without any degradation.")
+P("Such a false amplification must be separated from a real one before it enters the margin estimate. Direct identification cannot resolve the loop at these frequencies, but it remains reliable at the excited frequencies of the same window. Degradation changes the plant, so it also increases the magnitude of the identified loop at the excited frequencies. Section 2.3 observed such an increase by a factor of about 2.4 in the damaged specimen. An unchanged specimen and a degraded one therefore leave different traces in the measurements. For an unchanged specimen, a large $\\hat{g}_n$ at an unexcited frequency appears without any increase of $\\hat{L}_n$ at the excited frequencies. For a degraded specimen, the output power and the identified loop increase together. The amplification inferred from output power is therefore trusted only to the extent that the identified loop confirms it.")
+P("Confirmation requires a single measure of how much the identified loop exceeds the loop expected without degradation. This expected loop is $\\lambda_n L_0$, the prior loop scaled by the current adaptive factor. Including $\\lambda_n$ keeps a reduction of the adaptive factor from being mistaken for a change in the specimen. The loop-increase factor $\\rho_n$ is the real scale that best fits $\\lambda_n L_0$ to the identified loop $\\hat{L}_n$ in the weighted least-squares sense:")
 E("rhols", r"\rho_n=\underset{\rho\in\mathbb{R}}{\operatorname{arg\,min}}\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,\big|\hat{L}_n(j\omega)-\rho\,\lambda_n L_0(j\omega)\big|^{2}.",
   "ρ_n=\"arg min\"┬(ρ∈ℝ) ∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) |L̂_n (jω)−ρ λ_n L_0 (jω)|^2〗.")
-P("The factor is real, consistent with the real amplification $g$ in {eq:qmod}, and each term of the sum expands as")
-E("rhoexp", r"\big|\hat{L}_n-\rho\lambda_n L_0\big|^{2}=|\hat{L}_n|^{2}-2\rho\operatorname{Re}\{\lambda_n L_0^{*}\hat{L}_n\}+\rho^{2}|\lambda_n L_0|^{2}.",
-  "|L̂_n−ρ λ_n L_0|^2=|L̂_n|^2−2ρ Re{λ_n L_0^* L̂_n}+ρ^2 |λ_n L_0|^2.")
-P("Setting the derivative of the sum with respect to $\\rho$ to zero gives the closed-form solution")
+P("Each frequency is weighted by $w_{\\mathrm{id},n}^{2}$ from {eq:conf}, so the well-identified excited frequencies dominate the fit and the weakly excited ones contribute little. The fit uses the identified loop $\\hat{L}_n$ from {eq:lhat}, taken before the median smoothing of {eq:lmed}. The scale is kept real, consistent with the real amplification $g$ in {eq:qmod}. Setting the derivative of the sum with respect to $\\rho$ to zero then gives the closed form")
 E("rho", r"\rho_n=\frac{\operatorname{Re}\{\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,\lambda_n L_0^{*}(j\omega)\,\hat{L}_n(j\omega)\}}{\sum_{\omega\in\Omega}w_{\mathrm{id},n}^{2}(\omega)\,|\lambda_n L_0(j\omega)|^{2}}.",
   "ρ_n=(Re{∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) λ_n L_0^* (jω) L̂_n (jω)〗})/(∑_(ω∈Ω)▒〖w_(\"id\",n)^2 (ω) |λ_n L_0 (jω)|^2〗).")
-P("The weight $w_{\\mathrm{id},n}$ lets the well-identified excited frequencies dominate, and the identified loop "
-  "$\\hat{L}_n$ is taken before frequency-median smoothing. For an unchanged specimen $\\rho_n\\approx1$, whereas for "
-  "the damaged specimen of Section 2 the loop increase gives $\\rho_n\\approx2.4$.")
-P("The confirmation $c_n$ then sets how much the amplification inferred from output power is trusted in the margin "
-  "estimate. It depends on the loop increase $\\rho_n$ identified at the excited frequencies and is clipped between a "
-  "lower bound and one:")
-E("confirm", r"c_n=\frac{\rho_n-1}{\rho_{\mathrm{th}}-1},\qquad c_n\in[\epsilon,\,1],",
-  "c_n=(ρ_n−1)/(ρ_(\"th\")−1),  c_n∈[ε,1],")
-P("where $\\rho_{\\mathrm{th}}$ is the confirmation threshold, and once $\\rho_n$ reaches it, $c_n$ equals one and "
-  "the amplification inferred from output power is fully trusted. The lower bound $\\epsilon=0.1$ is a safety minimum "
-  "that keeps some trust in the inferred amplification even when no loop increase is identified. It accounts for "
-  "amplification that cannot be observed at any excited frequency, such as amplification from unmodeled dynamics or "
-  "higher-mode effects. The inferred amplification is then pulled toward one when the confirmation is low, which "
-  "gives the accepted amplification")
-E("gaccept", r"\tilde{g}_n(\omega)=1+c_n\big(\hat{g}_n(\omega)-1\big),",
-  "g̃_n (ω)=1+c_n (ĝ_n (ω)−1),")
-P("where $\\tilde{g}_n$ is the accepted amplification, which replaces $\\hat{g}_n$ as the input of the recursive "
-  "averaging in {eq:gmem}.")
-P("The accepted amplification at update $n$ inherits the scatter of $q_{\\mathrm{obs},n}$ and therefore varies between "
-  "updates. To reduce this scatter while following the degrading specimen, successive accepted amplifications are averaged "
-  "recursively. As for the spectra in Equations ({n:ewuu})–({n:ewyu}), more weight is placed on recent values, and "
-  "the average is formed on a logarithmic scale:")
-E("gmem", r"\log\hat{g}_{\mathrm{s},n}(\omega)=(1-\eta_g)\log\hat{g}_{\mathrm{s},n-1}(\omega)+\eta_g\log\tilde{g}_n(\omega),",
-  "log ĝ_(\"s\",n) (ω)=(1−η_g) log ĝ_(\"s\",n−1) (ω)+η_g log g̃_n (ω),")
-P("where $\\hat{g}_{\\mathrm{s},n}$ is the smoothed amplification, and $\\eta_g$ is the averaging factor that weights the "
-  "newest accepted amplification. {eq:bncf} applied to the prior loop scaled by the smoothed amplification then "
-  "gives the margin of this branch:")
-E("bres", r"b_{\mathrm{pow},n}=b_{\mathrm{NCF}}\big(\lambda_n\hat{g}_{\mathrm{s},n}L_0\big),",
-  "b_(\"pow\",n)=b_(\"NCF\") (λ_n ĝ_(\"s\",n) L_0),")
-P("where $b_{\\mathrm{pow},n}$ is the output-power margin, which reflects the loop amplification inferred from output "
-  "power and confirmed by the identified loop.")
-P("Besides being pulled toward one, an unconfirmed amplification should also carry little weight in the fused "
-  "margin. The confirmation $c_n$ therefore also weights this branch, together with the identification weight, in "
-  "the fusion of Section 3.1.3:")
-E("w", r"w_{\mathrm{pow},n}=(1-w_{\mathrm{id},n})\,c_n,",
-  "w_(\"pow\",n)=(1−w_(\"id\",n) ) c_n,")
-P("where $w_{\\mathrm{pow},n}$ is the weight of the output-power branch, and $w_{\\mathrm{id},n}$ is the identification "
-  "weight from {eq:conf}. Consequently, this branch receives the share left by direct identification, in proportion to "
-  "the confirmation.")
-P("Unlike direct identification, which reflects both losses and gains in the stability margin, the output-power "
-  "branch detects only open-loop gain amplification. Consequently, once the adaptive controller restores stability "
-  "and the output power returns to its initial level, this branch cannot reflect a recovered loop. A recovery step is "
-  "therefore introduced to release the remembered amplification once the output power indicates that the loop has "
-  "recovered. While the median of $q_{\\mathrm{obs},n}$ over $\\Omega$ remains below one, the smoothed "
-  "amplification is reduced gradually:")
-E("gdecay", r"\log\hat{g}_{\mathrm{s},n}(\omega)=r_g\,\log\hat{g}_{\mathrm{s},n-1}(\omega),",
-  "log ĝ_(\"s\",n) (ω)=r_g log ĝ_(\"s\",n−1) (ω),")
-P("where $r_g$ is the recovery factor, with $0<r_g<1$, and the reduction stops once the output power rises above its "
-  "initial reference. As a result, the output power itself limits how far the amplification is released as the loop "
-  "recovers.")
+P("For an unchanged specimen, $\\hat{L}_n$ agrees with $\\lambda_n L_0$ at the excited frequencies and $\\rho_n\\approx1$. A degraded specimen instead raises the identified loop at these frequencies and drives $\\rho_n$ above one. The confirmation $c_n$ converts this loop increase into the trust given to the amplification inferred from output power. It rises linearly with $\\rho_n$ and is clipped between a lower bound $\\epsilon$ and one:")
+E("confirm", r"c_n=\frac{\rho_n-1}{\rho_{\mathrm{th}}-1},\qquad c_n\in[\epsilon,\,1].",
+  "c_n=(ρ_n−1)/(ρ_(\"th\")−1),  c_n∈[ε,1].")
+P("Once $\\rho_n$ reaches the confirmation threshold $\\rho_{\\mathrm{th}}$, the loop increase confirms the amplification fully and $c_n=1$. The lower bound $\\epsilon=0.1$ keeps some trust in this branch even when no loop increase is identified. It accounts for amplification that cannot be observed at any excited frequency, such as amplification from unmodeled dynamics or higher-mode effects. Because $\\rho_n$ is a single value at each update, the same confirmation applies at every frequency.")
+P("The confirmation acts by pulling the inferred amplification toward one, which represents an unchanged loop, and gives the accepted amplification")
+E("gaccept", r"\tilde{g}_n(\omega)=1+c_n\big(\hat{g}_n(\omega)-1\big).",
+  "g̃_n (ω)=1+c_n (ĝ_n (ω)−1).")
+P("With full confirmation, $\\tilde{g}_n=\\hat{g}_n$, and the amplification inferred from output power is accepted unchanged. For an unchanged specimen, $c_n=\\epsilon$, so a false value of $\\hat{g}_n=2$ is accepted only as $\\tilde{g}_n=1.1$.")
+P("The accepted amplification still carries the scatter of $q_{\\mathrm{obs},n}$ and therefore varies between updates. To reduce this scatter while following a degrading specimen, successive accepted amplifications are averaged recursively, as the spectra were in Equations ({n:ewuu})–({n:ewyu}). The average is formed on a logarithmic scale, consistent with the logarithmic difference in {eq:gfit}:")
+E("gmem", r"\log\hat{g}_{\mathrm{s},n}(\omega)=(1-\eta_g)\log\hat{g}_{\mathrm{s},n-1}(\omega)+\eta_g\log\tilde{g}_n(\omega).",
+  "log ĝ_(\"s\",n) (ω)=(1−η_g) log ĝ_(\"s\",n−1) (ω)+η_g log g̃_n (ω).")
+P("The smoothed amplification $\\hat{g}_{\\mathrm{s},n}$ acts as the memory of this branch and holds a detected amplification while the specimen remains degraded. The averaging factor $\\eta_g$ sets how strongly each new accepted amplification updates this memory.")
+P("The same memory, however, slows the release of an amplification that the observed output no longer supports. With {eq:gmem} alone, each update moves the remembered value toward the newest one by only the fraction $\\eta_g$. An outdated amplification would therefore keep the margin of this branch low after the loop has recovered, and the output power shows when this occurs. A median of $q_{\\mathrm{obs},n}$ over $\\Omega$ below one means that the output power has fallen below its initial reference at most frequencies. In that case, the remembered amplification is released by a recovery step in place of {eq:gmem}:")
+E("gdecay", r"\log\hat{g}_{\mathrm{s},n}(\omega)=r_g\,\log\hat{g}_{\mathrm{s},n-1}(\omega).",
+  "log ĝ_(\"s\",n) (ω)=r_g log ĝ_(\"s\",n−1) (ω).")
+P("The recovery factor $r_g$, with $0<r_g<1$, moves the smoothed amplification gradually toward one. The release stops once the median ratio returns to one, and {eq:gmem} then resumes. As a result, the output power itself limits how far the amplification is released as the loop recovers.")
+P("The smoothed amplification then scales the prior loop, and {eq:bncf} gives the margin of the output-power branch:")
+E("bres", r"b_{\mathrm{pow},n}=b_{\mathrm{NCF}}\big(\lambda_n\hat{g}_{\mathrm{s},n}L_0\big).",
+  "b_(\"pow\",n)=b_(\"NCF\") (λ_n ĝ_(\"s\",n) L_0).")
+P("For an unchanged specimen, $\\hat{g}_{\\mathrm{s},n}$ stays close to one and $b_{\\mathrm{pow},n}$ stays close to the margin of the prior loop. A confirmed amplification instead lowers $b_{\\mathrm{pow},n}$ at the affected frequencies, including frequencies that direct identification cannot resolve.")
+P("The confirmation also sets how much this margin counts in the fusion of Section 3.1.3. Direct identification takes the share $w_{\\mathrm{id},n}$, and the output-power branch receives the remaining share in proportion to the confirmation:")
+E("w", r"w_{\mathrm{pow},n}=(1-w_{\mathrm{id},n})\,c_n.",
+  "w_(\"pow\",n)=(1−w_(\"id\",n) ) c_n.")
+P("Consequently, a confirmed amplification dominates the frequencies that direct identification cannot resolve, whereas an unconfirmed one receives only the small weight $\\epsilon(1-w_{\\mathrm{id},n})$. The rest of that share is left for the third branch, the prior identification of the initial state.")
 
 H2("3.1.3", "Per-frequency fusion and reported indicator", "s4")
-P("The third branch is the margin of the prior identification of the initial state, evaluated with the current "
-  "adaptive factor:")
+P("Sections 3.1.1 and 3.1.2 give two measured margins, and each is supported by evidence only under certain conditions. Direct identification needs an excited command, and output-power inference needs a loop increase that confirms the inferred amplification. At a bin where neither condition holds, a margin is still required, so the prior identification of the initial state supplies it. This third branch applies {eq:bncf} to the initial loop scaled by the current adaptive factor:")
 E("b0", r"b_{0,n}=b_{\mathrm{NCF}}\big(\lambda_nL_0\big).",
   "b_(0,n)=b_(\"NCF\") (λ_n L_0).")
-P("At each frequency, the three branches now provide three margin estimates, which are combined according to the "
-  "evidence behind each. The prior receives the weight left by the two measured branches, so the three weights sum "
-  "to one:")
+P("Because $L_0$ is identified before the experiment, $b_{0,n}$ is available at every bin and at every update. However, this margin assumes that the specimen has not changed since the prior identification, so it serves only as the default estimate.")
+P("Each branch evaluates the chordal distance of {eq:chi} for its own loop at every bin, before the infimum of {eq:bncf} is taken. These per-bin values, $b_{\\mathrm{id},n}(\\omega)$, $b_{\\mathrm{pow},n}(\\omega)$ and $b_{0,n}(\\omega)$, form three margin curves over $\\Omega$. The fusion combines the three curves bin by bin, and each weight should reflect the evidence available at that bin. The identification weight $w_{\\mathrm{id},n}$ first sets the share of direct identification, and the confirmation $c_n$ then divides the remaining share $1-w_{\\mathrm{id},n}$ between output-power inference and the prior. Output-power inference receives $w_{\\mathrm{pow},n}$ from {eq:w}, and the prior receives the share that remains at each bin:")
 E("w0", r"w_{0,n}=(1-w_{\mathrm{id},n})(1-c_n).",
   "w_(0,n)=(1−w_(\"id\",n) )(1−c_n ).")
-P("The three margins are then combined with these weights at each frequency bin to give the fused margin curve:")
+P("With this split, the three weights add up to one at every bin. The fused margin curve is therefore a weighted average of the three branch margins:")
 E("beta", r"\beta_n(\omega)=w_{\mathrm{id},n}\,b_{\mathrm{id},n}(\omega)+w_{\mathrm{pow},n}\,b_{\mathrm{pow},n}(\omega)+w_{0,n}\,b_{0,n}(\omega).",
   "β_n (ω)=w_(\"id\",n) b_(\"id\",n) (ω)+w_(\"pow\",n) b_(\"pow\",n) (ω)+w_(0,n) b_(0,n) (ω)")
-P("Fusion is performed bin by bin, before any reduction over frequency, so margins evaluated at different frequencies "
-  "are never combined. This choice also handles the idle case without special treatment, because "
-  "$w_{\\mathrm{id},n}=0$ in every bin when the command is inactive. An unchanged loop then reads its gain-scaled prior, and a bin with a remembered change "
-  "continues to report it.")
-P("To drive the adaptive controller, the fused curve is reduced to a single value at each update. Following "
-  "{eq:bncf}, which takes the infimum over frequency, the NCF OSI margin is the lowest value of $\\beta_n$ over "
-  "$\\Omega$:")
-E("bosi", r"b_{\mathrm{OSI},n}=\min_{\omega\in\Omega}\beta_n(\omega),",
-  "b_(\"OSI\",n)=\"min\"┬(ω∈Ω)  β_n (ω),")
-P("where $b_{\\mathrm{OSI},n}$ is the NCF OSI margin at update $n$, and $\\Omega$ is the set of frequencies considered in "
-  "evaluating the NCF OSI. The adaptive law of Section 3.1.4 then uses this margin to compute the next adaptive "
-  "factor $\\lambda_{n+1}$. Figure 5 summarizes one complete "
-  "update, from the measured signals to the adaptive factor, and Table 1 lists the estimator parameters.")
+P("Three limiting cases show how {eq:beta} moves between the branches as the evidence at a bin changes. At a well-excited bin with high coherence, $w_{\\mathrm{id},n}$ approaches one, and the fused margin follows the identified margin. At an unexcited bin, $w_{\\mathrm{id},n}$ approaches zero, and the confirmation then decides between the two remaining branches. A loop increase that reaches $\\rho_{\\mathrm{th}}$ gives $c_n=1$, so the fused margin follows the output-power margin. Without an identified loop increase, $c_n$ stays at its lower bound $\\epsilon$, so the prior carries most of the weight.")
+P("The same weights also handle an idle command, which excites no bin, without any special treatment. The activity $A_n$ from {eq:act} is then zero, so $w_{\\mathrm{id},n}=0$ at every bin and no loop increase can be identified. The confirmation therefore falls to $\\epsilon$, and the fused margin returns mostly to the prior evaluated with the current adaptive factor. A remembered amplification in $\\hat{g}_{\\mathrm{s},n}$ still lowers the fused margin, but only through the small weight $\\epsilon$.")
+P("Fusing bin by bin, before any reduction over frequency, keeps each weight attached to the frequency where its evidence was obtained. Reducing each branch to its own minimum first would instead combine margins located at different frequencies, with weights taken from other frequencies. Because the adaptive controller needs a single value at each update, the fused curve is reduced to its minimum over $\\Omega$, as in {eq:bncf}:")
+E("bosi", r"b_{\mathrm{OSI},n}=\min_{\omega\in\Omega}\beta_n(\omega).",
+  "b_(\"OSI\",n)=\"min\"┬(ω∈Ω)  β_n (ω).")
+P("The NCF OSI margin $b_{\\mathrm{OSI},n}$ is the only quantity that the adaptive law of Section 3.1.4 receives from the estimator. Figure 5 summarizes one complete update, from the measured signals to this margin and the adaptive factor that it sets.")
 
 H2("3.1.4", "Adaptive factor update", "s5")
-P("The NCF OSI estimated in Section 3.1.3 provides the margin needed to adjust the adaptive controller factor "
-  "$\\lambda$. When the margin falls below a specified target, $\\lambda$ is reduced to maintain the stability "
-  "of the system. This reduction is intended to counteract the gain amplification caused by specimen degradation, "
-  "as discussed earlier in Section 2.")
-P("To achieve this while retaining as much tracking performance as possible, $\\lambda$ is updated from the "
-  "difference between the estimated margin and a target margin:")
-E("lerr", r"e_n=b_{\mathrm{OSI},n}-b_{\mathrm{tar}},",
-  "e_n=b_(\"OSI\",n)−b_(\"tar\"),")
-P("where $e_n$ is the margin error, and $b_{\\mathrm{tar}}$ is the target NCF margin listed in Table 1. A negative "
-  "error indicates insufficient margin, whereas a positive error indicates spare margin that can be used to restore "
-  "tracking performance.")
-P("Reducing and restoring the adaptive factor carry different risks, which depend on how quickly each change is made. "
-  "A slow reduction leaves the loop exposed to instability for as long as the margin remains insufficient. "
-  "Conversely, a fast recovery can raise $\\lambda$ back toward instability before the margin estimate settles after a "
-  "reduction. The adaptive factor is therefore reduced and restored at different rates, depending on the sign of the "
-  "margin error:")
-E("lam", r"\lambda_{n+1}=\begin{cases}\lambda_n\exp(\kappa e_n),&e_n<0,\\\lambda_n\exp(\mu\kappa e_n),&e_n\ge0,\end{cases}\qquad\lambda_{n+1}\in[\lambda_{\min},1],",
-  "λ_(n+1)={■(λ_n exp(κ e_n),&e_n<0,@λ_n exp(μ κ e_n),&e_n≥0,)┤  λ_(n+1)∈[λ_\"min\",1],")
-P("where $\\kappa$ is the adaptation gain, and $\\mu=0.32$ is the ratio of the recovery rate to the reduction rate. "
-  "Consequently, $\\lambda$ falls at full rate when the margin is below the target and recovers about three times more slowly. "
-  "The adaptive factor is bounded between the smallest permitted value $\\lambda_{\\min}$ and one, which corresponds to "
-  "the full controller output.")
+P("The NCF OSI margin indicates whether the outer controller loop keeps enough robustness, and the adaptive factor $\\lambda$ provides the means to restore it. Section 2.3 showed that specimen degradation mainly amplifies the loop gain, and scaling the controller output by $\\lambda<1$ offsets this amplification in {eq:L}. For example, a loop amplified by a factor $g$ regains its initial gain when $\\lambda=1/g$. Full cancellation is not required, however, because the loop only needs to regain the target margin. Every reduction beyond the target margin weakens the corrective control action and compromises the tracking performance. The adaptive law therefore reduces $\\lambda$ only as far as the margin requires, based on the margin error at update $n$:")
+E("lerr", r"e_n=b_{\mathrm{OSI},n}-b_{\mathrm{tar}}.",
+  "e_n=b_(\"OSI\",n)−b_(\"tar\").")
+P("Here $b_{\\mathrm{tar}}$ is the target NCF margin listed in Table 1, and a negative error indicates insufficient margin that calls for a smaller adaptive factor. Conversely, a positive error indicates spare margin, which allows $\\lambda$ to recover toward one and restore tracking performance.")
+P("Reducing and restoring the adaptive factor carry different risks, which depend on how quickly each change is made. A slow reduction leaves the loop exposed to instability for as long as the margin remains insufficient. Conversely, a fast recovery can raise $\\lambda$ back toward instability before the margin estimate settles after a reduction. The adaptive factor is therefore reduced and restored at different rates, depending on the sign of the margin error:")
+E("lam", r"\lambda_{n+1}=\begin{cases}\lambda_n\exp(\kappa e_n),&e_n<0,\\\lambda_n\exp(\mu\kappa e_n),&e_n\ge0,\end{cases}\qquad\lambda_{n+1}\in[\lambda_{\min},1].",
+  "λ_(n+1)={■(λ_n exp(κ e_n),&e_n<0,@λ_n exp(μ κ e_n),&e_n≥0,)┤  λ_(n+1)∈[λ_\"min\",1].")
+P("Here $\\kappa$ is the adaptation gain, and $\\mu$ is the ratio of the recovery rate to the reduction rate. Each update thus adds $\\kappa e_n$ to $\\log\\lambda_n$, or $\\mu\\kappa e_n$ when the margin is sufficient. The adaptive factor therefore keeps changing until the margin reaches the target or $\\lambda$ reaches a bound. With the values in Table 1, a margin 0.1 below the target reduces $\\lambda$ by about 6% per update. A margin 0.1 above the target raises $\\lambda$ by only about 2%, so recovery is about three times slower than reduction. The adaptive factor stays between the smallest permitted value $\\lambda_{\\min}$ and one, which corresponds to the full controller output.")
+P("The updated factor $\\lambda_{n+1}$ scales the controller output during the next update interval and also enters {eq:qmod}, {eq:rho}, {eq:bres} and {eq:b0}. Consequently, the next margin estimate already accounts for the controller output reduced or restored at this update.")
 
 RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 1000 575">
 <title id="f2t">Structure of one estimator update</title>
@@ -532,7 +468,7 @@ RAW('''<figure id="fig2"><svg role="img" aria-labelledby="f2t f2d" viewBox="0 0 
 <text x="960" y="358" class="it" style="font-size:18px">b<tspan style="font-size:12px;font-style:normal" dy="5">OSI</tspan></text>
 
 </g></svg>
-<figcaption><b>Figure 5.</b> Flowchart for calculating the NCF OSI margin <i>b</i><sub>OSI</sub>. The reference <i>u</i> and measured displacement <i>y</i> provide spectra for direct identification and output-power inference. These estimates are combined with the initial-state prior, and the resulting margin updates the adaptive factor <i>λ</i>.</figcaption></figure>''')
+<figcaption><b>Figure 5.</b> Flowchart of one NCF OSI update. The reference <i>u</i> and the measured displacement <i>y</i> provide the spectra for direct identification and output-power inference. The two measured margin curves are fused bin by bin with the prior identification of the initial state. The minimum of the fused curve, <i>b</i><sub>OSI</sub>, then updates the adaptive factor <i>λ</i>.</figcaption></figure>''')
 
 
 T1 = [
@@ -542,7 +478,6 @@ T1 = [
     ("$\\eta_s$", "0.39", "0.25 s", "Calibrated", "Spectral averaging, Equations ({n:ewuu})–({n:ewyu})"),
     ("$\\eta_A$", "4.54", "—", "Calibrated", "Activity threshold relative to command noise, {eq:act}"),
     ("$\\ell_{\\mathrm{th}}$", "$10^{-3}$", "—", "Calibrated", "Input-leverage threshold, {eq:lev}"),
-    ("$\\mathcal{G}$", "0.5–6, 25 values", "—", "Design", "Candidate loop-magnitude changes, {eq:gfit}"),
     ("$\\epsilon$", "0.1", "—", "Design", "Minimum confirmation, Equation ({n:confirm})"),
     ("$\\rho_{\\mathrm{th}}$", "1.5", "—", "Calibrated", "Confirmation threshold, Equation ({n:confirm})"),
     ("$\\eta_g$", "0.12", "1.0 s", "Calibrated", "Output-power memory, accumulation, {eq:gmem}"),
@@ -555,47 +490,19 @@ T1 = [
 
 
 H2("3.2", "Calibration", "s32")
-P("The framework of Section 3.1 contains 15 parameters, which are listed in Table 1 with their values and roles. "
-  "Seven of them are design values set directly by the test and the analysis rather than by calibration. Among them, "
-  "the window duration $T_w$ and the update interval $\\Delta t$ are defined in Section 3.1.1. "
-  "The window duration of 0.5 s gives a frequency resolution of 2 Hz, which also sets the lower bound of $\\Omega$. "
-  "The update interval of 0.125 s sets how often the indicator and $\\lambda$ are updated. The upper bound of "
-  "$\\Omega$, 80 Hz, matches the band over which the plants were identified in Section 2.3. "
-  "The grid $\\mathcal{G}$ spans the amplifications expected from degradation and includes the factor of about 2.4 "
-  "observed in Section 2.3. The target $b_{\\mathrm{tar}}=0.4$ "
-  "follows the guideline of {citet:gomaa}, and $\\lambda_{\\min}$ keeps part of the controller active.")
-P("The remaining eight parameters are hyperparameters, which are marked as calibrated in Table 1 and tuned in this "
-  "section. They set how quickly the indicator follows a change, how much evidence each branch requires, and how "
-  "strongly the adaptive factor responds. Their suitable values depend on the laboratory, the equipment, the specimen "
-  "and its material, which differ between experiments. They therefore cannot be fixed from theory and must be calibrated "
-  "against cases with a known margin.")
+P("The equations of Section 3.1 fix the structure of the estimator and the adaptive law, but they leave several numerical values open. These values include the averaging factors, the evidence thresholds and the rates of the adaptive law. Each value balances two competing needs, as the spectral averaging factor $\\eta_s$ of Section 3.1.1 illustrates. A larger $\\eta_s$ lets the spectra follow a degrading specimen sooner, but it also leaves more scatter between updates. Calibration selects these values so that the indicator follows the true margin and the adaptive factor holds the loop near the target margin.")
+P("Table 1 lists the 14 parameters of the framework with their values and roles, and six of them are design values. These design values follow from the test setup and the analysis, so they are set directly rather than calibrated. The window duration $T_w$ of 0.5 s gives a frequency resolution of 2 Hz, which also sets the lower bound of $\\Omega$. The upper bound of 80 Hz matches the band over which the plants were identified in Section 2.3. The update interval $\\Delta t$ of 0.125 s sets how often the indicator and the adaptive factor are updated. The target $b_{\\mathrm{tar}}=0.4$ follows the guideline proposed by {citet:gomaa}, and $\\lambda_{\\min}=0.2$ keeps part of the controller output active. Finally, the minimum confirmation $\\epsilon=0.1$ is the safety minimum introduced in Section 3.1.2 for amplification that cannot be confirmed.")
+P("The remaining eight parameters are hyperparameters, which are marked as calibrated in Table 1 and are tuned in this section. They set how quickly the indicator follows a change, how much evidence each branch requires and how strongly the adaptive factor responds. Their suitable values depend on the laboratory, the equipment, the specimen and its material, which differ between experiments. They therefore cannot be fixed from theory alone and must be calibrated against cases in which the true margin is known.")
 RAW('<figure class="table" id="tab1"><figcaption><b>Table 1.</b> Estimator parameters. Smoothing coefficients follow '
     + inline("$\\eta=1-\\exp(-\\Delta t/\\tau)$") + ' from the listed time constant.</figcaption><table>'
     + "<thead>" + trow(["Symbol", "Value", "$\\tau$", "Type", "Role"], "th") + "</thead><tbody>"
     + "".join(trow(r) for r in T1) + "</tbody></table></figure>")
-P("The two plants identified in Section 2.3 provide such cases for the column specimen of this study. Because both models are known, the true NCF margin "
-  "can be computed at every update and compared with the estimate. To impose damage numerically, both models "
-  "receive the same command $v(t)$, and their outputs are mixed:")
+P("A known margin requires a plant that is known at every instant, including while the specimen degrades. The two plants $H_0$ and $H_d$ identified in Section 2.3 meet this requirement for the column specimen of this study. To impose damage numerically, both plants receive the same command $v(t)$, and their outputs are mixed:")
 E("mix", r"y(t)=\big[1-\delta(t)\big]\,y_0(t)+\delta(t)\,y_d(t),", "y(t)=[1−δ(t)] y_0 (t)+δ(t) y_d (t),")
-P("where $y_0$ and $y_d$ are the outputs of $H_0$ and $H_d$, and $\\delta(t)\\in[0,1]$ is the damage index. Here "
-  "$\\delta=0$ represents the initial state and $\\delta=1$ represents the damaged state identified in Section 2.3. "
-  "While $\\delta$ is constant, superposition makes this mixture equivalent to the single linear plant "
-  "$(1-\\delta)H_0+\\delta H_d$ driven by $v(t)$. The true margin at each update therefore follows from {eq:bncf} "
-  "applied to the corresponding loop $\\lambda C\\big[(1-\\delta)H_0+\\delta H_d\\big]$. The mixture "
-  "interpolates the responses of the two states and does not represent an intermediate stiffness.")
-P("The calibration cases combine three features, and the first is the damage history over a case duration of "
-  "120 s. Sudden "
-  "damage steps $\\delta$ from zero to one at 40 s and back to zero at 80 s. Gradual damage ramps $\\delta$ up "
-  "between 20 and 50 s and back down between 70 and 100 s. The second feature is the excitation band of the "
-  "reference $u(t)$, which is band-limited white noise with an RMS of 0.15 mm. Sensor noise with a standard deviation of "
-  "0.05 mm is added to the measured displacement.")
-P("Wideband excitation covers 2 to 80 Hz and therefore includes the frequencies of the minimum margin, near "
-  "35–38 Hz. Narrowband excitation covers only 2 to 10 Hz, so direct identification cannot observe the change at "
-  "those frequencies, and only output-power inference can detect it. The third feature is the adaptive factor, which "
-  "is either fixed at one or active during the case. With $\\lambda$ fixed, the cases test whether the indicator "
-  "alone estimates the margin correctly as the damage changes. With $\\lambda$ active, the same cases test whether "
-  "the loop is held at the target while tracking is retained. Table 2 lists the resulting eight cases, which cover "
-  "every combination of the three features.")
+P("where $y_0$ and $y_d$ are the outputs of $H_0$ and $H_d$, and $\\delta(t)\\in[0,1]$ is the damage index. Thus $\\delta=0$ represents the initial state, and $\\delta=1$ represents the damaged state identified in Section 2.3. While $\\delta$ is constant, superposition makes this mixture equivalent to the single linear plant $(1-\\delta)H_0+\\delta H_d$ driven by $v(t)$. The true margin at each update therefore follows from {eq:bncf} applied to the loop $\\lambda C\\big[(1-\\delta)H_0+\\delta H_d\\big]$. This true margin is computed independently of the estimator, so it serves as the benchmark for judging $b_{\\mathrm{OSI}}$. The mixture interpolates the responses of the two states and does not represent an intermediate stiffness.")
+P("The calibration cases are built from three features, and each feature targets one part of the framework. The first feature is the damage history, which tests how quickly the indicator follows a change over a case duration of 120 s. Sudden damage steps $\\delta$ from zero to one at 40 s and back to zero at 80 s. Gradual damage ramps $\\delta$ up between 20 and 50 s and back down between 70 and 100 s. A damaged specimen does not regain its stiffness, but the return to $\\delta=0$ reproduces a loop that regains its margin. This return therefore tests the recovery step of Section 3.1.2, which releases the remembered amplification.")
+P("The second feature is the excitation band of the reference $u(t)$, which determines which branch can observe the change. In both bands, the reference is band-limited white noise with an RMS of 0.15 mm. Sensor noise with a standard deviation of 0.05 mm is added to the measured displacement in every case. Wideband excitation covers 2 to 80 Hz and therefore excites the frequencies of the minimum margin, between 35 and 39 Hz in Section 2.3. The wideband cases therefore test direct identification, and they set its spectral averaging $\\eta_s$, activity threshold $\\eta_A$ and leverage threshold $\\ell_{\\mathrm{th}}$. Narrowband excitation covers only 2 to 10 Hz, so direct identification cannot observe the change near the minimum margin. Only output-power inference can then detect the reduced margin, and the narrowband cases set its hyperparameters. Their damage onset sets the confirmation threshold $\\rho_{\\mathrm{th}}$ and the averaging factor $\\eta_g$, and their return sets the recovery factor $r_g$.")
+P("The third feature is the adaptive factor, which is either fixed at one or active during the case. With $\\lambda$ fixed, the cases test whether the indicator alone estimates the margin correctly as the damage changes. With $\\lambda$ active, the same cases test whether the loop is held near the target while tracking is retained. These active cases set the adaptation gain $\\kappa$ and the ratio $\\mu$ of the recovery rate to the reduction rate. The fixed and active versions of each case use the same reference and sensor-noise records, so their differences come from $\\lambda$ alone. Table 2 lists the resulting eight cases, which cover every combination of the three features.")
 RAW('<figure class="table" id="tab_cases"><figcaption><b>Table 2.</b> Calibration cases.</figcaption>'
     '<table>'
     + "<thead>" + trow(["Case", "Damage history", "Excitation", "Adaptive factor"], "th") + "</thead><tbody>"
@@ -609,19 +516,10 @@ RAW('<figure class="table" id="tab_cases"><figcaption><b>Table 2.</b> Calibratio
         ("7", "Sudden", "Narrowband, 2–10 Hz", "Active"),
         ("8", "Gradual", "Narrowband, 2–10 Hz", "Active"),
     ]) + "</tbody></table></figure>")
-P("Figures 6 and 7 show the cases with $\\lambda$ fixed and active, respectively, and each column shows one case in "
-  "three panels. The first panel shows the command and the measured displacement, and the second shows the damage "
-  "index $\\delta$. The third "
-  "compares the estimated $b_{\\mathrm{OSI}}$ with the true margin and $b_{\\mathrm{tar}}$, and shows $\\lambda$ "
-  "in the adaptive cases.")
+P("Figures 6 and 7 show the cases with $\\lambda$ fixed and active, respectively, and each column shows one case in three panels. The first panel shows the command $v(t)$ and the measured displacement $y(t)$, and the second shows the damage index $\\delta$. The third panel compares the estimated $b_{\\mathrm{OSI}}$ with the true margin and the target $b_{\\mathrm{tar}}$, and it also shows $\\lambda$ in the adaptive cases.")
 RAW('<figure id="fig_cal_fixed"><img src="figures/fig_calibration_fixed.png" alt="Calibration cases 1 to 4 with the adaptive factor fixed" style="width:100%;max-width:100%;display:block;margin:0 auto;background:#fff"/><figcaption><b>Figure 6.</b> Calibration cases 1–4 with the adaptive factor fixed at one.</figcaption></figure>')
 RAW('<figure id="fig_cal_adapt"><img src="figures/fig_calibration_adaptive.png" alt="Calibration cases 5 to 8 with the adaptive factor active" style="width:100%;max-width:100%;display:block;margin:0 auto;background:#fff"/><figcaption><b>Figure 7.</b> Calibration cases 5–8 with the adaptive factor active.</figcaption></figure>')
-P("Four simple metrics, listed in Table 3, summarize each case after the first 5 s of the record. The estimation "
-  "error is the mean of $|b_{\\mathrm{OSI}}-b_{\\mathrm{NCF}}|$, which measures how closely the indicator follows the "
-  "true margin. The roughness is the median of the second difference of "
-  "$b_{\\mathrm{OSI}}$, multiplied by 1000, so steady changes are not penalized. The travel is the total variation "
-  "of $\\lambda$, which measures how much the controller is adjusted. The unsafe time is the percentage of time "
-  "with $b_{\\mathrm{NCF}}<b_{\\mathrm{tar}}-0.02$, during which the true margin lies clearly below the target.")
+P("Four metrics in Table 3 summarize each case, and they are evaluated after the first 5 s of the record. The estimation error is the mean of $|b_{\\mathrm{OSI}}-b_{\\mathrm{NCF}}|$, which measures how closely the indicator follows the true margin. The roughness is the median absolute second difference of $b_{\\mathrm{OSI}}$, multiplied by 1000, so steady changes are not penalized. The travel is the total variation of $\\lambda$, which measures how much the controller output is adjusted. The unsafe time is the percentage of time with $b_{\\mathrm{NCF}}<b_{\\mathrm{tar}}-0.02$, during which the true margin lies clearly below the target.")
 RAW('<figure class="table" id="tab_metrics"><figcaption><b>Table 3.</b> Calibration metrics with '
     + inline("$b_{\\mathrm{tar}}=0.4$") + '.</figcaption><table>'
     + "<thead>" + trow(["Case", "Estimation error", "Roughness", "Travel of $\\lambda$", "Unsafe time (%)"], "th") + "</thead><tbody>"
@@ -631,26 +529,16 @@ RAW('<figure class="table" id="tab_metrics"><figcaption><b>Table 3.</b> Calibrat
         ("5", "0.014", "10.1", "1.44", "1.5"), ("6", "0.015", "11.1", "1.38", "0.0"),
         ("7", "0.022", "0.023", "2.44", "3.6"), ("8", "0.037", "0.53", "2.64", "1.0"),
     ]) + "</tbody></table></figure>")
-P("Each case constrains the hyperparameters of the branch or the adaptive law that it exercises most strongly. "
-  "The wideband cases set the spectral averaging $\\eta_s$, the "
-  "activity threshold $\\eta_A$ and the leverage threshold $\\ell_{\\mathrm{th}}$ of direct identification. The "
-  "narrowband cases set the output-power parameters, with their damage onset setting $\\rho_{\\mathrm{th}}$ and "
-  "$\\eta_g$ and their return to the initial state setting $r_g$. The adaptive cases set the adaptation gain $\\kappa$ "
-  "and the ratio $\\mu$ of the recovery rate to the reduction rate. The values in Table 1 were tuned on a wider "
-  "benchmark, which included a closed-loop experimental record and a replay of a recorded hybrid simulation. The "
-  "eight cases above therefore illustrate the behavior of these values rather than define the complete tuning.")
+P("With $\\lambda$ fixed, the estimation error stays at or below 0.032, so the indicator follows the true margin in both bands. The unsafe time of 34.8% or 25.1% then measures how long the damage holds the true margin below the target, because $\\lambda$ stays at one. Activating $\\lambda$ with the same signals reduces the unsafe time to at most 3.6%, and the estimation error stays at or below 0.037. The narrowband cases adjust $\\lambda$ more, with a travel of 2.44 and 2.64 against 1.44 and 1.38 in the wideband cases.")
 
 H1("", "Appendix A. Assumptions and limitations", "appA")
-P("The estimator relies on four assumptions, and each one limits how the reported indicator should be interpreted.")
+P("The estimator and its calibration rely on the following assumptions, and each one limits how the reported indicator should be interpreted.")
 RAW('<ol class="assumptions">' + "".join(f"<li>{inline(t)}</li>" for t in [
-    "The identification branch assumes that the output disturbance is uncorrelated with the reference $u$, as the $H_1$ estimator requires. Feedback through the "
-    "numerical substructure can violate this assumption and bias $\\hat{T}_n$ even at high coherence.",
-    "The output-power branch assumes that the disturbance spectrum is unchanged from the reference period and that the "
-    "first 1.5 s represent the initial loop at full gain. A change in disturbance intensity or in the command-driven "
-    "response can therefore alter $q_{\\mathrm{obs}}$ without any change in stability.",
-    "The factor $g$ is real, so the output-power branch captures changes in loop magnitude but not in loop phase.",
-    "Band limitation means that $b_{\\mathrm{OSI}}$ is not a guaranteed lower bound on the full-frequency margin "
-    "$b_{\\mathrm{NCF}}$, because frequencies outside $\\Omega$ are not evaluated.",
+    "The identification branch assumes that the output disturbance is uncorrelated with the reference $u$, as the $H_1$ estimator requires. Feedback through the numerical substructure returns part of this disturbance to $u$ through the measured force $f_m$, which can bias $\\hat{T}_n$ even at high coherence.",
+    "The output-power branch assumes that the disturbance spectrum remains as it was during the reference period formed by the first three windows. It also assumes that the loop during this period is the initial loop at full controller output, with $\\lambda=1$. A change in disturbance intensity or in the command-driven response can therefore alter $q_{\\mathrm{obs}}$ without any change in stability.",
+    "The amplification $g$ is real, so the output-power branch captures changes in loop magnitude but not in loop phase.",
+    "Frequencies outside $\\Omega$ are not evaluated, so $b_{\\mathrm{OSI}}$ is not a guaranteed lower bound on the full-frequency margin $b_{\\mathrm{NCF}}$.",
+    "The calibration cases use the two identified linear plants and their output mixture, which do not include nonlinear specimen behavior. The calibrated values can therefore require adjustment when the framework is applied to another specimen or laboratory.",
 ]) + "</ol>")
 
 REFS = {  # key -> (in-text name, year, entry). Cite as {citet:key} "Name [n]" or {citep:key} "[n]". Numbered by first appearance.
@@ -721,6 +609,7 @@ if versions[-1]["html"] != ARTICLE:
     versions.append({"v": versions[-1]["v"] + 1, "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                      "note": args[0] if args else "", "html": ARTICLE})
     print("saved version", versions[-1]["v"])
+versions = versions[-10:]   # keep the last 10 versions
 open(VERS, "w", encoding="utf-8").write(HEAD + json.dumps(versions, ensure_ascii=False) + ";\n"
                                          + "window.MANUSCRIPT_WORD = " + json.dumps(WORD, ensure_ascii=False) + ";\n")
 print(len(EQ), "equations,", len(versions), "versions")

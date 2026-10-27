@@ -1,0 +1,34 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 141,
+  "saved": "2026-10-20T03:54:13.799Z",
+  "comments": [
+    {
+      "id": "c1792468226283",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "where qobs,n is the observed power ratio,",
+      "prefix": "state:\nqobs,n(ω)=p¯yy,n(ω)pyy,0(ω),(23)\n",
+      "suffix": " which measures the change in output pow",
+      "text": "At window n",
+      "created": "2026-10-20T03:50:26.283Z"
+    },
+    {
+      "id": "c1792468334277",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "These autospectra are taken at 0.5, 1.0 and 1.5 s",
+      "prefix": "ospectra recorded in the initial state. ",
+      "suffix": " after the start of the experiment, with",
+      "text": "First 3 non overlapping windows",
+      "created": "2026-10-20T03:52:14.277Z"
+    },
+    {
+      "id": "c1792468439782",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "and 𝒢 is a gr",
+      "prefix": "here g^n is the selected amplification, ",
+      "suffix": "id of candidate values of g.The predicte",
+      "text": "No need for this grid\nJust minimize over g",
+      "created": "2026-10-20T03:53:59.782Z"
+    }
+  ]
+}

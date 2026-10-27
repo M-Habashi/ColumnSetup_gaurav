@@ -110,6 +110,10 @@ Record the purpose of each figure or table, not just its filename.
 - Keep computational truth in the relevant files under `main/`.
 - Link paper claims to reproducible analysis, saved results, or source literature whenever possible.
 - Record assumptions, exclusions, and unresolved limitations rather than silently filling them in.
+- Expected paper–code differences (accepted by the author 2026-10-20, keep the paper as written and do not raise them again):
+  - Equation bosi uses the minimum of the fused curve. `paper2_bench/paper_osi.m` reports the second-smallest bin (`bs(2)`).
+  - Equation gfit minimizes over g with no grid. The bench code searches a 25-value grid from 0.5 to 6.
+  - Equation rho is 0/0 for an idle command. The code clamps it, which gives c_n = ε. The paper does not state this edge case.
 
 ## Revision log
 

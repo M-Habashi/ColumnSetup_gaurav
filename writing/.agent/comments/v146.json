@@ -1,0 +1,52 @@
+{
+  "page": "manuscript2_journal.html",
+  "version": 146,
+  "saved": "2026-10-26T02:23:00.356Z",
+  "comments": [
+    {
+      "id": "c1792981118669",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "evidence",
+      "prefix": "hese frequencies, so a second source of ",
+      "suffix": " is needed. In this case, the output pow",
+      "text": "Stability indication",
+      "created": "2026-10-26T02:18:38.670Z"
+    },
+    {
+      "id": "c1792981150798",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "still carries evidence",
+      "prefix": " needed. In this case, the output power ",
+      "suffix": ", because the outer controller loop shap",
+      "text": "Can be utilized",
+      "created": "2026-10-26T02:19:10.798Z"
+    },
+    {
+      "id": "c1792981221014",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "enters it",
+      "prefix": "ontroller loop shapes every signal that ",
+      "suffix": ", including sensor noise. Wu and Wang [1",
+      "text": "Goes through it",
+      "created": "2026-10-26T02:20:21.014Z"
+    },
+    {
+      "id": "c1792981233754",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "Wu and Wang [11] used the active-power deviation and its rate of change to detect the positive-feedback mode of a virtual synchronous generator.",
+      "prefix": "that enters it, including sensor noise. ",
+      "suffix": " The output-power inference branch is in",
+      "text": "Tbis seems very unnatural and unrelated to the topic or the paragraph. The link is very weak to use as a citation or inspiration. Use scite to have access to the full text of this reference and rephrase this inspiration sentence to be more linked and related to the paragraph bit correctly describing what is in the reference at the same time",
+      "created": "2026-10-26T02:20:33.754Z"
+    },
+    {
+      "id": "c1792981372267",
+      "section": "3.1.2Output-power inference branch",
+      "quote": "averaged output power",
+      "prefix": "tify this change at each frequency, the ",
+      "suffix": " is compared with its reference from the",
+      "text": "At each frequency",
+      "created": "2026-10-26T02:22:52.268Z"
+    }
+  ]
+}
