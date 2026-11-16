@@ -1,0 +1,37 @@
+Case,Metric,Unit,PaperDefinition,PaperValue,CodeDefinition,CodeValue,PaperMinusCode
+Case I,J1,ms,raw cross-correlation delay,3.9,paper raw cross-correlation delay,3.9,0
+Case I,J2,%,L2 RMS tracking error,9.76,L2 RMS tracking error,9.76,0
+Case I,J3,%,peak tracking error,10.69,peak tracking error,10.69,0
+Case I,J4,%,L2 RMS floor 1,18.86,L2 RMS floor 1,18.86,0
+Case I,J5,%,L2 RMS floor 2,15.67,L2 RMS floor 2,15.67,0
+Case I,J6,%,L2 RMS floor 3,15.73,L2 RMS floor 3,15.73,0
+Case I,J7,%,peak floor 1,13.9,peak floor 1,13.9,0
+Case I,J8,%,peak floor 2,9.13,peak floor 2,9.13,0
+Case I,J9,%,peak floor 3,9.09,peak floor 3,9.09,0
+Case II,J1,ms,raw cross-correlation delay,2.9,paper raw cross-correlation delay,2.9,0
+Case II,J2,%,L2 RMS tracking error,12.13,L2 RMS tracking error,12.13,0
+Case II,J3,%,peak tracking error,14.67,peak tracking error,14.67,0
+Case II,J4,%,L2 RMS floor 1,26.68,L2 RMS floor 1,26.68,0
+Case II,J5,%,L2 RMS floor 2,21.48,L2 RMS floor 2,21.48,0
+Case II,J6,%,L2 RMS floor 3,21.61,L2 RMS floor 3,21.61,0
+Case II,J7,%,peak floor 1,19.97,peak floor 1,19.97,0
+Case II,J8,%,peak floor 2,12.72,peak floor 2,12.72,0
+Case II,J9,%,peak floor 3,12.7,peak floor 3,12.7,0
+Case III,J1,ms,raw cross-correlation delay,0,paper raw cross-correlation delay,0,0
+Case III,J2,%,L2 RMS tracking error,NaN,L2 RMS tracking error,NaN,NaN
+Case III,J3,%,peak tracking error,2.1168117681881e+83,peak tracking error,2.1168117681881e+83,2.69599466671506e+67
+Case III,J4,%,L2 RMS floor 1,NaN,L2 RMS floor 1,NaN,NaN
+Case III,J5,%,L2 RMS floor 2,NaN,L2 RMS floor 2,NaN,NaN
+Case III,J6,%,L2 RMS floor 3,NaN,L2 RMS floor 3,NaN,NaN
+Case III,J7,%,peak floor 1,8.61749424690374e+88,peak floor 1,8.61749424690374e+88,0
+Case III,J8,%,peak floor 2,19682.57,peak floor 2,19682.57,0
+Case III,J9,%,peak floor 3,1392.59,peak floor 3,1392.59,0
+Case IV,J1,ms,raw cross-correlation delay,3.4,paper raw cross-correlation delay,3.4,0
+Case IV,J2,%,L2 RMS tracking error,10.91,L2 RMS tracking error,10.91,0
+Case IV,J3,%,peak tracking error,18.54,peak tracking error,18.54,0
+Case IV,J4,%,L2 RMS floor 1,22.08,L2 RMS floor 1,22.08,0
+Case IV,J5,%,L2 RMS floor 2,18.18,L2 RMS floor 2,18.18,0
+Case IV,J6,%,L2 RMS floor 3,18.24,L2 RMS floor 3,18.24,0
+Case IV,J7,%,peak floor 1,14.36,peak floor 1,14.36,0
+Case IV,J8,%,peak floor 2,11.1,peak floor 2,11.1,0
+Case IV,J9,%,peak floor 3,11.03,peak floor 3,11.03,0

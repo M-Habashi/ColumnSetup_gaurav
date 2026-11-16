@@ -1,0 +1,10 @@
+Metric,Unit,PaperDefinition,PaperValue,CodeDefinition,CodeValue,PaperMinusCode
+J1,ms,raw cross-correlation delay,0,paper raw cross-correlation delay,0,0
+J2,%,L2 RMS tracking error,NaN,L2 RMS tracking error,NaN,NaN
+J3,%,peak tracking error,2.1168117681881e+83,peak tracking error,2.1168117681881e+83,2.69599466671506e+67
+J4,%,L2 RMS floor 1,NaN,L2 RMS floor 1,NaN,NaN
+J5,%,L2 RMS floor 2,NaN,L2 RMS floor 2,NaN,NaN
+J6,%,L2 RMS floor 3,NaN,L2 RMS floor 3,NaN,NaN
+J7,%,peak floor 1,8.61749424690374e+88,peak floor 1,8.61749424690374e+88,0
+J8,%,peak floor 2,19682.57,peak floor 2,19682.57,0
+J9,%,peak floor 3,1392.59,peak floor 3,1392.59,0

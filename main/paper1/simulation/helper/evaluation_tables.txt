@@ -1,0 +1,61 @@
+% ============== J4 Table ==============
+\begin{table}[htbp]
+\centering
+\caption{J4 - Displacement normalized RMS error (1st floor)}
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{4}{c}{J4} \\
+\cmidrule(lr){3-6}
+ & & Segment 1 & Segment 2 & Segment 3 & \\
+ & & ($t < 7$s) & ($7 < t < 12$s) & ($t > 12$s) & Overall \\
+\midrule
+Original Benchmark & & 16.20\% & 34.90\% & 38.12\% & 36.08\% \\
+\midrule
+ & Case I & 18.39\% & 33.61\% & 37.83\% & 35.53\% \\
+Modified Benchmark & Case II & 17.41\% & 27.04\% & NA & NA \\
+ & Case III & 17.41\% & 27.04\% & 78.67\% & 62.88\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ============== J6 Table ==============
+\begin{table}[htbp]
+\centering
+\caption{J6 - Displacement normalized RMS error (2nd floor)}
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{4}{c}{J6} \\
+\cmidrule(lr){3-6}
+ & & Segment 1 & Segment 2 & Segment 3 & \\
+ & & ($t < 7$s) & ($7 < t < 12$s) & ($t > 12$s) & Overall \\
+\midrule
+Original Benchmark & & 13.13\% & 31.51\% & 33.96\% & 32.26\% \\
+\midrule
+ & Case I & 14.07\% & 27.85\% & 30.92\% & 29.14\% \\
+Modified Benchmark & Case II & 12.60\% & 19.14\% & NA & NA \\
+ & Case III & 12.60\% & 19.14\% & 69.81\% & 55.14\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ============== J7 Table ==============
+\begin{table}[htbp]
+\centering
+\caption{J7 - Displacement normalized RMS error (3rd floor)}
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{4}{c}{J7} \\
+\cmidrule(lr){3-6}
+ & & Segment 1 & Segment 2 & Segment 3 & \\
+ & & ($t < 7$s) & ($7 < t < 12$s) & ($t > 12$s) & Overall \\
+\midrule
+Original Benchmark & & 13.20\% & 31.63\% & 34.07\% & 32.38\% \\
+\midrule
+ & Case I & 14.13\% & 28.00\% & 31.08\% & 29.31\% \\
+Modified Benchmark & Case II & 12.66\% & 19.07\% & NA & NA \\
+ & Case III & 12.66\% & 19.07\% & 69.36\% & 54.83\% \\
+\bottomrule
+\end{tabular}
+\end{table}

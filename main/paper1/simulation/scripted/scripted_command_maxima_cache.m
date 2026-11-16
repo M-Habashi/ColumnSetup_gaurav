@@ -1,0 +1,223 @@
+function [maximumCommand, sourceFile] = scripted_command_maxima_cache( ...
+        projectRoot, p, newMaximum, resultPath)
+%SCRIPTED_COMMAND_MAXIMA_CACHE Record/load simulated PI-command maxima.
+%   With two inputs, this function only loads matching A/B/C values. With
+%   four inputs, it first records the nominal pure-controller simulation.
+%   No simulation is executed here. The stored signal is the selected PI
+%   output used as the servo displacement demand. Its stored maximum is
+%   max(abs(PI_command)) in millimetres.
+
+cachePath = fullfile(projectRoot, 'Results', ...
+    'scripted_command_maxima.mat');
+records = emptyRecords();
+if isfile(cachePath)
+    loaded = load(cachePath, 'records');
+    if isfield(loaded, 'records') && istable(loaded.records)
+        [records, compatible] = upgradeRecords(loaded.records, records);
+    else
+        compatible = false;
+    end
+    if ~compatible
+        warning('scripted:CommandCacheFormat', ...
+            'Ignoring an incompatible command-maximum cache.')
+    end
+end
+
+if nargin >= 3
+    validateattributes(newMaximum, {'numeric'}, ...
+        {'real', 'finite', 'scalar', 'nonnegative'}, ...
+        mfilename, 'newMaximum');
+    if nargin < 4
+        resultPath = "";
+    end
+    isPureControllerRun = p.options.modified == 1 && ...
+        (p.use_c || ~p.switch_on);
+    if isPureControllerRun
+        controllerName = string(p.start_c);
+        [kp, ki] = controllerGains(p, controllerName);
+        newRecord = table(controllerName, newMaximum, kp, ki, ...
+            p.options.Building_c, p.options.modified, ...
+            p.options.consider_damage, p.alpha_start, p.alpha_min, ...
+            p.post_yield_ratio, p.n_bw, p.u_y_mm, p.sigma, ...
+            p.delta_nu_per_mm2, p.delta_eta_per_mm2, p.q_damage, ...
+            p.reference_delta_nu_per_mm2, ...
+            p.reference_delta_eta_per_mm2, ...
+            p.lse_window, ...
+            p.lead_gain, p.lead_zero, p.lead_pole, p.fs, ...
+            logical(p.switch_on), p.m_e, p.k_e, p.c_e, p.eq_intensity, ...
+            p.E_sw, posixtime(datetime('now')), string(resultPath), ...
+            'VariableNames', records.Properties.VariableNames);
+        sameRunType = matchingRows(records, p, controllerName, kp, ki);
+        if any(sameRunType)
+            records(find(sameRunType, 1, 'last'), :) = newRecord;
+        else
+            records = [records; newRecord];
+        end
+        resultsDirectory = fileparts(cachePath);
+        if ~isfolder(resultsDirectory)
+            mkdir(resultsDirectory)
+        end
+        save(cachePath, 'records')
+    else
+        warning('scripted:SwitchedCommandMaximum', ...
+            ['The run did not execute one modified PI controller for its ', ...
+            'full duration. Use modified = 1 and switch_on = 0 to ', ...
+            'populate an A or B row.'])
+    end
+end
+
+controllerNames = ["A"; "B"; "C"];
+maximumCommand = nan(3, 1);
+sourceFile = strings(3, 1);
+for controllerIndex = 1:3
+    controllerName = controllerNames(controllerIndex);
+    [kp, ki] = controllerGains(p, controllerName);
+    matching = matchingRows(records, p, controllerName, kp, ki);
+    matchingIndices = find(matching);
+    if isempty(matchingIndices)
+        continue
+    end
+    [~, latestLocalIndex] = max(records.RecordedTime(matching));
+    selectedIndex = matchingIndices(latestLocalIndex);
+    maximumCommand(controllerIndex) = ...
+        records.MaxPICommandDisplacement_mm(selectedIndex);
+    sourceFile(controllerIndex) = records.ResultFile(selectedIndex);
+end
+end
+
+function records = emptyRecords()
+variableNames = {'Controller', 'MaxPICommandDisplacement_mm', ...
+    'Kp', 'Ki', ...
+    'Building_c', 'Modified', 'ConsiderDamage', 'AlphaStart', 'AlphaMin', ...
+    'PostYieldRatio', 'N', 'UYmm', 'Sigma', 'DeltaNuPerMm2', ...
+    'DeltaEtaPerMm2', 'Q', 'ReferenceDeltaNuPerMm2', ...
+    'ReferenceDeltaEtaPerMm2', 'LSEWindowS', 'PhaseLeadGain', 'PhaseLeadZero', ...
+    'PhaseLeadPole', 'Fs', 'SwitchOn', ...
+    'ExperimentalMass', 'ExperimentalStiffness', ...
+    'ExperimentalDamping', 'EqIntensity', 'Earthquake', ...
+    'RecordedTime', 'ResultFile'};
+variableTypes = repmat("double", 1, numel(variableNames));
+variableTypes([1, numel(variableNames)]) = "string";
+variableTypes(strcmp(variableNames, 'SwitchOn')) = "logical";
+records = table('Size', [0, numel(variableNames)], ...
+    'VariableTypes', variableTypes, 'VariableNames', variableNames);
+end
+
+function matching = matchingRows(records, p, controllerName, kp, ki)
+matching = records.Controller == controllerName & ...
+    closeEnough(records.Kp, kp) & closeEnough(records.Ki, ki) & ...
+    records.Building_c == p.options.Building_c & ...
+    records.Modified == p.options.modified & ...
+    records.ConsiderDamage == p.options.consider_damage & ...
+    closeEnough(records.AlphaStart, p.alpha_start) & ...
+    closeEnough(records.PhaseLeadGain, p.lead_gain) & ...
+    closeEnough(records.PhaseLeadZero, p.lead_zero) & ...
+    closeEnough(records.PhaseLeadPole, p.lead_pole) & ...
+    closeEnough(records.Fs, p.fs) & ...
+    closeEnough(records.ExperimentalMass, p.m_e) & ...
+    closeEnough(records.ExperimentalStiffness, p.k_e) & ...
+    closeEnough(records.ExperimentalDamping, p.c_e) & ...
+    closeEnough(records.EqIntensity, p.eq_intensity) & ...
+    records.Earthquake == p.E_sw;
+if p.options.consider_damage == 1
+    matching = matching & closeEnough(records.AlphaMin, p.alpha_min);
+elseif p.options.consider_damage == 2
+    matching = matching & ...
+        closeEnough(records.PostYieldRatio, p.post_yield_ratio) & ...
+        closeEnough(records.N, p.n_bw) & ...
+        closeEnough(records.UYmm, p.u_y_mm) & ...
+        closeEnough(records.Sigma, p.sigma) & ...
+        closeEnough(records.DeltaNuPerMm2, p.delta_nu_per_mm2) & ...
+        closeEnough(records.DeltaEtaPerMm2, p.delta_eta_per_mm2) & ...
+        closeEnough(records.ReferenceDeltaNuPerMm2, ...
+            p.reference_delta_nu_per_mm2) & ...
+        closeEnough(records.ReferenceDeltaEtaPerMm2, ...
+            p.reference_delta_eta_per_mm2) & ...
+        closeEnough(records.Q, p.q_damage) & ...
+        closeEnough(records.LSEWindowS, p.lse_window);
+end
+if controllerName ~= "C"
+    matching = matching & records.SwitchOn == logical(p.switch_on);
+end
+end
+
+function [records, compatible] = upgradeRecords(candidate, template)
+% Add degrading-law identity columns to older cache files.
+boucWenDefaults = struct('PostYieldRatio', 0.001, 'N', 8, ...
+    'Sigma', 0.769230769230769, 'DeltaNuPerMm2', 0, ...
+    'DeltaEtaPerMm2', 0, 'Q', 6, 'LSEWindowS', 1);
+legacyNames = struct('PostYieldRatio', 'BoucWenPostYieldRatio', ...
+    'N', 'BoucWenN', 'Sigma', 'BoucWenSigma', ...
+    'DeltaNuPerMm2', 'BoucWenDeltaNuPerMm2', ...
+    'DeltaEtaPerMm2', 'BoucWenDeltaEtaPerMm2', ...
+    'Q', 'BoucWenQ', ...
+    'LSEWindowS', 'BoucWenLSEWindowS');
+fieldNames = fieldnames(boucWenDefaults);
+for fieldIndex = 1:numel(fieldNames)
+    fieldName = fieldNames{fieldIndex};
+    if ~ismember(fieldName, candidate.Properties.VariableNames)
+        legacyName = legacyNames.(fieldName);
+        if ismember(legacyName, candidate.Properties.VariableNames)
+            candidate.(fieldName) = candidate.(legacyName);
+        else
+            candidate.(fieldName) = repmat( ...
+                boucWenDefaults.(fieldName), height(candidate), 1);
+        end
+    end
+end
+if ~ismember('ReferenceDeltaNuPerMm2', candidate.Properties.VariableNames)
+    candidate.ReferenceDeltaNuPerMm2 = candidate.DeltaNuPerMm2;
+end
+if ~ismember('ReferenceDeltaEtaPerMm2', candidate.Properties.VariableNames)
+    candidate.ReferenceDeltaEtaPerMm2 = candidate.DeltaEtaPerMm2;
+end
+if ~ismember('UYmm', candidate.Properties.VariableNames)
+    if ismember('YieldDisplacementMm', candidate.Properties.VariableNames)
+        candidate.UYmm = candidate.YieldDisplacementMm;
+    elseif ismember('RhoPerMm', candidate.Properties.VariableNames)
+        candidate.UYmm = 1 ./ candidate.RhoPerMm;
+    elseif ismember('BoucWenRho', candidate.Properties.VariableNames)
+        candidate.UYmm = 1000 ./ candidate.BoucWenRho;
+    else
+        candidate.UYmm = 1.25 * ones(height(candidate), 1);
+    end
+end
+phaseLeadNames = {'PhaseLeadGain', 'PhaseLeadZero', 'PhaseLeadPole'};
+modifiedDefaults = [31.6431547, 49.3502225, 1657.846121];
+originalDefaults = [50.8316336027, 168.6036181018, 8570.3973394443];
+for parameterIndex = 1:numel(phaseLeadNames)
+    parameterName = phaseLeadNames{parameterIndex};
+    if ~ismember(parameterName, candidate.Properties.VariableNames)
+        values = repmat(originalDefaults(parameterIndex), ...
+            height(candidate), 1);
+        values(candidate.Modified == 1) = modifiedDefaults(parameterIndex);
+        candidate.(parameterName) = values;
+    end
+end
+requiredNames = template.Properties.VariableNames;
+compatible = all(ismember(requiredNames, ...
+    candidate.Properties.VariableNames));
+if compatible
+    records = candidate(:, requiredNames);
+else
+    records = template;
+end
+end
+
+function matching = closeEnough(values, expected)
+scale = max(1, abs(expected));
+matching = abs(values - expected) <= 1e-10 * scale;
+end
+
+function [kp, ki] = controllerGains(p, controllerName)
+if controllerName == "A"
+    kp = p.controller_a.Kp;
+    ki = p.controller_a.Ki;
+elseif controllerName == "B"
+    kp = p.controller_b.Kp;
+    ki = p.controller_b.Ki;
+else
+    kp = p.controller_c.Kp;
+    ki = p.controller_c.Ki;
+end
+end
