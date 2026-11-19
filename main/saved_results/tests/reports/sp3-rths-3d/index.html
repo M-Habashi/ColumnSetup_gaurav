@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111617">
+  <meta name="description" content="Explore the nonlinear SP3 hybrid test in 3D with measured response, synchronized footage, and spatial instruments.">
+  <title>SP3 RTHS · 3D replay</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23121617'/%3E%3Cg fill='none' stroke='%23c5f793' stroke-width='2.5' stroke-linejoin='round'%3E%3Cpath d='m6 16 14-8 14 8-14 8zM6 22l14 8 14-8M6 28l14 8 14-8'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./src/style.css">
+  <script type="importmap">
+    {"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><svg class="brandmark" viewBox="0 0 32 35" aria-hidden="true"><path d="m2 10 14-8 14 8-14 8zM2 16l14 8 14-8M2 22l14 8 14-8"/></svg><span>Fieldglass</span></div>
+    <span class="brand-divider"></span><span class="product">SP3 3D replay</span>
+    <div class="header-actions"><a class="quiet player-link" href="../sp3-rths-player/">2D player</a><button id="notes" class="quiet" title="Test information"><i data-icon="info"></i><span>Test info</span></button><button id="ar" class="ar-button"><i data-icon="ar"></i>Enter AR</button></div>
+  </header>
+  <main id="studio">
+    <section id="stage" aria-label="Interactive experiment scene">
+      <div id="viewport" tabindex="0" aria-label="3D scene. Drag to orbit, scroll to zoom, or select Walk to move through the scene."></div>
+      <div class="stage-header">
+        <div class="stage-title"><div class="overline"><b></b><span id="section-kicker">PHYSICAL SUBSTRUCTURE</span></div>
+          <h1 id="scene-title">Nonlinear SP3</h1><p id="scene-subtitle">W8×28 steel column <em>/</em> El Centro ×3.5</p></div>
+        <div class="stage-actions"><button id="layer-button" class="scene-button" aria-expanded="false"><i data-icon="layers"></i><span>Layers</span><i data-icon="down" class="small-icon"></i></button><button id="fullscreen" class="scene-button square" title="Enter fullscreen" aria-label="Toggle fullscreen"><i data-icon="fullscreen"></i></button></div>
+      </div>
+      <div id="loading" role="status">Opening experiment…</div>
+      <div id="scene-error" hidden><strong>3D rendering is unavailable</strong><p>Enable WebGL 2 to explore the scene, or open the synchronized recording.</p><button class="primary" data-mode="camera">Open recording</button></div>
+      <canvas id="leaders" aria-hidden="true"></canvas>
+      <div id="instruments" hidden>
+        <button class="instrument" id="instrument-a" aria-label="Inspect displacement plot"><canvas></canvas><span class="plot-open"><i data-icon="expand"></i></span></button>
+        <button class="instrument" id="instrument-b" aria-label="Inspect hysteresis plot"><canvas></canvas><span class="plot-open"><i data-icon="expand"></i></span></button>
+      </div>
+      <div id="probe-label" class="probe-label" hidden><span></span>Actuator pin</div>
+      <div id="spec-label" class="probe-label secondary" hidden><span></span>Base anchors</div>
+      <button id="interface-focus" hidden title="Inspect the SP3 assembly in the frame">Inspect SP3 ↗</button>
+      <div id="view-key" hidden></div>
+      <section id="camera-bay" hidden aria-label="Synchronized test videos">
+        <div class="media-mode" role="group" aria-label="Video source"><button data-media="raw" aria-pressed="true">Lab recording</button><button data-media="film" aria-pressed="false">Analysis film</button></div>
+        <div id="film-wrap"><video id="footage" muted playsinline preload="metadata" data-file="./media/specimen-camera.mp4"></video><video id="analysis" muted playsinline preload="metadata" data-file="./media/analysis-film.mp4" hidden></video>
+          <div id="camera-gap" hidden><i data-icon="camera"></i><strong>Outside camera coverage</strong><p>The lab recording covers 4.96–25.59 s.</p><button class="primary" id="camera-jump">Jump to footage</button></div>
+        </div><span id="media-caption"></span>
+      </section>
+      <aside id="layer-menu" class="popover" hidden aria-label="Scene layers">
+        <h2>Scene layers</h2>
+        <label><span>Spatial plots</span><input id="show-plots" type="checkbox" checked></label>
+        <label><span>Instrument guides</span><input id="show-guides" type="checkbox"></label>
+        <label id="lens-setting"><span>Camera beside specimen</span><input id="camera-lens" type="checkbox"></label>
+        <label id="rig-cameras"><span>Inspect connection</span><select id="rig-camera" aria-label="Inspect connection"><option value="">Full setup</option><option value="base">Base anchors</option><option value="reaction">Actuator mount</option></select></label>
+        <label id="motion-setting"><span>Deformation</span><select id="motion" aria-label="Deformation scale"><option value="1">1× true scale</option><option value="3">3×</option><option value="5">5×</option></select></label>
+      </aside>
+      <div class="scene-bottom"><div id="nav-pad">
+        <button id="orbit" class="nav-choice selected" aria-pressed="true"><i data-icon="orbit"></i><span>Orbit</span></button>
+        <button id="walk" class="nav-choice" aria-pressed="false"><i data-icon="walk"></i><span>Walk</span></button><span class="short-divider"></span>
+        <button class="icon-button" id="reset-view" title="Reset camera (R)" aria-label="Reset camera"><i data-icon="home"></i></button>
+      </div><span id="nav-hint">Drag to orbit <em>·</em> Scroll to zoom</span></div>
+      <div id="walk-pad" hidden aria-label="Walk controls"><button data-step="w" aria-label="Move forward">↑</button><button data-step="a" aria-label="Move left">←</button><button data-step="s" aria-label="Move back">↓</button><button data-step="d" aria-label="Move right">→</button></div>
+      <canvas id="axis" width="156" height="142" aria-hidden="true"></canvas>
+    </section>
+    <footer class="console">
+      <div class="console-top"><nav id="views" aria-label="Experiment views">
+        <button data-mode="specimen" class="active" aria-pressed="true"><i data-icon="cube"></i><span>Specimen</span></button>
+        <button data-mode="frame" aria-pressed="false"><i data-icon="frame"></i><span>FEM frame</span></button>
+        <button data-mode="path" aria-pressed="false"><i data-icon="path"></i><span>Response space</span></button>
+        <button data-mode="camera" aria-pressed="false"><i data-icon="camera"></i><span>Camera</span></button></nav>
+        <button id="events" class="event-button" aria-expanded="false"><i data-icon="flag"></i><span>Jump to event</span><i data-icon="up" class="small-icon"></i></button>
+      </div>
+      <div class="transport"><button id="play" class="play-button" aria-label="Play experiment" title="Play or pause (Space)"><i data-icon="play"></i></button>
+        <div class="time-read"><span class="clock-label">EARTHQUAKE TIME</span><div><output id="time-value">07.03</output><span class="time-total"> / 37.52 s</span></div></div>
+        <div class="timeline"><canvas id="wave" aria-hidden="true"></canvas><input id="time" type="range" min="0" max="37.52" step="0.005" value="7.03" aria-label="Earthquake time in seconds"><div class="time-ticks" aria-hidden="true"><span>0 s</span><span>10</span><span>20</span><span>30</span><span>37.52 s</span></div></div>
+        <div class="speed-wrap"><i data-icon="speed"></i><select id="rate" title="Playback speed" aria-label="Playback speed"><option value=".05">0.05× lab</option><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></div>
+      </div>
+      <div id="event-menu" class="popover" hidden><h2>Jump to event</h2><div id="event-list"></div></div>
+    </footer>
+  </main>
+  <dialog id="modal"><div class="modal-title"><div><div class="overline"><b></b><span id="dialog-kicker">TEST RECORD</span></div><h2 id="dialog-title"></h2></div><button class="icon-button" id="close-modal" aria-label="Close dialog"><i data-icon="close"></i></button></div><div id="dialog-body"></div></dialog>
+  <div id="xr-ui" hidden><div id="xr-hint">Move your device to find a horizontal surface.</div><div id="xr-controls"><button id="xr-play">Play</button><button id="xr-scale">Scale 1:1</button><button id="xr-place">Place again</button><button id="xr-exit">Exit AR</button></div></div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
